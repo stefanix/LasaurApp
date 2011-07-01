@@ -1,0 +1,302 @@
+<!DOCTYPE html> 
+<html> 
+<head> 
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"> 
+<title>LasaurApp</title> 
+<link rel="stylesheet" href="/css/smoothness/jquery-ui-1.8.9.custom.css" type="text/css">	
+<link rel="stylesheet" href="/css/jquery.toastmessage.css" type="text/css">	
+<link rel="stylesheet" href="/css/demo.css" type="text/css"> 
+<script src="/js/jquery-1.5.min.js"></script>
+<script src="/js/jquery-ui-1.8.9.custom.min.js"></script>
+<script src="/js/jquery.toastmessage.js"></script>
+
+
+
+</head>
+
+
+
+<body>
+
+<h1>1. Initialize</h1>
+<div id="serial_connection" style="margin:20px; float:left">Connect Serial</div>
+<div id="find_home" style="margin:20px; float:left">Find Home</div>
+<div id="go_home" style="margin:20px; float:left">Go Home</div>
+<div id="escape_fire" style="margin:20px; float:left">Escape Fire</div>
+
+<h1 style="clear:both">2. Send G-Code</h1>
+<div id="gcode_widget" class="ui-corner-all" style="margin:20px; padding:10px; float:left; background-color:#555555">
+	<form id="gcode_form">
+		<p>
+		<select id="gcode_select">
+		  <option value="" selected="yes">select shape</option>
+		  <option value="rectangle">rectangle</option>
+		  <option value="triangle">triangle</option>
+		</select>
+		</p>
+		<p>
+		<textarea id="gcode_program" rows="10" cols="40"></textarea>
+		</p>
+		<p>
+		<input id="gcode_submit" type="submit" value="Submit" />
+		</p>
+	</form>	
+	<div id="progressbar" style="width:100%; height:20px"></div>
+</div>
+
+<div id="move_widget" class="ui-corner-all" style="margin:20px; width:425px; float:left; background-color:#555555">
+	<div id="lasaur_widget" style="position:relative; width:425px; height:270px;">
+		<div id="gantry_top" style="position:absolute; left:5px; top:35px; width:415px; height:10px; background-color:#83BBFF;"></div> 
+		<div id="gantry_bottom" style="position:absolute; left:5px; top:260px; width:415px; height:10px; background-color:#83BBFF;"></div> 
+		<div id="gantry_left" style="position:absolute; left:22.5px; top:45px; width:10px; height:215px; background-color:#83BBFF;"></div> 
+		<div id="gantry_right" style="position:absolute; left:392.5px; top:45px; width:10px; height:215px; background-color:#83BBFF;"></div> 
+		<div id="y_cart" style="position:absolute; left:19px; top:68px; width:387px; height:10px; background-color:#650B01;"></div> 
+		<div id="x_cart" style="position:absolute; left:54px; top:76.5px; width:12px; height:12px; background-color:#9E4301;"></div> 
+		<div id="cutting_area" style="position:absolute; left:60px; top:82.5px; width:305px; height:155px; border:1px solid #ff0000; opacity:0.3"></div>	
+	</div>
+	<form>
+		<div id="move_type_radio" style="margin:10px; float:left">
+			<input type="radio" id="radio_g0" name="radio" checked="checked" /><label for="radio_g0">G0</label>
+			<input type="radio" id="radio_g1" name="radio" /><label for="radio_g1">G1</label>
+		</div>
+	</form>
+	<div id="feedrate" style="margin:23px; width:150px; float:left"></div>
+	<input id="feedrate_field" type="textfield" value="5000" style="margin:15px; width:50px; float:left"></input>
+</div>
+
+
+	
+<script>
+  
+// connect to serial button
+//	
+$("#serial_connection").button();
+// get serial state
+$.get('/serial/2', function(data) {
+	if (data != "") {
+		$().toastmessage('showNoticeToast', "Serial is Connected");		
+		$("#serial_connection").val('1');
+		$("#serial_connection").button('option', 'label', 'Disconnect Serial');		
+	} else {
+		$().toastmessage('showNoticeToast', "Serial is Disconnected");
+		$("#serial_connection").val('0');
+		$("#serial_connection").button('option', 'label', 'Connect Serial');
+	}		
+});
+$("#serial_connection").click(function(e){	
+	if ($("#serial_connection").val() == '1') {
+		$.get('/serial/0', function(data) {
+			if (data != "") {
+				$().toastmessage('showSuccessToast', "Serial Disconnected");
+			} else {
+				$().toastmessage('showSuccessToast', "Serial was already disonnected.");
+			}
+			$("#serial_connection").val('0');
+			$("#serial_connection").button('option', 'label', 'Connect Serial');	
+		});
+	}	else {
+		$.get('/serial/1', function(data) {
+			if (data != "") {
+				$().toastmessage('showSuccessToast', "Serial Connected");
+				$().toastmessage('showNoticeToast', data);				
+				$("#serial_connection").val('1');
+				$("#serial_connection").button('option', 'label', 'Disconnect Serial');
+			} else {
+				$().toastmessage('showErrorToast', "Failed to Connect");
+			}		
+		});
+	}	
+	e.preventDefault();		
+});	
+
+$("#find_home").button();
+$("#find_home").click(function(e){
+	var gcode = 'G30\n'
+	$().toastmessage('showNoticeToast', gcode);	
+	$.get('/gcode/'+ gcode, function(data) {
+		if (data != "") {
+			$().toastmessage('showSuccessToast', "G-Code sent to serial.");
+		} else {
+			$().toastmessage('showErrorToast', "Serial not connected.");
+		}
+	});
+	e.preventDefault();		
+});
+
+$("#go_home").button();
+$("#go_home").click(function(e){
+	var gcode = 'G0X0Y0F20000\n'
+	$().toastmessage('showNoticeToast', gcode);	
+	$.get('/gcode/'+ gcode, function(data) {
+		if (data != "") {
+			$().toastmessage('showSuccessToast', "G-Code sent to serial.");
+		} else {
+			$().toastmessage('showErrorToast', "Serial not connected.");
+		}
+	});
+	e.preventDefault();		
+});
+
+$("#escape_fire").button();
+$("#escape_fire").click(function(e){
+	var gcode = 'M112X0Y0F20000\n'
+	$().toastmessage('showNoticeToast', gcode.replace(/\n/g, '<br>'));	
+	$.get('/gcode/'+ gcode, function(data) {
+		if (data != "") {
+			$().toastmessage('showSuccessToast', "G-Code sent to serial.");
+		} else {
+			$().toastmessage('showErrorToast', "Serial not connected.");
+		}
+	});
+	e.preventDefault();		
+});
+
+
+// gcode widget
+//
+
+$('#gcode_select').change(function() {
+	
+	if ($(this).val() == "rectangle") {
+		var gcode = 'G0X600Y400F20000\n'
+		gcode += 'G1X630Y400F200\n'
+		gcode += 'G1X630Y430\n'
+		gcode += 'G1X600Y430\n'
+		gcode += 'G1 X600Y400\n'
+		gcode += 'G0X400Y200F20000\n'
+		$('#gcode_program').val(gcode);
+	} else if ($(this).val() == "triangle"){
+		var gcode = 'G0X600Y400F20000\n'
+		gcode += 'G1X630Y400F200\n'
+		gcode += 'G1X630Y430\n'
+		gcode += 'G1X600Y400\n'
+		gcode += 'G0X400Y200F20000\n'
+		$('#gcode_program').val(gcode);		
+	}
+	
+});
+
+$("#gcode_submit").button();
+$("#gcode_form").submit(function(e) {
+	// send gcode string to server via POST
+	var gcode = $('#gcode_program').val();
+	$().toastmessage('showNoticeToast', gcode.replace(/\n/g, '<br>'));
+	$.post("/gcode", { 'gcode_program':gcode }, function(data) {
+		if (data != "") {
+			$().toastmessage('showSuccessToast', "G-Code sent to serial.");	
+			// show progress bar, register live updates
+			if ($("#progressbar").progressbar( "option", "value" ) == 0) {
+				$("#progressbar").progressbar( "option", "value", 5 )
+				$("#progressbar").show();
+			  var progresstimer = setInterval(function() {
+					$.get('/queue_pct_done', function(data2) {
+						//$().toastmessage('showNoticeToast', data2);
+						if (data2.length > 0) {
+							var pct = parseInt(data2);
+							//$().toastmessage('showNoticeToast', data);
+							$('#progressbar').progressbar( "option", "value", pct );
+						} else {
+							$().toastmessage('showNoticeToast', "Done.");
+							$('#progressbar').hide();
+							$('#progressbar').progressbar( "option", "value", 0 );
+							clearInterval(progresstimer);
+						}
+					});
+			  }, 3000);
+			}
+		} else {
+			$().toastmessage('showErrorToast', "Serial not connected.");
+		}
+  });		
+	return false;
+});
+$("#gcode_program").keyup(function(e) {
+	$('#gcode_select').val('select shape');
+});
+$("#progressbar").progressbar({
+	value: 0
+});
+$("#progressbar").hide();
+
+// lasaur widget
+//
+
+$("#cutting_area").click(function(e) {
+
+	//var x = (e.pageX - this.offsetLeft);
+	//var y = (e.pageY - this.offsetTop);
+
+	var offset = $('#lasaur_widget').offset();
+	var x = (e.pageX - offset.left);
+	var y = (e.pageY - offset.top);
+	
+	var pos = $(this).position();
+	var lasaur_coord_x = 4*(x - pos.left);
+	var lasaur_coord_y = 4*(y - pos.top);
+	// cap
+	if (lasaur_coord_x > 1220) { lasaur_coord_x = 1220; }
+	if (lasaur_coord_y > 620) { lasaur_coord_y = 620; }
+	
+	var g0_or_g1
+	if($('#radio_g1').is(":checked")){
+		g0_or_g1 = 'G1';
+	}	else {
+		g0_or_g1 = 'G0';	
+	}
+	var feedrate = $( "#feedrate_field" ).val();
+	var gcode = g0_or_g1 + ' X' + parseInt(lasaur_coord_x) + 'Y' + parseInt(lasaur_coord_y) + 'F' + feedrate + '\n';
+	
+	$().toastmessage('showNoticeToast', gcode);
+	
+	// send new pos to server, on success move graphics
+	$.get('/gcode/'+ gcode, function(data) {
+		if (data != "") {
+			$().toastmessage('showSuccessToast', "G-Code sent to serial.");
+			moveto(x, y);
+		} else {
+			$().toastmessage('showErrorToast', "Serial not connected.");
+		}
+	});
+	
+});
+
+$('#move_type_radio').buttonset();
+$("#feedrate").slider({ min:50, max:5000, value:$('#feedrate_field').val() });
+$("#feedrate").bind( "slide", function(event, ui) {
+	$('#feedrate_field').val($('#feedrate').slider("option", "value"));
+});
+$("#feedrate").bind( "slidestop", function(event, ui) {
+	$('#feedrate_field').val($('#feedrate').slider("option", "value"));
+});
+
+$("#cutting_area").hover(
+  function () {
+		$(this).css('border', '1px solid #ffffff');
+		$(this).css('cursor', 'crosshair');
+  },
+  function () {
+		$(this).css('border', '1px solid #ff0000');
+		$(this).css('cursor', 'pointer');			
+  }
+);	
+
+function moveto (x, y) {
+	$('#y_cart').animate({  
+		top: y - 8.5 - 6
+	}); 	
+	
+	$('#x_cart').animate({  
+		left: x - 6,  
+		top: y - 6 
+	});
+};
+
+
+
+
+</script>
+
+
+</body>
+</html>
+
