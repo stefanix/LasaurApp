@@ -6,7 +6,7 @@ LasaurApp is the cannonical app to control a Lasersaur. At the moment it only do
 
 This app is written mostly in cross-platform, cross-browser Javascript. Only a lightweight backend is used to relay to/from the USB port.
 
-**DISCLAIMER:** Please be aware that operating a diy laser cutter can be dangerous and requires full awareness of the risks involved. You build the machine and you will have to make sure it is safe. The instructions on this website come without any warranty or guarantees whatsoever. All information is provided as-is and without claims to mechanical or electrical fitness, safety, or usefulness. You are fully responsible for doing your own evaluations and making sure your system does not burn, blind, or electrocute people.
+**DISCLAIMER:** Please be aware that operating a diy laser cutter can be dangerous and requires full awareness of the risks involved. You build the machine and you will have to make sure it is safe. The instructions of the Lasersaur project and related software come without any warranty or guarantees whatsoever. All information is provided as-is and without claims to mechanical or electrical fitness, safety, or usefulness. You are fully responsible for doing your own evaluations and making sure your system does not burn, blind, or electrocute people.
 
 
 How to Use this App
