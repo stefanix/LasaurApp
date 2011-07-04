@@ -1,11 +1,12 @@
 .toast-container {
 	width: 280px;
 	z-index: 9999;
+	margin-top:300px;
 }
 
 
 * html .toast-container {
-	position: absolute;		
+	position: absolute;
 }
  
 .toast-item {

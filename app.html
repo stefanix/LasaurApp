@@ -5,7 +5,7 @@
 <title>LasaurApp</title> 
 <link rel="stylesheet" href="/css/smoothness/jquery-ui-1.8.9.custom.css" type="text/css">	
 <link rel="stylesheet" href="/css/jquery.toastmessage.css" type="text/css">	
-<link rel="stylesheet" href="/css/demo.css" type="text/css"> 
+<link rel="stylesheet" href="/css/style.css" type="text/css"> 
 <script src="/js/jquery-1.5.min.js"></script>
 <script src="/js/jquery-ui-1.8.9.custom.min.js"></script>
 <script src="/js/jquery.toastmessage.js"></script>
@@ -16,58 +16,85 @@
 
 
 
-<body>
+<body style="height:600px; min-width:1000px">
 
-<h1>1. Initialize</h1>
-<div id="serial_connection" style="margin:20px; float:left">Connect Serial</div>
-<div id="find_home" style="margin:20px; float:left">Find Home</div>
-<div id="go_home" style="margin:20px; float:left">Go Home</div>
-<div id="escape_fire" style="margin:20px; float:left">Escape Fire</div>
 
-<h1 style="clear:both">2. Send G-Code</h1>
-<div id="gcode_widget" class="ui-corner-all" style="margin:20px; padding:10px; float:left; background-color:#555555">
-	<form id="gcode_form">
-		<p>
-		<select id="gcode_select">
-		  <option value="" selected="yes">select shape</option>
-		  <option value="rectangle">rectangle</option>
-		  <option value="triangle">triangle</option>
-		</select>
-		</p>
-		<p>
-		<textarea id="gcode_program" rows="10" cols="40"></textarea>
-		</p>
-		<p>
-		<input id="gcode_submit" type="submit" value="Submit" />
-		</p>
-	</form>	
-	<div id="progressbar" style="width:100%; height:20px"></div>
+<div class="ui-corner-all" style="margin-left:10px; width:300px; height:300px; float:right; background-color:#555555">
+	<div id="serial_connection" class="button_row">Connect Serial</div>
+	<div id="find_home" class="button_row">Find Home</div>
+	<div id="go_home" class="button_row">Go Home</div>
+	<div id="escape_fire" class="button_row">Escape Fire</div>
 </div>
 
-<div id="move_widget" class="ui-corner-all" style="margin:20px; width:425px; float:left; background-color:#555555">
-	<div id="lasaur_widget" style="position:relative; width:425px; height:270px;">
-		<div id="gantry_top" style="position:absolute; left:5px; top:35px; width:415px; height:10px; background-color:#83BBFF;"></div> 
-		<div id="gantry_bottom" style="position:absolute; left:5px; top:260px; width:415px; height:10px; background-color:#83BBFF;"></div> 
-		<div id="gantry_left" style="position:absolute; left:22.5px; top:45px; width:10px; height:215px; background-color:#83BBFF;"></div> 
-		<div id="gantry_right" style="position:absolute; left:392.5px; top:45px; width:10px; height:215px; background-color:#83BBFF;"></div> 
-		<div id="y_cart" style="position:absolute; left:19px; top:68px; width:387px; height:10px; background-color:#650B01;"></div> 
-		<div id="x_cart" style="position:absolute; left:54px; top:76.5px; width:12px; height:12px; background-color:#9E4301;"></div> 
-		<div id="cutting_area" style="position:absolute; left:60px; top:82.5px; width:305px; height:155px; border:1px solid #ff0000; opacity:0.3"></div>	
+	
+<div id="accordion" style="width:680px">
+<h3><a href="#">Setup</a></h3>
+<div>
+
+</div>
+
+
+<h3><a href="#">G-Code</a></h3>
+<div>
+	<div id="gcode_widget" class="ui-corner-all" style="margin:20px; padding:10px; float:left; background-color:#555555">
+		<form id="gcode_form">
+			<p>
+			<select id="gcode_select">
+			  <option value="" selected="yes">select shape</option>
+			  <option value="rectangle">rectangle</option>
+			  <option value="triangle">triangle</option>
+			</select>
+			</p>
+			<p>
+			<textarea id="gcode_program" rows="10" cols="40"></textarea>
+			</p>
+			<p>
+			<input id="gcode_submit" type="submit" value="Submit" />
+			</p>
+		</form>	
+		<div id="progressbar" style="width:100%; height:20px"></div>
 	</div>
-	<form>
-		<div id="move_type_radio" style="margin:10px; float:left">
-			<input type="radio" id="radio_g0" name="radio" checked="checked" /><label for="radio_g0">G0</label>
-			<input type="radio" id="radio_g1" name="radio" /><label for="radio_g1">G1</label>
-		</div>
-	</form>
-	<div id="feedrate" style="margin:23px; width:150px; float:left"></div>
-	<input id="feedrate_field" type="textfield" value="5000" style="margin:15px; width:50px; float:left"></input>
 </div>
+
+
+<h3><a href="#">Move Widget</a></h3>
+<div>
+	<div id="move_widget" class="ui-corner-all" style="margin:20px; width:425px; float:left; background-color:#555555">
+		<div id="lasaur_widget" style="position:relative; width:425px; height:270px;">
+			<div id="gantry_top" style="position:absolute; left:5px; top:35px; width:415px; height:10px; background-color:#83BBFF;"></div> 
+			<div id="gantry_bottom" style="position:absolute; left:5px; top:260px; width:415px; height:10px; background-color:#83BBFF;"></div> 
+			<div id="gantry_left" style="position:absolute; left:22.5px; top:45px; width:10px; height:215px; background-color:#83BBFF;"></div> 
+			<div id="gantry_right" style="position:absolute; left:392.5px; top:45px; width:10px; height:215px; background-color:#83BBFF;"></div> 
+			<div id="y_cart" style="position:absolute; left:19px; top:68px; width:387px; height:10px; background-color:#650B01;"></div> 
+			<div id="x_cart" style="position:absolute; left:54px; top:76.5px; width:12px; height:12px; background-color:#9E4301;"></div> 
+			<div id="cutting_area" style="position:absolute; left:60px; top:82.5px; width:305px; height:155px; border:1px solid #ff0000; opacity:0.3"></div>	
+		</div>
+		<form>
+			<div id="move_type_radio" style="margin:10px; float:left">
+				<input type="radio" id="radio_g0" name="radio" checked="checked" /><label for="radio_g0">G0</label>
+				<input type="radio" id="radio_g1" name="radio" /><label for="radio_g1">G1</label>
+			</div>
+		</form>
+		<div id="feedrate" style="margin:23px; width:150px; float:left"></div>
+		<input id="feedrate_field" type="textfield" value="5000" style="margin:15px; width:50px; float:left"></input>
+	</div>
+</div>
+
+</div> <!--end of accordion -->
+
+
 
 
 	
 <script>
-  
+
+$(function() {
+	$( "#accordion" ).accordion({
+		fillSpace: true
+	});
+});
+
+
 // connect to serial button
 //	
 $("#serial_connection").button();

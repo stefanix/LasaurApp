@@ -6,7 +6,6 @@ from bottle import *
 import serial_manager, serial
 
 
-#ARDUINO_PORT = '/dev/tty.usbmodem411'
 ARDUINO_PORT = '/dev/tty.usbmodem621'
 BAUDRATE = 9600
 
