@@ -12,7 +12,7 @@ This app is written mostly in cross-platform, cross-browser Javascript. Only a l
 How to Use this App
 -------------------
 
-* install [pysersial](http://pyserial.sourceforge.net/)
+* install [pyserial](http://pyserial.sourceforge.net/)
 * edit app.py and define the port of the Lasersaur (*ARDUINO_PORT*)
 * run *python app.py*
 * open *http://localhost:8080*
