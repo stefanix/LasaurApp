@@ -16,18 +16,34 @@
 
 
 
-<body style="height:600px; min-width:1000px">
+<body style="height:600px; min-width:1000px; margin:10px">
 
 
-<div class="ui-corner-all" style="margin-left:10px; width:300px; height:300px; float:right; background-color:#555555">
+<div id="left-panel" style="width:300px; float:left">
+	
+<div class="ui-corner-all" style="height:300px; background-color:#555555">
 	<div id="serial_connection" class="button_row">Connect Serial</div>
 	<div id="find_home" class="button_row">Find Home</div>
 	<div id="go_home" class="button_row">Go Home</div>
 	<div id="escape_fire" class="button_row">Escape Fire</div>
 </div>
 
+
+<div id="tabs" style="margin-top:5px">
+	<ul>
+		<li><a href="#log-tab">Log</a></li>
+	</ul>
+	<div id="log-tab" style="height:230px; overflow:scroll;">
+		<p><strong>Click this tab again to close the content pane.</strong></p>
+		<p>Proin elit arcu, rutrum commodo, vehicula tempus, commodo a, risus. Curabitur nec arcu. Donec sollicitudin mi sit amet mauris. Nam elementum quam ullamcorper ante. Etiam aliquet massa et lorem. Mauris dapibus lacus auctor risus. Aenean tempor ullamcorper leo. Vivamus sed magna quis ligula eleifend adipiscing. Duis orci. Aliquam sodales tortor vitae ipsum. Aliquam nulla. Duis aliquam molestie erat. Ut et mauris vel pede varius sollicitudin. Sed ut dolor nec orci tincidunt interdum. Phasellus ipsum. Nunc tristique tempus lectus.</p>
+	</div>
+</div>
+
+</div>  <!-- end of left-panel -->
+
+
 	
-<div id="accordion" style="width:680px">
+<div id="accordion" style="width:680px; margin-left:310px;">
 <h3><a href="#">Setup</a></h3>
 <div>
 
@@ -49,7 +65,7 @@
 			<textarea id="gcode_program" rows="10" cols="40"></textarea>
 			</p>
 			<p>
-			<input id="gcode_submit" type="submit" value="Submit" />
+			<div id="gcode_submit" class="button_row">Submit</div>
 			</p>
 		</form>	
 		<div id="progressbar" style="width:100%; height:20px"></div>
@@ -88,6 +104,13 @@
 	
 <script>
 
+$(function() {
+	$( "#tabs" ).tabs({
+		collapsible: true,
+		selected: -1
+	});
+});
+	
 $(function() {
 	$( "#accordion" ).accordion({
 		fillSpace: true
@@ -204,7 +227,7 @@ $('#gcode_select').change(function() {
 });
 
 $("#gcode_submit").button();
-$("#gcode_form").submit(function(e) {
+$("#gcode_form").click(function(e) {
 	// send gcode string to server via POST
 	var gcode = $('#gcode_program').val();
 	$().toastmessage('showNoticeToast', gcode.replace(/\n/g, '<br>'));

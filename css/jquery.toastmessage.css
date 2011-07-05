@@ -1,7 +1,6 @@
 .toast-container {
-	width: 280px;
+	width: 300px;
 	z-index: 9999;
-	margin-top:300px;
 }
 
 
@@ -140,4 +139,10 @@
     margin-left: -140px;
     margin-top: -40px;
     top: 50%;
+}
+
+.toast-position-under-square {
+    position: fixed;
+    top: 320px;
+    left: 10px;
 }
