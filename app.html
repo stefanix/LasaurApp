@@ -16,7 +16,7 @@
 
 
 
-<body style="height:600px; min-width:1000px; margin:10px">
+<body style="min-width:930px; padding:10px">
 
 
 <div id="left-panel" style="width:300px; float:left">
@@ -28,31 +28,25 @@
 	<div id="escape_fire" class="button_row">Escape Fire</div>
 </div>
 
-
-<div id="tabs" style="margin-top:5px">
-	<ul>
-		<li><a href="#log-tab">Log</a></li>
-	</ul>
-	<div id="log-tab" style="height:230px; overflow:scroll;">
-		<p><strong>Click this tab again to close the content pane.</strong></p>
-		<p>Proin elit arcu, rutrum commodo, vehicula tempus, commodo a, risus. Curabitur nec arcu. Donec sollicitudin mi sit amet mauris. Nam elementum quam ullamcorper ante. Etiam aliquet massa et lorem. Mauris dapibus lacus auctor risus. Aenean tempor ullamcorper leo. Vivamus sed magna quis ligula eleifend adipiscing. Duis orci. Aliquam sodales tortor vitae ipsum. Aliquam nulla. Duis aliquam molestie erat. Ut et mauris vel pede varius sollicitudin. Sed ut dolor nec orci tincidunt interdum. Phasellus ipsum. Nunc tristique tempus lectus.</p>
-	</div>
+<div id="log-container" style="margin:5px">
+<a id="log-toggle" href="#">show log</a>
+<div id="log-content" style="margin-top:5px; display:none; overflow:auto; height:300px">
+	<!-- log -->
+</div>
 </div>
 
 </div>  <!-- end of left-panel -->
 
 
 	
-<div id="accordion" style="width:680px; margin-left:310px;">
-<h3><a href="#">Setup</a></h3>
-<div>
-
-</div>
-
-
-<h3><a href="#">G-Code</a></h3>
-<div>
-	<div id="gcode_widget" class="ui-corner-all" style="margin:20px; padding:10px; float:left; background-color:#555555">
+<div id="tabs-main" style="width:680px; height:620px; margin-left:310px;overflow:hidden;">
+<ul>
+	<li><a href="#tab-gcode">G-Code</a></li>
+	<li><a href="#tab-mover">Move Widget</a></li>
+</ul>
+		
+<div id="tab-gcode">
+	<div id="gcode_widget" class="ui-corner-all" style="margin:20px; padding:10px; background-color:#555555">
 		<form id="gcode_form">
 			<p>
 			<select id="gcode_select">
@@ -72,10 +66,8 @@
 	</div>
 </div>
 
-
-<h3><a href="#">Move Widget</a></h3>
-<div>
-	<div id="move_widget" class="ui-corner-all" style="margin:20px; width:425px; float:left; background-color:#555555">
+<div id="tab-mover">
+	<div id="move_widget" class="ui-corner-all" style="margin:20px; width:425px; background-color:#555555">
 		<div id="lasaur_widget" style="position:relative; width:425px; height:270px;">
 			<div id="gantry_top" style="position:absolute; left:5px; top:35px; width:415px; height:10px; background-color:#83BBFF;"></div> 
 			<div id="gantry_bottom" style="position:absolute; left:5px; top:260px; width:415px; height:10px; background-color:#83BBFF;"></div> 
@@ -96,7 +88,7 @@
 	</div>
 </div>
 
-</div> <!--end of accordion -->
+</div> <!--end of tabs -->
 
 
 
@@ -104,17 +96,36 @@
 	
 <script>
 
+(function($){  
+	 $.fn.uxmessage = function(kind, text) {
+		$('#log-content').prepend(text + '<br>');
+		if (kind == 'notice') {
+			$().toastmessage('showNoticeToast', text);
+		} else if (kind == 'success') {
+			$().toastmessage('showSuccessToast', text);		
+		} else if (kind == 'warning') {
+			$().toastmessage('showWarningToast', text);		
+		} else if (kind == 'error') {
+			$().toastmessage('showErrorToast', text);		
+		}
+	};
+})(jQuery); 
+
+
+
 $(function() {
-	$( "#tabs" ).tabs({
-		collapsible: true,
-		selected: -1
+	$( "#tabs-main" ).tabs({
+		selected: 1
 	});
 });
-	
-$(function() {
-	$( "#accordion" ).accordion({
-		fillSpace: true
-	});
+
+
+$('#log-toggle').toggle(function() {
+  $("#log-content").fadeIn('slow');
+	$("#log-toggle").html("hide log");
+}, function() {
+  $("#log-content").fadeOut('slow');
+	$("#log-toggle").html("show log");
 });
 
 
@@ -124,11 +135,11 @@ $("#serial_connection").button();
 // get serial state
 $.get('/serial/2', function(data) {
 	if (data != "") {
-		$().toastmessage('showNoticeToast', "Serial is Connected");		
+		$().uxmessage('notice', "Serial is Connected");		
 		$("#serial_connection").val('1');
 		$("#serial_connection").button('option', 'label', 'Disconnect Serial');		
 	} else {
-		$().toastmessage('showNoticeToast', "Serial is Disconnected");
+		$().uxmessage('notice', "Serial is Disconnected");
 		$("#serial_connection").val('0');
 		$("#serial_connection").button('option', 'label', 'Connect Serial');
 	}		
@@ -137,9 +148,9 @@ $("#serial_connection").click(function(e){
 	if ($("#serial_connection").val() == '1') {
 		$.get('/serial/0', function(data) {
 			if (data != "") {
-				$().toastmessage('showSuccessToast', "Serial Disconnected");
+				$().uxmessage('success', "Serial Disconnected");
 			} else {
-				$().toastmessage('showSuccessToast', "Serial was already disonnected.");
+				$().uxmessage('success', "Serial was already disonnected.");
 			}
 			$("#serial_connection").val('0');
 			$("#serial_connection").button('option', 'label', 'Connect Serial');	
@@ -147,12 +158,12 @@ $("#serial_connection").click(function(e){
 	}	else {
 		$.get('/serial/1', function(data) {
 			if (data != "") {
-				$().toastmessage('showSuccessToast', "Serial Connected");
-				$().toastmessage('showNoticeToast', data);				
+				$().uxmessage('success', "Serial Connected");
+				$().uxmessage('notice', data);				
 				$("#serial_connection").val('1');
 				$("#serial_connection").button('option', 'label', 'Disconnect Serial');
 			} else {
-				$().toastmessage('showErrorToast', "Failed to Connect");
+				$().uxmessage('error', "Failed to Connect");
 			}		
 		});
 	}	
@@ -162,12 +173,12 @@ $("#serial_connection").click(function(e){
 $("#find_home").button();
 $("#find_home").click(function(e){
 	var gcode = 'G30\n'
-	$().toastmessage('showNoticeToast', gcode);	
+	$().uxmessage('notice', gcode);	
 	$.get('/gcode/'+ gcode, function(data) {
 		if (data != "") {
-			$().toastmessage('showSuccessToast', "G-Code sent to serial.");
+			$().uxmessage('success', "G-Code sent to serial.");
 		} else {
-			$().toastmessage('showErrorToast', "Serial not connected.");
+			$().uxmessage('error', "Serial not connected.");
 		}
 	});
 	e.preventDefault();		
@@ -176,12 +187,12 @@ $("#find_home").click(function(e){
 $("#go_home").button();
 $("#go_home").click(function(e){
 	var gcode = 'G0X0Y0F20000\n'
-	$().toastmessage('showNoticeToast', gcode);	
+	$().uxmessage('notice', gcode);	
 	$.get('/gcode/'+ gcode, function(data) {
 		if (data != "") {
-			$().toastmessage('showSuccessToast', "G-Code sent to serial.");
+			$().uxmessage('success', "G-Code sent to serial.");
 		} else {
-			$().toastmessage('showErrorToast', "Serial not connected.");
+			$().uxmessage('error', "Serial not connected.");
 		}
 	});
 	e.preventDefault();		
@@ -190,12 +201,12 @@ $("#go_home").click(function(e){
 $("#escape_fire").button();
 $("#escape_fire").click(function(e){
 	var gcode = 'M112X0Y0F20000\n'
-	$().toastmessage('showNoticeToast', gcode.replace(/\n/g, '<br>'));	
+	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));	
 	$.get('/gcode/'+ gcode, function(data) {
 		if (data != "") {
-			$().toastmessage('showSuccessToast', "G-Code sent to serial.");
+			$().uxmessage('success', "G-Code sent to serial.");
 		} else {
-			$().toastmessage('showErrorToast', "Serial not connected.");
+			$().uxmessage('error', "Serial not connected.");
 		}
 	});
 	e.preventDefault();		
@@ -230,23 +241,23 @@ $("#gcode_submit").button();
 $("#gcode_form").click(function(e) {
 	// send gcode string to server via POST
 	var gcode = $('#gcode_program').val();
-	$().toastmessage('showNoticeToast', gcode.replace(/\n/g, '<br>'));
+	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
 	$.post("/gcode", { 'gcode_program':gcode }, function(data) {
 		if (data != "") {
-			$().toastmessage('showSuccessToast', "G-Code sent to serial.");	
+			$().uxmessage('success', "G-Code sent to serial.");	
 			// show progress bar, register live updates
 			if ($("#progressbar").progressbar( "option", "value" ) == 0) {
 				$("#progressbar").progressbar( "option", "value", 5 )
 				$("#progressbar").show();
 			  var progresstimer = setInterval(function() {
 					$.get('/queue_pct_done', function(data2) {
-						//$().toastmessage('showNoticeToast', data2);
+						//$().uxmessage('notice', data2);
 						if (data2.length > 0) {
 							var pct = parseInt(data2);
-							//$().toastmessage('showNoticeToast', data);
+							//$().uxmessage('notice', data);
 							$('#progressbar').progressbar( "option", "value", pct );
 						} else {
-							$().toastmessage('showNoticeToast', "Done.");
+							$().uxmessage('notice', "Done.");
 							$('#progressbar').hide();
 							$('#progressbar').progressbar( "option", "value", 0 );
 							clearInterval(progresstimer);
@@ -255,7 +266,7 @@ $("#gcode_form").click(function(e) {
 			  }, 3000);
 			}
 		} else {
-			$().toastmessage('showErrorToast', "Serial not connected.");
+			$().uxmessage('error', "Serial not connected.");
 		}
   });		
 	return false;
@@ -296,15 +307,15 @@ $("#cutting_area").click(function(e) {
 	var feedrate = $( "#feedrate_field" ).val();
 	var gcode = g0_or_g1 + ' X' + parseInt(lasaur_coord_x) + 'Y' + parseInt(lasaur_coord_y) + 'F' + feedrate + '\n';
 	
-	$().toastmessage('showNoticeToast', gcode);
+	$().uxmessage('notice', gcode);
 	
 	// send new pos to server, on success move graphics
 	$.get('/gcode/'+ gcode, function(data) {
 		if (data != "") {
-			$().toastmessage('showSuccessToast', "G-Code sent to serial.");
+			$().uxmessage('success', "G-Code sent to serial.");
 			moveto(x, y);
 		} else {
-			$().toastmessage('showErrorToast', "Serial not connected.");
+			$().uxmessage('error', "Serial not connected.");
 		}
 	});
 	
@@ -340,8 +351,6 @@ function moveto (x, y) {
 		top: y - 6 
 	});
 };
-
-
 
 
 </script>
