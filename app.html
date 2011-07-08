@@ -21,11 +21,15 @@
 
 <div id="left-panel" style="width:300px; float:left">
 	
-<div class="ui-corner-all" style="height:300px; background-color:#555555">
-	<div id="serial_connection" class="button_row">Connect Serial</div>
-	<div id="find_home" class="button_row">Find Home</div>
-	<div id="go_home" class="button_row">Go Home</div>
-	<div id="escape_fire" class="button_row">Escape Fire</div>
+<div class="ui-corner-all" style="height:300px; background-color:#e4f83b">
+	<img src="/img/lasersaur-dino-lasaurapp-190.png" style="padding:10px; padding-left:15px">
+	<div id="serial_connection" class="button_row">Connect</div>
+	<div id="escape_fire" class="button_row">Force Home</div>
+	
+	<ul style="clear:both; padding-top:20px">
+	<li><a href="#" id="find_home">run homing cycle</a></li>
+	<li><a href="#" id="go_home">go home to origin</a></li>
+	</ul>
 </div>
 
 <div id="log-container" style="margin:5px">
@@ -137,11 +141,11 @@ $.get('/serial/2', function(data) {
 	if (data != "") {
 		$().uxmessage('notice', "Serial is Connected");		
 		$("#serial_connection").val('1');
-		$("#serial_connection").button('option', 'label', 'Disconnect Serial');		
+		$("#serial_connection").button('option', 'label', 'Disconnect');		
 	} else {
 		$().uxmessage('notice', "Serial is Disconnected");
 		$("#serial_connection").val('0');
-		$("#serial_connection").button('option', 'label', 'Connect Serial');
+		$("#serial_connection").button('option', 'label', 'Connect');
 	}		
 });
 $("#serial_connection").click(function(e){	
@@ -153,7 +157,7 @@ $("#serial_connection").click(function(e){
 				$().uxmessage('success', "Serial was already disonnected.");
 			}
 			$("#serial_connection").val('0');
-			$("#serial_connection").button('option', 'label', 'Connect Serial');	
+			$("#serial_connection").button('option', 'label', 'Connect');	
 		});
 	}	else {
 		$.get('/serial/1', function(data) {
@@ -161,7 +165,7 @@ $("#serial_connection").click(function(e){
 				$().uxmessage('success', "Serial Connected");
 				$().uxmessage('notice', data);				
 				$("#serial_connection").val('1');
-				$("#serial_connection").button('option', 'label', 'Disconnect Serial');
+				$("#serial_connection").button('option', 'label', 'Disconnect');
 			} else {
 				$().uxmessage('error', "Failed to Connect");
 			}		
@@ -170,7 +174,7 @@ $("#serial_connection").click(function(e){
 	e.preventDefault();		
 });	
 
-$("#find_home").button();
+//$("#find_home").button();
 $("#find_home").click(function(e){
 	var gcode = 'G30\n'
 	$().uxmessage('notice', gcode);	
@@ -184,7 +188,7 @@ $("#find_home").click(function(e){
 	e.preventDefault();		
 });
 
-$("#go_home").button();
+//$("#go_home").button();
 $("#go_home").click(function(e){
 	var gcode = 'G0X0Y0F20000\n'
 	$().uxmessage('notice', gcode);	
