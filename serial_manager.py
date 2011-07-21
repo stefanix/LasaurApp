@@ -97,7 +97,8 @@ def send_queue_as_ready():
         try:
             lines = serial_port.readlines()
             for line in lines:
-                append_response("grbl: " + line)
+                print "grbl: " + line
+                # append_response("grbl: " + line)
                 grbl_buffer_current -= 1
     
             if gcode_queue:
@@ -107,7 +108,7 @@ def send_queue_as_ready():
                     print "sending to grbl: %s" % (line)
                     serial_port.write(line)
                     grbl_buffer_current += 1
-                    #append_response("sent to grbl: %s - buffer_current: %d" % (line,grbl_buffer_current))
+                    # append_response("sent to grbl: %s - buffer_current: %d" % (line,grbl_buffer_current))
             else:
                 total_items_queued_in_batch = 0
         except OSError:

@@ -9,7 +9,7 @@
 <script src="/js/jquery-1.5.min.js"></script>
 <script src="/js/jquery-ui-1.8.9.custom.min.js"></script>
 <script src="/js/jquery.toastmessage.js"></script>
-
+<script src="/js/lasaurCanvasLib.js"></script>
 
 
 </head>
@@ -45,41 +45,57 @@
 	
 <div id="tabs-main" style="width:680px; height:620px; margin-left:310px;overflow:hidden;">
 <ul>
-	<li><a href="#tab-gcode">G-Code</a></li>
-	<li><a href="#tab-mover">Move Widget</a></li>
+	<li><a href="#tab-gcode">Laser Jobs</a></li>
+	<li><a href="#tab-mover">Direct Control</a></li>
 </ul>
 		
-<div id="tab-gcode">
-	<div id="gcode_widget" class="ui-corner-all" style="margin:20px; padding:10px; background-color:#555555">
+<div id="tab-gcode" style="padding:30px">
+	<div style="float:left">	
+		<h3>From Queue</h3>
+		<select id="gcode_select">
+		  <option value="" selected="yes">select shape</option>
+		  <option value="rectangle">rectangle</option>
+		  <option value="triangle">triangle</option>
+		  <option value="pulse_x1">pulse x near</option>
+		  <option value="pulse_x2">pulse x far</option>
+		  <option value="pulse_y1">pulse y near</option>
+		  <option value="pulse_y2">pulse y far</option>
+		</select>
+		<h3>From Library</h3>
+		<select id="gcode_select">
+		  <option value="" selected="yes">select shape</option>
+		  <option value="rectangle">rectangle</option>
+		  <option value="triangle">triangle</option>
+		  <option value="pulse_x1">pulse x near</option>
+		  <option value="pulse_x2">pulse x far</option>
+		  <option value="pulse_y1">pulse y near</option>
+		  <option value="pulse_y2">pulse y far</option>
+		</select>
+	</div>	
+	<div id="gcode_widget" class="ui-corner-all" style="padding:20px; background-color:#dddddd; float:right">
 		<form id="gcode_form">
-			<p>
-			<select id="gcode_select">
-			  <option value="" selected="yes">select shape</option>
-			  <option value="rectangle">rectangle</option>
-			  <option value="triangle">triangle</option>
-			</select>
-			</p>
-			<p>
-			<textarea id="gcode_program" rows="10" cols="40"></textarea>
-			</p>
-			<p>
-			<div id="gcode_submit" class="button_row">Submit</div>
-			</p>
+			<h3>G-Code</h3>
+			<div><textarea id="gcode_program" style="font-size:0.8em; width:300px; height:100px"></textarea></div>
+			<h3>Preview</h3>
+			<div><canvas id="gcode_canvas" width="305px" height="155px"></div>
+			<div id="gcode_submit" style="margin-left:0; margin-top:20px">Send to Lasersaur</div>
+			<div id="progressbar" style="width:305px; height:20px; margin-top:60px"></div>
 		</form>	
-		<div id="progressbar" style="width:100%; height:20px"></div>
 	</div>
 </div>
 
-<div id="tab-mover">
-	<div id="move_widget" class="ui-corner-all" style="margin:20px; width:425px; background-color:#555555">
+<div id="tab-mover" style="padding-left:128px; padding-top:60px">
 		<div id="lasaur_widget" style="position:relative; width:425px; height:270px;">
-			<div id="gantry_top" style="position:absolute; left:5px; top:35px; width:415px; height:10px; background-color:#83BBFF;"></div> 
-			<div id="gantry_bottom" style="position:absolute; left:5px; top:260px; width:415px; height:10px; background-color:#83BBFF;"></div> 
+			<div id="outer_top" style="position:absolute; left:10px; top:0px; width:405px; height:10px; background-color:#546883;"></div> 
+			<div id="outer_left" style="position:absolute; left:0px; top:0px; width:10px; height:270px; background-color:#546883;"></div> 
+			<div id="outer_right" style="position:absolute; left:415px; top:0px; width:10px; height:270px; background-color:#546883;"></div> 
+			<div id="gantry_top" style="position:absolute; left:10px; top:35px; width:405px; height:10px; background-color:#83BBFF;"></div> 
+			<div id="gantry_bottom" style="position:absolute; left:10px; top:260px; width:405px; height:10px; background-color:#83BBFF;"></div> 
 			<div id="gantry_left" style="position:absolute; left:22.5px; top:45px; width:10px; height:215px; background-color:#83BBFF;"></div> 
 			<div id="gantry_right" style="position:absolute; left:392.5px; top:45px; width:10px; height:215px; background-color:#83BBFF;"></div> 
 			<div id="y_cart" style="position:absolute; left:19px; top:68px; width:387px; height:10px; background-color:#650B01;"></div> 
 			<div id="x_cart" style="position:absolute; left:54px; top:76.5px; width:12px; height:12px; background-color:#9E4301;"></div> 
-			<div id="cutting_area" style="position:absolute; left:60px; top:82.5px; width:305px; height:155px; border:1px solid #ff0000; opacity:0.3"></div>	
+			<div id="cutting_area" style="position:absolute; left:60px; top:82.5px; width:305px; height:155px; border:1px solid #888888; opacity:0.3"></div>	
 		</div>
 		<form>
 			<div id="move_type_radio" style="margin:10px; float:left">
@@ -88,8 +104,7 @@
 			</div>
 		</form>
 		<div id="feedrate" style="margin:23px; width:150px; float:left"></div>
-		<input id="feedrate_field" type="textfield" value="5000" style="margin:15px; width:50px; float:left"></input>
-	</div>
+		<input id="feedrate_field" type="textfield" value="10000" style="margin:15px; width:50px; float:left"></input>
 </div>
 
 </div> <!--end of tabs -->
@@ -102,24 +117,28 @@
 
 (function($){  
 	 $.fn.uxmessage = function(kind, text) {
-		$('#log-content').prepend(text + '<br>');
 		if (kind == 'notice') {
+			$('#log-content').prepend('NOTICE: ' + text + '<br>');
 			$().toastmessage('showNoticeToast', text);
 		} else if (kind == 'success') {
+			$('#log-content').prepend('SUCESS: ' + text + '<br>');
 			$().toastmessage('showSuccessToast', text);		
 		} else if (kind == 'warning') {
+			$('#log-content').prepend('WARNING: ' + text + '<br>');
 			$().toastmessage('showWarningToast', text);		
 		} else if (kind == 'error') {
+			$('#log-content').prepend('ERROR: ' + text + '<br>');
 			$().toastmessage('showErrorToast', text);		
 		}
 	};
 })(jQuery); 
+// TODO: limit log buffer size
 
 
 
 $(function() {
 	$( "#tabs-main" ).tabs({
-		selected: 1
+		selected: 0
 	});
 });
 
@@ -237,12 +256,43 @@ $('#gcode_select').change(function() {
 		gcode += 'G1X600Y400\n'
 		gcode += 'G0X400Y200F20000\n'
 		$('#gcode_program').val(gcode);		
+	} else if ($(this).val() == "pulse_x1"){
+		var gcode = 'S90\n' 
+		gcode += 'G0X100Y100F10000\n'
+		gcode += 'G1X105Y100F400\n'
+		gcode += 'G0X0Y0\n'
+		gcode += 'S0\n'
+		$('#gcode_program').val(gcode);		
+	} else if ($(this).val() == "pulse_x2"){
+		var gcode = 'S90\n' 
+		gcode += 'G0X100Y500F10000\n'
+		gcode += 'G1X105Y500F400\n'
+		gcode += 'G0X0Y0\n'
+		gcode += 'S0\n'
+		$('#gcode_program').val(gcode);		
+	} else if ($(this).val() == "pulse_y1"){
+		var gcode = 'S90\n' 
+		gcode += 'G0X100Y300F10000\n'
+		gcode += 'G1X105Y300F400\n'
+		gcode += 'G0X0Y0\n'
+		gcode += 'S0\n'
+		$('#gcode_program').val(gcode);		
+	} else if ($(this).val() == "pulse_y2"){
+		var gcode = 'S90\n' 
+		gcode += 'G0X1000Y300F10000\n'
+		gcode += 'G1X1005Y300F400\n'
+		gcode += 'G0X0Y0\n'
+		gcode += 'S0\n'
+		$('#gcode_program').val(gcode);		
 	}
+	
+	// make sure preview refreshes
+	$('#gcode_program').trigger('blur');
 	
 });
 
 $("#gcode_submit").button();
-$("#gcode_form").click(function(e) {
+$("#gcode_submit").click(function(e) {
 	// send gcode string to server via POST
 	var gcode = $('#gcode_program').val();
 	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
@@ -326,7 +376,7 @@ $("#cutting_area").click(function(e) {
 });
 
 $('#move_type_radio').buttonset();
-$("#feedrate").slider({ min:50, max:5000, value:$('#feedrate_field').val() });
+$("#feedrate").slider({ min:50, max:20000, value:$('#feedrate_field').val() });
 $("#feedrate").bind( "slide", function(event, ui) {
 	$('#feedrate_field').val($('#feedrate').slider("option", "value"));
 });
@@ -336,11 +386,11 @@ $("#feedrate").bind( "slidestop", function(event, ui) {
 
 $("#cutting_area").hover(
   function () {
-		$(this).css('border', '1px solid #ffffff');
+		$(this).css('border', '1px solid #ff0000');
 		$(this).css('cursor', 'crosshair');
   },
   function () {
-		$(this).css('border', '1px solid #ff0000');
+		$(this).css('border', '1px solid #888888');
 		$(this).css('cursor', 'pointer');			
   }
 );	
@@ -356,6 +406,133 @@ function moveto (x, y) {
 	});
 };
 
+
+
+
+/////////////////////////
+// G-Code Canvas Preview
+
+
+var canvas = new Canvas('#gcode_canvas');
+canvas.noStroke();
+canvas.fill('ffffff');
+canvas.rect(0,0,canvas.width,canvas.height);
+
+$('#gcode_program').blur(function() {
+	
+	var parseGArgs = function (str) {
+		var ret = {};
+		var pos;
+		pos = str.indexOf('X');
+		if (pos != -1) {
+			ret.X = parseFloat(str.slice(pos+1));
+		}
+		pos = str.indexOf('Y');
+		if (pos != -1) {
+			ret.Y = parseFloat(str.slice(pos+1));
+		}
+		pos = str.indexOf('I');
+		if (pos != -1) {
+			ret.I = parseFloat(str.slice(pos+1));
+		}
+		pos = str.indexOf('J');
+		if (pos != -1) {
+			ret.J = parseFloat(str.slice(pos+1));
+		}
+		return ret;
+	};
+	
+	
+	// parse gcode
+	//
+	var gcode = $('#gcode_program').val();
+	var lines = gcode.split("\n");
+	var moves = [];
+	var currentX = 0.0;
+	var currentY = 0.0;
+	var currentI = 0.0;
+	var currentJ = 0.0;
+	for (var i=0; i<lines.length; i++) {
+		var line = lines[i];
+		line.replace(' ', '');  // throw out any spaces
+		if (line[0] == 'G' 
+		    && (line[1] == '0' || line[1] == '1' || line[1] == '2' || line[1] == '3') 
+		    && !(line[2] in [0,1,2,3,4,5,6,7,8,9]))
+		{ // we have a move line
+			var args = parseGArgs(line.slice(2));
+			var scale = 4.0;
+			if ('X' in args) { currentX = args.X/scale; }
+			if ('Y' in args) { currentY = args.Y/scale; }
+			if ('I' in args) { currentI = args.I/scale; }
+			if ('J' in args) { currentJ = args.J/scale; }
+			moves.push( {'type':parseFloat(line[1]), 'X':currentX, 'Y':currentY, 'I':currentI, 'J':currentJ } );
+		}
+	}
+	
+	// draw moves
+	//
+	
+	function theta(x, y)	{
+	  var theta = Math.atan(x/Math.abs(y));
+	  if (y>0) {
+	    return(theta);
+	  } else {
+	    if (theta>0) {
+	      return(Math.PI-theta);
+	    } else {
+	      return(-Math.PI-theta);
+	    }
+	  }
+	}	
+	
+	function hypot(x, y) {
+		// also see http://stackoverflow.com/questions/3764978/why-hypot-function-is-so-slow
+    return Math.sqrt(x * x + y * y) || 0;	
+	}
+	
+	canvas.clear();
+	canvas.noStroke();
+	canvas.fill('#ffffff');
+	canvas.rect(0,0,canvas.width,canvas.height);
+	canvas.noFill();
+	var move_prev = {'type':0, 'X':0, 'Y':0, 'I':0, 'J':0 };
+	var move;
+	for (var i=0; i<moves.length; i++) {
+		if (i > 0) { move_prev = moves[i-1]; }
+		move = moves[i];
+		
+		if (move.type == 0 || move.type == 1) { 
+			if (move.type == 0) { canvas.stroke('#aaaaaa'); } else {canvas.stroke('#ff0000');}
+			canvas.line(move_prev.X, move_prev.Y, move.X, move.Y);
+		} else if (move.type == 2 || move.type == 3) {
+			// arc CW or CCW
+			// code from grbl
+			var ccw = false;
+      var theta_start = theta(-move.I, -move.J);
+      var theta_end = theta(move.X - move.I - move_prev.X, move.Y - move.J - move_prev.Y);
+      if (theta_end < theta_start) { theta_end += 2*Math.PI; }
+      if (move.type == 3) {
+				// arc CCW
+				ccw = true;
+				var theta_end_temp = theta_end;
+				theta_end = theta_start;
+				theta_start = theta_end_temp;
+      }
+      // Find the radius
+      var radius = hypot(move.I, move.J);
+	    var center_x = move_prev.X-Math.sin(theta_start)*radius;
+	    var center_y = move_prev.Y-Math.cos(theta_start)*radius;
+			
+			canvas.stroke('#ff0000');
+			canvas.arc(center_x, center_y, radius, theta_start, theta_end, ccw);
+			canvas.stroke('#aaaaaa');
+		}
+	}
+	
+});
+
+//
+/////////////////////////
 
 </script>
 

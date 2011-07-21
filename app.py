@@ -6,7 +6,8 @@ from bottle import *
 import serial_manager, serial
 
 
-ARDUINO_PORT = '/dev/tty.usbmodem621'
+# ARDUINO_PORT = '/dev/tty.usbmodem621'
+ARDUINO_PORT = '/dev/tty.usbserial-A70063dl'
 BAUDRATE = 9600
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -40,7 +41,7 @@ def hello_handler():
 
 @route('/connect')
 def connect_handler():
-    global arduino_port, baudrate
+    global ARDUINO_PORT, BAUDRATE
     try:
         serial_manager.connect(ARDUINO_PORT, BAUDRATE)
         ret = "Serial connected to %s:%d." % (ARDUINO_PORT, BAUDRATE)  + '<br>'
@@ -128,4 +129,4 @@ def queue_pct_done_handler():
 
 
 debug(True)
-run_with_callback(host='localhost', port=8080)
+run_with_callback(host='localhost')
