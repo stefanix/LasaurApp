@@ -252,3 +252,11 @@ pre.prettyprint {
 .ui-button-text {
   font-size:1.0em;
 }
+
+#gcode_library a {
+  display:block;
+}
+
+#gcode_library div {
+  display:none;
+}

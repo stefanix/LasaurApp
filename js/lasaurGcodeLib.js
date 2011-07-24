@@ -59,83 +59,8 @@ Gcode.prototype.parse = function (scale) {
 }
 
 
-	
+
 Gcode.prototype.draw = function (canvas) {
-	function theta(x, y)	{
-	  return Math.atan2(y,x);
-	  var theta = Math.atan(y/Math.abs(x));
-	  if (y>0) {
-	    return(theta);
-	  } else {
-	    if (theta>0) {
-	      return(Math.PI-theta);
-	    } else {
-	      return(-Math.PI-theta);
-	    }
-	  }
-	}	
-	
-	function hypot(x, y) {
-		// also see http://stackoverflow.com/questions/3764978/why-hypot-function-is-so-slow
-    return Math.sqrt(x * x + y * y);	
-	}
-	
-	canvas.clear();
-	canvas.noStroke();
-	canvas.fill('#ffffff');
-	canvas.rect(0,0,canvas.width,canvas.height);
-	canvas.noFill();
-	var move_prev = {'type':0, 'X':0, 'Y':0, 'I':0, 'J':0 };
-	var move;
-	for (var i=0; i<this.moves.length; i++) {
-		if (i > 0) { move_prev = this.moves[i-1]; }
-		move = this.moves[i];
-		
-		if (move.type == 0 || move.type == 1) { 
-			if (move.type == 0) { canvas.stroke('#aaaaaa'); } else {canvas.stroke('#ff0000');}
-			canvas.line(move_prev.X, move_prev.Y, move.X, move.Y);
-		} else if (move.type == 2 || move.type == 3) {
-			if (move.type == 2) { canvas.stroke('#ff00ff'); } else {canvas.stroke('#00ffff');}
-			canvas.line(move_prev.X, move_prev.Y, move.X, move.Y);		  
-			// arc CW or CCW
-			// code from grbl
-			var ccw = false;
-      var theta_start = theta(-move.I, -move.J);
-      var theta_end = theta(move.X - move.I - move_prev.X, move.Y - move.J - move_prev.Y);
-      if (theta_end < theta_start) { theta_end += 2*Math.PI; }
-      if (move.type == 3) {
-				// arc CCW
-				ccw = true;
-				var theta_end_temp = theta_end;
-				theta_end = theta_start;
-				theta_start = theta_end_temp;
-      }
-      // Find the radius
-      var radius = hypot(move.I, move.J);
-	    var center_x = move_prev.X-Math.sin(theta_start)*radius;
-	    var center_y = move_prev.Y-Math.cos(theta_start)*radius;
-			
-			canvas.stroke('#aaaaaa');
-			canvas.arc(center_x, center_y, radius, Math.PI, 0, true);
-			canvas.stroke('#ff0000');
-			canvas.arc(center_x, center_y, radius, theta_end, theta_start, ccw);
-			//canvas.arc(center_x, center_y, radius, theta_start+0.5*Math.PI, theta_end+0.5*Math.PI, ccw);			
-
-			var midX = (move_prev.X+move.X)/2.0;
-			var midY = (move_prev.Y+move.Y)/2.0;
-			canvas.stroke('#00ff00');			
-			//canvas.line(move_prev.X, move_prev.Y, move.X, move.Y);
-			canvas.line(midX, midY, (midX+move.I), (midY+move.J));
-			//canvas.line(move.I, move.J, move_prev.X, move_prev.Y);
-			
-			canvas.stroke('#aaaaaa');			
-		}
-	}
-}
-
-
-
-Gcode.prototype.draw2 = function (canvas) {
 		
 	canvas.clear();
 	canvas.noStroke();
@@ -151,6 +76,7 @@ Gcode.prototype.draw2 = function (canvas) {
 		if (move.type == 0 || move.type == 1) {  // line seek or cut
 			if (move.type == 0) { canvas.stroke('#aaaaaa'); } else {canvas.stroke('#ff0000');}
 			canvas.line(move_prev.X, move_prev.Y, move.X, move.Y);
+			
 		} else if (move.type == 2 || move.type == 3) {  // arc CW or CCW
 			var ccw = false;
       if (move.type == 3) { ccw = true;}
@@ -170,9 +96,10 @@ Gcode.prototype.draw2 = function (canvas) {
 	    var radius = Math.sqrt(centerToStartX*centerToStartX + centerToStartY*centerToStartY);
 			
 			canvas.stroke('#ff0000');
-			canvas.arc(centerX, centerY, radius, phi_end, phi_start, ccw);
-			
+			canvas.arc(centerX, centerY, radius, phi_end, phi_start, ccw);			
 		}
 	}
 }
+
+
 

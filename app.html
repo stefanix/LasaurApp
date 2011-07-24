@@ -53,25 +53,13 @@
 <div id="tab-gcode" style="padding:30px">
 	<div style="float:left">	
 		<h3>From Queue</h3>
-		<select id="gcode_select">
+		<select id="gcode_queue_select">
 		  <option value="" selected="yes">select shape</option>
 		  <option value="rectangle">rectangle</option>
 		  <option value="triangle">triangle</option>
-		  <option value="pulse_x1">pulse x near</option>
-		  <option value="pulse_x2">pulse x far</option>
-		  <option value="pulse_y1">pulse y near</option>
-		  <option value="pulse_y2">pulse y far</option>
 		</select>
 		<h3>From Library</h3>
-		<select id="gcode_select">
-		  <option value="" selected="yes">select shape</option>
-		  <option value="rectangle">rectangle</option>
-		  <option value="triangle">triangle</option>
-		  <option value="pulse_x1">pulse x near</option>
-		  <option value="pulse_x2">pulse x far</option>
-		  <option value="pulse_y1">pulse y near</option>
-		  <option value="pulse_y2">pulse y far</option>
-		</select>
+		<div id="library_placeholder">To be replaced by Javascript</div>
 	</div>	
 	<div id="gcode_widget" class="ui-corner-all" style="padding:20px; background-color:#dddddd; float:right">
 		<form id="gcode_form">
@@ -110,6 +98,100 @@
 
 </div> <!--end of tabs -->
 
+
+
+
+<!-- Gcode Library Start -->
+
+<div id="gcode_library" style="display:none">
+
+<a href="#">rectangle</a>	
+<div>
+G0X600Y400F20000
+G1X630Y400F200
+G1X630Y430
+G1X600Y430
+G1 X600Y400
+G0X400Y200F20000
+</div>
+
+<a href="#">triangle</a>
+<div>
+G0X600Y400F20000
+G1X630Y400F200
+G1X630Y430
+G1X600Y400
+G0X400Y200F20000
+</div>
+
+<a href="#">pulse x near</a>
+<div>
+S90
+G0X100Y100F10000
+G1X105Y100F400
+G0X0Y0
+S0
+</div>
+
+<a href="#">pulse x far</a>
+<div>
+S90
+G0X100Y500F10000
+G1X105Y500F400
+G0X0Y0
+S0
+</div>
+
+<a href="#">pulse y near</a>
+<div>
+S90
+G0X100Y300F10000
+G1X105Y300F400
+G0X0Y0
+S0
+</div>
+
+<a href="#">pulse y far</a>
+<div>
+S90
+G0X1000Y300F10000
+G1X1005Y300F400
+G0X0Y0
+S0
+</div>
+
+<a href="#">curves from arcs</a>
+<div>
+G00 X100.000009 Y122.999980
+G02 X127.753936 Y144.592104 I100.335931 J-100.335934
+G02 X162.500011 Y160.499980 I91.010543 J-152.885536
+G02 X191.237989 Y166.769852 I43.571275 J-130.713833
+G02 X226.562515 Y165.187480 I12.518899 J-115.610519
+G02 X259.030777 Y153.490227 I-22.888261 J-114.441314
+G02 X300.000023 Y122.999980 I-83.476586 J-154.936095
+G03 X340.969254 Y92.509724 I124.445821 J124.445751
+G03 X373.437505 Y80.812469 I55.356505 J102.743966
+G03 X408.762022 Y79.230097 I22.805622 J114.028057
+G03 X437.499995 Y85.499971 I-14.833297 J136.983635
+G03 X472.246067 Y101.407851 I-56.264472 J168.793352
+G03 X499.999991 Y122.999980 I-72.582040 J121.928066
+G03 X521.592115 Y150.753906 I-100.335934 J100.335934
+G03 X537.499990 Y185.499979 I-152.885523 J91.010540
+G03 X543.769862 Y214.237955 I-130.713817 J43.571272
+G03 X542.187490 Y249.562478 I-115.610498 J12.518898
+G03 X530.490238 Y282.030736 I-114.441291 J-22.888258
+G03 X499.999991 Y322.999977 I-154.936068 J-83.476580
+G02 X469.509744 Y363.969221 I124.445845 J124.445831
+G02 X457.812491 Y396.437481 I102.744054 J55.356521
+G02 X456.230119 Y431.762006 I114.028138 J22.805626
+G02 X462.499991 Y460.499983 I136.983692 J-14.833296
+G02 X478.407867 Y495.246057 I168.793397 J-56.264465
+G02 X499.999991 Y522.999982 I121.928049 J-72.582003
+</div>
+
+</div>
+
+<!-- Gcode Library End -->
 
 
 
@@ -237,60 +319,28 @@ $("#escape_fire").click(function(e){
 });
 
 
-// gcode widget
-//
 
-$('#gcode_select').change(function() {
-	
-	if ($(this).val() == "rectangle") {
-		var gcode = 'G0X600Y400F20000\n'
-		gcode += 'G1X630Y400F200\n'
-		gcode += 'G1X630Y430\n'
-		gcode += 'G1X600Y430\n'
-		gcode += 'G1 X600Y400\n'
-		gcode += 'G0X400Y200F20000\n'
-		$('#gcode_program').val(gcode);
-	} else if ($(this).val() == "triangle"){
-		var gcode = 'G0X600Y400F20000\n'
-		gcode += 'G1X630Y400F200\n'
-		gcode += 'G1X630Y430\n'
-		gcode += 'G1X600Y400\n'
-		gcode += 'G0X400Y200F20000\n'
-		$('#gcode_program').val(gcode);		
-	} else if ($(this).val() == "pulse_x1"){
-		var gcode = 'S90\n' 
-		gcode += 'G0X100Y100F10000\n'
-		gcode += 'G1X105Y100F400\n'
-		gcode += 'G0X0Y0\n'
-		gcode += 'S0\n'
-		$('#gcode_program').val(gcode);		
-	} else if ($(this).val() == "pulse_x2"){
-		var gcode = 'S90\n' 
-		gcode += 'G0X100Y500F10000\n'
-		gcode += 'G1X105Y500F400\n'
-		gcode += 'G0X0Y0\n'
-		gcode += 'S0\n'
-		$('#gcode_program').val(gcode);		
-	} else if ($(this).val() == "pulse_y1"){
-		var gcode = 'S90\n' 
-		gcode += 'G0X100Y300F10000\n'
-		gcode += 'G1X105Y300F400\n'
-		gcode += 'G0X0Y0\n'
-		gcode += 'S0\n'
-		$('#gcode_program').val(gcode);		
-	} else if ($(this).val() == "pulse_y2"){
-		var gcode = 'S90\n' 
-		gcode += 'G0X1000Y300F10000\n'
-		gcode += 'G1X1005Y300F400\n'
-		gcode += 'G0X0Y0\n'
-		gcode += 'S0\n'
-		$('#gcode_program').val(gcode);		
-	}
-	
-	// make sure preview refreshes
-	$('#gcode_program').trigger('blur');
-	
+/////////////////////////
+// laser jobs tab
+
+var gcode_list_html = '<ul>';
+$('#gcode_library').children().each(function() {
+	gcode_list_html += '<li>'+ $(this).children('div').text() +'</li>';
 });
+gcode_list_html += '</ul>';
+
+$('#library_placeholder').replaceWith($('#gcode_library'));
+$('#gcode_library').show();
+
+$('#gcode_library a').click(function(){
+	$('#gcode_program').val( $(this).next().text() );
+
+	// make sure preview refreshes
+	$('#gcode_program').trigger('blur');	
+});
+
+
+
 
 $("#gcode_submit").button();
 $("#gcode_submit").click(function(e) {
@@ -334,8 +384,15 @@ $("#progressbar").progressbar({
 });
 $("#progressbar").hide();
 
+
+// end laser jobs tab
+/////////////////////////
+
+
+
+/////////////////////////
 // lasaur widget
-//
+
 
 $("#cutting_area").click(function(e) {
 
@@ -406,6 +463,9 @@ function moveto (x, y) {
 		top: y - 6 
 	});
 };
+
+// end lasaur widget
+/////////////////////////
 
 
 
