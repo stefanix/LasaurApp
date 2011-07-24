@@ -10,6 +10,7 @@
 <script src="/js/jquery-ui-1.8.9.custom.min.js"></script>
 <script src="/js/jquery.toastmessage.js"></script>
 <script src="/js/lasaurCanvasLib.js"></script>
+<script src="/js/lasaurGcodeLib.js"></script>
 
 
 </head>
@@ -77,7 +78,7 @@
 			<h3>G-Code</h3>
 			<div><textarea id="gcode_program" style="font-size:0.8em; width:300px; height:100px"></textarea></div>
 			<h3>Preview</h3>
-			<div><canvas id="gcode_canvas" width="305px" height="155px"></div>
+			<div><canvas id="preview_canvas" width="305px" height="155px"></div>
 			<div id="gcode_submit" style="margin-left:0; margin-top:20px">Send to Lasersaur</div>
 			<div id="progressbar" style="width:305px; height:20px; margin-top:60px"></div>
 		</form>	
@@ -413,122 +414,15 @@ function moveto (x, y) {
 // G-Code Canvas Preview
 
 
-var canvas = new Canvas('#gcode_canvas');
+var canvas = new Canvas('#preview_canvas');
+var gcode = new Gcode('#gcode_program');
 canvas.noStroke();
 canvas.fill('ffffff');
 canvas.rect(0,0,canvas.width,canvas.height);
 
 $('#gcode_program').blur(function() {
-	
-	var parseGArgs = function (str) {
-		var ret = {};
-		var pos;
-		pos = str.indexOf('X');
-		if (pos != -1) {
-			ret.X = parseFloat(str.slice(pos+1));
-		}
-		pos = str.indexOf('Y');
-		if (pos != -1) {
-			ret.Y = parseFloat(str.slice(pos+1));
-		}
-		pos = str.indexOf('I');
-		if (pos != -1) {
-			ret.I = parseFloat(str.slice(pos+1));
-		}
-		pos = str.indexOf('J');
-		if (pos != -1) {
-			ret.J = parseFloat(str.slice(pos+1));
-		}
-		return ret;
-	};
-	
-	
-	// parse gcode
-	//
-	var gcode = $('#gcode_program').val();
-	var lines = gcode.split("\n");
-	var moves = [];
-	var currentX = 0.0;
-	var currentY = 0.0;
-	var currentI = 0.0;
-	var currentJ = 0.0;
-	for (var i=0; i<lines.length; i++) {
-		var line = lines[i];
-		line.replace(' ', '');  // throw out any spaces
-		if (line[0] == 'G' 
-		    && (line[1] == '0' || line[1] == '1' || line[1] == '2' || line[1] == '3') 
-		    && !(line[2] in [0,1,2,3,4,5,6,7,8,9]))
-		{ // we have a move line
-			var args = parseGArgs(line.slice(2));
-			var scale = 4.0;
-			if ('X' in args) { currentX = args.X/scale; }
-			if ('Y' in args) { currentY = args.Y/scale; }
-			if ('I' in args) { currentI = args.I/scale; }
-			if ('J' in args) { currentJ = args.J/scale; }
-			moves.push( {'type':parseFloat(line[1]), 'X':currentX, 'Y':currentY, 'I':currentI, 'J':currentJ } );
-		}
-	}
-	
-	// draw moves
-	//
-	
-	function theta(x, y)	{
-	  var theta = Math.atan(x/Math.abs(y));
-	  if (y>0) {
-	    return(theta);
-	  } else {
-	    if (theta>0) {
-	      return(Math.PI-theta);
-	    } else {
-	      return(-Math.PI-theta);
-	    }
-	  }
-	}	
-	
-	function hypot(x, y) {
-		// also see http://stackoverflow.com/questions/3764978/why-hypot-function-is-so-slow
-    return Math.sqrt(x * x + y * y) || 0;	
-	}
-	
-	canvas.clear();
-	canvas.noStroke();
-	canvas.fill('#ffffff');
-	canvas.rect(0,0,canvas.width,canvas.height);
-	canvas.noFill();
-	var move_prev = {'type':0, 'X':0, 'Y':0, 'I':0, 'J':0 };
-	var move;
-	for (var i=0; i<moves.length; i++) {
-		if (i > 0) { move_prev = moves[i-1]; }
-		move = moves[i];
-		
-		if (move.type == 0 || move.type == 1) { 
-			if (move.type == 0) { canvas.stroke('#aaaaaa'); } else {canvas.stroke('#ff0000');}
-			canvas.line(move_prev.X, move_prev.Y, move.X, move.Y);
-		} else if (move.type == 2 || move.type == 3) {
-			// arc CW or CCW
-			// code from grbl
-			var ccw = false;
-      var theta_start = theta(-move.I, -move.J);
-      var theta_end = theta(move.X - move.I - move_prev.X, move.Y - move.J - move_prev.Y);
-      if (theta_end < theta_start) { theta_end += 2*Math.PI; }
-      if (move.type == 3) {
-				// arc CCW
-				ccw = true;
-				var theta_end_temp = theta_end;
-				theta_end = theta_start;
-				theta_start = theta_end_temp;
-      }
-      // Find the radius
-      var radius = hypot(move.I, move.J);
-	    var center_x = move_prev.X-Math.sin(theta_start)*radius;
-	    var center_y = move_prev.Y-Math.cos(theta_start)*radius;
-			
-			canvas.stroke('#ff0000');
-			canvas.arc(center_x, center_y, radius, theta_start, theta_end, ccw);
-			canvas.stroke('#aaaaaa');
-		}
-	}
-	
+	gcode.parse(0.25);
+	gcode.draw(canvas);	
 });
 
 //

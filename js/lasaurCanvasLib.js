@@ -40,33 +40,33 @@ Canvas.prototype.line = function (x1, y1, x2, y2) {
   this.cx.beginPath();
   this.cx.moveTo(x1, y1);
   this.cx.lineTo(x2, y2);
-  this.cx.closePath();
   if (this.bFill) { this.cx.fill(); }
   if (this.bStroke) { this.cx.stroke(); }
+  this.cx.closePath();
 }
 
 Canvas.prototype.rect = function (x, y, w, h) {
   this.cx.beginPath();
   this.cx.rect(x, y, w, h);
-  this.cx.closePath();
   if (this.bFill) { this.cx.fill(); }
   if (this.bStroke) { this.cx.stroke(); }
+  this.cx.closePath();
 }
 
 Canvas.prototype.circle = function (x, y, r) {
   this.cx.beginPath();
   this.cx.arc(x, y, r, 0, Math.PI*2, true);
-  this.cx.closePath();
   if (this.bFill) { this.cx.fill(); }
   if (this.bStroke) { this.cx.stroke(); }
+  this.cx.closePath();
 };
 
 Canvas.prototype.arc = function (x, y, r, startang, endang, ccw) {
   this.cx.beginPath();
   this.cx.arc(x, y, r, startang, endang, ccw);
-  this.cx.closePath();
   if (this.bFill) { this.cx.fill(); }
   if (this.bStroke) { this.cx.stroke(); }
+  this.cx.closePath();
 };
 
 Canvas.prototype.clear = function () {

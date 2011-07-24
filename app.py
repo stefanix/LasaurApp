@@ -77,7 +77,10 @@ def static_css_handler(path):
 @route('/app.html')
 def default_handler():
     return static_file('app.html', root=current_dir)
-    
+
+@route('/canvas.html')
+def default_handler():
+    return static_file('testCanvas.html', root=current_dir)    
 
 @route('/serial/:connect')
 def serial_handler(connect):
