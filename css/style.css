@@ -253,10 +253,33 @@ pre.prettyprint {
   font-size:1.0em;
 }
 
-#gcode_library a {
+
+
+.gcode_programs {
+  display:none;
+}
+.gcode_programs a {
   display:block;
 }
-
-#gcode_library div {
+.gcode_programs div {
   display:none;
+}
+
+
+
+div.log_item {
+  padding:5px;
+  margin: 5px;
+}
+div.log_notice {
+  border: 1px solid #aaaaaa;
+}
+div.log_success {
+  border: 1px solid green;
+}
+div.log_warning {
+  border: 1px solid orange;  
+}
+div.log_error {
+  border: 1px solid red;
 }
