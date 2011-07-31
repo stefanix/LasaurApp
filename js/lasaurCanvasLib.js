@@ -68,6 +68,7 @@ Canvas.prototype.arc = function (x, y, r, startang, endang, ccw) {
   if (this.bStroke) { this.cx.stroke(); }
   this.cx.closePath();
 };
+// there is also a cx.arcTo(x1, y1, x2, y2, radius)
 
 Canvas.prototype.clear = function () {
   this.cx.clearRect(0, 0, this.width, this.height);

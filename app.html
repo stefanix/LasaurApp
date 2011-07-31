@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="/css/style.css" type="text/css"> 
 <script src="/js/jquery-1.5.min.js"></script>
 <script src="/js/jquery-ui-1.8.9.custom.min.js"></script>
+<script src="/js/jquery.form.js"></script>
 <script src="/js/jquery.toastmessage.js"></script>
 <script src="/js/lasaurCanvasLib.js"></script>
 <script src="/js/lasaurGcodeLib.js"></script>
@@ -49,6 +50,7 @@
 <ul>
 	<li><a href="#tab-gcode">Laser Jobs</a></li>
 	<li><a href="#tab-mover">Direct Control</a></li>
+	<li><a href="#svg-importer">Open SVG</a></li>
 </ul>
 		
 <div id="tab-gcode" style="padding:30px">
@@ -94,6 +96,14 @@
 		</form>
 		<div id="feedrate" style="margin:23px; width:150px; float:left"></div>
 		<input id="feedrate_field" type="textfield" value="10000" style="margin:15px; width:50px; float:left"></input>
+</div>
+
+<div id="svg-importer" style="padding-left:128px; padding-top:60px">
+	<form id="svg_upload_form" action="/svg_upload" method="post" enctype="multipart/form-data">
+	<input type="file" name="data">
+	<input type="submit" name="submitBtn" value="Upload" />
+	<div id="svg_upload_results"></div>
+	</form>
 </div>
 
 </div> <!--end of tabs -->
@@ -542,6 +552,43 @@ function moveto (x, y) {
 // direct control tab
 /////////////////////////
 
+
+
+
+/////////////////////////
+// import tab
+
+$('#svg_upload_form').ajaxForm({
+	beforeSubmit: function() {
+	  $('#svg_upload_results').html('Submitting...');
+	},
+	success: function(gcode) {
+    $('#svg_upload_results').html('Your results:');
+    $('#svg_upload_results').append('<div><pre>'+ gcode +'</pre></div>');
+	
+		// add gcode program to queue
+		// this code is repetitive
+		queue_num_index += 1;
+		if (queue_num_index > 10) {
+			// remove old items
+			$('#gcode_queue').children('a').last().remove();
+			$('#gcode_queue').children('div').last().remove();
+		}
+		var date = new Date();
+		$('#gcode_queue').prepend('<a href="#">'+ date.toDateString() +' - '+ queue_num_index +'</a>\n<div>'+ gcode +'</div>\n')
+		$('#gcode_queue a').click(function(){		
+			$('#gcode_program').val( $(this).next().text() );
+
+			// make sure preview refreshes
+			$('#gcode_program').trigger('blur');	
+		});		
+	
+  }
+});
+
+
+// import tab
+/////////////////////////
 
 
 

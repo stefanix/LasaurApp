@@ -5,6 +5,9 @@ import wsgiref.simple_server
 from bottle import *
 import serial_manager, serial
 
+from read_svg import SVG
+from write_gcode import write_GCODE
+
 
 # ARDUINO_PORT = '/dev/tty.usbmodem621'
 ARDUINO_PORT = '/dev/tty.usbserial-A70063dl'
@@ -130,6 +133,19 @@ def gcode_handler_submit():
 def queue_pct_done_handler():
     return serial_manager.get_queue_percentage_done()
 
+
+@route('/svg_upload', method='POST')
+def svg_upload():
+    data = request.files.get('data')
+    if data.file:
+        raw = data.file.read() # This is dangerous for big files
+        filename = data.filename
+        print "You uploaded %s (%d bytes)." % (filename, len(raw))
+        boundarys = SVG(raw).get_boundarys()
+        gcode = write_GCODE(boundarys, 2500, 255, 1.0, 0.0, 0.0)
+        return gcode
+    return "You missed a field."
+    
 
 debug(True)
 run_with_callback(host='localhost')
