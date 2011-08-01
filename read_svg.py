@@ -135,10 +135,12 @@ class SVG(object):
         self.width = self.parse_float(self.tree.get("width", '0'))
         self.height = self.parse_float(self.tree.get("height", '0'))
         if self.height:
-            self.transform = Matrix([1, 0, 0, -1, 0, self.height])
+            # self.transform = Matrix([1, 0, 0, -1, 0, self.height])  # original
+            self.transform = Matrix([1, 0, 0, 1, 0, 0])  # flip y axis for lasersaur
         else:
             x, y, w, h = (self.parse_float(x) for x in parse_list(self.tree.get("viewBox")))
-            self.transform = Matrix([1, 0, 0, -1, -x, h + y])
+            # self.transform = Matrix([1, 0, 0, -1, -x, h + y])  # original
+            self.transform = Matrix([1, 0, 0, 1, -x, -y])  # flip y axis for lasersaur
             self.height = h
             self.width = w
         self.opacity = 1.0
@@ -161,8 +163,9 @@ class SVG(object):
         self.transform = self.transform * Matrix(e.get('transform'))
         
         self.parse_style(e.get('style'))
-        if len(DEFAULT_CUT_COLOR) == len(self.stroke) \
-        and all(j == i for i, j in zip(DEFAULT_CUT_COLOR, self.stroke)):
+        if DEFAULT_CUT_COLOR[0] == self.stroke[0] \
+        and DEFAULT_CUT_COLOR[1] == self.stroke[1] \
+        and DEFAULT_CUT_COLOR[2] == self.stroke[2]:
             # we have an outline in the designated cut color
             self.parse_geometry(e)
         

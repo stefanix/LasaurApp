@@ -1,12 +1,11 @@
 
 
-function Gcode(gcode_selector) {
-  this.selector = gcode_selector;
+function Gcode() {
   this.moves = [];
 }
 
 
-Gcode.prototype.parse = function (scale) {
+Gcode.prototype.parse = function (gcode, scale) {
   
 	function parseGArgs(str) {
 		var ret = {};
@@ -34,7 +33,6 @@ Gcode.prototype.parse = function (scale) {
 	// parse gcode
 	//
 	this.moves = [];
-	var gcode =   $(this.selector).val();
 	var lines = gcode.split("\n");
 	var currentX = 0.0;
 	var currentY = 0.0;
@@ -61,7 +59,6 @@ Gcode.prototype.parse = function (scale) {
 
 
 Gcode.prototype.draw = function (canvas) {
-		
 	canvas.clear();
 	canvas.noStroke();
 	canvas.fill('#ffffff');

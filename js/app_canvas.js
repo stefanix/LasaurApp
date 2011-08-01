@@ -70,6 +70,12 @@ Canvas.prototype.arc = function (x, y, r, startang, endang, ccw) {
 };
 // there is also a cx.arcTo(x1, y1, x2, y2, radius)
 
+Canvas.prototype.background = function (color) {
+  this.noStroke();
+  this.fill(color);
+  this.rect(0, 0, this.width, this.height);
+}
+
 Canvas.prototype.clear = function () {
   this.cx.clearRect(0, 0, this.width, this.height);
 }

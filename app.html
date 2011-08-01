@@ -10,9 +10,12 @@
 <script src="/js/jquery-ui-1.8.9.custom.min.js"></script>
 <script src="/js/jquery.form.js"></script>
 <script src="/js/jquery.toastmessage.js"></script>
-<script src="/js/lasaurCanvasLib.js"></script>
-<script src="/js/lasaurGcodeLib.js"></script>
+<script src="/js/app_canvas.js"></script>
+<script src="/js/app_gcode.js"></script>
 <script src="/js/app.js"></script>
+<script src="/js/app_laserjobs.js"></script>
+<script src="/js/app_directcontrol.js"></script>
+<script src="/js/app_import.js"></script>
 
 
 </head>
@@ -50,7 +53,7 @@
 <ul>
 	<li><a href="#tab-gcode">Laser Jobs</a></li>
 	<li><a href="#tab-mover">Direct Control</a></li>
-	<li><a href="#svg-importer">Open SVG</a></li>
+	<li><a href="#svg-importer">Import</a></li>
 </ul>
 		
 <div id="tab-gcode" style="padding:30px">
@@ -67,7 +70,7 @@
 			<h3>G-Code</h3>
 			<div><textarea id="gcode_program" style="font-size:0.8em; width:300px; height:100px"></textarea></div>
 			<h3>Preview</h3>
-			<div><canvas id="preview_canvas" width="305px" height="155px"></div>
+			<div><canvas id="preview_canvas" width="305px" height="155px"></canvas></div>
 			<div id="gcode_submit" style="margin-left:0; margin-top:20px">Send to Lasersaur</div>
 			<div id="progressbar" style="width:305px; height:20px; margin-top:60px"></div>
 		</form>	
@@ -98,12 +101,22 @@
 		<input id="feedrate_field" type="textfield" value="10000" style="margin:15px; width:50px; float:left"></input>
 </div>
 
-<div id="svg-importer" style="padding-left:128px; padding-top:60px">
-	<form id="svg_upload_form" action="/svg_upload" method="post" enctype="multipart/form-data">
-	<input type="file" name="data">
-	<input type="submit" name="submitBtn" value="Upload" />
-	<div id="svg_upload_results"></div>
-	</form>
+<div id="svg-importer" style="padding-top:20px; margin-left:auto; margin-right:auto;">
+	<div>
+		<h3>Import SVG</h3>		
+		<div style="color:#666666">
+			Import all red geometry outlines (stroke color: 255,0,0 or #ff0000)
+		</div>
+		<div id="import_canvas_container" class="ui-corner-all" style="margin-top:10px; padding:16px; background-color:#cccccc">
+			<form id="svg_upload_form" action="/svg_upload" method="post" enctype="multipart/form-data">
+			<input type="file" id="svg_upload_file" name="data">
+			<input type="submit" id="svg_upload_button" name="submitBtn" value="Import">
+			<div id="import_results" style="display:none"></div>
+			</form>
+			<canvas id="import_canvas" style="margin-top:10px" width="610px" height="310px"></canvas>
+			<div id="import_to_queue" style="margin-left:0; margin-top:10px">Add to Queue</div>
+		</div> 
+	</div>
 </div>
 
 </div> <!--end of tabs -->
@@ -260,339 +273,6 @@ S0
 </div>
 
 <!-- Gcode Library End -->
-
-
-
-	
-<script>
-
-
-$(function() {
-	$( "#tabs-main" ).tabs({
-		selected: 0
-	});
-});
-
-
-$('#log_toggle').toggle(function() {
-  $("#log_content").fadeIn('slow');
-	$("#log_toggle").html("hide log");
-}, function() {
-  $("#log_content").fadeOut('slow');
-	$("#log_toggle").html("show log");
-});
-
-
-// connect to serial button
-//	
-$("#serial_connection").button();
-// get serial state
-$.get('/serial/2', function(data) {
-	if (data != "") {
-		$().uxmessage('notice', "Serial is Connected");		
-		$("#serial_connection").val('1');
-		$("#serial_connection").button('option', 'label', 'Disconnect');		
-	} else {
-		$().uxmessage('notice', "Serial is Disconnected");
-		$("#serial_connection").val('0');
-		$("#serial_connection").button('option', 'label', 'Connect');
-	}		
-});
-$("#serial_connection").click(function(e){	
-	if ($("#serial_connection").val() == '1') {
-		$.get('/serial/0', function(data) {
-			if (data != "") {
-				$().uxmessage('success', "Serial Disconnected");
-			} else {
-				$().uxmessage('success', "Serial was already disonnected.");
-			}
-			$("#serial_connection").val('0');
-			$("#serial_connection").button('option', 'label', 'Connect');	
-		});
-	}	else {
-		$.get('/serial/1', function(data) {
-			if (data != "") {
-				$().uxmessage('success', "Serial Connected");
-				$().uxmessage('notice', data);				
-				$("#serial_connection").val('1');
-				$("#serial_connection").button('option', 'label', 'Disconnect');
-			} else {
-				$().uxmessage('error', "Failed to Connect");
-			}		
-		});
-	}	
-	e.preventDefault();		
-});	
-
-//$("#find_home").button();
-$("#find_home").click(function(e){
-	var gcode = 'G30\n'
-	$().uxmessage('notice', gcode);	
-	$.get('/gcode/'+ gcode, function(data) {
-		if (data != "") {
-			$().uxmessage('success', "G-Code sent to serial.");
-		} else {
-			$().uxmessage('error', "Serial not connected.");
-		}
-	});
-	e.preventDefault();		
-});
-
-//$("#go_home").button();
-$("#go_home").click(function(e){
-	var gcode = 'G0X0Y0F20000\n'
-	$().uxmessage('notice', gcode);	
-	$.get('/gcode/'+ gcode, function(data) {
-		if (data != "") {
-			$().uxmessage('success', "G-Code sent to serial.");
-		} else {
-			$().uxmessage('error', "Serial not connected.");
-		}
-	});
-	e.preventDefault();		
-});
-
-$("#escape_fire").button();
-$("#escape_fire").click(function(e){
-	var gcode = 'M112X0Y0F20000\n'
-	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));	
-	$.get('/gcode/'+ gcode, function(data) {
-		if (data != "") {
-			$().uxmessage('success', "G-Code sent to serial.");
-		} else {
-			$().uxmessage('error', "Serial not connected.");
-		}
-	});
-	e.preventDefault();		
-});
-
-
-
-/////////////////////////
-// laser jobs tab
-
-$('#gcode_queue').show();
-
-$('#library_placeholder').replaceWith($('#gcode_library'));
-$('#gcode_library').show();
-
-$('#gcode_library a').click(function(){		
-	$('#gcode_program').val( $(this).next().text() );
-
-	// make sure preview refreshes
-	$('#gcode_program').trigger('blur');	
-});
-
-
-$('#calibration_placeholder').replaceWith($('#gcode_for_calibration'));
-$('#gcode_for_calibration').show();
-
-$('#gcode_for_calibration a').click(function(){
-	$('#gcode_program').val( $(this).next().text() );
-
-	// make sure preview refreshes
-	$('#gcode_program').trigger('blur');	
-});
-
-
-var queue_num_index = 0;
-$("#gcode_submit").button();
-$("#gcode_submit").click(function(e) {
-	// send gcode string to server via POST
-	var gcode = $('#gcode_program').val();
-	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
-	$.post("/gcode", { 'gcode_program':gcode }, function(data) {
-		if (data != "") {
-			$().uxmessage('success', "G-Code sent to serial.");	
-			// show progress bar, register live updates
-			if ($("#progressbar").progressbar( "option", "value" ) == 0) {
-				$("#progressbar").progressbar( "option", "value", 5 )
-				$("#progressbar").show();
-			  var progresstimer = setInterval(function() {
-					$.get('/queue_pct_done', function(data2) {
-						//$().uxmessage('notice', data2);
-						if (data2.length > 0) {
-							var pct = parseInt(data2);
-							//$().uxmessage('notice', data);
-							$('#progressbar').progressbar( "option", "value", pct );
-						} else {
-							$().uxmessage('notice', "Done.");
-							$('#progressbar').hide();
-							$('#progressbar').progressbar( "option", "value", 0 );
-							clearInterval(progresstimer);
-						}
-					});
-			  }, 3000);
-			}
-		} else {
-			$().uxmessage('error', "Serial not connected.");
-		}
-  });
-
-	// add gcode program to queue
-	queue_num_index += 1;
-	if (queue_num_index > 10) {
-		// remove old items
-		$('#gcode_queue').children('a').last().remove();
-		$('#gcode_queue').children('div').last().remove();
-	}
-	var date = new Date();
-	$('#gcode_queue').prepend('<a href="#">'+ date.toDateString() +' - '+ queue_num_index +'</a>\n<div>'+ gcode +'</div>\n')
-	$('#gcode_queue a').click(function(){		
-		$('#gcode_program').val( $(this).next().text() );
-
-		// make sure preview refreshes
-		$('#gcode_program').trigger('blur');	
-	});	
-	
-	return false;
-});
-
-
-
-$("#progressbar").progressbar({
-	value: 0
-});
-$("#progressbar").hide();
-
-
-// G-Code Canvas Preview
-
-var canvas = new Canvas('#preview_canvas');
-var gcode = new Gcode('#gcode_program');
-canvas.noStroke();
-canvas.fill('ffffff');
-canvas.rect(0,0,canvas.width,canvas.height);
-
-$('#gcode_program').blur(function() {
-	gcode.parse(0.25);
-	gcode.draw(canvas);	
-});
-
-
-// laser jobs tab
-/////////////////////////
-
-
-
-/////////////////////////
-// direct control tab
-
-
-$("#cutting_area").click(function(e) {
-
-	//var x = (e.pageX - this.offsetLeft);
-	//var y = (e.pageY - this.offsetTop);
-
-	var offset = $('#lasaur_widget').offset();
-	var x = (e.pageX - offset.left);
-	var y = (e.pageY - offset.top);
-	
-	var pos = $(this).position();
-	var lasaur_coord_x = 4*(x - pos.left);
-	var lasaur_coord_y = 4*(y - pos.top);
-	// cap
-	if (lasaur_coord_x > 1220) { lasaur_coord_x = 1220; }
-	if (lasaur_coord_y > 620) { lasaur_coord_y = 620; }
-	
-	var g0_or_g1
-	if($('#radio_g1').is(":checked")){
-		g0_or_g1 = 'G1';
-	}	else {
-		g0_or_g1 = 'G0';	
-	}
-	var feedrate = $( "#feedrate_field" ).val();
-	var gcode = g0_or_g1 + ' X' + parseInt(lasaur_coord_x) + 'Y' + parseInt(lasaur_coord_y) + 'F' + feedrate + '\n';
-	
-	$().uxmessage('notice', gcode);
-	
-	// send new pos to server, on success move graphics
-	$.get('/gcode/'+ gcode, function(data) {
-		if (data != "") {
-			$().uxmessage('success', "G-Code sent to serial.");
-			moveto(x, y);
-		} else {
-			$().uxmessage('error', "Serial not connected.");
-		}
-	});
-	
-});
-
-$('#move_type_radio').buttonset();
-$("#feedrate").slider({ min:50, max:20000, value:$('#feedrate_field').val() });
-$("#feedrate").bind( "slide", function(event, ui) {
-	$('#feedrate_field').val($('#feedrate').slider("option", "value"));
-});
-$("#feedrate").bind( "slidestop", function(event, ui) {
-	$('#feedrate_field').val($('#feedrate').slider("option", "value"));
-});
-
-$("#cutting_area").hover(
-  function () {
-		$(this).css('border', '1px solid #ff0000');
-		$(this).css('cursor', 'crosshair');
-  },
-  function () {
-		$(this).css('border', '1px solid #888888');
-		$(this).css('cursor', 'pointer');			
-  }
-);	
-
-function moveto (x, y) {
-	$('#y_cart').animate({  
-		top: y - 8.5 - 6
-	}); 	
-	
-	$('#x_cart').animate({  
-		left: x - 6,  
-		top: y - 6 
-	});
-};
-
-// direct control tab
-/////////////////////////
-
-
-
-
-/////////////////////////
-// import tab
-
-$('#svg_upload_form').ajaxForm({
-	beforeSubmit: function() {
-	  $('#svg_upload_results').html('Submitting...');
-	},
-	success: function(gcode) {
-    $('#svg_upload_results').html('Your results:');
-    $('#svg_upload_results').append('<div><pre>'+ gcode +'</pre></div>');
-	
-		// add gcode program to queue
-		// this code is repetitive
-		queue_num_index += 1;
-		if (queue_num_index > 10) {
-			// remove old items
-			$('#gcode_queue').children('a').last().remove();
-			$('#gcode_queue').children('div').last().remove();
-		}
-		var date = new Date();
-		$('#gcode_queue').prepend('<a href="#">'+ date.toDateString() +' - '+ queue_num_index +'</a>\n<div>'+ gcode +'</div>\n')
-		$('#gcode_queue a').click(function(){		
-			$('#gcode_program').val( $(this).next().text() );
-
-			// make sure preview refreshes
-			$('#gcode_program').trigger('blur');	
-		});		
-	
-  }
-});
-
-
-// import tab
-/////////////////////////
-
-
-
-</script>
 
 
 </body>
