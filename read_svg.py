@@ -356,8 +356,19 @@ class SVG(object):
          
 
     def parse_float(self, txt):
+        # assume 90dpi
         if txt.endswith('px'):
             return float(txt[:-2])
+        elif txt.endswith('pt'):
+            return float(txt[:-2]) * 1.25
+        elif txt.endswith('pc'):
+            return float(txt[:-2]) * 15.0
+        elif txt.endswith('mm'):
+            return float(txt[:-2]) * 3.5433070869
+        elif txt.endswith('cm'):
+            return float(txt[:-2]) * 35.433070869
+        elif txt.endswith('in'):
+            return float(txt[:-2]) * 90.0
         else:
             return float(txt)
 

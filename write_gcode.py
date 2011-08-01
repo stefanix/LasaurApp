@@ -25,19 +25,21 @@ def write_GCODE(boundarys, feedrate, laser_intensity, scale=1.0, xoff=0.0, yoff=
     for layer in range((len(boundarys)-1),-1,-1):
         path = boundarys[layer]
         for segment in range(len(path)):
-            vertex = 0
-            x = path[segment][vertex][X]*scale + xoff
-            y = path[segment][vertex][Y]*scale + yoff
-            if ((x_prev-x)**2 + (y_prev-y)**2) > DELETION_EPSILON_SQUARED:
-                glist.append("G00X%0.3f"%x+"Y%0.3f"%y+"\n")
-                nsegment += 1
-                x_prev,y_prev = x,y
-            for vertex in range(1,len(path[segment])):
-                x = path[segment][vertex][X]*scale + xoff
-                y = path[segment][vertex][Y]*scale + yoff
+            segment = path[segment]
+            if len(segment) > 0:
+                vertex = 0
+                x = segment[vertex][X]*scale + xoff
+                y = segment[vertex][Y]*scale + yoff
                 if ((x_prev-x)**2 + (y_prev-y)**2) > DELETION_EPSILON_SQUARED:
-                    glist.append("G01X%0.3f"%x+"Y%0.3f"%y+"\n")
-                    x_prev,y_prev = x,y                
+                    glist.append("G00X%0.3f"%x+"Y%0.3f"%y+"\n")
+                    nsegment += 1
+                    x_prev,y_prev = x,y
+                for vertex in range(1,len(segment)):
+                    x = segment[vertex][X]*scale + xoff
+                    y = segment[vertex][Y]*scale + yoff
+                    if ((x_prev-x)**2 + (y_prev-y)**2) > DELETION_EPSILON_SQUARED:
+                        glist.append("G01X%0.3f"%x+"Y%0.3f"%y+"\n")
+                        x_prev,y_prev = x,y                
     glist.append("S0\n") # reset laser intensity
     glist.append("G00X0Y0F20000\n") # reset laser intensity
     glist.append("%\n")

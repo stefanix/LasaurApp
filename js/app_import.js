@@ -15,12 +15,12 @@ $(document).ready(function(){
   	    $().uxmessage('notice', "unsupported file type");
   	    ret = false;
   	  } else {
-  	    $().uxmessage('notice', "submitting file");
+  	    $().uxmessage('notice', "submitting file ...");
   	  }
   	  return ret;
   	},
   	success: function(gcodedata) {
-  	  $().uxmessage('notice', "file converted to G-code");
+  	  $().uxmessage('notice', "rendering G-code ...");
       $('#import_results').text(gcodedata);      
     	gcode.parse(gcodedata, 0.5);
     	gcode.draw(icanvas);
