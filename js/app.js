@@ -41,7 +41,7 @@
 var queue_num_index = 0;
 function add_to_job_queue(gcode, name) {
 	queue_num_index += 1;  
-  if (typeof(name) == 'undefined') {
+  if ((typeof(name) == 'undefined') || ($.trim(name) == '')) {
     var date = new Date();
     name = date.toDateString() +' - '+ queue_num_index
   }
@@ -51,7 +51,8 @@ function add_to_job_queue(gcode, name) {
 		$('#gcode_queue').children('div').last().remove();
 	}
 	$('#gcode_queue').prepend('<a href="#">'+ name +'</a>\n<div>'+ gcode +'</div>\n')
-	$('#gcode_queue a').click(function(){		
+	$('#gcode_queue a').click(function(){
+	  $('#gcode_name').val( $(this).text() );
 		$('#gcode_program').val( $(this).next().text() );
 
 		// make sure preview refreshes

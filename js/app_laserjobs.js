@@ -6,6 +6,7 @@ $(document).ready(function(){
   $('#gcode_library').show();
 
   $('#gcode_library a').click(function(){		
+  	$('#gcode_name').val( $(this).text() );
   	$('#gcode_program').val( $(this).next().text() );
 
   	// make sure preview refreshes
@@ -17,6 +18,7 @@ $(document).ready(function(){
   $('#gcode_for_calibration').show();
 
   $('#gcode_for_calibration a').click(function(){
+    $('#gcode_name').val( $(this).text() );
   	$('#gcode_program').val( $(this).next().text() );
 
   	// make sure preview refreshes
@@ -56,12 +58,15 @@ $(document).ready(function(){
   			$().uxmessage('error', "Serial not connected.");
   		}
     });
-
-  	add_to_job_queue(gcode);
-	
+    
   	return false;
   });
 
+
+  $("#gcode_save_to_queue").button();  
+  $("#gcode_save_to_queue").click(function(e) {
+    add_to_job_queue($('#gcode_program').val(), $.trim($('#gcode_name').val()));
+  });
 
 
   $("#progressbar").progressbar({
