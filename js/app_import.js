@@ -15,7 +15,7 @@ $(document).ready(function(){
   	    $().uxmessage('notice', "unsupported file type");
   	    ret = false;
   	  } else {
-  	    $().uxmessage('notice', "submitting file ...");
+  	    $().uxmessage('notice', "opening file ...");
   	  }
   	  return ret;
   	},
