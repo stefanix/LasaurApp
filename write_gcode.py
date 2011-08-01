@@ -17,8 +17,9 @@ def write_GCODE(boundarys, feedrate, laser_intensity, scale=1.0, xoff=0.0, yoff=
     glist = []
     glist.append("%\n")
     glist.append("G21\nG90\n") # mm and absolute positioning
-    glist.append("F%0.3f\n"%feedrate)
     glist.append("S%0.3f\n"%laser_intensity)
+    glist.append("G0F10000\n")
+    glist.append("G1F%0.3f\n"%feedrate)
     nsegment = 0
     x_prev = 0.0
     y_prev = 0.0
@@ -41,7 +42,7 @@ def write_GCODE(boundarys, feedrate, laser_intensity, scale=1.0, xoff=0.0, yoff=
                         glist.append("G01X%0.3f"%x+"Y%0.3f"%y+"\n")
                         x_prev,y_prev = x,y                
     glist.append("S0\n") # reset laser intensity
-    glist.append("G00X0Y0F20000\n") # reset laser intensity
+    glist.append("G00X0Y0F15000\n") # reset laser intensity
     glist.append("%\n")
     print "wrote",nsegment-1,"G code toolpath segments"
     return ''.join(glist)
