@@ -22,7 +22,7 @@ from string import strip
 import xml.etree.cElementTree
 
     
-TOLERANCE = 1.0
+TOLERANCE = 0.01
 CIRCLE_POINTS = 24
 LOOP_TOLERANCE = 0.001
 

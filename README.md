@@ -15,4 +15,5 @@ How to Use this App
 * install [pysersial](http://pyserial.sourceforge.net/)
 * edit app.py and define the port of the Lasersaur (*ARDUINO_PORT*)
 * run *python app.py*
-* open *http://localhost:4444*
+* open *http://localhost:4444* 
+  (in a browser with basic html5 support)

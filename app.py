@@ -81,7 +81,7 @@ def static_css_handler(path):
 def default_handler():
     return static_file('app.html', root=current_dir)
 
-@route('/canvas.html')
+@route('/canvas')
 def default_handler():
     return static_file('testCanvas.html', root=current_dir)    
 
