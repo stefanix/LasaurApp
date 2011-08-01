@@ -193,7 +193,7 @@ class SVG(object):
                 try:
                     float(pathdata[0])
                     return True
-                except ValueError:
+                except (ValueError, IndexError):
                     return False
 
             self.new_path()
