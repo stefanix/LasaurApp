@@ -22,8 +22,8 @@ from string import strip
 import xml.etree.cElementTree
 
     
-TOLERANCE = 0.01
-CIRCLE_POINTS = 24
+TOLERANCE = 0.2
+MIN_CIRCLE_POINTS = 6
 LOOP_TOLERANCE = 0.001
 
 DEFAULT_CUT_COLOR = [255,0,0,255]
@@ -69,29 +69,23 @@ class Matrix(object):
         
 class SVG(object):
     
-    def __init__(self, svgdata, anchor_x=0, anchor_y=0, tolerance=TOLERANCE, circle_points=CIRCLE_POINTS):
+    def __init__(self, svgdata, anchor_x=0, anchor_y=0, tolerance=TOLERANCE, min_circle_points=MIN_CIRCLE_POINTS):
         """Creates an SVG object from a .svg or .svgz file.
         
             `svgdata`: str
                 The actual SVG.
-            `anchor_x`: float
-                The horizontal anchor position for scaling and rotations. Defaults to 0. The symbolic 
-                values 'left', 'center' and 'right' are also accepted.
-            `anchor_y`: float
-                The vertical anchor position for scaling and rotations. Defaults to 0. The symbolic 
-                values 'bottom', 'center' and 'top' are also accepted.
-            `bezier_tolerance`: float
-                The maximum deviation from the curve.
-            `circle_points`: int
-                The number of line segments into which to subdivide circular and elliptic arcs. 
-                Defaults to 10.
-                
+            `tolerance`: float
+                The maximum deviation from the curve, circle, ellipse, arc.
+            `min_circle_points`: int
+                num of circles points are calculated based on radius and to achive the specified
+                TOLERANCE. In some cases (e.g: svg with wild transformation on the circles) it might
+                be necessary to overwrite this. You can do this with this arg.                
         """
         
         self.boundarys = [[]]
         self.svgdata = svgdata
-        self.tolerance_squared = tolerance*tolerance
-        self.circle_points = circle_points
+        self.tolerance_squared = (10.0*tolerance)**2  #hack, added factor of 10
+        self.min_circle_points = min_circle_points
         self.fill = [0, 0, 0, 255]
         self.stroke = [0, 0, 0, 255]          
         # parse on initiation
@@ -336,9 +330,10 @@ class SVG(object):
             cx = float(e.get('cx'))
             cy = float(e.get('cy'))
             r = float(e.get('r'))
+            circle_points = self.get_circle_steps_for_tolerance(r, self.tolerance_squared)
             self.new_path()
-            for i in xrange(self.circle_points):
-                theta = 2 * i * math.pi / self.circle_points
+            for i in xrange(circle_points):
+                theta = 2 * i * math.pi / circle_points
                 self.line_to(cx + r * math.cos(theta), cy + r * math.sin(theta))
             self.close_path()
             self.end_path()
@@ -347,9 +342,10 @@ class SVG(object):
             cy = float(e.get('cy'))
             rx = float(e.get('rx'))
             ry = float(e.get('ry'))
+            circle_points = self.get_circle_steps_for_tolerance(max([rx,ry]), self.tolerance_squared)
             self.new_path()
-            for i in xrange(self.circle_points):
-                theta = 2 * i * math.pi / self.circle_points
+            for i in xrange(circle_points):
+                theta = 2 * i * math.pi / circle_points
                 self.line_to(cx + rx * math.cos(theta), cy + ry * math.sin(theta))
             self.close_path()
             self.end_path()
@@ -473,7 +469,10 @@ class SVG(object):
                       ((-x_ - cx_)/rx, (-y_ - cy_)/ry))
         if sweep and delta < 0: delta += math.pi * 2
         if not sweep and delta > 0: delta -= math.pi * 2
-        n_points = max(int(abs(self.circle_points * delta / (2 * math.pi))), 1)
+        
+        circle_points = self.get_circle_steps_for_tolerance(max([rx,ry]), self.tolerance_squared)
+        n_points = max(int(abs(circle_points * delta / (2 * math.pi))), 1)
+        print 'num arc points: ' + str(n_points)
         
         for i in xrange(n_points + 1):
             theta = psi + i * delta / n_points
@@ -586,20 +585,24 @@ class SVG(object):
 
 
     def get_circle_steps_for_tolerance(self, r, tolerance_squared):
-        # not used yet because circle and ellipses have
-        # typically transformation on them which obscure the radii
-        numSteps = 8
+        # This calculation may lead to bad results when 
+        # circles are under scale transformations because it will
+        # the radii - would basically have to apply all transforms
+        # to the radii to make this stable
+        numSteps = MIN_CIRCLE_POINTS/2
         def sagitta_squared(r, steps):
             angle = 2*math.pi/steps
             chord = 2*r*math.sin(angle/2.0)
-            # return (r - math.sqrt(r**2 - (chord/2.0)**2))
-            sagitta2 = (r**2 - (r**2 - (chord/2.0)**2))
-            print 'sagitta2: ' + str(sagitta2) + '  << ' + str(r)         
+            sagitta2 = (r - math.sqrt(r**2 - (chord/2.0)**2))**2
+            # sagitta2 = (r**2 - (r**2 - (chord/2.0)**2))
             return sagitta2
                                 
         while sagitta_squared(r, numSteps) > tolerance_squared:
-            print 'num: ' + str(numSteps)
+            print 'num of circle steps: ' + str(numSteps)
             numSteps *= 1.5
+            
+        # added *2 to better match the resolution of the bezier accuracy
+        numSteps *= 2
             
         return int(numSteps)
 

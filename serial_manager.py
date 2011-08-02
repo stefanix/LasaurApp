@@ -6,7 +6,7 @@ import serial
 serial_port = None
 
 gcode_queue = deque()  # could use a list, but deque is faster
-GRBL_BUFFER_MAX = 3
+GRBL_BUFFER_MAX = 20
 grbl_buffer_current = 0
 gcode_queue_count = 0
 total_items_queued_in_batch = 0  # used for calculating percentage done

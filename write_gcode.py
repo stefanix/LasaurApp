@@ -10,7 +10,7 @@ Y = 1
 # last used point is ignored.
 # This also has the effect of merging geometry made from
 # short lines into one segment.
-DELETION_EPSILON_SQUARED = 0.01**2
+DELETION_EPSILON_SQUARED = 0.1**2
 
 def write_GCODE(boundarys, feedrate, laser_intensity, scale=1.0, xoff=0.0, yoff=0.0):
     feed = 2000.0
@@ -35,10 +35,12 @@ def write_GCODE(boundarys, feedrate, laser_intensity, scale=1.0, xoff=0.0, yoff=
                     glist.append("G00X%0.3f"%x+"Y%0.3f"%y+"\n")
                     nsegment += 1
                     x_prev,y_prev = x,y
-                for vertex in range(1,len(segment)):
+                numVerts = len(segment)
+                for vertex in range(1,numVerts):
                     x = segment[vertex][X]*scale + xoff
                     y = segment[vertex][Y]*scale + yoff
-                    if ((x_prev-x)**2 + (y_prev-y)**2) > DELETION_EPSILON_SQUARED:
+                    if ((x_prev-x)**2 + (y_prev-y)**2) > DELETION_EPSILON_SQUARED \
+                    or vertex == numVerts-1:
                         glist.append("G01X%0.3f"%x+"Y%0.3f"%y+"\n")
                         x_prev,y_prev = x,y                
     glist.append("S0\n") # reset laser intensity

@@ -142,7 +142,7 @@ def svg_upload():
         filename = data.filename
         print "You uploaded %s (%d bytes)." % (filename, len(raw))
         boundarys = SVG(raw).get_boundarys()
-        gcode = write_GCODE(boundarys, 2500, 255, 0.2822222222, 0.0, 0.0)
+        gcode = write_GCODE(boundarys, 1200, 255, 0.2822222222, 0.0, 0.0)
             # 0.2822222222 converts from px to mm (at 90dpi)
             # this is necessary because inkscape stores everything in px units
         return gcode
