@@ -10,6 +10,7 @@ Y = 1
 # last used point is ignored.
 # This also has the effect of merging geometry made from
 # short lines into one segment.
+# TODO: include angles into the deletion check
 DELETION_EPSILON_SQUARED = 0.1**2
 
 def write_GCODE(boundarys, feedrate, laser_intensity, scale=1.0, xoff=0.0, yoff=0.0):

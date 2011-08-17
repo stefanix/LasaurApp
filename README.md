@@ -19,7 +19,7 @@ This is done this way because we imagine laser cutters being shared in shops. We
 How to Use this App
 -------------------
 
-* install [pysersial](http://pyserial.sourceforge.net/)
+* install [pyserial](http://pyserial.sourceforge.net/)
 * edit app.py and define the port of the Lasersaur (*ARDUINO_PORT*)
 * run *python app.py*
 * open *http://localhost:4444* 

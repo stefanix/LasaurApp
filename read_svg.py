@@ -186,6 +186,7 @@ class SVG(object):
             def pnext_is_num():
                 try:
                     float(pathdata[0])
+                    float(pathdata[1])
                     return True
                 except (ValueError, IndexError):
                     return False
@@ -197,9 +198,11 @@ class SVG(object):
                 #
                 opcode = pathdata.pop(0)
                 if opcode == 'M':
+                    self.next_path()
                     while pnext_is_num():
                         self.set_position(*pnext())
                 elif opcode == 'm':
+                    self.next_path()
                     while pnext_is_num():
                         x, y = pnext()
                         self.set_position(self.x + x, self.y + y)
@@ -429,6 +432,9 @@ class SVG(object):
         self.loop = [] 
     def close_path(self):
         self.loop.append(self.loop[0][:])
+        self.path.append(self.loop)
+        self.loop = []
+    def next_path(self):
         self.path.append(self.loop)
         self.loop = []
     def set_position(self, x, y):
