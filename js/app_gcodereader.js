@@ -1,6 +1,6 @@
 
 
-function Gcode() {
+function GcodeRead() {
   this.moves = [];
 }
 

@@ -1,14 +1,9 @@
 $(document).ready(function(){
 
   // G-Code Canvas Preview
-  
-  icanvas = new Canvas($('#import_canvas').get(0), {width:610, height:310})     
-  
-  
-  //var icanvas = new Canvas('#import_canvas');
-  
-  var gcode = new Gcode();
-  //icanvas.background('ffffff');  
+  var icanvas = new Canvas('#import_canvas');
+  var gcodereader = new GcodeReader();
+  icanvas.background('ffffff'); 
   // file upload form
   $('#svg_upload_button').button();
   $('#svg_upload_file').button();
@@ -25,29 +20,29 @@ $(document).ready(function(){
   	  return ret;
   	},
   	success: function(svgdata) {
+      $().uxmessage('notice', "rendering G-code ...");
+      $('#import_results').text(gcodedata);
+      
+      
+      
+	  
+  	  
   	  $().uxmessage('notice', "rendering SVG with cakejs ...");
       //$('#import_results').text(svgdata);
             
-      
-  		var svgNode = SVGParser.parse($.parseXML(svgdata), {
+      var svgroot = $.parseXML(svgdata).documentElement
+  		var boundarys = SVGReader.parse(svgroot, {
   		    width: 610,
   		    height: 310				
   		})
-  	  $().uxmessage('notice', "adding SVG to canvas ...");
-  		icanvas.append(svgNode);  
   		
-      var circle = new Circle(100, {
-        id: 'myCircle',
-        x: icanvas.width / 2,
-        y: icanvas.height / 2,
-        stroke: 'cyan',
-        strokeWidth: 20,
-        endAngle: Math.PI*1.8
-      })
-  
-    	icanvas.append(circle);   		    
-    	
-    	//gcode.draw(icanvas);
+  		var gcode = GcodeWriter.write(boundarys)
+  		
+      gcodereader.parse(gcode, 0.5);
+      gcodereader.draw(icanvas);    		
+  		
+  		//alert(JSON.stringify(svgNode));
+  		alert(svgNode.toSource())
     		
     }
   });
