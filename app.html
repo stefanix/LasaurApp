@@ -8,10 +8,10 @@
 <link rel="stylesheet" href="/css/style.css" type="text/css"> 
 <script src="/js/jquery-1.5.min.js"></script>
 <script src="/js/jquery-ui-1.8.9.custom.min.js"></script>
-<script src="/js/jquery.form.js"></script>
 <script src="/js/jquery.toastmessage.js"></script>
-<script src="/js/app_svgreader.js"></script>
+<!-- <script src="/js/app_svgreader.js"></script> -->
 <script src="/js/app_gcodereader.js"></script>
+<script src="/js/app_canvas.js"></script>
 <script src="/js/app.js"></script>
 <script src="/js/app_laserjobs.js"></script>
 <script src="/js/app_directcontrol.js"></script>
@@ -112,9 +112,9 @@
 			Import all red geometry outlines (stroke color: 255,0,0 or #ff0000)
 		</div>
 		<div id="import_canvas_container" class="ui-corner-all" style="margin-top:10px; padding:16px; background-color:#cccccc">
-			<form id="svg_upload_form" action="/svg_upload" method="post" enctype="multipart/form-data">
+			<form id="svg_upload_form" action="#" onsubmit="return false;">
 			<input type="file" id="svg_upload_file" name="data">
-			<input type="submit" id="svg_upload_button" name="submitBtn" value="Import">
+			<input type="button" id="svg_upload_button" name="submitBtn" value="Import">
 			<div id="import_results" style="display:none"></div>
 			</form>
 			<canvas id="import_canvas" style="margin-top:10px" width="610px" height="310px"></canvas>

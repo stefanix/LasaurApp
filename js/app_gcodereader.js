@@ -1,11 +1,11 @@
 
 
-function GcodeRead() {
+function GcodeReader() {
   this.moves = [];
 }
 
 
-Gcode.prototype.parse = function (gcode, scale) {
+GcodeReader.prototype.parse = function (gcode, scale) {
   
 	function parseGArgs(str) {
 		var ret = {};
@@ -58,7 +58,7 @@ Gcode.prototype.parse = function (gcode, scale) {
 
 
 
-Gcode.prototype.draw = function (canvas) {
+GcodeReader.prototype.draw = function (canvas) {
 	canvas.clear();
 	canvas.noStroke();
 	canvas.fill('#ffffff');

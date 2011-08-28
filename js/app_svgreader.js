@@ -30,21 +30,6 @@
 */
 SVGReader = {
   
-  /**
-    Parses an SVG DOM into CAKE scenegraph.
-
-    Config hash parameters:
-      filename: Filename for the SVG document. Used for parsing image paths.
-      width: Width of the bounding box to fit the SVG in.
-      height: Height of the bounding box to fit the SVG in.
-      fontSize: Default font size for the SVG document.
-      currentColor: HTML text color of the containing element.
-
-    @param svgstring a string representing a SVG document.
-    @param config The config hash.
-    @returns the boundarys of all the shapes.
-    */
-  
   var boundarys = {}
     // output path flattened (world coords)
     // hash of segments by color
@@ -75,6 +60,7 @@ SVGReader = {
     
     // let the fun begin
     var node = {}
+    this.boundarys = {}
     node.xformToWorld = [1,0,0,1,0,0]
     this.parseChildren(this, svgRootElement, node)
     
@@ -93,29 +79,43 @@ SVGReader = {
           // others are irrelevant
           // console.log("parsing: %s", tag.tagName);
 
+          // 1.) setup a new node
+          // and inherit from parent
           var node = {}
+          node.opacity = parentNode.opacity
+          node.display = parentNode.display
+          node.visibility = parentNode.visibility
+          node.fill = parentNode.fill
+          node.stroke = parentNode.stroke
+          node.color = parentNode.color
+          node.fillOpacity = parentNode.fillOpacity
+          node.strokeOpacity = parentNode.strokeOpacity
           
-          // parse transform and style attributes
+          // 2.) parse own attributes and overwrite
           if (tag.attributes) {
             for (var j=0; j<tag.attributes.length; j++) {
               var attr = tag.attributes[j]
               if (this.SVGAttributeMapping[attr.nodeName])
-                this.SVGAttributeMapping[attr.nodeName].call(node, attr.nodeValue)
+                this.SVGAttributeMapping[attr.nodeName].call(this, node, attr.nodeValue)
             }
           }
           
+          // 3.) accumulate transformations
           node.xformToWorld = this.matrixMult(parentNode.xformToWorld, node.xform)
           node.segments = []
           
-          // parse tag    
+          // 4.) parse tag 
+          // with current attributes and transformation
           if (this.SVGTagMapping[tag.tagName]) {
             this.SVGTagMapping[tag.tagName].call(this, tag, node)
           }
           
-          // compile boundarys
-          node.xformSegmentsToWorld()
+          // 5.) compile boundarys
+          // by converting coordinates to world and adding segments
           for (var s=0; s<node.segments.length; s++) {
-            boundarys[color].push(node.segments[s])
+            var seg = node.segments[s]
+            this.matrixApplyToSegment(seg, node.xformToWorld)
+            boundarys[color].push(seg)
           }          
           
         }
@@ -128,11 +128,208 @@ SVGReader = {
   
 
 
+
+  /////////////////////////////
+  // recognized svg attributes
+  
+  SVGAttributeMapping : {
+    DEG_TO_RAD : Math.PI / 180,
+    RAD_TO_DEG : 180 / Math.PI,
+
+    id : function(parser, node, val) {
+      node.id = val
+    },   
+
+    transform : function(parser, node, val) {
+      // http://www.w3.org/TR/SVG11/coords.html#EstablishingANewUserSpace
+      var xforms = []
+      var segs = transform.match(/[a-z]+\s*\([^)]*\)/ig)
+      for (var i=0; i<segs.length; i++) {
+        var kv = segs[i].split("(")
+        var k = kv[0].strip()
+        var params = kv[1].strip().slice(0,-1)
+        
+        // translate
+        if (k == 'translate') {
+          var xy = params.split(/[\s,]+/).map(parseFloat)
+          xforms.push([1, 0, 0, 1, xy[0], xy[1]])
+        // rotate         
+        } else if (k == 'rotate') {
+          if (params != 'auto' && params != 'auto-reverse') {
+            var rot = params.split(/[\s,]+/).map(parseFloat)
+            var angle = rot[0] * this.DEG_TO_RAD
+            if (rot.length > 1) {
+              xforms.push([1, 0, 0, 1, rot[1], rot[2]])
+              xforms.push([Math.cos(angle), Math.sin(angle), -Math.sin(angle), Math.cos(angle), 0, 0])
+              xforms.push([1, 0, 0, 1, -rot[1], -rot[2]])
+            } else {
+              xforms.push([Math.cos(angle), Math.sin(angle), -Math.sin(angle), Math.cos(angle), 0, 0])
+            }
+          }
+        //scale       
+        } else if (k == 'scale') {
+          var xy = params.split(/[\s,]+/).map(parseFloat)
+          var trans = ['scale']
+          if (xy.length > 1) {
+            xforms.push([xy[0], 0, 0, xy[1], 0, 0])
+          } else {
+            xforms.push([xy[0], 0, 0, xy[0], 0, 0])
+          }
+        // matrix
+        } else if (k == 'matrix') {
+          var mat = val.split(/[\s,]+/).map(parseFloat)
+          if (mat.length == 6) {
+            xforms.push(mat)
+          }
+        // skewX        
+        } else if (k == 'skewX') {
+          var angle = parseFloat(val)*this.DEG_TO_RAD
+          xforms.push([1, 0, Math.tan(angle), 1, 0, 0])
+        // skewY
+        } else if (k == 'skewY') {
+          var angle = parseFloat(val)*this.DEG_TO_RAD
+          xforms.push([1, Math.tan(angle), 0, 1, 0, 0])
+        }
+      }
+
+      //calculate combined transformation matrix
+      xform_combined = [1,0,0,1,0,0]
+      for (var i=0; i<xforms.length; i++) {
+        xform_combined = matrixMult(xform_combined, xforms[i])
+      }
+      
+      // assign
+      node.xform = xform_combined
+    },
+
+    style : function(parser, node, val) {
+      // style attribute
+      // http://www.w3.org/TR/SVG11/styling.html#StyleAttribute
+      // <rect x="200" y="100" width="600" height="300" 
+      //   style="fill: red; stroke: blue; stroke-width: 3"/>
+      
+      var segs = val.split(";")
+      for (var i=0; i<segs.length; i++) {
+        var kv = segs[i].split(":")
+        var k = kv[0].strip()
+        if (this[k]) {
+          var v = kv[1].strip()
+          this[k].call(parser, node, v)
+        }
+      }
+    }, 
+    
+    ///////////////////////////
+    // Presentations Attributes 
+    // http://www.w3.org/TR/SVG11/styling.html#UsingPresentationAttributes
+    // <rect x="200" y="100" width="600" height="300" 
+    //   fill="red" stroke="blue" stroke-width="3"/>
+    
+    opacity : function(parser, node, val) {
+      node.opacity = parseFloat(val)
+    },
+
+    display : function (parser, node, val) {
+      node.display = val
+    },
+
+    visibility : function (parser, node, val) {
+      node.visibility = val
+    },
+
+    fill : function(parser, node, val) {
+      node.fill = this.__parseColor(val, node.color)
+    },
+
+    stroke : function(parser, node, val) {
+      node.stroke = this.__parseColor(val, node.color)
+    },
+
+    color : function(parser, node, val) {
+      if (val == 'inherit') return
+      node.color = this.__parseColor(val, node.color)
+    },
+
+    'fill-opacity' : function(parser, node, val) {
+      node.fillOpacity = Math.min(1,Math.max(0,parseFloat(val)))
+    },
+
+    'stroke-opacity' : function(parser, node, val) {
+      node.strokeOpacity = Math.min(1,Math.max(0,parseFloat(val)))
+    },
+
+    // Presentations Attributes 
+    ///////////////////////////
+
+    __parseColor : function(val, currentColor) {
+
+      if (val.charAt(0) == '#') {
+        if (val.length == 4)
+          val = val.replace(/([^#])/g, '$1$1')
+        var a = val.slice(1).match(/../g).map(
+          function(i) { return parseInt(i, 16) })
+        return a
+
+      } else if (val.search(/^rgb\(/) != -1) {
+        var a = val.slice(4,-1).split(",")
+        for (var i=0; i<a.length; i++) {
+          var c = a[i].strip()
+          if (c.charAt(c.length-1) == '%')
+            a[i] = Math.round(parseFloat(c.slice(0,-1)) * 2.55)
+          else
+            a[i] = parseInt(c)
+        }
+        return a
+
+      } else if (val.search(/^rgba\(/) != -1) {
+        var a = val.slice(5,-1).split(",")
+        for (var i=0; i<3; i++) {
+          var c = a[i].strip()
+          if (c.charAt(c.length-1) == '%')
+            a[i] = Math.round(parseFloat(c.slice(0,-1)) * 2.55)
+          else
+            a[i] = parseInt(c)
+        }
+        var c = a[3].strip()
+        if (c.charAt(c.length-1) == '%')
+          a[3] = Math.round(parseFloat(c.slice(0,-1)) * 0.01)
+        else
+          a[3] = Math.max(0, Math.min(1, parseFloat(c)))
+        return a
+
+      } else if (val.search(/^url\(/) != -1) {
+        alert('ERROR: defs are not supported at the moment')
+
+      } else if (val == 'currentColor') {
+        return currentColor
+
+      } else if (val == 'none') {
+        return 'none'
+
+      } else if (val == 'freeze') { // SMIL is evil, but so are we
+        return null
+
+      } else if (val == 'remove') {
+        return null
+
+      } else { // unknown value, maybe it's an ICC color
+        return val
+      }
+    }
+  },
+  
+  // recognized svg attributes
+  /////////////////////////////
+
+
+  
+
+
   ///////////////////////////
   // recognized svg elements
   
   SVGTagMapping : {
-    svg : function(tag, node) {
+    svg : function(parser, tag, node) {
       // has style attributes
             
       this.node.width = 0
@@ -151,13 +348,13 @@ SVGReader = {
     },
     
     
-    g : function(tag, node) {
+    g : function(parser, tag, node) {
       // http://www.w3.org/TR/SVG11/struct.html#Groups
       // has transform and style attributes
     },
 
 
-    polygon : function(tag, node) {
+    polygon : function(parser, tag, node) {
       // has transform and style attributes
       var path = []
       var vertnums = c.getAttribute("points").toString().strip().split(/[\s,]+/).map(parseFloat)
@@ -178,7 +375,7 @@ SVGReader = {
     },
 
 
-    polyline : function(tag, node) {
+    polyline : function(parser, tag, node) {
       // has transform and style attributes
       var path = []
       var vertnums = c.getAttribute("points").toString().strip().split(/[\s,]+/).map(parseFloat)
@@ -193,7 +390,7 @@ SVGReader = {
     },
 
 
-    rect : function(tag, node) {
+    rect : function(parser, tag, node) {
       // has transform and style attributes      
       var w = this.parseUnit(c.getAttribute('width'))
       var h = this.parseUnit(c.getAttribute('height'))
@@ -201,7 +398,23 @@ SVGReader = {
       var y = this.parseUnit(c.getAttribute('y'))
       var rx = this.parseUnit(c.getAttribute('rx'))
       var ry = this.parseUnit(c.getAttribute('ry'))
-
+      
+      if(rx == null || ry == null) {
+        // corners
+        var d=['M',str(x),str(y),'h',str(width),'v',str(height),'h',str(-width),'z'].join(' ')
+        this.addPath(d,node)
+      } else {
+        // rounded corners
+    		rx=frx])
+    		if 'ry' not in prp : 
+    			ry=float(prp['rx'])
+    		else :	ry=float(prp['ry'])
+    		if 'rx' in prp and prp['rx']<0.0: rx*=-1
+    		if 'ry' in prp and prp['ry']<0.0: ry*=-1        
+        var d=['M',str(x),str(y),'h',str(width),'v',str(height),'h',str(-width),'z'].join(' ')
+        this.addPath(d,node)        
+      }
+      
       var path = []
       path.push( [x,y] )
       path.push( [x+w,y] )
@@ -215,7 +428,7 @@ SVGReader = {
     },
 
 
-    line : function(tag, node) {
+    line : function(parser, tag, node) {
       // has transform and style attributes
       var x1 = this.parseUnit(c.getAttribute('x1')) || 0
       var y1 = this.parseUnit(c.getAttribute('y1')) || 0
@@ -229,7 +442,7 @@ SVGReader = {
     },
 
 
-    circle : function(tag, node) {
+    circle : function(parser, tag, node) {
       // has transform and style attributes
       var scaleToWorld = this.matrixGetScale(node.xformToWorld)  // use this for tolerance
       
@@ -243,7 +456,7 @@ SVGReader = {
     },
 
 
-    ellipse : function(tag, node) {
+    ellipse : function(parser, tag, node) {
       // has transform and style attributes
       var scaleToWorld = this.matrixGetScale(node.xformToWorld)  // use this for tolerance
       
@@ -258,12 +471,51 @@ SVGReader = {
     },
 
     
-    path : function(tag, node) {
+    path : function(parser, tag, node) {
       // http://www.w3.org/TR/SVG11/paths.html
       // has transform and style attributes
-      var scaleToWorld = this.matrixGetScale(node.xformToWorld)  // use this for tolerance
+      var d = c.getAttribute("d")
+      this.addPath(d, node) 
+    },    
+    
+    image : function(parser, tag, node) {
+      // not supported
+      // has transform and style attributes
+    },
+    
+    defs : function(parser, tag, node) {
+      // not supported
+      // http://www.w3.org/TR/SVG11/struct.html#Head
+      // has transform and style attributes      
+    },
+    
+    style : function(parser, tag, node) {
+      // not supported: embedded style sheets
+      // http://www.w3.org/TR/SVG11/styling.html#StyleElement
+      // instead presentation attributes and the 'style' attribute      
+      // var style = tag.getAttribute("style")
+      // if (style) {
+      //   var segs = style.split(";")
+      //   for (var i=0; i<segs.length; i++) {
+      //     var kv = segs[i].split(":")
+      //     var k = kv[0].strip()
+      //     if (this.SVGAttributeMapping[k]) {
+      //       var v = kv[1].strip()
+      //       this.SVGAttributeMapping[k].call(v, defs, st)
+      //     }
+      //   }
+      // }      
+    }    
+        
+  },
 
-      var segs = c.getAttribute("d").split(/(?=[a-z])/i)
+  // recognized svg elements
+  ///////////////////////////
+
+
+  addPath : function(d, node) {
+      var scaleToWorld = this.matrixGetScale(node.xformToWorld)  // use this for tolerance    
+      var segs = d.split(/(?=[a-z])/i)
       var x = 0
       var y = 0
       var px,py
@@ -420,7 +672,9 @@ SVGReader = {
             y += coords[1]
             break
           case 'A':
-            var arc_segs = this.solveArc(x,y, coords)
+            var arc_segs = this.addArc(
+              x,y, coords[0], coords[1], coords[2], 
+              coords[3], coords[4], coords[5], coords[6])
             for (var l=0; l<arc_segs.length; l++) arc_segs[l][2] = i
             commands.push.apply(commands, arc_segs)
             x = coords[5]
@@ -429,7 +683,9 @@ SVGReader = {
           case 'a':
             coords[5] += x
             coords[6] += y
-            var arc_segs = this.solveArc(x,y, coords)
+            var arc_segs = this.addArc(
+              x,y, coords[0], coords[1], coords[2], 
+              coords[3], coords[4], coords[5], coords[6])
             for (var l=0; l<arc_segs.length; l++) arc_segs[l][2] = i
             commands.push.apply(commands, arc_segs)
             x = coords[5]
@@ -443,63 +699,19 @@ SVGReader = {
             break
         }
         pc = cmd
-      }      
-    },    
-    
-    image : function(tag, node) {
-      // not supported
-      // has transform and style attributes
-    },
-    
-    defs : function(tag, node) {
-      // not supported
-      // http://www.w3.org/TR/SVG11/struct.html#Head
-      // has transform and style attributes      
-    },
-    
-    style : function(tag, node) {
-      // not supported: embedded style sheets
-      // http://www.w3.org/TR/SVG11/styling.html#StyleElement
-      // instead presentation attributes and the 'style' attribute      
-      // var style = tag.getAttribute("style")
-      // if (style) {
-      //   var segs = style.split(";")
-      //   for (var i=0; i<segs.length; i++) {
-      //     var kv = segs[i].split(":")
-      //     var k = kv[0].strip()
-      //     if (this.SVGAttributeMapping[k]) {
-      //       var v = kv[1].strip()
-      //       this.SVGAttributeMapping[k].call(v, defs, st)
-      //     }
-      //   }
-      // }      
-    }    
-        
+      }         
   },
 
-  // recognized svg elements
-  ///////////////////////////
-
-
-  solveArc : function(x, y, coords) {
-    var rx = coords[0]
-    var ry = coords[1]
-    var rot = coords[2]
-    var large = coords[3]
-    var sweep = coords[4]
-    var ex = coords[5]
-    var ey = coords[6]
-    var segs = this.arcToSegments(ex, ey, rx, ry, large, sweep, rot, x, y)
-    var retval = []
-    for (var i=0; i<segs.length; i++) {
-      retval.push(['bezierCurveTo', this.segmentToBezier.apply(this, segs[i])])
+  addArc : function(x, y, rx, ry, rot, large, sweep, ex,  ey) {
+    var beziers = this.arcToBeziers(ex, ey, rx, ry, large, sweep, rot, x, y)
+    for (var i=0; i<beziers.length; i++) {
+      this.addBezier(beziers[i])
     }
-    return retval
   },
 
 
   // Copied from Inkscape svgtopdf, thanks!
-  arcToSegments : function(x, y, rx, ry, large, sweep, rotateX, ox, oy) {
+  arcToBeziers : function(x, y, rx, ry, large, sweep, rotateX, ox, oy) {
     var th = rotateX * (Math.PI/180)
     var sin_th = Math.sin(th)
     var cos_th = Math.cos(th)
@@ -549,7 +761,13 @@ SVGReader = {
       result[i] = [xc, yc, th2, th3, rx, ry, sin_th, cos_th]
     }
 
-    return result
+    // convert segments to bezier
+    beziers = []
+    for (var i=0; i<result.length; i++) {
+      beziers.push( this.segmentToBezier.apply(this, segs[i]) )
+    }
+    
+    return beziers
   },
 
   segmentToBezier : function(cx, cy, th0, th1, rx, ry, sin_th, cos_th) {
@@ -574,217 +792,31 @@ SVGReader = {
   },
   
 
-  
-  /////////////////////////////
-  // recognized svg attributes
-  
-  SVGAttributeMapping : {
-    DEG_TO_RAD : Math.PI / 180,
-    RAD_TO_DEG : 180 / Math.PI,
 
-    id : function(node, v) {
-      node.id = v
-    },   
-
-    transform : function(node, v) {
-      // http://www.w3.org/TR/SVG11/coords.html#EstablishingANewUserSpace
-      var xforms = []
-      var segs = transform.match(/[a-z]+\s*\([^)]*\)/ig)
-      for (var i=0; i<segs.length; i++) {
-        var kv = segs[i].split("(")
-        var k = kv[0].strip()
-        var params = kv[1].strip().slice(0,-1)
-        
-        // translate
-        if (k == 'translate') {
-          var xy = params.split(/[\s,]+/).map(parseFloat)
-          xforms.push([1, 0, 0, 1, xy[0], xy[1]])
-        // rotate         
-        } else if (k == 'rotate') {
-          if (params != 'auto' && params != 'auto-reverse') {
-            var rot = params.split(/[\s,]+/).map(parseFloat)
-            var angle = rot[0] * this.DEG_TO_RAD
-            if (rot.length > 1) {
-              xforms.push([1, 0, 0, 1, rot[1], rot[2]])
-              xforms.push([Math.cos(angle), Math.sin(angle), -Math.sin(angle), Math.cos(angle), 0, 0])
-              xforms.push([1, 0, 0, 1, -rot[1], -rot[2]])
-            } else {
-              xforms.push([Math.cos(angle), Math.sin(angle), -Math.sin(angle), Math.cos(angle), 0, 0])
-            }
-          }
-        //scale       
-        } else if (k == 'scale') {
-          var xy = params.split(/[\s,]+/).map(parseFloat)
-          var trans = ['scale']
-          if (xy.length > 1) {
-            xforms.push([xy[0], 0, 0, xy[1], 0, 0])
-          } else {
-            xforms.push([xy[0], 0, 0, xy[0], 0, 0])
-          }
-        // matrix
-        } else if (k == 'matrix') {
-          var mat = v.split(/[\s,]+/).map(parseFloat)
-          if (mat.length == 6) {
-            xforms.push(mat)
-          }
-        // skewX        
-        } else if (k == 'skewX') {
-          var angle = parseFloat(v)*this.DEG_TO_RAD
-          xforms.push([1, 0, Math.tan(angle), 1, 0, 0])
-        // skewY
-        } else if (k == 'skewY') {
-          var angle = parseFloat(v)*this.DEG_TO_RAD
-          xforms.push([1, Math.tan(angle), 0, 1, 0, 0])
-        }
-      }
-
-      //calculate combined transformation matrix
-      xform_combined = [1,0,0,1,0,0]
-      for (var i=0; i<xforms.length; i++) {
-        xform_combined = matrixMult(xform_combined, xforms[i])
-      }
-      
-      // assign
-      node.xform = xform_combined
-    },
-
-    style : function(node, v) {
-      // style attribute
-      // http://www.w3.org/TR/SVG11/styling.html#StyleAttribute
-      // <rect x="200" y="100" width="600" height="300" 
-      //   style="fill: red; stroke: blue; stroke-width: 3"/>
-    }, 
-    
-    ///////////////////////////
-    // Presentations Attributes 
-    // http://www.w3.org/TR/SVG11/styling.html#UsingPresentationAttributes
-    // <rect x="200" y="100" width="600" height="300" 
-    //   fill="red" stroke="blue" stroke-width="3"/>
-    
-    opacity : function(node, v) {
-      node.opacity = parseFloat(v)
-    },
-
-    display : function (node, v) {
-      node.display = v
-    },
-
-    visibility : function (node, v) {
-      node.visibility = v
-    },
-
-    fill : function(node, v, defs, style) {
-      node.fill = this.__parseStyle(v, node.fill, defs, node.color)
-    },
-
-    stroke : function(node, v, defs, style) {
-      node.stroke = this.__parseStyle(v, node.stroke, defs, node.color)
-    },
-
-    color : function(node, v, defs, style) {
-      if (v == 'inherit') return
-      node.color = this.__parseStyle(v, false, defs, node.color)
-    },
-
-    'fill-opacity' : function(node, v) {
-      node.fillOpacity = Math.min(1,Math.max(0,parseFloat(v)))
-    },
-
-    'stroke-opacity' : function(node, v) {
-      node.strokeOpacity = Math.min(1,Math.max(0,parseFloat(v)))
-    },
-
-    // Presentations Attributes 
-    ///////////////////////////
-
-    __parseStyle : function(v, currentStyle, defs, currentColor) {
-
-      if (v.charAt(0) == '#') {
-        if (v.length == 4)
-          v = v.replace(/([^#])/g, '$1$1')
-        var a = v.slice(1).match(/../g).map(
-          function(i) { return parseInt(i, 16) })
-        return a
-
-      } else if (v.search(/^rgb\(/) != -1) {
-        var a = v.slice(4,-1).split(",")
-        for (var i=0; i<a.length; i++) {
-          var c = a[i].strip()
-          if (c.charAt(c.length-1) == '%')
-            a[i] = Math.round(parseFloat(c.slice(0,-1)) * 2.55)
-          else
-            a[i] = parseInt(c)
-        }
-        return a
-
-      } else if (v.search(/^rgba\(/) != -1) {
-        var a = v.slice(5,-1).split(",")
-        for (var i=0; i<3; i++) {
-          var c = a[i].strip()
-          if (c.charAt(c.length-1) == '%')
-            a[i] = Math.round(parseFloat(c.slice(0,-1)) * 2.55)
-          else
-            a[i] = parseInt(c)
-        }
-        var c = a[3].strip()
-        if (c.charAt(c.length-1) == '%')
-          a[3] = Math.round(parseFloat(c.slice(0,-1)) * 0.01)
-        else
-          a[3] = Math.max(0, Math.min(1, parseFloat(c)))
-        return a
-
-      } else if (v.search(/^url\(/) != -1) {
-        var id = v.match(/\([^)]+\)/)[0].slice(1,-1).replace(/^#/, '')
-        if (defs[id]) {
-          return defs[id]
-        } else { // missing defs, let's make it known that we're screwed
-          return 'rgba(255,0,255,1)'
-        }
-
-      } else if (v == 'currentColor') {
-        return currentColor
-
-      } else if (v == 'none') {
-        return 'none'
-
-      } else if (v == 'freeze') { // SMIL is evil, but so are we
-        return null
-
-      } else if (v == 'remove') {
-        return null
-
-      } else { // unknown value, maybe it's an ICC color
-        return v
-      }
-    }
-  },
-  
-  // recognized svg attributes
-  /////////////////////////////
   
 
-  parseUnit : function(v) {
-    if (v == null) {
+  parseUnit : function(val) {
+    if (val == null) {
       return null
     } else {
       var multiplier = 1.0
       var cm = this.getCmInPixels()
-      if (v.search(/cm$/i) != -1) {
+      if (val.search(/cm$/i) != -1) {
         multiplier = cm
-      } else if (v.search(/mm$/i) != -1) {
+      } else if (val.search(/mm$/i) != -1) {
         multiplier = 0.1 * cm
-      } else if (v.search(/pt$/i) != -1) {
+      } else if (val.search(/pt$/i) != -1) {
         multiplier = 0.0352777778 * cm
-      } else if (v.search(/pc$/i) != -1) {
+      } else if (val.search(/pc$/i) != -1) {
         multiplier = 0.4233333333 * cm
-      } else if (v.search(/in$/i) != -1) {
+      } else if (val.search(/in$/i) != -1) {
         multiplier = 2.54 * cm
-      } else if (v.search(/em$/i) != -1) {
+      } else if (val.search(/em$/i) != -1) {
         multiplier = parent.fontSize
-      } else if (v.search(/ex$/i) != -1) {
+      } else if (val.search(/ex$/i) != -1) {
         multiplier = parent.fontSize / 2
       }
-      return multiplier * parseFloat(v.strip())
+      return multiplier * parseFloat(val.strip())
     }
   },
 
@@ -819,6 +851,15 @@ SVGReader = {
     return [ mat[0]*vec[0] + mat[2]*vec[1] + mat[4],
              mat[1]*vec[0] + mat[3]*vec[1] + mat[5] ]     
   },
+  
+  matrixApplyToSegment : function(mat, segment) {
+    for (var i=0; i<segment.length; i++) {
+      var path = segment[i]
+      for (var j=0; j<path.length; j++) {
+        path[j] = this.matrixApply(mat, path[j])
+      }
+    }    
+  },  
   
   matrixGetScale : function(mat) {
     function sign(x) {

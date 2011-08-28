@@ -6,45 +6,49 @@ $(document).ready(function(){
   icanvas.background('ffffff'); 
   // file upload form
   $('#svg_upload_button').button();
-  $('#svg_upload_file').button();
-  $('#svg_upload_form').ajaxForm({
-  	beforeSubmit: function() {
-  	  var ret = true;
-  	  var fullpath = $('#svg_upload_file').val();
-  	  if (fullpath.lastIndexOf(".svg") == -1) {
-  	    $().uxmessage('notice', "unsupported file type");
-  	    ret = false;
-  	  } else {
-  	    $().uxmessage('notice', "opening file ...");
-  	  }
-  	  return ret;
-  	},
-  	success: function(svgdata) {
-      $().uxmessage('notice', "rendering G-code ...");
-      $('#import_results').text(gcodedata);
-      
-      
-      
-	  
-  	  
-  	  $().uxmessage('notice', "rendering SVG with cakejs ...");
-      //$('#import_results').text(svgdata);
-            
-      var svgroot = $.parseXML(svgdata).documentElement
-  		var boundarys = SVGReader.parse(svgroot, {
-  		    width: 610,
-  		    height: 310				
-  		})
-  		
-  		var gcode = GcodeWriter.write(boundarys)
-  		
-      gcodereader.parse(gcode, 0.5);
-      gcodereader.draw(icanvas);    		
-  		
-  		//alert(JSON.stringify(svgNode));
-  		alert(svgNode.toSource())
-    		
+  $('#svg_upload_button').click(function(e){
+    var input = $('#svg_upload_file').get(0)
+    if (typeof window.FileReader !== 'function') {
+      $().uxmessage('error', "This requires a modern browser with File API support.");
+    } else if (!input.files) {
+      $().uxmessage('error', "This browser does not support the files property.");
+    } else if (!input.files[0]) {
+      $().uxmessage('notice', "No file was selected.");      
+    } else {
+      $().uxmessage('notice', input.files[0]);
+      var fr = new FileReader()
+      fr.onload = gotSvgData
+      fr.readAsText(input.files[0])
     }
+    
+    function gotSvgData(e) {
+      $().uxmessage('notice', "gotSvgData called ...");
+      var svgdata = e.target.result
+      //alert(svgdata)
+      
+      //       $('#import_results').text(gcodedata);
+      //       
+      //       
+      //      $().uxmessage('notice', "rendering SVG with cakejs ...");
+      //       //$('#import_results').text(svgdata);
+      //             
+      //       var svgroot = $.parseXML(svgdata).documentElement
+      // var boundarys = SVGReader.parse(svgroot, {
+      //     width: 610,
+      //     height: 310        
+      // })
+      // 
+      // var gcode = GcodeWriter.write(boundarys)
+      // 
+      //       gcodereader.parse(gcode, 0.5);
+      //       gcodereader.draw(icanvas);       
+      // 
+      // //alert(JSON.stringify(svgNode));
+      // alert(svgNode.toSource())      
+      
+    }
+    
+  	e.preventDefault();		
   });
 
 
