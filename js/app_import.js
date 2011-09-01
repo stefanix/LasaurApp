@@ -30,7 +30,7 @@ $(document).ready(function(){
       //alert(JSON.stringify(boundarys));
       //$().uxmessage('notice', JSON.stringify(boundarys));
       
-      var gcode = GcodeWriter.write(boundarys, 2000, 255, 2, 0.0, 0.0);
+      var gcode = GcodeWriter.write(boundarys, 2000, 255, 0.5, 0.0, 0.0);
       gcodereader.parse(gcode, 0.5);
       gcodereader.draw(icanvas);       
       

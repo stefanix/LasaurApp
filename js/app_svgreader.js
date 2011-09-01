@@ -467,11 +467,17 @@ SVGReader = {
       
       if (r > 0.0) {
       	var d = ['M', cx-r, cy,                  
-      			     'C', cx-r, cy+r*0.552, cx-0.552*r, cy+r, cx, cy+r,
-      			     'C', cx+r*0.552, cy+r, cx+r, cy+r*0.552, cx+r, cy,
-      			     'C', cx+r, cy-r*0.552, cx+r*0.552, cy-r, cx, cy-r,
-                 'C', cx-r*0.552, cy-r, cx-r, cy-r*0.552, cx-r, cy,
+      			     'A', r, r, 0, 0, 0, cx, cy+r,
+      			     'A', r, r, 0, 0, 0, cx+r, cy,
+      			     'A', r, r, 0, 0, 0, cx, cy-r,
+      			     'A', r, r, 0, 0, 0, cx-r, cy,
       			     'Z'];
+        // var d = ['M', cx-r, cy,                  
+        //         'C', cx-r, cy+r*0.552, cx-0.552*r, cy+r, cx, cy+r,
+        //         'C', cx+r*0.552, cy+r, cx+r, cy+r*0.552, cx+r, cy,
+        //         'C', cx+r, cy-r*0.552, cx+r*0.552, cy-r, cx, cy-r,
+        //                  'C', cx-r*0.552, cy-r, cx-r, cy-r*0.552, cx-r, cy,
+        //         'Z'];
       	parser.addPath(d, node);
       }
     },
@@ -486,13 +492,19 @@ SVGReader = {
       var cx = parser.parseUnit(tag.getAttribute('cx')) || 0
       var cy = parser.parseUnit(tag.getAttribute('cy')) || 0
       
-      if (rx > 0.0 && ry > 0.0) {      
-      	d = ['M', cx-rx, cy, 
-      			 'C', cx-rx, cy+ry*0.552, cx-0.552*rx, cy+ry, cx, cy+ry,
-      			 'C', cx+rx*0.552, cy+ry, cx+rx, cy+ry*0.552, cx+rx, cy,
-      			 'C', cx+rx, cy-ry*0.552, cx+rx*0.552, cy-ry, cx, cy-ry,
-      			 'C', cx-rx*0.552, cy-ry, cx-rx, cy-ry*0.552, cx-rx, cy,
-      			 'z']
+      if (rx > 0.0 && ry > 0.0) {    
+      	var d = ['M', cx-rx, cy,                  
+      			     'A', rx, ry, 0, 0, 0, cx, cy+ry,
+      			     'A', rx, ry, 0, 0, 0, cx+rx, cy,
+      			     'A', rx, ry, 0, 0, 0, cx, cy-ry,
+      			     'A', rx, ry, 0, 0, 0, cx-rx, cy,
+      			     'Z'];          
+        // d = ['M', cx-rx, cy, 
+        //     'C', cx-rx, cy+ry*0.552, cx-0.552*rx, cy+ry, cx, cy+ry,
+        //     'C', cx+rx*0.552, cy+ry, cx+rx, cy+ry*0.552, cx+rx, cy,
+        //     'C', cx+rx, cy-ry*0.552, cx+rx*0.552, cy-ry, cx, cy-ry,
+        //     'C', cx-rx*0.552, cy-ry, cx-rx, cy-ry*0.552, cx-rx, cy,
+        //     'z']
       	parser.addPath(d, node);
       }
     },
@@ -580,7 +592,7 @@ SVGReader = {
     
     var x = 0;
     var y = 0;
-    var cmdPrev;
+    var cmdPrev = '';
     var xPrevCp;
     var yPrevCp;
     var subpath = [];    
@@ -609,10 +621,12 @@ SVGReader = {
             node.path.push(subpath);
             subpath = [];
           } 
-          // first treated absolute
-          x = getNext();
-          y = getNext();
-          subpath.push([x, y]);
+          if (cmdPrev == '') {
+            // first treated absolute
+            x = getNext();
+            y = getNext();
+            subpath.push([x, y]);
+          }
           var implicitVerts = 0       
           while (nextIsNum()) {
             // subsequent treated realtive
@@ -1004,7 +1018,9 @@ SVGReader = {
       var st = Math.sin(theta);
       return [cp*rx*ct-sp*ry*st+cx, sp*rx*ct+cp*ry*st+cy];        
     }
-          
+    
+    // let the recursive fun begin
+    //
     function recursiveArc(parser, t1, t2, c1, c5, level) {
       if (level > 18) {
         // protect from deep recursion cases
@@ -1034,9 +1050,6 @@ SVGReader = {
     subpath.push(c5Init);
   },
   
-  
-
-
 
   // handle path data
   //////////////////////////////////////////////////////////////////////////
