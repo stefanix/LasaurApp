@@ -44,7 +44,7 @@ SVGReader = {
     
   parse : function(svgstring, config) {
     
-    this.tolerance_squared = this.tolerance*this.tolerance
+    this.tolerance_squared = Math.pow(this.tolerance, 2);
     
     // parse xml
     var svgRootElement;
@@ -895,8 +895,9 @@ SVGReader = {
     // This mean we subdivide more and have more curve points in
     // curvy areas and less in flatter areas of the curve.
     
-    if (level > 32) {
+    if (level > 18) {
       // protect from deep recursion cases
+      // max 2**18 = 262144 segments
       return
     }
     
@@ -933,8 +934,9 @@ SVGReader = {
 
 
   addQuadraticBezier : function(subpath, x1, y1, x2, y2, x3, y3, level) {
-    if (level > 32) {
+    if (level > 18) {
       // protect from deep recursion cases
+      // max 2**18 = 262144 segments
       return
     }
     
@@ -961,8 +963,90 @@ SVGReader = {
   },
   
   
+  addArc : function(subpath, x1, y1, rx, ry, phi, large_arc, sweep, x2, y2) {
+    // This function is made out of magical fairy dust
+    // http://www.w3.org/TR/SVG/implnote.html#ArcImplementationNotes
+    $().uxmessage('notice', x1 + " " + y1 + " " + rx + " " + ry + " " + phi + " " + large_arc + " " + sweep + " " + x2 + " " + y2 );
+    var cp = Math.cos(phi);
+    var sp = Math.sin(phi);
+    var dx = 0.5 * (x1 - x2);
+    var dy = 0.5 * (y1 - y2);
+    var x_ = cp * dx + sp * dy;
+    var y_ = -sp * dx + cp * dy;
+    var r2 = (Math.pow(rx*ry,2)-Math.pow(rx*y_,2)-Math.pow(ry*x_,2)) / (Math.pow(rx*y_,2)+Math.pow(ry*x_,2));
+    if (r2 < 0) { r2 = 0; }
+    var r = Math.sqrt(r2);
+    if (large_arc == sweep) { r = -r; }
+    var cx_ = r*rx*y_ / ry;
+    var cy_ = -r*ry*x_ / rx;
+    var cx = cp*cx_ - sp*cy_ + 0.5*(x1 + x2);
+    var cy = sp*cx_ + cp*cy_ + 0.5*(y1 + y2);
+    
+    function angle(u, v) {
+      var a = Math.acos((u[0]*v[0] + u[1]*v[1]) /
+              Math.sqrt((Math.pow(u[0],2) + Math.pow(u[1],2)) *
+              (Math.pow(v[0],2) + Math.pow(v[1],2))));
+      var sgn = -1;
+      if (u[0]*v[1] > u[1]*v[0]) { sgn = 1; }
+      return sgn * a;
+    }
+  
+    var psi = angle([1,0], [(x_-cx_)/rx, (y_-cy_)/ry]);
+    var delta = angle([(x_-cx_)/rx, (y_-cy_)/ry], [(-x_-cx_)/rx, (-y_-cy_)/ry]);
+    if (sweep && delta < 0) { delta += Math.PI * 2; }
+    if (!sweep && delta > 0) { delta -= Math.PI * 2; }
+    
+    // var circle_points = self.get_circle_steps_for_tolerance(max([rx,ry]), self.tolerance_squared)
+    // var n_points = max(int(abs(circle_points * delta / (2 * math.pi))), 1)
+    
+    // var n_points = 12;
+    // for (var i=0; i<n_points+1; i++) {  
+    //   var theta = psi + i*delta/n_points;
+    //   var ct = Math.cos(theta);
+    //   var st = Math.sin(theta);
+    //   subpath.push([cp*rx*ct-sp*ry*st+cx, sp*rx*ct+cp*ry*st+cy]);
+    // }
+        
+    this.__recursiveArc(subpath, 0.0, 1.0, rx, ry, cx, cy, cp, sp, psi, delta, 0);
+  },
+  
+  
+  __recursiveArc : function(subpath, t1, t2, rx, ry, cx, cy, cp, sp, psi, delta, level) {
+    if (level > 18) {
+      // protect from deep recursion cases
+      // max 2**18 = 262144 segments
+      return
+    }
+        
+    function getVertex(pct) {
+      var theta = psi + delta * pct;
+      var ct = Math.cos(theta);
+      var st = Math.sin(theta);
+      return [cp*rx*ct-sp*ry*st+cx, sp*rx*ct+cp*ry*st+cy];        
+    }
+        
+    var tRange = t2-t1
+    var tHalf = t1 + 0.5*tRange;
+    var c1 = getVertex(t1);
+    var c2 = getVertex(t1 + 0.25*tRange);
+    var c3 = getVertex(tHalf);
+    var c4 = getVertex(t1 + 0.75*tRange);
+    var c5 = getVertex(t2);
+    
+    subpath.push(c1);
+    var dist2 = this.vertexDistanceSquared(c2, this.vertexMiddle(c1,c3));
+    if (dist2 > this.tolerance_squared) { 
+      this.__recursiveArc(subpath, t1, tHalf, rx, ry, cx, cy, cp, sp, psi, delta, level+1);
+    }
+    subpath.push(c3);
+    if (this.vertexDistanceSquared(c4, this.vertexMiddle(c3,c5)) > this.tolerance_squared) { 
+      this.__recursiveArc(subpath, tHalf, t2, rx, ry, cx, cy, cp, sp, psi, delta, level+1);
+    }
+    subpath.push(c5);    
+  },
 
-  addArc : function(subpath, x, y, rx, ry, rot, large, sweep, ex,  ey) {
+
+  addArcOld : function(subpath, x, y, rx, ry, rot, large, sweep, ex,  ey) {
     var beziers = this.__arcToBeziers(ex, ey, rx, ry, large, sweep, rot, x, y)
     for (var i=0; i<beziers.length; i++) {
       var bez = beziers[i];
@@ -1105,7 +1189,16 @@ SVGReader = {
     var sx = sign(mat[0]) * Math.sqrt(mat[0]*mat[0] + mat[1]*mat[1])
     var sy = sign(mat[3]) * Math.sqrt(mat[2]*mat[2] + mat[3]*mat[3])
     return [sx,sy]
-  }
+  },
+  
+  
+  vertexDistanceSquared : function(v1, v2) {
+    return Math.pow(v2[0]-v1[0], 2) + Math.pow(v2[1]-v1[1], 2);
+  },
+  
+  vertexMiddle : function(v1, v2) {
+    return [ (v2[0]+v1[0])/2.0, (v2[1]+v1[1])/2.0 ];
+  }  
   
 }
 

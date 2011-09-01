@@ -82,6 +82,7 @@ $(document).ready(function(){
     $("#log_content").fadeOut('slow');
   	$("#log_toggle").html("show log");
   });
+  $('#log_toggle').trigger('click');  // show log, for debugging
 
 
   // connect to serial button
