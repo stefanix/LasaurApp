@@ -964,16 +964,18 @@ SVGReader = {
   
   
   addArc : function(subpath, x1, y1, rx, ry, phi, large_arc, sweep, x2, y2) {
-    // This function is made out of magical fairy dust
+    // Implemented based on the SVG implementation notes
+    // plus some recursive sugar for incrementally refining the
+    // arc resolution until the requested tolerance is met.
     // http://www.w3.org/TR/SVG/implnote.html#ArcImplementationNotes
-    $().uxmessage('notice', x1 + " " + y1 + " " + rx + " " + ry + " " + phi + " " + large_arc + " " + sweep + " " + x2 + " " + y2 );
     var cp = Math.cos(phi);
     var sp = Math.sin(phi);
     var dx = 0.5 * (x1 - x2);
     var dy = 0.5 * (y1 - y2);
     var x_ = cp * dx + sp * dy;
     var y_ = -sp * dx + cp * dy;
-    var r2 = (Math.pow(rx*ry,2)-Math.pow(rx*y_,2)-Math.pow(ry*x_,2)) / (Math.pow(rx*y_,2)+Math.pow(ry*x_,2));
+    var r2 = (Math.pow(rx*ry,2)-Math.pow(rx*y_,2)-Math.pow(ry*x_,2)) /
+             (Math.pow(rx*y_,2)+Math.pow(ry*x_,2));
     if (r2 < 0) { r2 = 0; }
     var r = Math.sqrt(r2);
     if (large_arc == sweep) { r = -r; }
@@ -996,145 +998,45 @@ SVGReader = {
     if (sweep && delta < 0) { delta += Math.PI * 2; }
     if (!sweep && delta > 0) { delta -= Math.PI * 2; }
     
-    // var circle_points = self.get_circle_steps_for_tolerance(max([rx,ry]), self.tolerance_squared)
-    // var n_points = max(int(abs(circle_points * delta / (2 * math.pi))), 1)
-    
-    // var n_points = 12;
-    // for (var i=0; i<n_points+1; i++) {  
-    //   var theta = psi + i*delta/n_points;
-    //   var ct = Math.cos(theta);
-    //   var st = Math.sin(theta);
-    //   subpath.push([cp*rx*ct-sp*ry*st+cx, sp*rx*ct+cp*ry*st+cy]);
-    // }
-        
-    this.__recursiveArc(subpath, 0.0, 1.0, rx, ry, cx, cy, cp, sp, psi, delta, 0);
-  },
-  
-  
-  __recursiveArc : function(subpath, t1, t2, rx, ry, cx, cy, cp, sp, psi, delta, level) {
-    if (level > 18) {
-      // protect from deep recursion cases
-      // max 2**18 = 262144 segments
-      return
-    }
-        
     function getVertex(pct) {
       var theta = psi + delta * pct;
       var ct = Math.cos(theta);
       var st = Math.sin(theta);
       return [cp*rx*ct-sp*ry*st+cx, sp*rx*ct+cp*ry*st+cy];        
     }
+          
+    function recursiveArc(parser, t1, t2, c1, c5, level) {
+      if (level > 18) {
+        // protect from deep recursion cases
+        // max 2**18 = 262144 segments
+        return
+      }
+      var tRange = t2-t1
+      var tHalf = t1 + 0.5*tRange;
+      var c2 = getVertex(t1 + 0.25*tRange);
+      var c3 = getVertex(tHalf);
+      var c4 = getVertex(t1 + 0.75*tRange);
+      if (parser.vertexDistanceSquared(c2, parser.vertexMiddle(c1,c3)) > parser.tolerance_squared) { 
+        recursiveArc(parser, t1, tHalf, c1, c3, level+1);
+      }
+      subpath.push(c3);
+      if (parser.vertexDistanceSquared(c4, parser.vertexMiddle(c3,c5)) > parser.tolerance_squared) { 
+        recursiveArc(parser, tHalf, t2, c3, c5, level+1);
+      }
+    }
         
-    var tRange = t2-t1
-    var tHalf = t1 + 0.5*tRange;
-    var c1 = getVertex(t1);
-    var c2 = getVertex(t1 + 0.25*tRange);
-    var c3 = getVertex(tHalf);
-    var c4 = getVertex(t1 + 0.75*tRange);
-    var c5 = getVertex(t2);
-    
-    subpath.push(c1);
-    var dist2 = this.vertexDistanceSquared(c2, this.vertexMiddle(c1,c3));
-    if (dist2 > this.tolerance_squared) { 
-      this.__recursiveArc(subpath, t1, tHalf, rx, ry, cx, cy, cp, sp, psi, delta, level+1);
-    }
-    subpath.push(c3);
-    if (this.vertexDistanceSquared(c4, this.vertexMiddle(c3,c5)) > this.tolerance_squared) { 
-      this.__recursiveArc(subpath, tHalf, t2, rx, ry, cx, cy, cp, sp, psi, delta, level+1);
-    }
-    subpath.push(c5);    
-  },
-
-
-  addArcOld : function(subpath, x, y, rx, ry, rot, large, sweep, ex,  ey) {
-    var beziers = this.__arcToBeziers(ex, ey, rx, ry, large, sweep, rot, x, y)
-    for (var i=0; i<beziers.length; i++) {
-      var bez = beziers[i];
-      subpath.push([bez[0], bez[1]]);
-      this.addQuadraticBezier(subpath, bez[0], bez[1], bez[2], bez[3], bez[4], bez[5], 0);
-      subpath.push([bez[4], bez[5]]);
-    }
-  },
-
-
-  // Copied from Inkscape svgtopdf, thanks!
-  __arcToBeziers : function(x, y, rx, ry, large, sweep, rotateX, ox, oy) {
-    var th = rotateX * (Math.PI/180)
-    var sin_th = Math.sin(th)
-    var cos_th = Math.cos(th)
-    rx = Math.abs(rx)
-    ry = Math.abs(ry)
-    var px = cos_th * (ox - x) * 0.5 + sin_th * (oy - y) * 0.5
-    var py = cos_th * (oy - y) * 0.5 - sin_th * (ox - x) * 0.5
-    var pl = (px*px) / (rx*rx) + (py*py) / (ry*ry)
-    if (pl > 1) {
-      pl = Math.sqrt(pl)
-      rx *= pl
-      ry *= pl
-    }
-
-    var a00 = cos_th / rx
-    var a01 = sin_th / rx
-    var a10 = (-sin_th) / ry
-    var a11 = (cos_th) / ry
-    var x0 = a00 * ox + a01 * oy
-    var y0 = a10 * ox + a11 * oy
-    var x1 = a00 * x + a01 * y
-    var y1 = a10 * x + a11 * y
-
-    var d = (x1-x0) * (x1-x0) + (y1-y0) * (y1-y0)
-    var sfactor_sq = 1 / d - 0.25
-    if (sfactor_sq < 0) sfactor_sq = 0
-    var sfactor = Math.sqrt(sfactor_sq)
-    if (sweep == large) sfactor = -sfactor
-    var xc = 0.5 * (x0 + x1) - sfactor * (y1-y0)
-    var yc = 0.5 * (y0 + y1) + sfactor * (x1-x0)
-
-    var th0 = Math.atan2(y0-yc, x0-xc)
-    var th1 = Math.atan2(y1-yc, x1-xc)
-
-    var th_arc = th1-th0
-    if (th_arc < 0 && sweep == 1){
-      th_arc += 2*Math.PI
-    } else if (th_arc > 0 && sweep == 0) {
-      th_arc -= 2 * Math.PI
-    }
-
-    var segments = Math.ceil(Math.abs(th_arc / (Math.PI * 0.5 + 0.001)))
-    var result = []
-    for (var i=0; i<segments; i++) {
-      var th2 = th0 + i * th_arc / segments
-      var th3 = th0 + (i+1) * th_arc / segments
-      result[i] = [xc, yc, th2, th3, rx, ry, sin_th, cos_th]
-    }
-
-    // convert segments to bezier
-    beziers = []
-    for (var i=0; i<result.length; i++) {
-      beziers.push( this.__segmentToBezier.apply(this, result[i]) )
-    }
-    return beziers;
-  },
-
-  __segmentToBezier : function(cx, cy, th0, th1, rx, ry, sin_th, cos_th) {
-    var a00 = cos_th * rx
-    var a01 = -sin_th * ry
-    var a10 = sin_th * rx
-    var a11 = cos_th * ry
-
-    var th_half = 0.5 * (th1 - th0)
-    var t = (8/3) * Math.sin(th_half * 0.5) * Math.sin(th_half * 0.5) / Math.sin(th_half)
-    var x1 = cx + Math.cos(th0) - t * Math.sin(th0)
-    var y1 = cy + Math.sin(th0) + t * Math.cos(th0)
-    var x3 = cx + Math.cos(th1)
-    var y3 = cy + Math.sin(th1)
-    var x2 = x3 + t * Math.sin(th1)
-    var y2 = y3 - t * Math.cos(th1)
-    return [ a00*x1+a01*y1, a10*x1+a11*y1,
-             a00*x2+a01*y2, a10*x2+a11*y2,
-             a00*x3+a01*y3, a10*x3+a11*y3 ];
+    var t1Init = 0.0;
+    var t2Init = 1.0;
+    var c1Init = getVertex(t1Init);
+    var c5Init = getVertex(t2Init);
+    subpath.push(c1Init);
+    recursiveArc(this, t1Init, t2Init, c1Init, c5Init, 0);
+    subpath.push(c5Init);
   },
   
+  
+
+
 
   // handle path data
   //////////////////////////////////////////////////////////////////////////
