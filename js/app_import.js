@@ -15,16 +15,24 @@ $(document).ready(function(){
     } else if (!input.files[0]) {
       $().uxmessage('notice', "No file was selected.");      
     } else {
-      $().uxmessage('notice', input.files[0]);
       var fr = new FileReader()
-      fr.onload = gotSvgData
+      fr.onload = parseSvgData
       fr.readAsText(input.files[0])
     }
     
-    function gotSvgData(e) {
-      $().uxmessage('notice', "gotSvgData called ...");
+    function parseSvgData(e) {
+      $().uxmessage('notice', "parsing SVG ...");
       var svgdata = e.target.result
       //alert(svgdata)
+      
+      var boundarys = SVGReader.parse(svgdata, {})
+      //alert(boundarys.toSource());
+      //alert(JSON.stringify(boundarys));
+      //$().uxmessage('notice', JSON.stringify(boundarys));
+      
+      var gcode = GcodeWriter.write(boundarys, 2000, 255, 0.25, 0.0, 0.0);
+      gcodereader.parse(gcode, 0.5);
+      gcodereader.draw(icanvas);       
       
       //       $('#import_results').text(gcodedata);
       //       

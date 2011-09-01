@@ -3,7 +3,7 @@
 (function($){
 	$.fn.uxmessage = function(kind, text) {
 	  if (text.length > 80) {
-	    text = text.slice(0,100) + '\n...'
+	    //text = text.slice(0,100) + '\n...'
 	  }
 	  
 	  var div_opener = '<div class="log_item log_notice ui-corner-all" style="display:none">'
@@ -70,7 +70,7 @@ $(document).ready(function(){
 
   $(function() {
   	$( "#tabs-main" ).tabs({
-  		selected: 0
+  		selected: 2
   	});
   });
 
