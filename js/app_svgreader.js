@@ -423,20 +423,20 @@ SVGReader = {
       var ry = parser.parseUnit(tag.getAttribute('ry'))
       
       if(rx == null || ry == null) {  // no rounded corners
-        var d = ['M', x, y, 'h', width, 'v', height, 'h', -width, 'z'];
+        var d = ['M', x, y, 'h', w, 'v', h, 'h', -w, 'z'];
         parser.addPath(d, node)
       } else {                       // rounded corners
     		if ('ry' == null) { ry = rx; }
     		if (rx < 0.0) { rx *=-1; }
     		if (ry < 0.0) { ry *=-1; }
     		d = ['M', x+rx , y ,
-    				 'h', width-2*rx,
+    				 'h', w-2*rx,
     				 'c', rx, 0.0, rx, ry, rx, ry,
-    				 'v', height-ry,
+    				 'v', h-ry,
     				 'c', '0.0', ry, -rx, ry, -rx, ry,
-    				 'h', -width+2*rx,
+    				 'h', -w+2*rx,
     				 'c', -rx, '0.0', -rx, -ry, -rx, -ry,
-    				 'v', -height+ry,
+    				 'v', -h+ry,
     				 'c', '0.0','0.0','0.0', -ry, rx, -ry,
     				 'z'];
         parser.addPath(d, node)        
@@ -936,7 +936,8 @@ SVGReader = {
     var d2 = Math.abs(((x2 - x4) * dy - (y2 - y4) * dx))
     var d3 = Math.abs(((x3 - x4) * dy - (y3 - y4) * dx))
 
-    if ( (d2 + d3)*(d2 + d3) < this.tolerance_squared * (dx*dx + dy*dy) ) {
+    if ( Math.pow(d2+d3, 2) < 5.0 *this.tolerance_squared * (dx*dx + dy*dy) ) {
+      // added factor of 5.0 to match circle resolution
       subpath.push([x1234, y1234])
       return
     }
@@ -966,7 +967,8 @@ SVGReader = {
     var dy = y3-y1
     var d = Math.abs(((x2 - x3) * dy - (y2 - y3) * dx))
 
-    if ( d * d <= this.tolerance_squared * (dx*dx + dy*dy) ) {
+    if ( d*d <= 5.0*this.tolerance_squared * (dx*dx + dy*dy) ) {
+      // added factor of 5.0 to match circle resolution      
       subpath.push([x123, y123])
       return                 
     }
