@@ -146,6 +146,10 @@ class SVG(object):
                 raise
             
     def parse_element(self, e):
+        for ignore in ['text', 'defs']:
+            if e.tag.endswith(ignore):
+                return
+        
         # self.fill = parse_fill_color(e.get('fill'))
         self.stroke = self.parse_stroke_color(e.get('stroke'))
         oldopacity = self.opacity
