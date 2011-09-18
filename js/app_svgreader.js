@@ -596,7 +596,7 @@ SVGReader = {
     var xPrevCp;
     var yPrevCp;
     var subpath = [];    
-        
+    
     while (d.length > 0) {
       var cmd = getNext();
       switch(cmd) {
@@ -613,7 +613,6 @@ SVGReader = {
             subpath.push([x, y]);
             implicitVerts += 1;
           }
-          $().uxmessage('notice', "in addPath: M (" + implicitVerts + ")");
           break
         case 'm':  //moveto relative
           // start new subpath
@@ -635,12 +634,10 @@ SVGReader = {
             subpath.push([x, y]);
             implicitVerts += 1;            
           }
-          $().uxmessage('notice', "in addPath: m (" + implicitVerts + ")");          
           break;
         case 'Z':  // closepath
           // loop and finalize subpath
           if ( subpath.length > 0) {
-            $().uxmessage('notice', "in addPath: Z");        
             subpath.push(subpath[0]);  // close
             node.path.push(subpath);
             subpath = [];
@@ -649,7 +646,6 @@ SVGReader = {
         case 'z':  // closepath
           // loop and finalize subpath
           if ( subpath.length > 0) {
-            $().uxmessage('notice', "in addPath: z");        
             subpath.push(subpath[0]);  // close
             node.path.push(subpath);
             subpath = [];
@@ -657,7 +653,6 @@ SVGReader = {
           break          
         case 'L':  // lineto absolute
           while (nextIsNum()) {
-            $().uxmessage('notice', "in addPath: L");
             x = getNext();
             y = getNext();
             subpath.push([x, y]);
@@ -665,7 +660,6 @@ SVGReader = {
           break
         case 'l':  // lineto relative
           while (nextIsNum()) {
-            $().uxmessage('notice', "in addPath: l");        
             x += getNext();
             y += getNext();
             subpath.push([x, y]);
@@ -673,35 +667,30 @@ SVGReader = {
           break
         case 'H':  // lineto horizontal absolute
           while (nextIsNum()) {
-            $().uxmessage('notice', "in addPath: H");        
             x = getNext();
             subpath.push([x, y]);
           }
           break
         case 'h':  // lineto horizontal relative
           while (nextIsNum()) {
-            $().uxmessage('notice', "in addPath: h");        
             x += getNext();
             subpath.push([x, y]);
           }
           break;
         case 'V':  // lineto vertical absolute
           while (nextIsNum()) {
-            $().uxmessage('notice', "in addPath: V");        
             y = getNext()
             subpath.push([x, y])
           }
           break;
         case 'v':  // lineto vertical realtive
           while (nextIsNum()) {
-            $().uxmessage('notice', "in addPath: v");        
             y += getNext();
             subpath.push([x, y]);
           }
           break;
         case 'C':  // curveto cubic absolute
           while (nextIsNum()) {
-            $().uxmessage('notice', "in addPath: C");
             var x2 = getNext();
             var y2 = getNext();
             var x3 = getNext();
@@ -719,7 +708,6 @@ SVGReader = {
           break
         case 'c':  // curveto cubic relative
           while (nextIsNum()) {
-            $().uxmessage('notice', "in addPath: c");        
             var x2 = x + getNext();
             var y2 = y + getNext();
             var x3 = x + getNext();
@@ -737,7 +725,6 @@ SVGReader = {
           break
         case 'S':  // curveto cubic absolute shorthand
           while (nextIsNum()) {
-            $().uxmessage('notice', "in addPath: S");        
             var x2;
             var y2;
             if (cmdPrev.match(/[CcSs]/)) {
@@ -762,7 +749,6 @@ SVGReader = {
           break
         case 's':  // curveto cubic relative shorthand
           while (nextIsNum()) {
-            $().uxmessage('notice', "in addPath: s");            
             var x2;
             var y2;
             if (cmdPrev.match(/[CcSs]/)) {
@@ -787,7 +773,6 @@ SVGReader = {
           break
         case 'Q':  // curveto quadratic absolute
           while (nextIsNum()) {
-            $().uxmessage('notice', "in addPath: Q");            
             var x2 = getNext();
             var y2 = getNext();
             var x3 = getNext();
@@ -801,7 +786,6 @@ SVGReader = {
           break
         case 'q':  // curveto quadratic relative
           while (nextIsNum()) {
-            $().uxmessage('notice', "in addPath: q");
             var x2 = x + getNext();
             var y2 = y + getNext();
             var x3 = x + getNext();
@@ -815,7 +799,6 @@ SVGReader = {
           break
         case 'T':  // curveto quadratic absolute shorthand
           while (nextIsNum()) {
-            $().uxmessage('notice', "in addPath: T");            
             var x2;
             var y2;
             if (cmdPrev.match(/[QqTt]/)) {
@@ -838,7 +821,6 @@ SVGReader = {
           break
         case 't':  // curveto quadratic relative shorthand
           while (nextIsNum()) {
-            $().uxmessage('notice', "in addPath: t");            
             var x2;
             var y2;
             if (cmdPrev.match(/[QqTt]/)) {
@@ -861,7 +843,6 @@ SVGReader = {
           break
         case 'A':  // eliptical arc absolute
           while (nextIsNum()) {
-            $().uxmessage('notice', "in addPath: A");            
             var rx = getNext();
             var ry = getNext();
             var xrot = getNext();
@@ -876,7 +857,6 @@ SVGReader = {
           break
         case 'a':  // elliptical arc relative
           while (nextIsNum()) {
-            $().uxmessage('notice', "in addPath: a");            
             var rx = getNext();
             var ry = getNext();
             var xrot = getNext();
