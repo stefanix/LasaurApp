@@ -2,7 +2,6 @@ $(document).ready(function(){
 
   // G-Code Canvas Preview
   var icanvas = new Canvas('#import_canvas');
-  var gcodereader = new GcodeReader();
   icanvas.background('ffffff'); 
   // file upload form
   $('#svg_upload_button').button();
@@ -32,8 +31,8 @@ $(document).ready(function(){
       
       var gcode = GcodeWriter.write(boundarys, 2000, 255, 0.2822222291, 0.0, 0.0);
       $('#import_results').text(gcode);
-      gcodereader.parse(gcode, 0.5);
-      gcodereader.draw(icanvas);
+      GcodeReader.parse(gcode, 0.5);
+      GcodeReader.draw(icanvas);
     }
     
   	e.preventDefault();		

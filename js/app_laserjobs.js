@@ -77,14 +77,13 @@ $(document).ready(function(){
 
   // G-Code Canvas Preview
   //
-  //var canvas = new Canvas('#preview_canvas');
-  var gcodereader = new GcodeReader();
-  //canvas.background('ffffff');
+  var canvas = new Canvas('#preview_canvas');
+  canvas.background('ffffff');
 
   $('#gcode_program').blur(function() {
     var gcodedata = $('#gcode_program').val();
-  	gcodereader.parse(gcodedata, 0.25);
-  	//gcode.draw(canvas);	
+  	GcodeReader.parse(gcodedata, 0.25);
+  	GcodeReader.draw(canvas);	
   });
 
 });  // ready
