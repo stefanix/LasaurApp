@@ -30,30 +30,10 @@ $(document).ready(function(){
       //alert(JSON.stringify(boundarys));
       //$().uxmessage('notice', JSON.stringify(boundarys));
       
-      var gcode = GcodeWriter.write(boundarys, 2000, 255, 1, 0.0, 0.0);
+      var gcode = GcodeWriter.write(boundarys, 2000, 255, 0.2822222291, 0.0, 0.0);
+      $('#import_results').text(gcode);
       gcodereader.parse(gcode, 0.5);
-      gcodereader.draw(icanvas);       
-      
-      //       $('#import_results').text(gcodedata);
-      //       
-      //       
-      //      $().uxmessage('notice', "rendering SVG with cakejs ...");
-      //       //$('#import_results').text(svgdata);
-      //             
-      //       var svgroot = $.parseXML(svgdata).documentElement
-      // var boundarys = SVGReader.parse(svgroot, {
-      //     width: 610,
-      //     height: 310        
-      // })
-      // 
-      // var gcode = GcodeWriter.write(boundarys)
-      // 
-      //       gcodereader.parse(gcode, 0.5);
-      //       gcodereader.draw(icanvas);       
-      // 
-      // //alert(JSON.stringify(svgNode));
-      // alert(svgNode.toSource())      
-      
+      gcodereader.draw(icanvas);
     }
     
   	e.preventDefault();		
