@@ -24,12 +24,15 @@ $(document).ready(function(){
       var svgdata = e.target.result
       //alert(svgdata)
       
+      var dpi = parseFloat($('#svg_upload_dpi').val());
+      var px2mm = 25.4*(1.0/dpi);
+      
       var boundarys = SVGReader.parse(svgdata, {})
       //alert(boundarys.toSource());
       //alert(JSON.stringify(boundarys));
       //$().uxmessage('notice', JSON.stringify(boundarys));
       
-      var gcode = GcodeWriter.write(boundarys, 2000, 255, 0.2822222291, 0.0, 0.0);
+      var gcode = GcodeWriter.write(boundarys, 2000, 255, px2mm, 0.0, 0.0);
       $('#import_results').text(gcode);
       GcodeReader.parse(gcode, 0.5);
       GcodeReader.draw(icanvas);
