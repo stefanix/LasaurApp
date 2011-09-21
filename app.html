@@ -119,8 +119,11 @@
 				<input type="radio" id="dpi_radio_72" name="radio" /><label for="dpi_radio_72">72dpi</label>
 				<input type="radio" id="dpi_radio_90" name="radio" /><label for="dpi_radio_90">90dpi</label>
 				<input type="radio" id="dpi_radio_other" name="radio" /><label for="dpi_radio_other">other</label>
-			</div>			
-			<input type="textfield" id="dpi_value" value="90" style="width:30px; margin-left:20px; display:none; float:right">
+			</div>
+			<div id="dpi_value_div" style="display:none; float:right">			
+				<a href="#" id="dpi_other_back">&lt;</a>
+				<input type="textfield" id="dpi_value" value="90" style="width:30px;">
+			</div>
 			<div id="import_results" style="display:none"></div>
 			</form>
 			<canvas id="import_canvas" style="margin-top:10px" width="610px" height="305px"></canvas>

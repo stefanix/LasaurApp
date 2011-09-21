@@ -53,8 +53,13 @@ $(document).ready(function(){
   });
   $('#dpi_radio_other').click(function(e){
     $('#dpi_radio_set').hide();
-    $('#dpi_value').show();
+    $('#dpi_value_div').show();
   });
+  $('#dpi_other_back').click(function(e){
+    $('#dpi_value_div').hide();
+    $('#dpi_radio_set').show();
+    $('#svg_upload_file').trigger('change');
+  });  
   $('#dpi_value').blur(function(e){
     $('#svg_upload_file').trigger('change');
   });
