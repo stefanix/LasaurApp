@@ -1,4 +1,18 @@
 $(document).ready(function(){
+  
+  $("#dpi_radio_set").buttonset();
+  $('#dpi_radio_72').click(function(e){
+    $('#dpi_value').val('72');
+  });
+  $('#dpi_radio_90').click(function(e){
+    $('#dpi_value').val('90');
+  });
+  $('#dpi_radio_other').click(function(e){
+    $('#dpi_radio_set').hide();
+    $('#dpi_value').show();
+  });
+  $('#dpi_radio_90').trigger('click').button("refresh");
+  
 
   // G-Code Canvas Preview
   var icanvas = new Canvas('#import_canvas');
@@ -24,7 +38,7 @@ $(document).ready(function(){
       var svgdata = e.target.result
       //alert(svgdata)
       
-      var dpi = parseFloat($('#svg_upload_dpi').val());
+      var dpi = parseFloat($('#dpi_value').val());
       var px2mm = 25.4*(1.0/dpi);
       
       var boundarys = SVGReader.parse(svgdata, {})

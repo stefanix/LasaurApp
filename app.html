@@ -116,9 +116,12 @@
 			<form id="svg_upload_form" action="#" onsubmit="return false;">
 			<input type="file" id="svg_upload_file" name="data">
 			<input type="button" id="svg_upload_button" name="submitBtn" value="Import">
-			<div style="float:right">
-				DPI: <input type="textfield" id="svg_upload_dpi" value="90" style="width:30px">
-			</div>
+			<div id="dpi_radio_set" style="float:right">
+				<input type="radio" id="dpi_radio_72" name="radio" /><label for="dpi_radio_72">72dpi</label>
+				<input type="radio" id="dpi_radio_90" name="radio" /><label for="dpi_radio_90">90dpi</label>
+				<input type="radio" id="dpi_radio_other" name="radio" /><label for="dpi_radio_other">other</label>
+			</div>			
+			<input type="textfield" id="dpi_value" value="90" style="width:30px; margin-left:20px; display:none; float:right">
 			<div id="import_results" style="display:none"></div>
 			</form>
 			<canvas id="import_canvas" style="margin-top:10px" width="610px" height="305px"></canvas>
