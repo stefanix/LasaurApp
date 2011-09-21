@@ -15,11 +15,6 @@ GcodeWriter = {
 
   write : function(boundarys, feedrate, laser_intensity, scale, xoff, yoff) {
     var glist = [];
-    glist.push("%\n");
-    glist.push("G21\nG90\n")  // mm and absolute positioning;
-    glist.push("S"+laser_intensity.toFixed(0)+"\n");
-    glist.push("G1 F"+feedrate.toFixed(0)+"\n");
-    glist.push("G0 F10000\n");
     var nsegment = 0;
     var x_prev = 0.0;
     var y_prev = 0.0;
@@ -50,9 +45,6 @@ GcodeWriter = {
         }
       }
     }            
-    glist.push("S0\n")  // reset laser intensity
-    glist.push("G00X0Y0F15000\n")  // reset laser intensity
-    glist.push("%\n")
     $().uxmessage('notice', "wrote " + nsegment + " G code toolpath segments");
     return glist.join('');
   }

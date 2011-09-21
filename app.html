@@ -103,10 +103,10 @@
 			</div>
 		</form>
 		<div id="feedrate" style="margin:23px; width:150px; float:left"></div>
-		<input id="feedrate_field" type="textfield" value="10000" style="margin:15px; width:50px; float:left"></input>
+		<input id="feedrate_field" type="textfield" value="10000" style="margin:15px; width:50px; float:left">
 </div>
 
-<div id="svg-importer" style="padding-top:20px; margin-left:auto; margin-right:auto;">
+<div id="svg-importer" style="padding-top:10px; margin-left:auto; margin-right:auto;">
 	<div>
 		<h3>Import SVG</h3>		
 		<div style="color:#666666">
@@ -126,6 +126,18 @@
 				<a href="#" id="dpi_other_back">&lt;</a>
 				<input type="textfield" id="dpi_value" value="90" style="width:30px;">
 			</div>
+			
+			<div style="float:right; clear:both; margin-top: 10px;">
+				<div style="height:20px; clear:both;">
+					<div id="import_feedrate" style="width:210px; float:right"></div>
+					<div style="float:right; margin-right:20px; color:#666666">Feedrate: <span id="feedrate_val"></span> </div>
+				</div>
+				<div style="height:20px; clear:both;">
+					<div id="import_intensity" style="width:210px; float:right;"></div>
+					<div style="float:right; margin-right:20px; color:#666666">Laser Intensity: <span id="intensity_val"> </div>
+				</div>
+			</div>
+						
 			<div id="import_results" style="display:none"></div>
 			</form>
 			<canvas id="import_canvas" style="margin-top:10px" width="610px" height="305px"></canvas>
