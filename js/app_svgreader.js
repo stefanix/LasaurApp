@@ -66,6 +66,7 @@ SVGReader = {
     // let the fun begin
     var node = {}
     this.boundarys.allcolors = []  // TODO: sort by color
+    node.stroke = [0,0,0];
     node.xformToWorld = [1,0,0,1,0,0]
     this.parseChildren(svgRootElement, node)
     
@@ -113,7 +114,9 @@ SVGReader = {
           // 4.) parse tag 
           // with current attributes and transformation
           if (this.SVGTagMapping[tag.tagName]) {
-            this.SVGTagMapping[tag.tagName](this, tag, node)
+            if (node.stroke[0] == 255 && node.stroke[1] == 0 && node.stroke[2] == 0) {
+              this.SVGTagMapping[tag.tagName](this, tag, node)
+            }
           }
           
           // 5.) compile boundarys
