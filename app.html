@@ -115,7 +115,8 @@
 		<div id="import_canvas_container" class="ui-corner-all" style="margin-top:10px; padding:16px; background-color:#cccccc">
 			<form id="svg_upload_form" action="#" onsubmit="return false;">
 			<input type="submit" id="svg_open_button" value="Open"/>
-			<input type="file" id="svg_upload_file" name="data" style="visibility:hidden">
+			<span id="svg_loading_hint" style="display:none">loading ...</span>
+			<input type="file" id="svg_upload_file" name="data" style="visibility:hidden; position:fixed">
 			<div id="dpi_radio_set" style="float:right">
 				<input type="radio" id="dpi_radio_72" name="radio" /><label for="dpi_radio_72">72dpi</label>
 				<input type="radio" id="dpi_radio_90" name="radio" /><label for="dpi_radio_90">90dpi</label>

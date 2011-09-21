@@ -7,6 +7,7 @@ $(document).ready(function(){
   icanvas.background('ffffff'); 
   // file upload form
   $('#svg_upload_file').change(function(e){
+    $('#svg_loading_hint').show();
     var input = $('#svg_upload_file').get(0)
     if (typeof window.FileReader !== 'function') {
       $().uxmessage('error', "This requires a modern browser with File API support.");
@@ -30,6 +31,7 @@ $(document).ready(function(){
     //alert(JSON.stringify(geo_boundarys));
     //$().uxmessage('notice', JSON.stringify(geo_boundarys));
     writeGcode();
+    $('#svg_loading_hint').hide();
   }
       
   function writeGcode() {
@@ -46,7 +48,7 @@ $(document).ready(function(){
       }
     } else {
       $().uxmessage('notice', "No data loaded to write G-code from.");
-    }
+    }   
   }
 
   // setting up open button
@@ -61,12 +63,10 @@ $(document).ready(function(){
   $('#dpi_radio_72').click(function(e){
     $('#dpi_value').val('72');
     writeGcode();
-    //$('#svg_upload_file').trigger('change');
   });
   $('#dpi_radio_90').click(function(e){
     $('#dpi_value').val('90');
     writeGcode();
-    //$('#svg_upload_file').trigger('change');
   });
   $('#dpi_radio_other').click(function(e){
     $('#dpi_radio_set').hide();
@@ -76,7 +76,6 @@ $(document).ready(function(){
     $('#dpi_value_div').hide();
     $('#dpi_radio_set').show();
     writeGcode();
-    //$('#svg_upload_file').trigger('change');
   });
   $('#dpi_radio_90').trigger('click').button("refresh");
 
