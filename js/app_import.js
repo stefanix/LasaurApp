@@ -59,9 +59,6 @@ $(document).ready(function(){
     $('#dpi_value_div').hide();
     $('#dpi_radio_set').show();
     $('#svg_upload_file').trigger('change');
-  });  
-  $('#dpi_value').blur(function(e){
-    $('#svg_upload_file').trigger('change');
   });
   $('#dpi_radio_90').trigger('click').button("refresh");
 
