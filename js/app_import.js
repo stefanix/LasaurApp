@@ -49,6 +49,12 @@ $(document).ready(function(){
     }
   }
 
+  // setting up open button
+  $('#svg_open_button').button();
+  $('#svg_open_button').click(function(e){
+    $('#svg_upload_file').trigger('click');
+  });  
+
 
   // setting up dpi selector
   $("#dpi_radio_set").buttonset();
