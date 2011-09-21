@@ -1,5 +1,7 @@
 $(document).ready(function(){
   
+  var geo_boundarys = null;
+  
   // G-Code Canvas Preview
   var icanvas = new Canvas('#import_canvas');
   icanvas.background('ffffff'); 
@@ -17,39 +19,48 @@ $(document).ready(function(){
       fr.onload = parseSvgData
       fr.readAsText(input.files[0])
     }
-    
-    function parseSvgData(e) {
-      $().uxmessage('notice', "parsing SVG ...");
-      var svgdata = e.target.result
-      //alert(svgdata)
-      
-      var dpi = parseFloat($('#dpi_value').val());
-      var px2mm = 25.4*(1.0/dpi);
-      
-      var boundarys = SVGReader.parse(svgdata, {})
-      //alert(boundarys.toSource());
-      //alert(JSON.stringify(boundarys));
-      //$().uxmessage('notice', JSON.stringify(boundarys));
-      
-      var gcode = GcodeWriter.write(boundarys, 2000, 255, px2mm, 0.0, 0.0);
-      $('#import_results').text(gcode);
-      GcodeReader.parse(gcode, 0.5);
-      GcodeReader.draw(icanvas);
-    }
-    
   	e.preventDefault();		
   });
+
+  function parseSvgData(e) {
+    $().uxmessage('notice', "parsing SVG ...");
+    var svgdata = e.target.result
+    geo_boundarys = SVGReader.parse(svgdata, {})
+    //alert(geo_boundarys.toSource());
+    //alert(JSON.stringify(geo_boundarys));
+    //$().uxmessage('notice', JSON.stringify(geo_boundarys));
+    writeGcode();
+  }
+      
+  function writeGcode() {
+    if (geo_boundarys) {
+      var dpi = parseFloat($('#dpi_value').val());
+      if (!isNaN(dpi)) {
+        var px2mm = 25.4*(1.0/dpi);
+        var gcode = GcodeWriter.write(geo_boundarys, 2000, 255, px2mm, 0.0, 0.0);
+        $('#import_results').text(gcode);
+        GcodeReader.parse(gcode, 0.5);
+        GcodeReader.draw(icanvas);
+      } else {
+        $().uxmessage('error', "Invalid DPI setting.");
+      }
+    } else {
+      $().uxmessage('notice', "No data loaded to write G-code from.");
+    }
+  }
 
 
   // setting up dpi selector
   $("#dpi_radio_set").buttonset();
   $('#dpi_radio_72').click(function(e){
     $('#dpi_value').val('72');
-    $('#svg_upload_file').trigger('change');
+    writeGcode();
+    //$('#svg_upload_file').trigger('change');
   });
   $('#dpi_radio_90').click(function(e){
     $('#dpi_value').val('90');
-    $('#svg_upload_file').trigger('change');
+    writeGcode();
+    //$('#svg_upload_file').trigger('change');
   });
   $('#dpi_radio_other').click(function(e){
     $('#dpi_radio_set').hide();
@@ -58,7 +69,8 @@ $(document).ready(function(){
   $('#dpi_other_back').click(function(e){
     $('#dpi_value_div').hide();
     $('#dpi_radio_set').show();
-    $('#svg_upload_file').trigger('change');
+    writeGcode();
+    //$('#svg_upload_file').trigger('change');
   });
   $('#dpi_radio_90').trigger('click').button("refresh");
 

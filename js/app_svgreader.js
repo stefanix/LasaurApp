@@ -1,34 +1,38 @@
-
-
 /**
-  SVG parser for simple documents. Converts SVG DOM to a flat collection of paths.
+  SVG parser for the Lasersaur.
+  Converts SVG DOM to a flat collection of paths.
+  
+  Copyright (c) 2011 Nortd Labs
+  Open Source by the terms of the Gnu Public License (GPL3) or higher.
+  
+  Code inspired by cake.js, canvg.js, svg2obj.py, and Squirtle.
+  Thank you for open sourcing your work!
 
+  Usage:
   var boundarys = SVGReader.parse(svgstring, config)
 
   Features:
     * <svg> width and height, viewBox clipping.
-    * Clipping (objectBoundingBox clipping too)
-    * Paths, rectangles, ellipses, circles, lines, polylines and polygons
-    * Nested transforms
-    * Transform lists (transform="rotate(30) translate(2,2) scale(4)")
-    * Parsing simple stylesheets (tag, class or id)
-    * Non-pixel units (cm, mm, in, pt, pc, em, ex, %)
+    * paths, rectangles, ellipses, circles, lines, polylines and polygons
+    * nested transforms
+    * transform lists (transform="rotate(30) translate(2,2) scale(4)")
+    * non-pixel units (cm, mm, in, pt, pc)
     * 'style' attribute and presentation attributes
+    * curves, arcs, cirles, ellipses tesellated according to tolerance
     
   Intentinally not Supported:
-    * viewBox
     * markers
     * masking
-    * % units
+    * em, ex, % units
     * text (needs to be converted to paths)
-    * raster image
+    * raster images
     * style sheets
-    
-  TODO
-    * rounded rects
-    * units em, ex
 
+  ToDo:
+    * check for out of bounds geometry
 */
+
+
 SVGReader = {
   
   boundarys : {},
@@ -43,7 +47,6 @@ SVGReader = {
 
     
   parse : function(svgstring, config) {
-    
     this.tolerance_squared = Math.pow(this.tolerance, 2);
     
     // parse xml
@@ -76,11 +79,9 @@ SVGReader = {
       var tag = domNode.childNodes[i]
       if (tag.childNodes) {
         if (tag.tagName) {
-          // $().uxmessage('notice', tag.tagName);
           // we are looping here through 
           // all nodes with child nodes
           // others are irrelevant
-          // console.log("parsing: %s", tag.tagName);
 
           // 1.) setup a new node
           // and inherit from parent
@@ -101,7 +102,6 @@ SVGReader = {
             for (var j=0; j<tag.attributes.length; j++) {
               var attr = tag.attributes[j]
               if (attr.nodeName && attr.nodeValue && this.SVGAttributeMapping[attr.nodeName]) {
-                //$().uxmessage('notice', 'tag: ' + tag.tagName + '<br>' + attr.nodeName + ':' + attr.nodeValue);
                 this.SVGAttributeMapping[attr.nodeName](this, node, attr.nodeValue)
               }
             }
@@ -117,7 +117,7 @@ SVGReader = {
           }
           
           // 5.) compile boundarys
-          // by converting coordinates to world and adding node's path  
+          // before adding all path data convert to world coordinates  
           for (var k=0; k<node.path.length; k++) {
             var subpath = node.path[k];
             for (var l=0; l<node.path[k].length; l++) {
@@ -152,7 +152,6 @@ SVGReader = {
       var xforms = []
       var segs = val.match(/[a-z]+\s*\([^)]*\)/ig)
       for (var i=0; i<segs.length; i++) {
-        //$().uxmessage('notice', 'transform segs: ' + segs[i]);
         var kv = segs[i].split("(");
         var xformKind = kv[0].strip();
         var paramsTemp = kv[1].strip().slice(0,-1);
@@ -233,8 +232,8 @@ SVGReader = {
     style : function(parser, node, val) {
       // style attribute
       // http://www.w3.org/TR/SVG11/styling.html#StyleAttribute
-      // <rect x="200" y="100" width="600" height="300" 
-      //   style="fill: red; stroke: blue; stroke-width: 3"/>
+      // example: <rect x="200" y="100" width="600" height="300" 
+      //          style="fill: red; stroke: blue; stroke-width: 3"/>
       
       // relay to parse style attributes the same as Presentation Attributes
       var segs = val.split(";")
@@ -251,8 +250,8 @@ SVGReader = {
     ///////////////////////////
     // Presentations Attributes 
     // http://www.w3.org/TR/SVG11/styling.html#UsingPresentationAttributes
-    // <rect x="200" y="100" width="600" height="300" 
-    //   fill="red" stroke="blue" stroke-width="3"/>
+    // example: <rect x="200" y="100" width="600" height="300" 
+    //          fill="red" stroke="blue" stroke-width="3"/>
     
     opacity : function(parser, node, val) {
       node.opacity = parseFloat(val)
@@ -355,20 +354,19 @@ SVGReader = {
   SVGTagMapping : {
     svg : function(parser, tag, node) {
       // has style attributes
-            
-      node.width = 0
-      node.height = 0
       node.fill = 'black'
       node.stroke = 'none'
-      
-      var w = tag.getAttribute('width')
-      var h = tag.getAttribute('height')
-      if (!w) w = h
-      else if (!h) h = w
-      if (w) {
-        var wpx = parser.parseUnit(w, cn, 'x')
-        var hpx = parser.parseUnit(h, cn, 'y')
-      }
+      // // parse document dimensions
+      // node.width = 0
+      // node.height = 0
+      // var w = tag.getAttribute('width')
+      // var h = tag.getAttribute('height')
+      // if (!w) w = h
+      // else if (!h) h = w
+      // if (w) {
+      //   var wpx = parser.parseUnit(w, cn, 'x')
+      //   var hpx = parser.parseUnit(h, cn, 'y')
+      // }
     },
     
     
@@ -458,9 +456,7 @@ SVGReader = {
 
     circle : function(parser, tag, node) {
       // http://www.w3.org/TR/SVG11/shapes.html#CircleElement
-      // has transform and style attributes
-      var scaleToWorld = parser.matrixGetScale(node.xformToWorld)  // use this for tolerance
-      
+      // has transform and style attributes      
       var r = parser.parseUnit(tag.getAttribute('r'))
       var cx = parser.parseUnit(tag.getAttribute('cx')) || 0
       var cy = parser.parseUnit(tag.getAttribute('cy')) || 0
@@ -472,12 +468,6 @@ SVGReader = {
       			     'A', r, r, 0, 0, 0, cx, cy-r,
       			     'A', r, r, 0, 0, 0, cx-r, cy,
       			     'Z'];
-        // var d = ['M', cx-r, cy,                  
-        //         'C', cx-r, cy+r*0.552, cx-0.552*r, cy+r, cx, cy+r,
-        //         'C', cx+r*0.552, cy+r, cx+r, cy+r*0.552, cx+r, cy,
-        //         'C', cx+r, cy-r*0.552, cx+r*0.552, cy-r, cx, cy-r,
-        //                  'C', cx-r*0.552, cy-r, cx-r, cy-r*0.552, cx-r, cy,
-        //         'Z'];
       	parser.addPath(d, node);
       }
     },
@@ -485,8 +475,6 @@ SVGReader = {
 
     ellipse : function(parser, tag, node) {
       // has transform and style attributes
-      var scaleToWorld = parser.matrixGetScale(node.xformToWorld)  // use this for tolerance
-      
       var rx = parser.parseUnit(tag.getAttribute('rx'))
       var ry = parser.parseUnit(tag.getAttribute('ry'))
       var cx = parser.parseUnit(tag.getAttribute('cx')) || 0
@@ -499,12 +487,6 @@ SVGReader = {
       			     'A', rx, ry, 0, 0, 0, cx, cy-ry,
       			     'A', rx, ry, 0, 0, 0, cx-rx, cy,
       			     'Z'];          
-        // d = ['M', cx-rx, cy, 
-        //     'C', cx-rx, cy+ry*0.552, cx-0.552*rx, cy+ry, cx, cy+ry,
-        //     'C', cx+rx*0.552, cy+ry, cx+rx, cy+ry*0.552, cx+rx, cy,
-        //     'C', cx+rx, cy-ry*0.552, cx+rx*0.552, cy-ry, cx, cy-ry,
-        //     'C', cx-rx*0.552, cy-ry, cx-rx, cy-ry*0.552, cx-rx, cy,
-        //     'z']
       	parser.addPath(d, node);
       }
     },
@@ -559,14 +541,18 @@ SVGReader = {
 
   addPath : function(d, node) {
     // http://www.w3.org/TR/SVG11/paths.html#PathData
-    var scaleToWorld = this.matrixGetScale(node.xformToWorld);  // use this for tolerance
+    
+    var tolerance2 = this.tolerance_squared
+    var totalMaxScale = this.matrixGetScale(node.xformToWorld);
+    if (totalMaxScale != 0) {
+      // adjust for possible transforms
+      tolerance2 /= Math.pow(totalMaxScale, 2);
+      // $().uxmessage('notice', "tolerance2: " + tolerance2.toString());
+    }
     
     if ( typeof d == 'string') {
       // parse path string
       d = d.match(/([A-Za-z]|-?[0-9]+\.?[0-9]*(?:e-?[0-9]*)?)/g);
-      
-      
-      // convert to actual numbers
       for (var i=0; i<d.length; i++) {
         var num = parseFloat(d[i]);
         if (!isNaN(num)) {
@@ -574,7 +560,6 @@ SVGReader = {
         }
       }
     }
-    
     //$().uxmessage('notice', "d: " + d.toString());
     
     function nextIsNum () {
@@ -698,7 +683,7 @@ SVGReader = {
             var x4 = getNext();
             var y4 = getNext();
             subpath.push([x,y]);
-            this.addCubicBezier(subpath, x, y, x2, y2, x3, y3, x4, y4, 0);
+            this.addCubicBezier(subpath, x, y, x2, y2, x3, y3, x4, y4, 0, tolerance2);
             subpath.push([x4,y4]);
             x = x4;
             y = y4;
@@ -715,7 +700,7 @@ SVGReader = {
             var x4 = x + getNext();
             var y4 = y + getNext();
             subpath.push([x,y]);
-            this.addCubicBezier(subpath, x, y, x2, y2, x3, y3, x4, y4, 0);
+            this.addCubicBezier(subpath, x, y, x2, y2, x3, y3, x4, y4, 0, tolerance2);
             subpath.push([x4,y4]);
             x = x4;
             y = y4;
@@ -739,7 +724,7 @@ SVGReader = {
             var x4 = getNext();
             var y4 = getNext();
             subpath.push([x,y]);
-            this.addCubicBezier(subpath, x, y, x2, y2, x3, y3, x4, y4, 0);
+            this.addCubicBezier(subpath, x, y, x2, y2, x3, y3, x4, y4, 0, tolerance2);
             subpath.push([x4,y4]);
             x = x4;
             y = y4;
@@ -763,7 +748,7 @@ SVGReader = {
             var x4 = x + getNext();
             var y4 = y + getNext();
             subpath.push([x,y]);
-            this.addCubicBezier(subpath, x, y, x2, y2, x3, y3, x4, y4, 0);
+            this.addCubicBezier(subpath, x, y, x2, y2, x3, y3, x4, y4, 0, tolerance2);
             subpath.push([x4,y4]);
             x = x4;
             y = y4;
@@ -778,7 +763,7 @@ SVGReader = {
             var x3 = getNext();
             var y3 = getNext();
             subpath.push([x,y]);
-            this.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0);
+            this.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0, tolerance2);
             subpath.push([x3,y3]);
             x = x3;
             y = y3;        
@@ -791,7 +776,7 @@ SVGReader = {
             var x3 = x + getNext();
             var y3 = y + getNext();
             subpath.push([x,y]);
-            this.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0);
+            this.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0, tolerance2);
             subpath.push([x3,y3]);
             x = x3;
             y = y3;        
@@ -811,7 +796,7 @@ SVGReader = {
             var x3 = getNext();
             var y3 = getNext();
             subpath.push([x,y]);
-            this.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0);
+            this.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0, tolerance2);
             subpath.push([x3,y3]);
             x = x3;
             y = y3; 
@@ -833,7 +818,7 @@ SVGReader = {
             var x3 = x + getNext();
             var y3 = y + getNext();
             subpath.push([x,y]);
-            this.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0);
+            this.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0, tolerance2);
             subpath.push([x3,y3]);
             x = x3;
             y = y3; 
@@ -850,7 +835,7 @@ SVGReader = {
             var sweep = getNext();
             var x2 = getNext();
             var y2 = getNext();        
-            this.addArc(subpath, x, y, rx, ry, xrot, large, sweep, x2, y2); 
+            this.addArc(subpath, x, y, rx, ry, xrot, large, sweep, x2, y2, tolerance2); 
             x = x2
             y = y2
           }
@@ -864,7 +849,7 @@ SVGReader = {
             var sweep = getNext();
             var x2 = x + getNext();
             var y2 = y + getNext();        
-            this.addArc(subpath, x, y, rx, ry, xrot, large, sweep, x2, y2); 
+            this.addArc(subpath, x, y, rx, ry, xrot, large, sweep, x2, y2, tolerance2); 
             x = x2
             y = y2
           }
@@ -880,7 +865,7 @@ SVGReader = {
   },
     
   
-  addCubicBezier : function(subpath, x1, y1, x2, y2, x3, y3, x4, y4, level) {
+  addCubicBezier : function(subpath, x1, y1, x2, y2, x3, y3, x4, y4, level, tolerance2) {
     // for details see:
     // http://www.antigrain.com/research/adaptive_bezier/index.html
     // based on DeCasteljau Algorithm
@@ -916,19 +901,19 @@ SVGReader = {
     var d2 = Math.abs(((x2 - x4) * dy - (y2 - y4) * dx))
     var d3 = Math.abs(((x3 - x4) * dy - (y3 - y4) * dx))
 
-    if ( Math.pow(d2+d3, 2) < 5.0 *this.tolerance_squared * (dx*dx + dy*dy) ) {
+    if ( Math.pow(d2+d3, 2) < 5.0 * tolerance2 * (dx*dx + dy*dy) ) {
       // added factor of 5.0 to match circle resolution
       subpath.push([x1234, y1234])
       return
     }
 
     // Continue subdivision
-    this.addCubicBezier(subpath, x1, y1, x12, y12, x123, y123, x1234, y1234, level+1)
-    this.addCubicBezier(subpath, x1234, y1234, x234, y234, x34, y34, x4, y4, level+1)
+    this.addCubicBezier(subpath, x1, y1, x12, y12, x123, y123, x1234, y1234, level+1, tolerance2);
+    this.addCubicBezier(subpath, x1234, y1234, x234, y234, x34, y34, x4, y4, level+1, tolerance2);
   },
 
 
-  addQuadraticBezier : function(subpath, x1, y1, x2, y2, x3, y3, level) {
+  addQuadraticBezier : function(subpath, x1, y1, x2, y2, x3, y3, level, tolerance2) {
     if (level > 18) {
       // protect from deep recursion cases
       // max 2**18 = 262144 segments
@@ -947,19 +932,19 @@ SVGReader = {
     var dy = y3-y1
     var d = Math.abs(((x2 - x3) * dy - (y2 - y3) * dx))
 
-    if ( d*d <= 5.0*this.tolerance_squared * (dx*dx + dy*dy) ) {
+    if ( d*d <= 5.0 * tolerance2 * (dx*dx + dy*dy) ) {
       // added factor of 5.0 to match circle resolution      
       subpath.push([x123, y123])
       return                 
     }
     
     // Continue subdivision
-    this.addQuadraticBezier(subpath, x1, y1, x12, y12, x123, y123, level + 1)
-    this.addQuadraticBezier(subpath, x123, y123, x23, y23, x3, y3, level + 1)
+    this.addQuadraticBezier(subpath, x1, y1, x12, y12, x123, y123, level + 1, tolerance2)
+    this.addQuadraticBezier(subpath, x123, y123, x23, y23, x3, y3, level + 1, tolerance2)
   },
   
   
-  addArc : function(subpath, x1, y1, rx, ry, phi, large_arc, sweep, x2, y2) {
+  addArc : function(subpath, x1, y1, rx, ry, phi, large_arc, sweep, x2, y2, tolerance2) {
     // Implemented based on the SVG implementation notes
     // plus some recursive sugar for incrementally refining the
     // arc resolution until the requested tolerance is met.
@@ -1003,7 +988,7 @@ SVGReader = {
     
     // let the recursive fun begin
     //
-    function recursiveArc(parser, t1, t2, c1, c5, level) {
+    function recursiveArc(parser, t1, t2, c1, c5, level, tolerance2) {
       if (level > 18) {
         // protect from deep recursion cases
         // max 2**18 = 262144 segments
@@ -1014,12 +999,12 @@ SVGReader = {
       var c2 = getVertex(t1 + 0.25*tRange);
       var c3 = getVertex(tHalf);
       var c4 = getVertex(t1 + 0.75*tRange);
-      if (parser.vertexDistanceSquared(c2, parser.vertexMiddle(c1,c3)) > parser.tolerance_squared) { 
-        recursiveArc(parser, t1, tHalf, c1, c3, level+1);
+      if (parser.vertexDistanceSquared(c2, parser.vertexMiddle(c1,c3)) > tolerance2) { 
+        recursiveArc(parser, t1, tHalf, c1, c3, level+1, tolerance2);
       }
       subpath.push(c3);
-      if (parser.vertexDistanceSquared(c4, parser.vertexMiddle(c3,c5)) > parser.tolerance_squared) { 
-        recursiveArc(parser, tHalf, t2, c3, c5, level+1);
+      if (parser.vertexDistanceSquared(c4, parser.vertexMiddle(c3,c5)) > tolerance2) { 
+        recursiveArc(parser, tHalf, t2, c3, c5, level+1, tolerance2);
       }
     }
         
@@ -1028,7 +1013,7 @@ SVGReader = {
     var c1Init = getVertex(t1Init);
     var c5Init = getVertex(t2Init);
     subpath.push(c1Init);
-    recursiveArc(this, t1Init, t2Init, c1Init, c5Init, 0);
+    recursiveArc(this, t1Init, t2Init, c1Init, c5Init, 0, tolerance2);
     subpath.push(c5Init);
   },
   
@@ -1078,14 +1063,15 @@ SVGReader = {
   },  
   
   matrixGetScale : function(mat) {
-    function sign(x) {
-      if(x>0)return 1;
-      else if(x<0)return -1;
-      else return 0;
+    // extract absolute scale from matrix
+    var sx = Math.sqrt(mat[0]*mat[0] + mat[1]*mat[1]);
+    var sy = Math.sqrt(mat[2]*mat[2] + mat[3]*mat[3]);
+    // return dominant axis
+    if (sx > sy) {
+      return sx;
+    } else {
+      return sy;
     }
-    var sx = sign(mat[0]) * Math.sqrt(mat[0]*mat[0] + mat[1]*mat[1])
-    var sy = sign(mat[3]) * Math.sqrt(mat[2]*mat[2] + mat[3]*mat[3])
-    return [sx,sy]
   },
   
   
