@@ -45,7 +45,7 @@ GcodeWriter = {
         }
       }
     }            
-    $().uxmessage('notice', "wrote " + nsegment + " G code toolpath segments");
+    //$().uxmessage('notice', "wrote " + nsegment + " G-code toolpath segments");
     return glist.join('');
   }
     
