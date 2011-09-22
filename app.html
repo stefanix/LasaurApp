@@ -8,10 +8,11 @@
 <link rel="stylesheet" href="/css/style.css" type="text/css"> 
 <script src="/js/jquery-1.5.min.js"></script>
 <script src="/js/jquery-ui-1.8.9.custom.min.js"></script>
-<script src="/js/jquery.form.js"></script>
 <script src="/js/jquery.toastmessage.js"></script>
+<script src="/js/app_svgreader.js"></script>
+<script src="/js/app_gcodewriter.js"></script>
+<script src="/js/app_gcodereader.js"></script>
 <script src="/js/app_canvas.js"></script>
-<script src="/js/app_gcode.js"></script>
 <script src="/js/app.js"></script>
 <script src="/js/app_laserjobs.js"></script>
 <script src="/js/app_directcontrol.js"></script>
@@ -73,7 +74,7 @@
 			<h3>G-Code</h3>
 			<div><textarea id="gcode_program" style="font-size:0.8em; width:300px; height:100px"></textarea></div>
 			<h3>Preview</h3>
-			<div><canvas id="preview_canvas" width="305px" height="155px"></canvas></div>
+			<div><canvas id="preview_canvas" width="305px" height="153px"></canvas></div>
 			<div id="gcode_submit" style="margin-left:0; margin-top:20px">Send to Lasersaur</div>
 			<div id="gcode_save_to_queue" style="margin-top:20px">Add to Queue</div>
 			<div id="progressbar" style="width:305px; height:20px; margin-top:20px"></div>
@@ -102,22 +103,44 @@
 			</div>
 		</form>
 		<div id="feedrate" style="margin:23px; width:150px; float:left"></div>
-		<input id="feedrate_field" type="textfield" value="10000" style="margin:15px; width:50px; float:left"></input>
+		<input id="feedrate_field" type="textfield" value="10000" style="margin:15px; width:50px; float:left">
 </div>
 
-<div id="svg-importer" style="padding-top:20px; margin-left:auto; margin-right:auto;">
+<div id="svg-importer" style="padding-top:10px; margin-left:auto; margin-right:auto;">
 	<div>
 		<h3>Import SVG</h3>		
 		<div style="color:#666666">
 			Import all red geometry outlines (stroke color: 255,0,0 or #ff0000)
 		</div>
 		<div id="import_canvas_container" class="ui-corner-all" style="margin-top:10px; padding:16px; background-color:#cccccc">
-			<form id="svg_upload_form" action="/svg_upload" method="post" enctype="multipart/form-data">
-			<input type="file" id="svg_upload_file" name="data">
-			<input type="submit" id="svg_upload_button" name="submitBtn" value="Import">
+			<form id="svg_upload_form" action="#" onsubmit="return false;">
+			<input type="submit" id="svg_open_button" value="Open"/>
+			<span id="svg_loading_hint" style="display:none">loading ...</span>
+			<input type="file" id="svg_upload_file" name="data" style="visibility:hidden; position:fixed">
+			<div id="dpi_radio_set" style="float:right">
+				<input type="radio" id="dpi_radio_72" name="radio" /><label for="dpi_radio_72">72dpi</label>
+				<input type="radio" id="dpi_radio_90" name="radio" /><label for="dpi_radio_90">90dpi</label>
+				<input type="radio" id="dpi_radio_other" name="radio" /><label for="dpi_radio_other">other</label>
+			</div>
+			<div id="dpi_value_div" style="display:none; float:right; height:33px">			
+				<a href="#" id="dpi_other_back">&lt;</a>
+				<input type="textfield" id="dpi_value" value="90" style="width:30px;">
+			</div>
+			
+			<div style="float:right; clear:both; margin-top: 10px;">
+				<div style="height:20px; clear:both;">
+					<div id="import_feedrate" style="width:210px; float:right"></div>
+					<div style="float:right; margin-right:20px; color:#666666">Feedrate: <span id="feedrate_val"></span> </div>
+				</div>
+				<div style="height:20px; clear:both;">
+					<div id="import_intensity" style="width:210px; float:right;"></div>
+					<div style="float:right; margin-right:20px; color:#666666">Laser Intensity: <span id="intensity_val"> </div>
+				</div>
+			</div>
+						
 			<div id="import_results" style="display:none"></div>
 			</form>
-			<canvas id="import_canvas" style="margin-top:10px" width="610px" height="310px"></canvas>
+			<canvas id="import_canvas" style="margin-top:10px" width="610px" height="305px"></canvas>
 			<div id="import_to_queue" style="margin-left:0; margin-top:10px">Add to Queue</div>
 		</div> 
 	</div>

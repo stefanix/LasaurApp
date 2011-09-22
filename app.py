@@ -134,19 +134,20 @@ def queue_pct_done_handler():
     return serial_manager.get_queue_percentage_done()
 
 
-@route('/svg_upload', method='POST')
-def svg_upload():
-    data = request.files.get('data')
-    if data.file:
-        raw = data.file.read() # This is dangerous for big files
-        filename = data.filename
-        print "You uploaded %s (%d bytes)." % (filename, len(raw))
-        boundarys = SVG(raw).get_boundarys()
-        gcode = write_GCODE(boundarys, 1200, 255, 0.2822222222, 0.0, 0.0)
-            # 0.2822222222 converts from px to mm (at 90dpi)
-            # this is necessary because inkscape stores everything in px units
-        return gcode
-    return "You missed a field."
+# @route('/svg_upload', method='POST')
+# def svg_upload():
+#     data = request.files.get('data')
+#     if data.file:
+#         raw = data.file.read() # This is dangerous for big files
+#         filename = data.filename
+#         print "You uploaded %s (%d bytes)." % (filename, len(raw))
+#         return raw
+#         # boundarys = SVG(raw).get_boundarys()
+#         # gcode = write_GCODE(boundarys, 1200, 255, 0.2822222222, 0.0, 0.0)
+#         #     # 0.2822222222 converts from px to mm (at 90dpi)
+#         #     # this is necessary because inkscape stores everything in px units
+#         # return gcode
+#     return "You missed a field."
     
 
 debug(True)
