@@ -3,7 +3,7 @@
 (function($){
 	$.fn.uxmessage = function(kind, text) {
 	  if (text.length > 80) {
-	    //text = text.slice(0,100) + '\n...'
+	    text = text.slice(0,100) + '\n...'
 	  }
 	  
 	  var div_opener = '<div class="log_item log_notice ui-corner-all" style="display:none">'
@@ -82,7 +82,7 @@ $(document).ready(function(){
     $("#log_content").fadeOut('slow');
   	$("#log_toggle").html("show log");
   });
-  $('#log_toggle').trigger('click');  // show log, for debugging
+  //$('#log_toggle').trigger('click');  // show log, for debugging
 
 
   // connect to serial button

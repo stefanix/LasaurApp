@@ -83,7 +83,7 @@ $(document).ready(function(){
     $('#dpi_radio_set').show();
     generateRawGcode();
   });
-  $('#dpi_radio_90').trigger('click').button("refresh");
+  $('#dpi_radio_90').attr('checked', 'checked').button("refresh");
   
   
   //setting up sliders for feedrate and laser intensity
@@ -93,7 +93,8 @@ $(document).ready(function(){
   });  
   $("#import_feedrate").bind( "slidestop", function(event, ui) {
   	$('#feedrate_val').text($('#import_feedrate').slider("value"));
-  });  
+  });
+  $('#feedrate_val').text($('#import_feedrate').slider("value"));
   //
   $("#import_intensity").slider({ min:0, max:255, step:5, value:80 });
   $("#import_intensity").bind( "slide", function(event, ui) {
@@ -102,7 +103,9 @@ $(document).ready(function(){
   });  
   $("#import_intensity").bind( "slidestop", function(event, ui) {
   	$('#intensity_val').text($('#import_intensity').slider("value"));
-  });    
+  });
+  $('#intensity_val').text($('#import_intensity').slider("value"));
+  
 
 
   // setting up add to queue button
