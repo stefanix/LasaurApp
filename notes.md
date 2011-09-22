@@ -1,5 +1,9 @@
 
 
+- bed size: 48x24" or 1220x610mm
+  also for direct control
+
+
 Laser Style by color
 --------------------
 
