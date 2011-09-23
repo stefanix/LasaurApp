@@ -11,7 +11,7 @@ from write_gcode import write_GCODE
 
 # ARDUINO_PORT = '/dev/tty.usbmodem621'
 ARDUINO_PORT = '/dev/tty.usbserial-A70063dl'
-BAUDRATE = 9600
+BITSPERSECOND = 9600
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -44,10 +44,10 @@ def hello_handler():
 
 @route('/connect')
 def connect_handler():
-    global ARDUINO_PORT, BAUDRATE
+    global ARDUINO_PORT, BITSPERSECOND
     try:
-        serial_manager.connect(ARDUINO_PORT, BAUDRATE)
-        ret = "Serial connected to %s:%d." % (ARDUINO_PORT, BAUDRATE)  + '<br>'
+        serial_manager.connect(ARDUINO_PORT, BITSPERSECOND)
+        ret = "Serial connected to %s:%d." % (ARDUINO_PORT, BITSPERSECOND)  + '<br>'
         time.sleep(0.5) # allow some time to receive a prompt/welcome
         return serial_manager.get_responses('<br>')
     except serial.SerialException:
@@ -90,8 +90,8 @@ def serial_handler(connect):
     if connect == '1' and not serial_manager.is_connected():
         try:
             global arduino_port, baudrate
-            serial_manager.connect(ARDUINO_PORT, BAUDRATE)
-            ret = "Serial connected to %s:%d." % (ARDUINO_PORT, BAUDRATE)  + '<br>'
+            serial_manager.connect(ARDUINO_PORT, BITSPERSECOND)
+            ret = "Serial connected to %s:%d." % (ARDUINO_PORT, BITSPERSECOND)  + '<br>'
             time.sleep(0.5) # allow some time to receive a prompt/welcome
             return serial_manager.get_responses('<br>')
         except serial.SerialException:
