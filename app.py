@@ -5,9 +5,6 @@ import wsgiref.simple_server
 from bottle import *
 import serial_manager, serial
 
-from read_svg import SVG
-from write_gcode import write_GCODE
-
 
 # ARDUINO_PORT = '/dev/tty.usbmodem621'
 ARDUINO_PORT = '/dev/tty.usbserial-A70063dl'
