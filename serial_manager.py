@@ -65,6 +65,11 @@ def is_connected():
 def queue_for_sending(gcode):
     global gcode_queue, total_items_queued_in_batch, gcode_queue_count
     gcode = gcode.strip()
+    
+    if gcode[:4] == 'M112':
+      # cancel current job
+      clear_queue()
+    
     if gcode:
         print "adding to queue: %s" % (gcode)
         gcode_queue.append(gcode + '\n')
