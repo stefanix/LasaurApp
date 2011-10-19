@@ -20,7 +20,8 @@ def run_with_callback(host='127.0.0.1', port=4444, timeout=0.01):
     server = wsgiref.simple_server.make_server(host, port, handler)
     server.timeout = timeout
     print "Bottle server starting up ..."
-    print "Listening on http://%s:%d/" % (host, port)
+    print "Serial is set to %d bps" % BITSPERSECOND
+    print "Point your browser to: http://%s:%d/" % (host, port)
     print "Use Ctrl-C to quit."
     print
     while 1:
