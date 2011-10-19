@@ -154,13 +154,13 @@ $(document).ready(function(){
   	e.preventDefault();		
   });
 
-  $("#escape_fire").button();
-  $("#escape_fire").click(function(e){
+  $("#cancel_job").button();
+  $("#cancel_job").click(function(e){
   	var gcode = 'M112X0Y0F20000\n'
   	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));	
   	$.get('/gcode/'+ gcode, function(data) {
   		if (data != "") {
-  			$().uxmessage('success', "G-Code sent to serial.");
+  			$().uxmessage('success', "Canceling ...");
   		} else {
   			$().uxmessage('error', "Serial not connected.");
   		}
