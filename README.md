@@ -23,6 +23,6 @@ How to Use this App
 * edit app.py and define the port of the Lasersaur (*ARDUINO_PORT*)
 * run *python app.py*
 * open *http://localhost:4444* 
-  (in a browser with basic html5 support)
+  (in current Firefox or Chrome, future Safari 6 or IE 10)
 
 Also see: [The Lasersaur Manual](http://labs.nortd.com/lasersaur/manual/)
