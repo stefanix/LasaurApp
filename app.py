@@ -85,19 +85,24 @@ def default_handler():
 @route('/serial/:connect')
 def serial_handler(connect):
     if connect == '1' and not serial_manager.is_connected():
+        print 'js is asking to connect serial'      
         try:
             global arduino_port, baudrate
             serial_manager.connect(ARDUINO_PORT, BITSPERSECOND)
             ret = "Serial connected to %s:%d." % (ARDUINO_PORT, BITSPERSECOND)  + '<br>'
-            time.sleep(0.5) # allow some time to receive a prompt/welcome
-            return serial_manager.get_responses('<br>')
+            time.sleep(1.0) # allow some time to receive a prompt/welcome
+            resp = serial_manager.get_responses('<br>')
+            if resp == "": resp = ret
+            return resp
         except serial.SerialException:
             print "Failed to connect to serial."    
             return ""          
     elif connect == '0' and serial_manager.is_connected():
+        print 'js is asking to closer serial'    
         if serial_manager.close(): return "1"
         else: return ""  
     elif connect == "2":
+        print 'js is asking if serial connected'
         if serial_manager.is_connected(): return "1"
         else: return ""
     else:
