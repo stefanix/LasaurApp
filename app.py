@@ -6,7 +6,8 @@ from bottle import *
 import serial_manager, serial
 
 
-ARDUINO_PORT = '/dev/tty.usbmodem621'
+# ARDUINO_PORT = '/dev/tty.usbmodem621'
+ARDUINO_PORT = '/dev/tty.usbmodemfd121'
 BITSPERSECOND = 57600
 
 current_dir = os.path.dirname(os.path.abspath(__file__))

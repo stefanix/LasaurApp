@@ -25,8 +25,8 @@ $(document).ready(function(){
   	$('#gcode_program').trigger('blur');	
   });
 
-
-  $("#gcode_submit").button();
+  
+  $("#gcode_submit").button()
   $("#gcode_submit").click(function(e) {
   	// send gcode string to server via POST
   	var gcode = $('#gcode_program').val();
@@ -61,7 +61,33 @@ $(document).ready(function(){
     
   	return false;
   });
+  
+  $("#gcode_submit").next().button( {
+		text: false,
+		icons: {
+			primary: "ui-icon-triangle-1-s"
+		}
+  })
+  $("#gcode_submit").next().toggle(function() {
+    var pos = $(this).position();
+    $("#gcode_more_div").css('left', pos.left-30).css('top', pos.top-30)
+    $("#gcode_more_div").show();
+    $('body').bind('click.dropdown', function(e) {
+      $("#gcode_submit").next().trigger('click')
+      // remove click event by namespace,
+      // see: http://api.jquery.com/unbind/
+      $('body').unbind('click.dropdown');
+    });
+  }, function() {
+    $("#gcode_more_div").hide();
+  });
+  $("#gcode_submit").next().parent().buttonset();
 
+
+  $("#gcode_bbox").button();  
+  $("#gcode_bbox").click(function(e) {
+    $().uxmessage('notice', "bbox not yet implemented");
+  });
 
   $("#gcode_save_to_queue").button();  
   $("#gcode_save_to_queue").click(function(e) {

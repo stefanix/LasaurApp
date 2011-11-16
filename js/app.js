@@ -70,7 +70,7 @@ $(document).ready(function(){
 
   $(function() {
   	$( "#tabs-main" ).tabs({
-  		selected: 2
+  		selected: 0
   	});
   });
 
