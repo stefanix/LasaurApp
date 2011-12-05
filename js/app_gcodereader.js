@@ -55,6 +55,17 @@ GcodeReader = {
   		}
   	}
   },
+  
+  
+  generate_bbox_gcode : function () {
+    var move_prev = null;
+    for (var i=0; i<this.moves.length; i++) {
+      move = this.moves[i];
+      
+      
+      move_prev = move;
+    }
+  },  
 
 
   draw : function (canvas) {

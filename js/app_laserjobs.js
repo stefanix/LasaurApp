@@ -87,6 +87,8 @@ $(document).ready(function(){
   $("#gcode_bbox").button();  
   $("#gcode_bbox").click(function(e) {
     $().uxmessage('notice', "bbox not yet implemented");
+    var gcodedata = $('#gcode_program').val();
+    var gcode_bbox = 
   });
 
   $("#gcode_save_to_queue").button();  
