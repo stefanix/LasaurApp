@@ -46,7 +46,8 @@ def get_responses(line_separator='<br>'):
 def connect(port, baudrate):
     global serial_port
     clear_queue()
-    serial_port = serial.Serial(port, baudrate, timeout=0.1)
+    # serial_port = serial.Serial(port, baudrate, timeout=0.1)
+    serial_port = serial.Serial(port, baudrate, timeout=0)
 
 def close():
     global serial_port

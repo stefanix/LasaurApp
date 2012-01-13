@@ -7,7 +7,9 @@ import serial_manager, serial
 
 
 # ARDUINO_PORT = '/dev/tty.usbmodem621'
-ARDUINO_PORT = '/dev/tty.usbmodemfa131'
+# ARDUINO_PORT = '/dev/tty.usbmodemfa131'
+# ARDUINO_PORT = '/dev/tty.usbmodemfd122'
+ARDUINO_PORT = '/dev/tty.usbmodemfd121'
 BITSPERSECOND = 57600
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -46,9 +48,9 @@ def connect_handler():
     try:
         serial_manager.connect(ARDUINO_PORT, BITSPERSECOND)
         ret = "Serial connected to %s:%d." % (ARDUINO_PORT, BITSPERSECOND)  + '<br>'
-        # serial_manager.write("\r\n\r\n")
+        serial_manager.write("\r\n\r\n")
         time.sleep(1) # allow some time to receive a prompt/welcome
-        # serial_manager.flushInput()
+        serial_manager.flushInput()
         return serial_manager.get_responses('<br>')
     except serial.SerialException:
         print "Failed to connect to serial."    
