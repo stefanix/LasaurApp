@@ -1,128 +1,123 @@
 
-from collections import deque
 import time
 import serial
-
-serial_port = None
-
-gcode_queue = deque()  # could use a list, but deque is faster
-GRBL_BUFFER_MAX = 20
-grbl_buffer_current = 0
-gcode_queue_count = 0
-total_items_queued_in_batch = 0  # used for calculating percentage done
-
-responses = deque()
-RESPONSES_MAX = 50
-responses_current = 0
+from collections import deque
 
 
 
-def append_response(line):
-    # ring buffer-style responses queuing
-    global responses, responses_current, RESPONSES_MAX
-    if responses_current >= RESPONSES_MAX:
-        responses.popleft()
-        responses_current -= 1
-    responses.append(line)
-    responses_current += 1
-
-def get_responses(line_separator='<br>'):
-    global responses, responses_current, serial_port
+class SerialManagerClass:
     
-    if serial_port:
-        lines = serial_port.readlines()
-        for line in lines:
-            append_response("grbl: " + line)          
-    responce_text = ""
-    while responses:
-        responce_text += responses.popleft() + line_separator
-    responses.clear()
-    responses_current = 0
-    return responce_text
-    
-    
+    def __init__(self):
+        self.device = None
+
+        self.rx_buffer = ""
+        self.tx_buffer = ""
+        self.CHUNK_SIZE = 256
+
+        # buffer_tracker - tracks the number of 
+        # characters in the Lasersaur serial buffer
+        self.remote_buffer_tracker = deque()
+        
+        # REMOTE_BUFFER_SIZE - has to match the
+        # serial rx buffer of the Lasersaur controller.
+        self.REMOTE_BUFFER_SIZE = 256
+        
+        # used for calculating percentage done
+        self.job_size = 0    
 
 
-def connect(port, baudrate):
-    global serial_port
-    clear_queue()
-    # serial_port = serial.Serial(port, baudrate, timeout=0.1)
-    serial_port = serial.Serial(port, baudrate, timeout=0)
 
-def close():
-    global serial_port
-    if serial_port:
-        serial_port.close()
-        serial_port = None
-        return True
-    else:
-        return False
+    def connect(self, port, baudrate):
+        tx_buffer = ""
+        self.job_size = 0
+        # Create serial device with both read timeout set to 0.
+        # This results in the read() being non-blocking
+        self.device = serial.Serial(port, baudrate, timeout=0)
+        
+        # I would like to use write with a timeout but it appears from checking
+        # serialposix.py that the write function does not correctly report the
+        # number of bytes actually written. It appears to simply report back
+        # the number of bytes passed to the function.
+        # self.device = serial.Serial(port, baudrate, timeout=0, writeTimeout=0)
+
+    def close(self):
+        if self.device:
+            self.device.close()
+            self.device = None
+            return True
+        else:
+            return False
                     
-def is_connected():
-    global serial_port
-    return bool(serial_port)
+    def is_connected(self):
+        return bool(self.device)
+
+    def flush_input(self):
+        if self.device:
+            self.device.flushInput()
+
+    def flush_output(self):
+        if self.device:
+            self.device.flushOutput()
 
 
+    def queue_for_sending(self, gcode):
+        gcode = gcode.strip()
+    
+        if gcode[:4] == 'M112':
+          # cancel current job
+          self.tx_buffer = ""
+          self.job_size = 0
+        elif gcode[0] == '%':
+            return
+    
+        if gcode:
+            print "adding to queue: %s" % (gcode)
+            self.tx_buffer += gcode + '\n'
+            self.job_size += len(gcode) + 1
 
-def queue_for_sending(gcode):
-    global gcode_queue, total_items_queued_in_batch, gcode_queue_count
-    gcode = gcode.strip()
+    def is_queue_empty(self):
+        return len(self.tx_buffer) == 0
+        
     
-    if gcode[:4] == 'M112':
-      # cancel current job
-      clear_queue()
-    
-    if gcode:
-        print "adding to queue: %s" % (gcode)
-        gcode_queue.append(gcode + '\n')
-        gcode_queue_count += 1
-        total_items_queued_in_batch += 1
+    def get_queue_percentage_done(self):
+        if self.job_size == 0:
+            return ""
+        return str(100-100*len(self.tx_buffer)/self.job_size)
 
-def is_queue_empty():
-    global gcode_queue
-    return not bool(gcode_queue)
 
-def clear_queue():
-    global gcode_queue, gcode_queue_count, total_items_queued_in_batch
-    gcode_queue.clear()
-    gcode_queue_count = 0
-    total_items_queued_in_batch = 0
     
-def get_queue_percentage_done():
-    global total_items_queued_in_batch, gcode_queue_count
-    if total_items_queued_in_batch == 0: 
-        print get_responses('\n')
-        return ""
-    return str(100-100*gcode_queue_count/total_items_queued_in_batch)
-    
-def send_queue_as_ready():
-    """Continuously call this to keep processing queue."""
-    global serial_port, gcode_queue, grbl_buffer_current, GRBL_BUFFER_MAX
-    global total_items_queued_in_batch, gcode_queue_count
-    
-    if serial_port:
-        try:
-            lines = serial_port.readlines()
-            for line in lines:
-                print "grbl: " + line
-                # append_response("grbl: " + line)
-                grbl_buffer_current -= 1
-    
-            if gcode_queue:
-                if grbl_buffer_current < GRBL_BUFFER_MAX:
-                    line = gcode_queue.popleft()
-                    gcode_queue_count -= 1
-                    print "sending to grbl: %s" % (line)
-                    serial_port.write(line)
-                    grbl_buffer_current += 1
-                    # append_response("sent to grbl: %s - buffer_current: %d" % (line,grbl_buffer_current))
-            else:
-                total_items_queued_in_batch = 0
-        except OSError:
-            # Serial port appears closed => reset
-            close()
-        except ValueError:
-            # Serial port appears closed => reset
-            close()            
+    def send_queue_as_ready(self):
+        """Continuously call this to keep processing queue."""    
+        if self.device:
+            try:
+                chars = self.device.read(self.CHUNK_SIZE)
+                self.rx_buffer += chars
+                posNewline = self.rx_buffer.find('\n')
+                if posNewline >= 0:  # we got a line
+                    line = self.rx_buffer[:posNewline]
+                    self.rx_buffer = self.rx_buffer[posNewline+1:]
+                    print "grbl: " + line
+                    if line.find('ok') >= 0 or line.find('error') >= 0:
+                        self.remote_buffer_tracker.popleft()
+                
+                if len(self.tx_buffer) > 0:
+                    lasersaur_buffer_count = sum(self.remote_buffer_tracker)
+                    if lasersaur_buffer_count < self.REMOTE_BUFFER_SIZE:
+                        nToSend = min(self.REMOTE_BUFFER_SIZE-lasersaur_buffer_count, self.CHUNK_SIZE)
+                        toSend = self.tx_buffer[:nToSend]
+                        print "sending chunk: %s" % (toSend)
+                        actuallySent = self.device.write(toSend)
+                        self.tx_buffer = self.tx_buffer[actuallySent:]
+                        self.remote_buffer_tracker.append(actuallySent)
+                else:
+                    self.job_size = 0
+            except OSError:
+                # Serial port appears closed => reset
+                close()
+            except ValueError:
+                # Serial port appears closed => reset
+                close()            
+
             
-
+# singelton
+SerialManager = SerialManagerClass()

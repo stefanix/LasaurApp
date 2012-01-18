@@ -2,9 +2,10 @@
 import time
 import sys, os
 import os.path
+import serial
 import wsgiref.simple_server
 from bottle import *
-import serial_manager, serial
+from serial_manager import SerialManager
 
 
 SERIAL_PORT = None
@@ -30,12 +31,12 @@ def run_with_callback(host='127.0.0.1', port=4444, timeout=0.01):
     print
     while 1:
         try:
-            serial_manager.send_queue_as_ready()
+            SerialManager.send_queue_as_ready()
             server.handle_request()
         except KeyboardInterrupt:
             break
     print "\nShutting down..."
-    serial_manager.close()
+    SerialManager.close()
 
 
 
@@ -43,25 +44,11 @@ def run_with_callback(host='127.0.0.1', port=4444, timeout=0.01):
 def hello_handler():
     return "Hello World!!"
 
-@route('/connect')
-def connect_handler():
-    global SERIAL_PORT, BITSPERSECOND
-    try:
-        serial_manager.connect(SERIAL_PORT, BITSPERSECOND)
-        ret = "Serial connected to %s:%d." % (SERIAL_PORT, BITSPERSECOND)  + '<br>'
-        serial_manager.write("\r\n\r\n")
-        time.sleep(1) # allow some time to receive a prompt/welcome
-        serial_manager.flushInput()
-        return serial_manager.get_responses('<br>')
-    except serial.SerialException:
-        print "Failed to connect to serial."    
-        return ""    
-
 @route('/longtest')
 def longtest_handler():
     fp = open("longtest.ngc")
     for line in fp:
-        serial_manager.queue_for_sending(line)
+        SerialManager.queue_for_sending(line)
     return "Longtest queued."
     
 
@@ -90,37 +77,37 @@ def default_handler():
 
 @route('/serial/:connect')
 def serial_handler(connect):
-    if connect == '1' and not serial_manager.is_connected():
+    if connect == '1' and not SerialManager.is_connected():
         print 'js is asking to connect serial'      
         try:
             global SERIAL_PORT, BITSPERSECOND
-            serial_manager.connect(SERIAL_PORT, BITSPERSECOND)
+            SerialManager.connect(SERIAL_PORT, BITSPERSECOND)
             ret = "Serial connected to %s:%d." % (SERIAL_PORT, BITSPERSECOND)  + '<br>'
             time.sleep(1.0) # allow some time to receive a prompt/welcome
-            resp = serial_manager.get_responses('<br>')
-            if resp == "": resp = ret
-            return resp
+            SerialManager.flush_input()
+            SerialManager.flush_output()
+            return ret
         except serial.SerialException:
             print "Failed to connect to serial."    
             return ""          
-    elif connect == '0' and serial_manager.is_connected():
-        print 'js is asking to closer serial'    
-        if serial_manager.close(): return "1"
+    elif connect == '0' and SerialManager.is_connected():
+        # print 'js is asking to close serial'    
+        if SerialManager.close(): return "1"
         else: return ""  
     elif connect == "2":
         print 'js is asking if serial connected'
-        if serial_manager.is_connected(): return "1"
+        if SerialManager.is_connected(): return "1"
         else: return ""
     else:
-        print 'got neither: ' + connect            
+        print 'ambigious connect request from js: ' + connect            
         return ""
         
 
 @route('/gcode/:gcode_line')
 def gcode_handler(gcode_line):
-    if serial_manager.is_connected():    
+    if SerialManager.is_connected():    
         print gcode_line
-        serial_manager.queue_for_sending(gcode_line + '\n')
+        SerialManager.queue_for_sending(gcode_line + '\n')
         return "Queued for sending."
     else:
         return ""
@@ -128,18 +115,18 @@ def gcode_handler(gcode_line):
 @route('/gcode', method='POST')
 def gcode_handler_submit():
     gcode_program = request.forms.get('gcode_program')
-    if gcode_program and serial_manager.is_connected():
+    if gcode_program and SerialManager.is_connected():
         print gcode_program
         lines = gcode_program.split('\n')
         for line in lines:
-            serial_manager.queue_for_sending(line + '\n')
+            SerialManager.queue_for_sending(line + '\n')
         return "Queued for sending."
     else:
         return ""
 
 @route('/queue_pct_done')
 def queue_pct_done_handler():
-    return serial_manager.get_queue_percentage_done()
+    return SerialManager.get_queue_percentage_done()
 
 
 # @route('/svg_upload', method='POST')
@@ -156,6 +143,9 @@ def queue_pct_done_handler():
 #         #     # this is necessary because inkscape stores everything in px units
 #         # return gcode
 #     return "You missed a field."
+
+
+
 
 
 
