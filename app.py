@@ -17,7 +17,7 @@ GUESS_PPREFIX = "tty.usbmodem"
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 
-def run_with_callback(host='127.0.0.1', port=4442, timeout=0.01):
+def run_with_callback(host='127.0.0.1', port=4444, timeout=0.01):
     """ Start a wsgiref server instance with control over the main loop.
         This is a function that I derived from the bottle.py run()
     """
