@@ -17,7 +17,7 @@ GUESS_PPREFIX = "tty.usbmodem"
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 
-def run_with_callback(host='127.0.0.1', port=4444, timeout=0.01):
+def run_with_callback(host='127.0.0.1', port=4442, timeout=0.01):
     """ Start a wsgiref server instance with control over the main loop.
         This is a function that I derived from the bottle.py run()
     """
@@ -77,23 +77,25 @@ def default_handler():
 
 @route('/serial/:connect')
 def serial_handler(connect):
-    if connect == '1' and not SerialManager.is_connected():
+    if connect == '1':
         print 'js is asking to connect serial'      
-        try:
-            global SERIAL_PORT, BITSPERSECOND
-            SerialManager.connect(SERIAL_PORT, BITSPERSECOND)
-            ret = "Serial connected to %s:%d." % (SERIAL_PORT, BITSPERSECOND)  + '<br>'
-            time.sleep(1.0) # allow some time to receive a prompt/welcome
-            SerialManager.flush_input()
-            SerialManager.flush_output()
-            return ret
-        except serial.SerialException:
-            print "Failed to connect to serial."    
-            return ""          
-    elif connect == '0' and SerialManager.is_connected():
-        # print 'js is asking to close serial'    
-        if SerialManager.close(): return "1"
-        else: return ""  
+        if not SerialManager.is_connected():
+            try:
+                global SERIAL_PORT, BITSPERSECOND
+                SerialManager.connect(SERIAL_PORT, BITSPERSECOND)
+                ret = "Serial connected to %s:%d." % (SERIAL_PORT, BITSPERSECOND)  + '<br>'
+                time.sleep(1.0) # allow some time to receive a prompt/welcome
+                SerialManager.flush_input()
+                SerialManager.flush_output()
+                return ret
+            except serial.SerialException:
+                print "Failed to connect to serial."    
+                return ""          
+    elif connect == '0':
+        print 'js is asking to close serial'    
+        if SerialManager.is_connected():
+            if SerialManager.close(): return "1"
+            else: return ""  
     elif connect == "2":
         print 'js is asking if serial connected'
         if SerialManager.is_connected(): return "1"
@@ -107,7 +109,7 @@ def serial_handler(connect):
 def gcode_handler(gcode_line):
     if SerialManager.is_connected():    
         print gcode_line
-        SerialManager.queue_for_sending(gcode_line + '\n')
+        SerialManager.queue_for_sending(gcode_line)
         return "Queued for sending."
     else:
         return ""
@@ -116,10 +118,10 @@ def gcode_handler(gcode_line):
 def gcode_handler_submit():
     gcode_program = request.forms.get('gcode_program')
     if gcode_program and SerialManager.is_connected():
-        print gcode_program
         lines = gcode_program.split('\n')
+        print "Adding to queue %s lines" % len(lines)
         for line in lines:
-            SerialManager.queue_for_sending(line + '\n')
+            SerialManager.queue_for_sending(line)
         return "Queued for sending."
     else:
         return ""
