@@ -19,7 +19,7 @@ class SerialManagerClass:
         # written to the device in one go.
         # IMPORTANT: The remote device is required to send an
         # XOFF if TX_CHUNK_SIZE bytes would overflow it's buffer.
-        self.TX_CHUNK_SIZE = 1
+        self.TX_CHUNK_SIZE = 16
         self.RX_CHUNK_SIZE = 256
         
         # used for calculating percentage done
@@ -96,8 +96,8 @@ class SerialManagerClass:
                 chars = self.device.read(self.RX_CHUNK_SIZE)
                 if len(chars) > 0:
                     ## check for flow control chars
-                    iXON = chars.rfind(serial.XON)
-                    iXOFF = chars.rfind(serial.XOFF)
+                    iXON = chars.rfind('>')
+                    iXOFF = chars.rfind('<')
                     if iXON != -1 or iXOFF != -1:
                         if iXON > iXOFF:
                             print "=========================== XON"
@@ -106,7 +106,7 @@ class SerialManagerClass:
                             print "=========================== XOFF"
                             self.remoteXON = False
                         #remove control chars
-                        for c in serial.XON+serial.XOFF: 
+                        for c in '>'+'<': 
                             chars = chars.replace(c, "")
                     ## assemble lines
                     self.rx_buffer += chars
@@ -120,7 +120,6 @@ class SerialManagerClass:
                 if self.tx_buffer and self.remoteXON:
                     actuallySent = self.device.write(self.tx_buffer[:self.TX_CHUNK_SIZE])
                     # sys.stdout.write(self.tx_buffer[:actuallySent])  # print w/ newline
-                    self.device.flushOutput()
                     self.tx_buffer = self.tx_buffer[actuallySent:]  
                 else:
                     self.job_size = 0
