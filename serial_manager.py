@@ -139,10 +139,10 @@ class SerialManagerClass:
                         self.job_active = False
             except OSError:
                 # Serial port appears closed => reset
-                close()
+                self.close()
             except ValueError:
                 # Serial port appears closed => reset
-                close()            
+                self.close()            
 
             
 # singelton
