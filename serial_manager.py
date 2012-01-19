@@ -19,11 +19,16 @@ class SerialManagerClass:
         # written to the device in one go.
         # IMPORTANT: The remote device is required to send an
         # XOFF if TX_CHUNK_SIZE bytes would overflow it's buffer.
-        self.TX_CHUNK_SIZE = 8  # from testing 16 causes issues, seems write is not reporting back the actualy sent stuff
+        # BUG WARNING: it appears pyserial's write() does not
+        # report back the correct size of actually written bytes.
+        # It simply returns the num is was handed to. This is a problem
+        # when it cannot write at least TX_CHUNK_SIZE. 8 seems to be fine.
+        self.TX_CHUNK_SIZE = 8
         self.RX_CHUNK_SIZE = 256
         
         # used for calculating percentage done
-        self.job_size = 0    
+        self.job_size = 0
+        self.job_active = False
 
 
 
@@ -77,6 +82,7 @@ class SerialManagerClass:
                     
             self.tx_buffer += gcode + '\n'
             self.job_size += len(gcode) + 1
+            self.job_active = True
 
     def is_queue_empty(self):
         return len(self.tx_buffer) == 0
@@ -96,17 +102,17 @@ class SerialManagerClass:
                 chars = self.device.read(self.RX_CHUNK_SIZE)
                 if len(chars) > 0:
                     ## check for flow control chars
-                    iXON = chars.rfind('>')
-                    iXOFF = chars.rfind('<')
+                    iXON = chars.rfind(serial.XON)
+                    iXOFF = chars.rfind(serial.XOFF)
                     if iXON != -1 or iXOFF != -1:
                         if iXON > iXOFF:
-                            print "=========================== XON"
+                            # print "=========================== XON"
                             self.remoteXON = True
                         else:
-                            print "=========================== XOFF"
+                            # print "=========================== XOFF"
                             self.remoteXON = False
                         #remove control chars
-                        for c in '>'+'<': 
+                        for c in serial.XON+serial.XOFF: 
                             chars = chars.replace(c, "")
                     ## assemble lines
                     self.rx_buffer += chars
@@ -114,15 +120,23 @@ class SerialManagerClass:
                     if posNewline >= 0:  # we got a line
                         line = self.rx_buffer[:posNewline]
                         self.rx_buffer = self.rx_buffer[posNewline+1:]
-                        # if line.find('error') > -1:
-                        print "grbl: " + line
+                        if line.find('error') > -1:
+                            print "grbl: " + line
+                        else:
+                            sys.stdout.write(".")  # print w/ newline
+                            sys.stdout.flush()
                 
-                if self.tx_buffer and self.remoteXON:
-                    actuallySent = self.device.write(self.tx_buffer[:self.TX_CHUNK_SIZE])
-                    # sys.stdout.write(self.tx_buffer[:actuallySent])  # print w/ newline
-                    self.tx_buffer = self.tx_buffer[actuallySent:]  
+                if self.tx_buffer:
+                    if self.remoteXON:
+                        actuallySent = self.device.write(self.tx_buffer[:self.TX_CHUNK_SIZE])
+                        # sys.stdout.write(self.tx_buffer[:actuallySent])  # print w/ newline
+                        self.tx_buffer = self.tx_buffer[actuallySent:]  
                 else:
-                    self.job_size = 0
+                    if self.job_active:
+                        print "\nG-code stream finished!"
+                        print "(LasaurGrbl may take some extra time to finalize)"
+                        self.job_size = 0
+                        self.job_active = False
             except OSError:
                 # Serial port appears closed => reset
                 close()

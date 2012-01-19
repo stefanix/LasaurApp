@@ -178,7 +178,7 @@ if not SERIAL_PORT:
             
 
 if SERIAL_PORT:
-    debug(True)
+    # debug(True)
     run_with_callback(host='localhost')    
 else:         
     print "-----------------------------------------------------------------------------"
