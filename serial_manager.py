@@ -19,7 +19,7 @@ class SerialManagerClass:
         # written to the device in one go.
         # IMPORTANT: The remote device is required to send an
         # XOFF if TX_CHUNK_SIZE bytes would overflow it's buffer.
-        self.TX_CHUNK_SIZE = 16
+        self.TX_CHUNK_SIZE = 8  # from testing 16 causes issues, seems write is not reporting back the actualy sent stuff
         self.RX_CHUNK_SIZE = 256
         
         # used for calculating percentage done
