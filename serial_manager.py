@@ -120,11 +120,11 @@ class SerialManagerClass:
                     if posNewline >= 0:  # we got a line
                         line = self.rx_buffer[:posNewline]
                         self.rx_buffer = self.rx_buffer[posNewline+1:]
-                        if line.find('error') > -1:
-                            print "grbl: " + line
-                        else:
+                        if line.find('ok') > -1:
                             sys.stdout.write(".")  # print w/ newline
                             sys.stdout.flush()
+                        else:
+                            print "\ngrbl: " + line
                 
                 if self.tx_buffer:
                     if self.remoteXON:
