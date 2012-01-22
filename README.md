@@ -19,10 +19,10 @@ This is done this way because we imagine laser cutters being shared in shops. We
 How to Use this App
 -------------------
 
+* make sure you have Python 2.7
 * install [pyserial](http://pyserial.sourceforge.net/)
-* edit app.py and define the port of the Lasersaur (*ARDUINO_PORT*)
 * run *python app.py*
 * open *http://localhost:4444* 
   (in current Firefox or Chrome, future Safari 6 or IE 10)
 
-Also see: [The Lasersaur Manual](http://labs.nortd.com/lasersaur/manual/)
+For more information see the [Lasersaur Software Setup Guide](http://labs.nortd.com/lasersaur/manual/software_setup).
