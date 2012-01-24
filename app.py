@@ -194,7 +194,7 @@ if not SERIAL_PORT:
 
 if SERIAL_PORT:
     # debug(True)
-    run_with_callback(host='')    
+    run_with_callback()    
 else:         
     print "-----------------------------------------------------------------------------"
     print "ERROR: LasaurApp doesn't know what serial device to connect to!"
