@@ -12,6 +12,7 @@ SERIAL_PORT = None
 BITSPERSECOND = 9600
 CONFIG_FILE = "lasaurapp.conf"
 GUESS_PPREFIX = "tty.usbmodem"
+COOKIE_KEY = 'secret_key_jkn23489hsdf'
 
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -132,6 +133,7 @@ def queue_pct_done_handler():
 
 
 # @route('/svg_upload', method='POST')
+# # file echo - used as a fall back for browser not supporting the file API
 # def svg_upload():
 #     data = request.files.get('data')
 #     if data.file:
@@ -139,15 +141,28 @@ def queue_pct_done_handler():
 #         filename = data.filename
 #         print "You uploaded %s (%d bytes)." % (filename, len(raw))
 #         return raw
-#         # boundarys = SVG(raw).get_boundarys()
-#         # gcode = write_GCODE(boundarys, 1200, 255, 0.2822222222, 0.0, 0.0)
-#         #     # 0.2822222222 converts from px to mm (at 90dpi)
-#         #     # this is necessary because inkscape stores everything in px units
-#         # return gcode
 #     return "You missed a field."
 
 
-
+# @route('/login')
+# def login():
+#     username = request.forms.get('username')
+#     password = request.forms.get('password')
+#     if check_user_credentials(username, password):
+#         response.set_cookie("account", username, secret=COOKIE_KEY)
+#         return "Welcome %s! You are now logged in." % username
+#     else:
+#         return "Login failed."
+# 
+# @route('/logout')
+# def login():
+#     username = request.forms.get('username')
+#     password = request.forms.get('password')
+#     if check_user_credentials(username, password):
+#         response.delete_cookie("account", username, secret=COOKIE_KEY)
+#         return "Welcome %s! You are now logged out." % username
+#     else:
+#         return "Already logged out."
 
 
 
@@ -179,7 +194,7 @@ if not SERIAL_PORT:
 
 if SERIAL_PORT:
     # debug(True)
-    run_with_callback(host='localhost')    
+    run_with_callback(host='')    
 else:         
     print "-----------------------------------------------------------------------------"
     print "ERROR: LasaurApp doesn't know what serial device to connect to!"

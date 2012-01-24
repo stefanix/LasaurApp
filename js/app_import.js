@@ -10,23 +10,37 @@ $(document).ready(function(){
   $('#svg_upload_file').change(function(e){
     $('#svg_loading_hint').show();
     var input = $('#svg_upload_file').get(0)
+    var browser_supports_file_api = true;
     if (typeof window.FileReader !== 'function') {
-      $().uxmessage('error', "This requires a modern browser with File API support.");
+      browser_supports_file_api = false;
+      $().uxmessage('notice', "This requires a modern browser with File API support.");
     } else if (!input.files) {
-      $().uxmessage('error', "This browser does not support the files property.");
-    } else if (!input.files[0]) {
-      $().uxmessage('notice', "No file was selected.");      
-    } else {
-      var fr = new FileReader()
-      fr.onload = parseSvgData
-      fr.readAsText(input.files[0])
+      browser_supports_file_api = false;
+      $().uxmessage('notice', "This browser does not support the files property.");
     }
+    
+    if (browser_supports_file_api) {
+      if (input.files[0]) {
+        var fr = new FileReader()
+        fr.onload = parseSvgDataFromFileAPI
+        fr.readAsText(input.files[0])
+      } else {
+        $().uxmessage('error', "No file was selected.");
+      }
+    } else {  // fallback
+      // $().uxmessage('notice', "Using fallback: file form upload.");
+    }
+    
   	e.preventDefault();		
   });
 
-  function parseSvgData(e) {
+
+  function parseSvgDataFromFileAPI(e) {
+    parseSvgData(e.target.result);
+  }
+
+  function parseSvgData(svgdata) {
     $().uxmessage('notice', "parsing SVG ...");
-    var svgdata = e.target.result
     geo_boundarys = SVGReader.parse(svgdata, {})
     //alert(geo_boundarys.toSource());
     //alert(JSON.stringify(geo_boundarys));
