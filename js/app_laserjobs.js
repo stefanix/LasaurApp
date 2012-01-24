@@ -5,12 +5,9 @@ $(document).ready(function(){
   $('#library_placeholder').replaceWith($('#gcode_library'));
   $('#gcode_library').show();
 
-  $('#gcode_library a').click(function(){		
-  	$('#gcode_name').val( $(this).text() );
-  	$('#gcode_program').val( $(this).next().text() );
 
-  	// make sure preview refreshes
-  	$('#gcode_program').trigger('blur');	
+  $('#gcode_library a').click(function(){		
+    preview_job($(this).next().text(), $(this).text())
   });
 
 

@@ -65,6 +65,14 @@ function add_to_job_queue(gcode, name) {
 }
 
 
+function preview_job(gcode, name) {
+	$('#gcode_name').val(name);
+	$('#gcode_program').val(gcode);
+	// make sure preview refreshes
+	$('#gcode_program').trigger('blur');
+}
+
+
 
 $(document).ready(function(){
 
