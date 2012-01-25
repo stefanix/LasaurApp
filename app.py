@@ -3,11 +3,14 @@ import time
 import sys, os
 import os.path
 import serial
+import socket
 import wsgiref.simple_server
 from bottle import *
 from serial_manager import SerialManager
+from optparse import OptionParser
 
 
+VERSION = "v12.01c"
 SERIAL_PORT = None
 BITSPERSECOND = 9600
 CONFIG_FILE = "lasaurapp.conf"
@@ -18,17 +21,22 @@ COOKIE_KEY = 'secret_key_jkn23489hsdf'
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 
-def run_with_callback(host='127.0.0.1', port=4444, timeout=0.01):
+def run_with_callback(host, port=4444, timeout=0.01):
     """ Start a wsgiref server instance with control over the main loop.
         This is a function that I derived from the bottle.py run()
     """
     handler = default_app()
     server = wsgiref.simple_server.make_server(host, port, handler)
     server.timeout = timeout
+    print "-----------------------------------------------------------------------------"
     print "Bottle server starting up ..."
     print "Serial is set to %d bps" % BITSPERSECOND
-    print "Point your browser to: http://%s:%d/" % (host, port)
+    print "Point your browser to: "    
+    print "http://%s:%d/      (local)" % ('127.0.0.1', port)    
+    if host == '':
+        print "http://%s:%d/   (public)" % (socket.gethostbyname(socket.gethostname()), port)
     print "Use Ctrl-C to quit."
+    print "-----------------------------------------------------------------------------"    
     print
     while 1:
         try:
@@ -39,7 +47,7 @@ def run_with_callback(host='127.0.0.1', port=4444, timeout=0.01):
     print "\nShutting down..."
     SerialManager.close()
 
-
+        
 
 @route('/hello')
 def hello_handler():
@@ -144,6 +152,10 @@ def queue_pct_done_handler():
 #     return "You missed a field."
 
 
+
+# def check_user_credentials(username, password):
+#     return username in allowed and allowed[username] == password
+#     
 # @route('/login')
 # def login():
 #     username = request.forms.get('username')
@@ -166,9 +178,16 @@ def queue_pct_done_handler():
 
 
 
-if len(sys.argv) == 2:
+oparser = OptionParser(usage="%prog [-p] [serial_port]", version=VERSION)
+# parser.add_option("-s", "--serial", dest="serial",
+#                   help="serial port to connect to")
+oparser.add_option("-p", action="store_true", dest="host_on_all_interfaces")
+(options, args) = oparser.parse_args()
+
+
+if len(args) == 1:
     # (1) get the serial device from the argument list
-    SERIAL_PORT = sys.argv[1]
+    SERIAL_PORT = args[0]
     print "Using serial device '"+ SERIAL_PORT +"' from command line."
 else:    
     if os.path.isfile(CONFIG_FILE):
@@ -194,7 +213,10 @@ if not SERIAL_PORT:
 
 if SERIAL_PORT:
     # debug(True)
-    run_with_callback()    
+    if options.host_on_all_interfaces:
+        run_with_callback('')
+    else:
+        run_with_callback('127.0.0.1')
 else:         
     print "-----------------------------------------------------------------------------"
     print "ERROR: LasaurApp doesn't know what serial device to connect to!"
