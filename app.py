@@ -202,12 +202,13 @@ else:
 
 if not SERIAL_PORT:
     # (3) try best guess the serial device if on linux or osx
-    devices = os.listdir("/dev")
-    for device in devices:
-        if device[:len(GUESS_PPREFIX)] == GUESS_PPREFIX:
-            SERIAL_PORT = "/dev/" + device
-            print "Using serial device '"+ SERIAL_PORT +"' by best guess."
-            break
+    if os.path.isdir("/dev"):
+        devices = os.listdir("/dev")
+        for device in devices:
+            if device[:len(GUESS_PPREFIX)] == GUESS_PPREFIX:
+                SERIAL_PORT = "/dev/" + device
+                print "Using serial device '"+ SERIAL_PORT +"' by best guess."
+                break
     
             
 
