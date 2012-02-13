@@ -136,7 +136,7 @@ $(document).ready(function(){
 
   //$("#find_home").button();
   $("#find_home").click(function(e){
-  	var gcode = 'G30\n'
+  	var gcode = '~G30\n'  // ~ is the cancel stop state char
   	$().uxmessage('notice', gcode);	
   	$.get('/gcode/'+ gcode, function(data) {
   		if (data != "") {
@@ -164,7 +164,8 @@ $(document).ready(function(){
 
   $("#cancel_job").button();
   $("#cancel_job").click(function(e){
-  	var gcode = 'M112X0Y0F20000\n'
+  	var gcode = '!\n'  // ! is enter stop state char
+  	//var gcode = '!\n~\nG0X0Y0F20000\n'  // ! is enter stop state char
   	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));	
   	$.get('/gcode/'+ gcode, function(data) {
   		if (data != "") {
@@ -176,4 +177,17 @@ $(document).ready(function(){
   	e.preventDefault();		
   });
 
+  $("#suspend_stop_state").button();
+  $("#suspend_stop_state").click(function(e){
+  	var gcode = '~\n'  // ~ is the cancel stop state char
+  	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));	
+  	$.get('/gcode/'+ gcode, function(data) {
+  		if (data != "") {
+  			$().uxmessage('success', "Stop-state cancled. Machine is ready for new gcode.");
+  		} else {
+  			$().uxmessage('error', "Serial not connected.");
+  		}
+  	});
+  	e.preventDefault();		
+  });
 });  // ready

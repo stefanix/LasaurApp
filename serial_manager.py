@@ -73,7 +73,7 @@ class SerialManagerClass:
         if gcode:
             gcode = gcode.strip()
     
-            if gcode[:4] == 'M112':
+            if gcode[:4] == '!':
               # cancel current job
               self.tx_buffer = ""
               self.job_size = 0

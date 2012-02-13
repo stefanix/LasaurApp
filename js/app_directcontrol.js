@@ -23,14 +23,14 @@ $(document).ready(function(){
   		g0_or_g1 = 'G0';	
   	}
   	var feedrate = $( "#feedrate_field" ).val();
-  	var gcode = g0_or_g1 + ' X' + parseInt(lasaur_coord_x) + 'Y' + parseInt(lasaur_coord_y) + 'F' + feedrate + '\n';
+  	var gcode = 'g54\n' + g0_or_g1 + ' X' + parseInt(lasaur_coord_x) + 'Y' + parseInt(lasaur_coord_y) + 'F' + feedrate + '\n';
 	
   	$().uxmessage('notice', gcode);
 	
   	// send new pos to server, on success move graphics
   	$.get('/gcode/'+ gcode, function(data) {
   		if (data != "") {
-  			$().uxmessage('success', "G-Code sent to serial.");
+  			$().uxmessage('success', "Motion request sent via g54 coordinate system.");
   			moveto(x, y);
   		} else {
   			$().uxmessage('error', "Serial not connected.");
