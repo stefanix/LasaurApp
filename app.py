@@ -10,7 +10,7 @@ from serial_manager import SerialManager
 from optparse import OptionParser
 
 
-VERSION = "v12.01c"
+VERSION = "v12.02-beta1"
 SERIAL_PORT = None
 BITSPERSECOND = 9600
 CONFIG_FILE = "lasaurapp.conf"
