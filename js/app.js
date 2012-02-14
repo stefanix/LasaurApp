@@ -134,34 +134,6 @@ $(document).ready(function(){
   	e.preventDefault();		
   });	
 
-  //$("#find_home").button();
-  $("#find_home").click(function(e){
-  	var gcode = '~G30\n'  // ~ is the cancel stop state char
-  	$().uxmessage('notice', gcode);	
-  	$.get('/gcode/'+ gcode, function(data) {
-  		if (data != "") {
-  			$().uxmessage('success', "G-Code sent to serial.");
-  		} else {
-  			$().uxmessage('error', "Serial not connected.");
-  		}
-  	});
-  	e.preventDefault();		
-  });
-
-  //$("#go_home").button();
-  $("#go_home").click(function(e){
-  	var gcode = 'G0X0Y0F20000\n'
-  	$().uxmessage('notice', gcode);	
-  	$.get('/gcode/'+ gcode, function(data) {
-  		if (data != "") {
-  			$().uxmessage('success', "G-Code sent to serial.");
-  		} else {
-  			$().uxmessage('error', "Serial not connected.");
-  		}
-  	});
-  	e.preventDefault();		
-  });
-
   $("#cancel_job").button();
   $("#cancel_job").click(function(e){
   	var gcode = '!\n'  // ! is enter stop state char
@@ -186,18 +158,84 @@ $(document).ready(function(){
 	  }, 1000);
   	e.preventDefault();		
   });
-
-  $("#suspend_stop_state").button();
-  $("#suspend_stop_state").click(function(e){
-  	var gcode = '~\n'  // ~ is resume char
-  	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));	
+  
+  $("#find_home").click(function(e){
+  	var gcode = '~G30\n'  // ~ is the cancel stop state char
+  	$().uxmessage('notice', gcode);	
   	$.get('/gcode/'+ gcode, function(data) {
   		if (data != "") {
-  			$().uxmessage('success', "Stop-state cancled. Machine is ready for new gcode.");
+  			$().uxmessage('success', "Homing cycle ...");
   		} else {
   			$().uxmessage('error', "Serial not connected.");
   		}
   	});
   	e.preventDefault();		
   });
+
+  $("#go_to_origin").click(function(e){
+  	var gcode = 'G0X0Y0F20000\n'
+  	$().uxmessage('notice', gcode);	
+  	$.get('/gcode/'+ gcode, function(data) {
+  		if (data != "") {
+  			$().uxmessage('success', "Going to origin ...");
+  		} else {
+  			$().uxmessage('error', "Serial not connected.");
+  		}
+  	});
+  	e.preventDefault();		
+  });
+
+  $("#set_table_offset").click(function(e){
+  	var gcode = 'G10L20P0\n'
+  	$().uxmessage('notice', gcode);	
+  	$.get('/gcode/'+ gcode, function(data) {
+  		if (data != "") {
+  			$().uxmessage('success', "Setting table offset ...");
+  		} else {
+  			$().uxmessage('error', "Serial not connected.");
+  		}
+  	});
+  	e.preventDefault();		
+  });
+  
+  $("#use_table_offset").click(function(e){
+  	var gcode = 'G54\n'
+  	$().uxmessage('notice', gcode);	
+  	$.get('/gcode/'+ gcode, function(data) {
+  		if (data != "") {
+  			$().uxmessage('success', "Using table offset ...");
+  		} else {
+  			$().uxmessage('error', "Serial not connected.");
+  		}
+  	});
+  	e.preventDefault();		
+  });
+
+  $("#set_custom_offset").click(function(e){
+  	var gcode = 'G10L20P1\n'
+  	$().uxmessage('notice', gcode);	
+  	$.get('/gcode/'+ gcode, function(data) {
+  		if (data != "") {
+  			$().uxmessage('success', "Setting custom offset ...");
+  		} else {
+  			$().uxmessage('error', "Serial not connected.");
+  		}
+  	});
+  	e.preventDefault();		
+  });
+  
+  $("#use_custom_offset").click(function(e){
+  	var gcode = 'G55\n'
+  	$().uxmessage('notice', gcode);	
+  	$.get('/gcode/'+ gcode, function(data) {
+  		if (data != "") {
+  			$().uxmessage('success', "Using custom offset ...");
+  		} else {
+  			$().uxmessage('error', "Serial not connected.");
+  		}
+  	});
+  	e.preventDefault();		
+  });
+  
+  
 });  // ready
