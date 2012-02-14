@@ -184,33 +184,7 @@ $(document).ready(function(){
   	});
   	e.preventDefault();		
   });
-
-  $("#set_table_offset").click(function(e){
-  	var gcode = 'G10L20P0\n'
-  	$().uxmessage('notice', gcode);	
-  	$.get('/gcode/'+ gcode, function(data) {
-  		if (data != "") {
-  			$().uxmessage('success', "Setting table offset ...");
-  		} else {
-  			$().uxmessage('error', "Serial not connected.");
-  		}
-  	});
-  	e.preventDefault();		
-  });
   
-  $("#use_table_offset").click(function(e){
-  	var gcode = 'G54\n'
-  	$().uxmessage('notice', gcode);	
-  	$.get('/gcode/'+ gcode, function(data) {
-  		if (data != "") {
-  			$().uxmessage('success', "Using table offset ...");
-  		} else {
-  			$().uxmessage('error', "Serial not connected.");
-  		}
-  	});
-  	e.preventDefault();		
-  });
-
   $("#set_custom_offset").click(function(e){
   	var gcode = 'G10L20P1\n'
   	$().uxmessage('notice', gcode);	
@@ -230,6 +204,19 @@ $(document).ready(function(){
   	$.get('/gcode/'+ gcode, function(data) {
   		if (data != "") {
   			$().uxmessage('success', "Using custom offset ...");
+  		} else {
+  			$().uxmessage('error', "Serial not connected.");
+  		}
+  	});
+  	e.preventDefault();		
+  });
+  
+  $("#use_table_offset").click(function(e){
+  	var gcode = 'G54\n'
+  	$().uxmessage('notice', gcode);	
+  	$.get('/gcode/'+ gcode, function(data) {
+  		if (data != "") {
+  			$().uxmessage('success', "Using table offset ...");
   		} else {
   			$().uxmessage('error', "Serial not connected.");
   		}
