@@ -165,7 +165,6 @@ $(document).ready(function(){
   $("#cancel_job").button();
   $("#cancel_job").click(function(e){
   	var gcode = '!\n'  // ! is enter stop state char
-  	//var gcode = '!\n~\nG0X0Y0F20000\n'  // ! is enter stop state char
   	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));	
   	$.get('/gcode/'+ gcode, function(data) {
   		if (data != "") {
@@ -174,12 +173,23 @@ $(document).ready(function(){
   			$().uxmessage('error', "Serial not connected.");
   		}
   	});
+	  var delayedresume = setTimeout(function() {
+    	var gcode = '~\nG0X0Y0F20000\n'  // ~ is resume char
+    	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));	
+    	$.get('/gcode/'+ gcode, function(data) {
+    		if (data != "") {
+    			$().uxmessage('success', "Resetting ...");
+    		} else {
+    			$().uxmessage('error', "Serial not connected.");
+    		}
+    	});
+	  }, 1000);
   	e.preventDefault();		
   });
 
   $("#suspend_stop_state").button();
   $("#suspend_stop_state").click(function(e){
-  	var gcode = '~\n'  // ~ is the cancel stop state char
+  	var gcode = '~\n'  // ~ is resume char
   	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));	
   	$.get('/gcode/'+ gcode, function(data) {
   		if (data != "") {
