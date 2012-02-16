@@ -134,13 +134,13 @@ $(document).ready(function(){
   	e.preventDefault();		
   });	
 
-  $("#cancel_job").button();
-  $("#cancel_job").click(function(e){
+  $("#stop_job").button();
+  $("#stop_job").click(function(e){
   	var gcode = '!\n'  // ! is enter stop state char
   	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));	
   	$.get('/gcode/'+ gcode, function(data) {
   		if (data != "") {
-  			$().uxmessage('success', "Canceling ...");
+  			$().uxmessage('success', "Stopping ...");
   		} else {
   			$().uxmessage('error', "Serial not connected.");
   		}
