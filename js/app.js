@@ -134,8 +134,8 @@ $(document).ready(function(){
   	e.preventDefault();		
   });	
 
-  $("#stop_job").button();
-  $("#stop_job").click(function(e){
+  $("#cancel_job").button();
+  $("#cancel_job").click(function(e){
   	var gcode = '!\n'  // ! is enter stop state char
   	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));	
   	$.get('/gcode/'+ gcode, function(data) {
