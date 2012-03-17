@@ -226,6 +226,12 @@ if not SERIAL_PORT:
             
 
 if SERIAL_PORT:
+    
+    if hasattr(sys, "_MEIPASS"):
+        print "_MEIPASS: " + sys._MEIPASS
+    else:
+        print "no _MEIPASS"
+    
     # debug(True)
     if options.host_on_all_interfaces:
         run_with_callback('')
