@@ -18,7 +18,20 @@ GUESS_PPREFIX = "tty.usbmodem"
 COOKIE_KEY = 'secret_key_jkn23489hsdf'
 
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
+
+def data_root():
+    """This is to be used with all relative file access.
+       _MEIPASS is a special location for data files when creating
+       standalone, single file python apps with pyInstaller.
+       pyInstaller command is:
+       (python pyinstaller/pyinstaller.py --onefile app.py)
+       python pyinstaller/pyinstaller.py --onefile app.spec
+    """
+    if hasattr(sys, "_MEIPASS"):
+        return sys._MEIPASS
+    else:
+        return os.path.dirname(os.path.abspath(__file__))
+
 
 
 def run_with_callback(host, port=4444, timeout=0.01):
@@ -64,25 +77,25 @@ def longtest_handler():
 
 @route('/css/:path#.+#')
 def static_css_handler(path):
-    return static_file(path, root=os.path.join(current_dir, 'css'))
+    return static_file(path, root=os.path.join(data_root(), 'css'))
     
 @route('/js/:path#.+#')
 def static_css_handler(path):
-    return static_file(path, root=os.path.join(current_dir, 'js'))
+    return static_file(path, root=os.path.join(data_root(), 'js'))
     
 @route('/img/:path#.+#')
 def static_css_handler(path):
-    return static_file(path, root=os.path.join(current_dir, 'img'))
+    return static_file(path, root=os.path.join(data_root(), 'img'))
 
 @route('/')
 @route('/index.html')
 @route('/app.html')
 def default_handler():
-    return static_file('app.html', root=current_dir)
+    return static_file('app.html', root=data_root())
 
 @route('/canvas')
 def default_handler():
-    return static_file('testCanvas.html', root=current_dir)    
+    return static_file('testCanvas.html', root=data_root())    
 
 @route('/serial/:connect')
 def serial_handler(connect):
