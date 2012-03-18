@@ -26,3 +26,19 @@ How to Use this App
   (in current Firefox or Chrome, future Safari 6 or IE 10)
 
 For more information see the [Lasersaur Software Setup Guide](http://labs.nortd.com/lasersaur/manual/software_setup).
+
+
+
+Notes on Creating Standalone Apps
+----------------------------------
+
+With [PyInstaller](http://www.pyinstaller.org) it's possible to convert a python app to a standalone, single file executable. This allows us to make the setup process much easier and remove all the the prerequisites on the target machine (including python and pyserial).
+
+From a shell/Terminal do the following:
+
+* go to LasaurApp directory
+* run 'python pyinstaller/pyinstaller.py --onefile app.spec'
+* the executable will be dist/app (or dist/app.exe on Windows)
+
+Most of the setup for making this happen is in the app.spec file. Here all the accessory data and frontend files are listed for inclusion in the executable. In the actual code the data root directory can be found in 'sys._MEIPASS'.
+

@@ -4,6 +4,7 @@ import sys, os
 import os.path
 import serial
 import socket
+import webbrowser
 import wsgiref.simple_server
 from bottle import *
 from serial_manager import SerialManager
@@ -24,7 +25,6 @@ def data_root():
        _MEIPASS is a special location for data files when creating
        standalone, single file python apps with pyInstaller.
        pyInstaller command is:
-       (python pyinstaller/pyinstaller.py --onefile app.py)
        python pyinstaller/pyinstaller.py --onefile app.spec
     """
     if hasattr(sys, "_MEIPASS"):
@@ -51,6 +51,10 @@ def run_with_callback(host, port=4444, timeout=0.01):
     print "Use Ctrl-C to quit."
     print "-----------------------------------------------------------------------------"    
     print
+    try:
+        webbrowser.open_new_tab('127.0.0.1:'+str(port))
+    except webbrowser.Error:
+        print "Cannot open Webbrowser, please to so manually."
     while 1:
         try:
             SerialManager.send_queue_as_ready()
@@ -225,13 +229,7 @@ if not SERIAL_PORT:
     
             
 
-if SERIAL_PORT:
-    
-    if hasattr(sys, "_MEIPASS"):
-        print "_MEIPASS: " + sys._MEIPASS
-    else:
-        print "no _MEIPASS"
-    
+if SERIAL_PORT:    
     # debug(True)
     if options.host_on_all_interfaces:
         run_with_callback('')
