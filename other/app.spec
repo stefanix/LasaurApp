@@ -22,15 +22,15 @@ add_resource_files( glob('../firmware/*.hex') )
 
 ### name of the executable
 ### depending on platform
-targetname = 'lasaurapp'
+target_location = os.path.join('dist', 'lasaurapp')
 if sys.platform == "darwin":
-    targetname = 'lasaurapp'
+    target_location = os.path.join('dist_osx', 'lasaurapp')
     add_resource_files( glob('../firmware/tools_osx/*') )
 elif sys.platform == "win32":
-    targetname = 'lasaurapp.exe'
+    target_location = os.path.join('dist_win', 'lasaurapp.exe')
     add_resource_files( glob('../firmware/tools_win/*') )
 elif sys.platform == "linux" or sys.platform == "linux2":
-    targetname = 'lasaurapp'
+    target_location = os.path.join('dist_linux', 'lasaurapp')
     add_resource_files( glob('../firmware/tools_linux/*') )
 
 
@@ -47,7 +47,7 @@ exe = EXE(pyz,
           a.binaries,
           a.zipfiles,
           a.datas + resource_files,
-          name=os.path.join('dist', targetname),
+          name=target_location,
           debug=False,
           strip=None,
           upx=True,
