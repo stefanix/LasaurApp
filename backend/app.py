@@ -198,13 +198,13 @@ def queue_pct_done_handler():
 
 ### Setup Argument Parser
 argparser = argparse.ArgumentParser(description='Run LasaurApp.', prog='lasaurapp')
-argparser.add_argument('port', metavar='<serial_port>', nargs='?', default=False,
-                    help='Serial port where the Lasersaur is connected to.')
+argparser.add_argument('port', metavar='serial_port', nargs='?', default=False,
+                    help='serial port to the Lasersaur')
 argparser.add_argument('-v', '--version', action='version', version='%(prog)s ' + VERSION)
 argparser.add_argument('-p', '--public', dest='host_on_all_interfaces', action='store_true',
-                    default=False, help='Bind to all network devices (default: bind to 127.0.0.1).')
+                    default=False, help='bind to all network devices (default: bind to 127.0.0.1)')
 argparser.add_argument('-f', '--flash', dest='build_and_flash', action='store_true',
-                    default=False, help='Build the firmware and flash the controller.')
+                    default=False, help='flash Arduino with LasaurGrbl firmware')
 args = argparser.parse_args()
 
 
