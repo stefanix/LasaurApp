@@ -54,7 +54,7 @@ def run_with_callback(host, port=4444, timeout=0.01):
     print "-----------------------------------------------------------------------------"    
     print
     try:
-        webbrowser.open_new_tab('127.0.0.1:'+str(port))
+        webbrowser.open_new_tab('http://127.0.0.1:'+str(port))
     except webbrowser.Error:
         print "Cannot open Webbrowser, please to so manually."
     while 1:
