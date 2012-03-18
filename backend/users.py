@@ -1,0 +1,5 @@
+
+allowed = {
+"admin":"",
+"yourname":"password"
+}

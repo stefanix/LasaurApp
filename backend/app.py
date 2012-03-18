@@ -4,14 +4,15 @@ import sys, os
 import os.path
 import serial
 import socket
+import argparse
 import webbrowser
 import wsgiref.simple_server
 from bottle import *
 from serial_manager import SerialManager
-from optparse import OptionParser
+from flash import flash_upload
 
 
-VERSION = "v12.02-beta1"
+VERSION = "v12.02-beta2"
 SERIAL_PORT = None
 BITSPERSECOND = 9600
 CONFIG_FILE = "lasaurapp.conf"
@@ -24,13 +25,14 @@ def data_root():
     """This is to be used with all relative file access.
        _MEIPASS is a special location for data files when creating
        standalone, single file python apps with pyInstaller.
-       pyInstaller command is:
+       Standalone is created by calling from 'other' directory:
        python pyinstaller/pyinstaller.py --onefile app.spec
     """
     if hasattr(sys, "_MEIPASS"):
         return sys._MEIPASS
     else:
-        return os.path.dirname(os.path.abspath(__file__))
+        # root is one up from this file
+        return os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../'))
 
 
 
@@ -81,25 +83,25 @@ def longtest_handler():
 
 @route('/css/:path#.+#')
 def static_css_handler(path):
-    return static_file(path, root=os.path.join(data_root(), 'css'))
+    return static_file(path, root=os.path.join(data_root(), 'frontend/css'))
     
 @route('/js/:path#.+#')
 def static_css_handler(path):
-    return static_file(path, root=os.path.join(data_root(), 'js'))
+    return static_file(path, root=os.path.join(data_root(), 'frontend/js'))
     
 @route('/img/:path#.+#')
 def static_css_handler(path):
-    return static_file(path, root=os.path.join(data_root(), 'img'))
+    return static_file(path, root=os.path.join(data_root(), 'frontend/img'))
 
 @route('/')
 @route('/index.html')
 @route('/app.html')
 def default_handler():
-    return static_file('app.html', root=data_root())
+    return static_file('app.html', root=os.path.join(data_root(), 'frontend') )
 
 @route('/canvas')
 def default_handler():
-    return static_file('testCanvas.html', root=data_root())    
+    return static_file('testCanvas.html', root=os.path.join(data_root(), 'frontend'))    
 
 @route('/serial/:connect')
 def serial_handler(connect):
@@ -194,17 +196,22 @@ def queue_pct_done_handler():
 #         return "Already logged out."
 
 
+### Setup Argument Parser
+argparser = argparse.ArgumentParser(description='Run LasaurApp.', prog='lasaurapp')
+argparser.add_argument('port', metavar='<serial_port>', nargs='?', default=False,
+                    help='Serial port where the Lasersaur is connected to.')
+argparser.add_argument('-v', '--version', action='version', version='%(prog)s ' + VERSION)
+argparser.add_argument('-p', '--public', dest='host_on_all_interfaces', action='store_true',
+                    default=False, help='Bind to all network devices (default: bind to 127.0.0.1).')
+argparser.add_argument('-f', '--flash', dest='build_and_flash', action='store_true',
+                    default=False, help='Build the firmware and flash the controller.')
+args = argparser.parse_args()
 
-oparser = OptionParser(usage="%prog [-p] [serial_port]", version=VERSION)
-# parser.add_option("-s", "--serial", dest="serial",
-#                   help="serial port to connect to")
-oparser.add_option("-p", action="store_true", dest="host_on_all_interfaces")
-(options, args) = oparser.parse_args()
 
 
-if len(args) == 1:
+if args.port:
     # (1) get the serial device from the argument list
-    SERIAL_PORT = args[0]
+    SERIAL_PORT = args.port
     print "Using serial device '"+ SERIAL_PORT +"' from command line."
 else:    
     if os.path.isfile(CONFIG_FILE):
@@ -230,11 +237,14 @@ if not SERIAL_PORT:
             
 
 if SERIAL_PORT:    
-    # debug(True)
-    if options.host_on_all_interfaces:
-        run_with_callback('')
+    if args.build_and_flash:
+        flash_upload(SERIAL_PORT, data_root())
     else:
-        run_with_callback('127.0.0.1')
+        # debug(True)
+        if args.host_on_all_interfaces:
+            run_with_callback('')
+        else:
+            run_with_callback('127.0.0.1')
 else:         
     print "-----------------------------------------------------------------------------"
     print "ERROR: LasaurApp doesn't know what serial device to connect to!"
