@@ -36,9 +36,9 @@ With [PyInstaller](http://www.pyinstaller.org) it's possible to convert a python
 
 From a shell/Terminal do the following:
 
-* go to LasaurApp directory
+* go to LasaurApp/other directory
 * run 'python pyinstaller/pyinstaller.py --onefile app.spec'
-* the executable will be dist/app (or dist/app.exe on Windows)
+* the executable will be other/dist/lasaurapp (or dist/lasaurapp.exe on Windows)
 
 Most of the setup for making this happen is in the app.spec file. Here all the accessory data and frontend files are listed for inclusion in the executable. In the actual code the data root directory can be found in 'sys._MEIPASS'.
 

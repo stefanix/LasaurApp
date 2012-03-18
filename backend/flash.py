@@ -18,12 +18,12 @@ def flash_upload(serial_port, data_root):
         AVRDUDECONFIG = os.path.join(data_root, "firmware/tools_osx/avrdude.conf")
     
     elif sys.platform == "win32": # Windows
-        AVRDUDEAPP    = os.path.join(data_root, "firmware/tools_win32/avrdude")
-        AVRDUDECONFIG = os.path.join(data_root, "firmware/tools_win32/avrdude.conf")
+        AVRDUDEAPP    = os.path.join(data_root, "firmware/tools_win/avrdude")
+        AVRDUDECONFIG = os.path.join(data_root, "firmware/tools_win/avrdude.conf")
     
     elif sys.platform == "linux" or sys.platform == "linux2":  #Linux
-        AVRDUDEAPP    = os.path.join(data_root, "firmware/tools_linux32/avrdude")
-        AVRDUDECONFIG = os.path.join(data_root, "firmware/tools_linux32/avrdude.conf")
+        AVRDUDEAPP    = os.path.join(data_root, "firmware/tools_linux/avrdude")
+        AVRDUDECONFIG = os.path.join(data_root, "firmware/tools_linux/avrdude.conf")
               
     os.system('%(dude)s -c %(programmer)s -b %(bps)s -P %(port)s -p %(device)s -C %(dudeconf)s -B 10 -F -U flash:w:%(product)s.hex:i' 
         % {'dude':AVRDUDEAPP, 'programmer':PROGRAMMER, 'bps':BITRATE, 'port':serial_port, 'device':DEVICE, 'dudeconf':AVRDUDECONFIG, 'product':BUILDNAME})

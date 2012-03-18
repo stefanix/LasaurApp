@@ -28,10 +28,10 @@ if sys.platform == "darwin":
     add_resource_files( glob('../firmware/tools_osx/*') )
 elif sys.platform == "win32":
     targetname = 'lasaurapp.exe'
-    add_resource_files( glob('../firmware/tools_win32/*') )
+    add_resource_files( glob('../firmware/tools_win/*') )
 elif sys.platform == "linux" or sys.platform == "linux2":
     targetname = 'lasaurapp'
-    add_resource_files( glob('../firmware/tools_linux32/*') )
+    add_resource_files( glob('../firmware/tools_linux/*') )
 
 
 ### build TOC
