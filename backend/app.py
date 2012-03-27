@@ -58,9 +58,7 @@ class Example(Frame):
   
     def __init__(self, parent):
         Frame.__init__(self, parent)   
-         
         self.parent = parent
-        
         self.initUI()
         
     def initUI(self):
@@ -105,6 +103,7 @@ def init_app(host):
     
     ### TkInter
     root = Tk()
+    root.iconbitmap(default=os.path.join(data_root(), 'backend/lasersaur.ico'))    
     root.geometry("250x150+300+300")
     app = Example(root)
     root.mainloop() 

@@ -61,7 +61,7 @@ elif sys.platform == "win32":
               debug=False,
               strip=None,
               upx=True,
-              console=True ) 
+              console=False ) 
     
 elif sys.platform == "linux" or sys.platform == "linux2":
     target_location = os.path.join('dist_linux', 'lasaurapp')
