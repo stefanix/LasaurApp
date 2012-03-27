@@ -8,8 +8,17 @@ import argparse
 import webbrowser
 import wsgiref.simple_server
 from bottle import *
+# from thread import start_new_thread
 from serial_manager import SerialManager
 from flash import flash_upload
+
+from PyQt4.QtCore import *
+from PyQt4.QtGui import *
+from PyQt4.QtWebKit import *
+
+if sys.platform == "darwin":  # OSX
+    # inform search path about Homebrew installation
+    sys.path.append("/usr/local/lib/python2.7/site-packages/") 
 
 
 VERSION = "v12.02-beta2"
@@ -17,7 +26,10 @@ SERIAL_PORT = None
 BITSPERSECOND = 9600
 CONFIG_FILE = "lasaurapp.conf"
 GUESS_PPREFIX = "tty.usbmodem"
+NETWORK_PORT = 4444
 COOKIE_KEY = 'secret_key_jkn23489hsdf'
+
+server = None
 
 
 
@@ -36,36 +48,52 @@ def data_root():
 
 
 
-def run_with_callback(host, port=4444, timeout=0.01):
+def loop_along():
+    global server
+    try:
+        SerialManager.send_queue_as_ready()
+        if server:
+            server.handle_request()
+    finally:
+        QTimer.singleShot(10, loop_along)
+
+
+
+def init_app(host):
     """ Start a wsgiref server instance with control over the main loop.
         This is a function that I derived from the bottle.py run()
     """
+    global server
     handler = default_app()
-    server = wsgiref.simple_server.make_server(host, port, handler)
-    server.timeout = timeout
+    server = wsgiref.simple_server.make_server(host, NETWORK_PORT, handler)
+    server.timeout = 0
     print "-----------------------------------------------------------------------------"
     print "Bottle server starting up ..."
     print "Serial is set to %d bps" % BITSPERSECOND
     print "Point your browser to: "    
-    print "http://%s:%d/      (local)" % ('127.0.0.1', port)    
+    print "http://%s:%d/      (local)" % ('127.0.0.1', NETWORK_PORT)    
     if host == '':
-        print "http://%s:%d/   (public)" % (socket.gethostbyname(socket.gethostname()), port)
+        print "http://%s:%d/   (public)" % (socket.gethostbyname(socket.gethostname()), NETWORK_PORT)
     print "Use Ctrl-C to quit."
     print "-----------------------------------------------------------------------------"    
     print
+    
+    # start_new_thread(loop_along, ("webserver_thread",))
+    
+    
+    ### qtWebKit
+    app = QApplication(sys.argv)
+    web = QWebView()
+    web.load( QUrl('http://127.0.0.1:'+str(NETWORK_PORT)) )
+    web.show()
+    # Post a call to your python code.
+    QTimer.singleShot(100, loop_along)
     try:
-        webbrowser.open_new_tab('http://127.0.0.1:'+str(port))
-    except webbrowser.Error:
-        print "Cannot open Webbrowser, please to so manually."
-    while 1:
-        try:
-            SerialManager.send_queue_as_ready()
-            server.handle_request()
-        except KeyboardInterrupt:
-            break
-    print "\nShutting down..."
-    SerialManager.close()
-
+        ret = app.exec_()
+    except KeyboardInterrupt:
+        print "\nShutting down..."
+        SerialManager.close()
+        sys.exit(ret)
         
 
 @route('/hello')
@@ -242,9 +270,9 @@ if SERIAL_PORT:
     else:
         # debug(True)
         if args.host_on_all_interfaces:
-            run_with_callback('')
+            init_app('')
         else:
-            run_with_callback('127.0.0.1')
+            init_app('127.0.0.1')
 else:         
     print "-----------------------------------------------------------------------------"
     print "ERROR: LasaurApp doesn't know what serial device to connect to!"

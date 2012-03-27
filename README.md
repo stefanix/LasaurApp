@@ -32,13 +32,33 @@ For more information see the [Lasersaur Software Setup Guide](http://labs.nortd.
 Notes on Creating Standalone Apps
 ----------------------------------
 
-With [PyInstaller](http://www.pyinstaller.org) it's possible to convert a python app to a standalone, single file executable. This allows us to make the setup process much easier and remove all the the prerequisites on the target machine (including python and pyserial).
+With [PyInstaller](http://www.pyinstaller.org) we can convert a python app to a standalone application. This allows us to make the setup process much easier and remove all the prerequisites on the target machine (including python and pyserial).
 
-From a shell/Terminal do the following:
+From command line interface do the following:
 
 * go to LasaurApp/other directory
 * run 'python pyinstaller/pyinstaller.py --onefile app.spec'
-* the executable will be other/dist/lasaurapp (or dist/lasaurapp.exe on Windows)
+* the executable will be in other/dist/
 
 Most of the setup for making this happen is in the app.spec file. Here all the accessory data and frontend files are listed for inclusion in the executable. In the actual code the data root directory can be found in 'sys._MEIPASS'.
 
+
+Notes on Writing PyQt Apps
+----------------------------
+
+PyQt are the python wrappers for the Qt SDK. A good intro is here: http://zetcode.com/tutorials/pyqt4/
+
+### On OSX (64-bit):
+  - python 2.7 is already installed
+  - install Homebrew
+  - use Homebrew to install PyQt (takes a while)
+    - "brew install pyqt"
+  - need to point python to the pyqt installation
+    - export PYTHONPATH=/usr/local/lib/python2.7/site-packages:$PYTHONPATH
+  - creating standalone app
+    - python pyinstaller/pyinstaller.py --onedir -w app.py
+
+### On Windows (32-bit):
+  - install python 2.7 from ActiveState distribution
+  - install Qt binaries
+  - install PyQt binaries

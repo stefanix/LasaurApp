@@ -66,4 +66,22 @@ LasaurApp inkscape import workflow
 - import in LasaurApp
 
 
+Experimentation with PyQt and PyInstaller
+=========================================
+- osx
+  - using homebrew to install pyqt
+  - before running python need to export python path
+    - export PYTHONPATH=/usr/local/lib/python2.7/site-packages:$PYTHONPATH
+  - running pyinstaller with --onedir -w options creates app bundle
+    - python pyinstaller/pyinstaller.py --onedir -w app.py
+  - intro to pyqt here:
+    - http://zetcode.com/tutorials/pyqt4/
+
+
+
+
+
+
+
+
 
