@@ -8,7 +8,7 @@ import argparse
 import webbrowser
 import wsgiref.simple_server
 from bottle import *
-# from thread import start_new_thread
+from thread import start_new_thread
 from serial_manager import SerialManager
 from flash import flash_upload
 
@@ -50,12 +50,14 @@ def data_root():
 
 def loop_along():
     global server
-    try:
-        SerialManager.send_queue_as_ready()
-        if server:
+    while 1:
+        try:
+            SerialManager.send_queue_as_ready()
             server.handle_request()
-    finally:
-        QTimer.singleShot(10, loop_along)
+        except KeyboardInterrupt:
+            break
+    print "\nShutting down..."
+    SerialManager.close()
 
 
 
@@ -66,7 +68,7 @@ def init_app(host):
     global server
     handler = default_app()
     server = wsgiref.simple_server.make_server(host, NETWORK_PORT, handler)
-    server.timeout = 0
+    server.timeout = 0.01
     print "-----------------------------------------------------------------------------"
     print "Bottle server starting up ..."
     print "Serial is set to %d bps" % BITSPERSECOND
@@ -78,7 +80,7 @@ def init_app(host):
     print "-----------------------------------------------------------------------------"    
     print
     
-    # start_new_thread(loop_along, ("webserver_thread",))
+    start_new_thread(loop_along, ("webserver_thread",))
     
     
     ### qtWebKit
@@ -87,7 +89,7 @@ def init_app(host):
     web.load( QUrl('http://127.0.0.1:'+str(NETWORK_PORT)) )
     web.show()
     # Post a call to your python code.
-    QTimer.singleShot(100, loop_along)
+    # QTimer.singleShot(100, loop_along)
     try:
         ret = app.exec_()
     except KeyboardInterrupt:
