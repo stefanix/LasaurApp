@@ -4,16 +4,12 @@ import sys, os
 import os.path
 import serial
 import socket
-import argparse
 import webbrowser
 import wsgiref.simple_server
 from bottle import *
 import threading
 from serial_manager import SerialManager
 from flash import flash_upload
-
-from Tkinter import Tk, RIGHT, BOTH, RAISED
-from ttk import Frame, Button, Style
 
 
 VERSION = "v12.03a"
@@ -50,36 +46,11 @@ def webserver_thread():
         server.handle_request()
     print "\nShutting down webserver_thread..."
     sys.stdout.flush()
-    SerialManager.close()
+    SerialManager.close()     
 
 
 
-class Example(Frame):
-  
-    def __init__(self, parent):
-        Frame.__init__(self, parent)   
-        self.parent = parent
-        self.initUI()
-        
-    def initUI(self):
-      
-        self.parent.title("Buttons")
-        self.style = Style()
-        self.style.theme_use("default")
-        
-        frame = Frame(self, relief=RAISED, borderwidth=1)
-        frame.pack(fill=BOTH, expand=1)
-        
-        self.pack(fill=BOTH, expand=1)
-        
-        closeButton = Button(self, text="Close")
-        closeButton.pack(side=RIGHT, padx=5, pady=5)
-        okButton = Button(self, text="OK")
-        okButton.pack(side=RIGHT)
-
-
-
-def init_app(host):
+def init_app(host, run_windowed=False):
     """ Start a wsgiref server instance with control over the main loop.
         This is a function that I derived from the bottle.py run()
     """
@@ -98,19 +69,38 @@ def init_app(host):
     print "-----------------------------------------------------------------------------"    
     print
     
-    t = threading.Thread(target=webserver_thread)
-    t.start()
+    try:
+        webbrowser.open_new_tab('http://127.0.0.1:'+str(NETWORK_PORT))
+    except webbrowser.Error:
+        print "Cannot open Webbrowser, please to so manually."
+                
+    if (run_windowed):
+        from app_window import TkGui
+        
+        t = threading.Thread(target=webserver_thread)
+        t.start()
     
-    ### TkInter
-    root = Tk()
-    root.iconbitmap(default=os.path.join(data_root(), 'backend', 'lasersaur.ico'))    
-    root.geometry("250x150+300+300")
-    app = Example(root)
-    root.mainloop() 
+        ### TkInter
+        tkgui = TkGui()
     
-    print "\nShutting down..."
-    b_run_webserver = False
-    t.join()  # wait for thread to terminate
+        try:
+            tkgui.mainloop()
+        except KeyboardInterrupt:
+            print "\nShutting down..."
+        b_run_webserver = False
+    
+        print "\nShutting down..."
+        t.join()  # wait for thread to terminate
+    
+    else:  ### command line app
+        while 1:
+            try:
+                SerialManager.send_queue_as_ready()
+                server.handle_request()
+            except KeyboardInterrupt:
+                break
+        print "\nShutting down..."
+        SerialManager.close()        
 
         
 
@@ -243,27 +233,86 @@ def queue_pct_done_handler():
 
 
 
-if not SERIAL_PORT:
-    # (3) try best guess the serial device if on linux or osx
-    if os.path.isdir("/dev"):
-        devices = os.listdir("/dev")
-        for device in devices:
-            if device[:len(GUESS_PPREFIX)] == GUESS_PPREFIX:
-                SERIAL_PORT = "/dev/" + device
-                print "Using serial device '"+ SERIAL_PORT +"' by best guess."
-                break   
 
+if hasattr(sys, 'argv') and len(sys.argv) > 1:  ### run as command line app  ### the app bundle does not like this line
+    import argparse
+    ### Setup Argument Parser
+    argparser = argparse.ArgumentParser(description='Run LasaurApp.', prog='lasaurapp')
+    argparser.add_argument('port', metavar='serial_port', nargs='?', default=False,
+                        help='serial port to the Lasersaur')
+    argparser.add_argument('-v', '--version', action='version', version='%(prog)s ' + VERSION)
+    argparser.add_argument('-p', '--public', dest='host_on_all_interfaces', action='store_true',
+                        default=False, help='bind to all network devices (default: bind to 127.0.0.1)')
+    argparser.add_argument('-f', '--flash', dest='build_and_flash', action='store_true',
+                        default=False, help='flash Arduino with LasaurGrbl firmware')
+    args = argparser.parse_args()
     
-# if args.build_and_flash:
-#     flash_upload(SERIAL_PORT, data_root())
-# else:
-#     # debug(True)
-#     if args.host_on_all_interfaces:
-#         init_app('')
-#     else:
-#         init_app('127.0.0.1')
     
-init_app('127.0.0.1')    
+    
+    if args.port:
+        # (1) get the serial device from the argument list
+        SERIAL_PORT = args.port
+        print "Using serial device '"+ SERIAL_PORT +"' from command line."
+    else:
+        if os.path.isfile(CONFIG_FILE):
+            # (2) get the serial device from the config file
+            fp = open(CONFIG_FILE)
+            line = fp.readline().strip()
+            if len(line) > 3:
+                SERIAL_PORT = line
+                print "Using serial device '"+ SERIAL_PORT +"' from '" + CONFIG_FILE + "'."
+            
+        
+    
+    if not SERIAL_PORT:
+        # (3) try best guess the serial device if on linux or osx
+        if os.path.isdir("/dev"):
+            devices = os.listdir("/dev")
+            for device in devices:
+                if device[:len(GUESS_PPREFIX)] == GUESS_PPREFIX:
+                    SERIAL_PORT = "/dev/" + device
+                    print "Using serial device '"+ SERIAL_PORT +"' by best guess."
+                    break
+    
+            
+    
+    if SERIAL_PORT:
+        if args.build_and_flash:
+            flash_upload(SERIAL_PORT, data_root())
+        else:
+            # debug(True)
+            if args.host_on_all_interfaces:
+                init_app('')
+            else:
+                init_app('127.0.0.1')
+    else:
+        print "-----------------------------------------------------------------------------"
+        print "ERROR: LasaurApp doesn't know what serial device to connect to!"
+        print "On Linux or OSX this is something like '/dev/tty.usbmodemfd121' and on"
+        print "Windows this is something like 'COM1', 'COM2', 'COM3', ..."
+        print "The serial port can be supplied in one of the following ways:"
+        print "(1) First argument on the command line."
+        print "(2) In a config file named '" + CONFIG_FILE + "' (located in same directory)"
+        print " with the serial port string on the first line."
+        print "(3) Best guess. On Linux and OSX the app can guess the serial name by"
+        print " choosing the first device it finds starting with '"+ GUESS_PPREFIX +"'."
+        print "-----------------------------------------------------------------------------"
+
+
+
+else:  ### no args - run as GUI app
+
+    if not SERIAL_PORT:
+        # (3) try best guess the serial device if on linux or osx
+        if os.path.isdir("/dev"):
+            devices = os.listdir("/dev")
+            for device in devices:
+                if device[:len(GUESS_PPREFIX)] == GUESS_PPREFIX:
+                    SERIAL_PORT = "/dev/" + device
+                    print "Using serial device '"+ SERIAL_PORT +"' by best guess."
+                    break   
+
+    init_app('127.0.0.1', True)    
 
 
 
