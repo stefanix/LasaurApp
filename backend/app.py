@@ -103,7 +103,7 @@ def init_app(host):
     
     ### TkInter
     root = Tk()
-    root.iconbitmap(default=os.path.join(data_root(), 'backend/lasersaur.ico'))    
+    root.iconbitmap(default=os.path.join(data_root(), 'backend', 'lasersaur.ico'))    
     root.geometry("250x150+300+300")
     app = Example(root)
     root.mainloop() 
