@@ -8,7 +8,7 @@ import argparse
 import webbrowser
 import wsgiref.simple_server
 from bottle import *
-from thread import start_new_thread
+import threading
 from serial_manager import SerialManager
 from flash import flash_upload
 
@@ -21,7 +21,7 @@ if sys.platform == "darwin":  # OSX
     sys.path.append("/usr/local/lib/python2.7/site-packages/") 
 
 
-VERSION = "v12.02-beta2"
+VERSION = "v12.03a"
 SERIAL_PORT = None
 BITSPERSECOND = 9600
 CONFIG_FILE = "lasaurapp.conf"
@@ -30,6 +30,7 @@ NETWORK_PORT = 4444
 COOKIE_KEY = 'secret_key_jkn23489hsdf'
 
 server = None
+b_run_webserver = True
 
 
 
@@ -47,16 +48,13 @@ def data_root():
         return os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../'))
 
 
-
-def loop_along():
-    global server
-    while 1:
-        try:
-            SerialManager.send_queue_as_ready()
-            server.handle_request()
-        except KeyboardInterrupt:
-            break
-    print "\nShutting down..."
+def webserver_thread():
+    global server, b_run_webserver
+    while b_run_webserver:
+        SerialManager.send_queue_as_ready()
+        server.handle_request()
+    print "\nShutting down webserver_thread..."
+    sys.stdout.flush()
     SerialManager.close()
 
 
@@ -65,7 +63,7 @@ def init_app(host):
     """ Start a wsgiref server instance with control over the main loop.
         This is a function that I derived from the bottle.py run()
     """
-    global server
+    global server, b_run_webserver
     handler = default_app()
     server = wsgiref.simple_server.make_server(host, NETWORK_PORT, handler)
     server.timeout = 0.01
@@ -80,22 +78,25 @@ def init_app(host):
     print "-----------------------------------------------------------------------------"    
     print
     
-    start_new_thread(loop_along, ("webserver_thread",))
-    
+    t = threading.Thread(target=webserver_thread)
+    t.start()
     
     ### qtWebKit
     app = QApplication(sys.argv)
     web = QWebView()
+    web.setGeometry(50, 80, 1020, 680)
     web.load( QUrl('http://127.0.0.1:'+str(NETWORK_PORT)) )
     web.show()
+    web.raise_()
     # Post a call to your python code.
     # QTimer.singleShot(100, loop_along)
-    try:
-        ret = app.exec_()
-    except KeyboardInterrupt:
-        print "\nShutting down..."
-        SerialManager.close()
-        sys.exit(ret)
+    ret = app.exec_()
+    
+    print "\nShutting down..."
+    b_run_webserver = False
+    t.join()  # wait for thread to terminate
+    sys.exit(ret)
+
         
 
 @route('/hello')
@@ -226,33 +227,6 @@ def queue_pct_done_handler():
 #         return "Already logged out."
 
 
-### Setup Argument Parser
-argparser = argparse.ArgumentParser(description='Run LasaurApp.', prog='lasaurapp')
-argparser.add_argument('port', metavar='serial_port', nargs='?', default=False,
-                    help='serial port to the Lasersaur')
-argparser.add_argument('-v', '--version', action='version', version='%(prog)s ' + VERSION)
-argparser.add_argument('-p', '--public', dest='host_on_all_interfaces', action='store_true',
-                    default=False, help='bind to all network devices (default: bind to 127.0.0.1)')
-argparser.add_argument('-f', '--flash', dest='build_and_flash', action='store_true',
-                    default=False, help='flash Arduino with LasaurGrbl firmware')
-args = argparser.parse_args()
-
-
-
-if args.port:
-    # (1) get the serial device from the argument list
-    SERIAL_PORT = args.port
-    print "Using serial device '"+ SERIAL_PORT +"' from command line."
-else:    
-    if os.path.isfile(CONFIG_FILE):
-        # (2) get the serial device from the config file
-        fp = open(CONFIG_FILE)
-        line = fp.readline().strip()
-        if len(line) > 3:
-            SERIAL_PORT = line
-            print "Using serial device '"+ SERIAL_PORT +"' from '" + CONFIG_FILE + "'."
-            
-        
 
 if not SERIAL_PORT:
     # (3) try best guess the serial device if on linux or osx
@@ -262,30 +236,19 @@ if not SERIAL_PORT:
             if device[:len(GUESS_PPREFIX)] == GUESS_PPREFIX:
                 SERIAL_PORT = "/dev/" + device
                 print "Using serial device '"+ SERIAL_PORT +"' by best guess."
-                break
-    
-            
+                break   
 
-if SERIAL_PORT:    
-    if args.build_and_flash:
-        flash_upload(SERIAL_PORT, data_root())
-    else:
-        # debug(True)
-        if args.host_on_all_interfaces:
-            init_app('')
-        else:
-            init_app('127.0.0.1')
-else:         
-    print "-----------------------------------------------------------------------------"
-    print "ERROR: LasaurApp doesn't know what serial device to connect to!"
-    print "On Linux or OSX this is something like '/dev/tty.usbmodemfd121' and on"
-    print "Windows this is something like 'COM1', 'COM2', 'COM3', ..."
-    print "The serial port can be supplied in one of the following ways:"
-    print "(1) First argument on the  command line."
-    print "(2) In a config file named '" + CONFIG_FILE + "' (located in same directory)"
-    print "    with the serial port string on the first line."
-    print "(3) Best guess. On Linux and OSX the app can guess the serial name by"
-    print "    choosing the first device it finds starting with '"+ GUESS_PPREFIX +"'."
-    print "-----------------------------------------------------------------------------"
+    
+# if args.build_and_flash:
+#     flash_upload(SERIAL_PORT, data_root())
+# else:
+#     # debug(True)
+#     if args.host_on_all_interfaces:
+#         init_app('')
+#     else:
+#         init_app('127.0.0.1')
+    
+init_app('127.0.0.1')    
+
 
 

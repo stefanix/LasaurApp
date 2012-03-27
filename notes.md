@@ -79,6 +79,26 @@ Experimentation with PyQt and PyInstaller
 
 
 
+PyQt installation - using QtSDK
+================================
+
+## qt
+git clone git://gitorious.org/qt/qt.git
+./configure -arch x86_64 -confirm-license -opensource -nomake demos -nomake examples
+make
+make install
+-> will be installed in: /usr/local/Trolltech/Qt-4.8.1
+
+## sip
+python configure.py -d /Library/Python/2.7/site-packages --arch x86_64
+make
+make install
+
+## pyqt
+python configure.py -q /Users/noema/Development/QtSDK/Desktop/Qt/4.8.0/gcc/bin/qmake -d /Library/Python/2.7/site-packages -g --use-arch x86_6
+[export PATH=$PATH:/usr/local/Trolltech/Qt-4.8.0/bin/]
+make 
+make install
 
 
 
