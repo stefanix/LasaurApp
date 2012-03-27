@@ -12,13 +12,8 @@ import threading
 from serial_manager import SerialManager
 from flash import flash_upload
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.QtWebKit import *
-
-if sys.platform == "darwin":  # OSX
-    # inform search path about Homebrew installation
-    sys.path.append("/usr/local/lib/python2.7/site-packages/") 
+from Tkinter import Tk, RIGHT, BOTH, RAISED
+from ttk import Frame, Button, Style
 
 
 VERSION = "v12.03a"
@@ -59,6 +54,33 @@ def webserver_thread():
 
 
 
+class Example(Frame):
+  
+    def __init__(self, parent):
+        Frame.__init__(self, parent)   
+         
+        self.parent = parent
+        
+        self.initUI()
+        
+    def initUI(self):
+      
+        self.parent.title("Buttons")
+        self.style = Style()
+        self.style.theme_use("default")
+        
+        frame = Frame(self, relief=RAISED, borderwidth=1)
+        frame.pack(fill=BOTH, expand=1)
+        
+        self.pack(fill=BOTH, expand=1)
+        
+        closeButton = Button(self, text="Close")
+        closeButton.pack(side=RIGHT, padx=5, pady=5)
+        okButton = Button(self, text="OK")
+        okButton.pack(side=RIGHT)
+
+
+
 def init_app(host):
     """ Start a wsgiref server instance with control over the main loop.
         This is a function that I derived from the bottle.py run()
@@ -81,21 +103,15 @@ def init_app(host):
     t = threading.Thread(target=webserver_thread)
     t.start()
     
-    ### qtWebKit
-    app = QApplication(sys.argv)
-    web = QWebView()
-    web.setGeometry(50, 80, 1020, 680)
-    web.load( QUrl('http://127.0.0.1:'+str(NETWORK_PORT)) )
-    web.show()
-    web.raise_()
-    # Post a call to your python code.
-    # QTimer.singleShot(100, loop_along)
-    ret = app.exec_()
+    ### TkInter
+    root = Tk()
+    root.geometry("250x150+300+300")
+    app = Example(root)
+    root.mainloop() 
     
     print "\nShutting down..."
     b_run_webserver = False
     t.join()  # wait for thread to terminate
-    sys.exit(ret)
 
         
 
