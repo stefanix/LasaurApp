@@ -38,7 +38,7 @@ if sys.platform == "darwin":
               debug=False,
               strip=None,
               upx=True,
-              console=False )
+              console=True )
     coll = COLLECT(exe,
                    a.binaries,
                    a.zipfiles,

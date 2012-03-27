@@ -234,85 +234,96 @@ def queue_pct_done_handler():
 
 
 
-if hasattr(sys, 'argv') and len(sys.argv) > 1:  ### run as command line app  ### the app bundle does not like this line
-    import argparse
-    ### Setup Argument Parser
-    argparser = argparse.ArgumentParser(description='Run LasaurApp.', prog='lasaurapp')
-    argparser.add_argument('port', metavar='serial_port', nargs='?', default=False,
-                        help='serial port to the Lasersaur')
-    argparser.add_argument('-v', '--version', action='version', version='%(prog)s ' + VERSION)
-    argparser.add_argument('-p', '--public', dest='host_on_all_interfaces', action='store_true',
-                        default=False, help='bind to all network devices (default: bind to 127.0.0.1)')
-    argparser.add_argument('-f', '--flash', dest='build_and_flash', action='store_true',
-                        default=False, help='flash Arduino with LasaurGrbl firmware')
-    args = argparser.parse_args()
-    
-    
-    
-    if args.port:
-        # (1) get the serial device from the argument list
-        SERIAL_PORT = args.port
-        print "Using serial device '"+ SERIAL_PORT +"' from command line."
-    else:
-        if os.path.isfile(CONFIG_FILE):
-            # (2) get the serial device from the config file
-            fp = open(CONFIG_FILE)
-            line = fp.readline().strip()
-            if len(line) > 3:
-                SERIAL_PORT = line
-                print "Using serial device '"+ SERIAL_PORT +"' from '" + CONFIG_FILE + "'."
-            
-        
-    
-    if not SERIAL_PORT:
-        # (3) try best guess the serial device if on linux or osx
-        if os.path.isdir("/dev"):
-            devices = os.listdir("/dev")
-            for device in devices:
-                if device[:len(GUESS_PPREFIX)] == GUESS_PPREFIX:
-                    SERIAL_PORT = "/dev/" + device
-                    print "Using serial device '"+ SERIAL_PORT +"' by best guess."
-                    break
-    
-            
-    
-    if SERIAL_PORT:
-        if args.build_and_flash:
-            flash_upload(SERIAL_PORT, data_root())
-        else:
-            # debug(True)
-            if args.host_on_all_interfaces:
-                init_app('')
-            else:
-                init_app('127.0.0.1')
-    else:
-        print "-----------------------------------------------------------------------------"
-        print "ERROR: LasaurApp doesn't know what serial device to connect to!"
-        print "On Linux or OSX this is something like '/dev/tty.usbmodemfd121' and on"
-        print "Windows this is something like 'COM1', 'COM2', 'COM3', ..."
-        print "The serial port can be supplied in one of the following ways:"
-        print "(1) First argument on the command line."
-        print "(2) In a config file named '" + CONFIG_FILE + "' (located in same directory)"
-        print " with the serial port string on the first line."
-        print "(3) Best guess. On Linux and OSX the app can guess the serial name by"
-        print " choosing the first device it finds starting with '"+ GUESS_PPREFIX +"'."
-        print "-----------------------------------------------------------------------------"
+# if hasattr(sys, 'argv') and len(sys.argv) > 1:  ### run as command line app  ### the app bundle does not like this line
+#     import argparse
+#     ### Setup Argument Parser
+#     argparser = argparse.ArgumentParser(description='Run LasaurApp.', prog='lasaurapp')
+#     argparser.add_argument('port', metavar='serial_port', nargs='?', default=False,
+#                         help='serial port to the Lasersaur')
+#     argparser.add_argument('-v', '--version', action='version', version='%(prog)s ' + VERSION)
+#     argparser.add_argument('-p', '--public', dest='host_on_all_interfaces', action='store_true',
+#                         default=False, help='bind to all network devices (default: bind to 127.0.0.1)')
+#     argparser.add_argument('-f', '--flash', dest='build_and_flash', action='store_true',
+#                         default=False, help='flash Arduino with LasaurGrbl firmware')
+#     args = argparser.parse_args()
+#     
+#     
+#     
+#     if args.port:
+#         # (1) get the serial device from the argument list
+#         SERIAL_PORT = args.port
+#         print "Using serial device '"+ SERIAL_PORT +"' from command line."
+#     else:
+#         if os.path.isfile(CONFIG_FILE):
+#             # (2) get the serial device from the config file
+#             fp = open(CONFIG_FILE)
+#             line = fp.readline().strip()
+#             if len(line) > 3:
+#                 SERIAL_PORT = line
+#                 print "Using serial device '"+ SERIAL_PORT +"' from '" + CONFIG_FILE + "'."
+#             
+#         
+#     
+#     if not SERIAL_PORT:
+#         # (3) try best guess the serial device if on linux or osx
+#         if os.path.isdir("/dev"):
+#             devices = os.listdir("/dev")
+#             for device in devices:
+#                 if device[:len(GUESS_PPREFIX)] == GUESS_PPREFIX:
+#                     SERIAL_PORT = "/dev/" + device
+#                     print "Using serial device '"+ SERIAL_PORT +"' by best guess."
+#                     break
+#     
+#             
+#     
+#     if SERIAL_PORT:
+#         if args.build_and_flash:
+#             flash_upload(SERIAL_PORT, data_root())
+#         else:
+#             # debug(True)
+#             if args.host_on_all_interfaces:
+#                 init_app('')
+#             else:
+#                 init_app('127.0.0.1')
+#     else:
+#         print "-----------------------------------------------------------------------------"
+#         print "ERROR: LasaurApp doesn't know what serial device to connect to!"
+#         print "On Linux or OSX this is something like '/dev/tty.usbmodemfd121' and on"
+#         print "Windows this is something like 'COM1', 'COM2', 'COM3', ..."
+#         print "The serial port can be supplied in one of the following ways:"
+#         print "(1) First argument on the command line."
+#         print "(2) In a config file named '" + CONFIG_FILE + "' (located in same directory)"
+#         print " with the serial port string on the first line."
+#         print "(3) Best guess. On Linux and OSX the app can guess the serial name by"
+#         print " choosing the first device it finds starting with '"+ GUESS_PPREFIX +"'."
+#         print "-----------------------------------------------------------------------------"
+# 
+# 
+# 
+# else:  ### no args - run as GUI app
+# 
+#     if not SERIAL_PORT:
+#         # (3) try best guess the serial device if on linux or osx
+#         if os.path.isdir("/dev"):
+#             devices = os.listdir("/dev")
+#             for device in devices:
+#                 if device[:len(GUESS_PPREFIX)] == GUESS_PPREFIX:
+#                     SERIAL_PORT = "/dev/" + device
+#                     print "Using serial device '"+ SERIAL_PORT +"' by best guess."
+#                     break   
+# 
+#     init_app('127.0.0.1', True)    
 
+if not SERIAL_PORT:
+    # (3) try best guess the serial device if on linux or osx
+    if os.path.isdir("/dev"):
+        devices = os.listdir("/dev")
+        for device in devices:
+            if device[:len(GUESS_PPREFIX)] == GUESS_PPREFIX:
+                SERIAL_PORT = "/dev/" + device
+                print "Using serial device '"+ SERIAL_PORT +"' by best guess."
+                break   
 
-
-else:  ### no args - run as GUI app
-
-    if not SERIAL_PORT:
-        # (3) try best guess the serial device if on linux or osx
-        if os.path.isdir("/dev"):
-            devices = os.listdir("/dev")
-            for device in devices:
-                if device[:len(GUESS_PPREFIX)] == GUESS_PPREFIX:
-                    SERIAL_PORT = "/dev/" + device
-                    print "Using serial device '"+ SERIAL_PORT +"' by best guess."
-                    break   
-
-    init_app('127.0.0.1', True)    
-
+init_app('127.0.0.1')  
 
 
