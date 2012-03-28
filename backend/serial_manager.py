@@ -3,7 +3,7 @@ import sys
 import time
 import serial
 from collections import deque
-
+from serial_list_ports import grep
 
 
 class SerialManagerClass:
@@ -31,6 +31,12 @@ class SerialManagerClass:
         self.job_active = False
 
 
+    def list_devices(self):
+        iterator = sorted(grep('tty'))
+        for port, desc, hwid in iterator:
+            print "%-20s" % (port,)
+            print "    desc: %s" % (desc,)
+            print "    hwid: %s" % (hwid,)        
 
     def connect(self, port, baudrate):
         self.rx_buffer = ""

@@ -15,6 +15,7 @@ from flash import flash_upload
 VERSION = "v12.02-beta2"
 SERIAL_PORT = None
 BITSPERSECOND = 9600
+NETWORK_PORT = 4444
 CONFIG_FILE = "lasaurapp.conf"
 GUESS_PPREFIX = "tty.usbmodem"
 COOKIE_KEY = 'secret_key_jkn23489hsdf'
@@ -36,27 +37,27 @@ def data_root():
 
 
 
-def run_with_callback(host, port=4444, timeout=0.01):
+def run_with_callback(host):
     """ Start a wsgiref server instance with control over the main loop.
         This is a function that I derived from the bottle.py run()
     """
     handler = default_app()
-    server = wsgiref.simple_server.make_server(host, port, handler)
-    server.timeout = timeout
+    server = wsgiref.simple_server.make_server(host, NETWORK_PORT, handler)
+    server.timeout = 0.01
     print "-----------------------------------------------------------------------------"
     print "Bottle server starting up ..."
     print "Serial is set to %d bps" % BITSPERSECOND
     print "Point your browser to: "    
-    print "http://%s:%d/      (local)" % ('127.0.0.1', port)    
+    print "http://%s:%d/      (local)" % ('127.0.0.1', NETWORK_PORT)    
     if host == '':
-        print "http://%s:%d/   (public)" % (socket.gethostbyname(socket.gethostname()), port)
+        print "http://%s:%d/   (public)" % (socket.gethostbyname(socket.gethostname()), NETWORK_PORT)
     print "Use Ctrl-C to quit."
     print "-----------------------------------------------------------------------------"    
     print
     try:
-        webbrowser.open_new_tab('http://127.0.0.1:'+str(port))
+        webbrowser.open_new_tab('http://127.0.0.1:'+str(NETWORK_PORT))
     except webbrowser.Error:
-        print "Cannot open Webbrowser, please to so manually."
+        print "Cannot open Webbrowser, please do so manually."
     while 1:
         try:
             SerialManager.send_queue_as_ready()
@@ -246,6 +247,7 @@ if SERIAL_PORT:
         else:
             run_with_callback('127.0.0.1')
 else:         
+    SerialManager.list_devices()
     print "-----------------------------------------------------------------------------"
     print "ERROR: LasaurApp doesn't know what serial device to connect to!"
     print "On Linux or OSX this is something like '/dev/tty.usbmodemfd121' and on"
