@@ -240,7 +240,7 @@ else:
             SERIAL_PORT = SerialManager.match_device('Arduino')
         elif os.name == 'posix':
             SERIAL_PORT = SerialManager.match_device(GUESS_PPREFIX)
-        print "Using serial device '"+ SERIAL_PORT +"' by best guess."
+        print "Using serial device '"+ str(SERIAL_PORT) +"' by best guess."
     
     if SERIAL_PORT:    
         if args.build_and_flash:
