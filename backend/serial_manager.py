@@ -3,7 +3,7 @@ import sys
 import time
 import serial
 from collections import deque
-from serial_list_ports import grep
+import serial_list_ports
 
 
 class SerialManagerClass:
@@ -32,17 +32,29 @@ class SerialManagerClass:
 
 
     def list_devices(self):
-        iterator = sorted(grep('tty'))
+        iterator = sorted(serial_list_ports.grep('tty'))
         for port, desc, hwid in iterator:
             print "%-20s" % (port,)
             print "    desc: %s" % (desc,)
-            print "    hwid: %s" % (hwid,)        
+            print "    hwid: %s" % (hwid,)
+
+            
+    def match_device(self, search_regex):
+        matched_ports = serial_list_ports.grep(search_regex)
+        if matched_ports:
+            for match_tuple in matched_ports:
+                if match_tuple:
+                    return match_tuple[0]
+        print "No serial port match for anything like: " + search_regex
+        return None
+        
 
     def connect(self, port, baudrate):
         self.rx_buffer = ""
         self.tx_buffer = ""        
         self.remoteXON = True
         self.job_size = 0
+                
         # Create serial device with both read timeout set to 0.
         # This results in the read() being non-blocking
         self.device = serial.Serial(port, baudrate, timeout=0)
