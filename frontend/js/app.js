@@ -108,7 +108,7 @@ $(document).ready(function(){
   //$('#log_toggle').trigger('click');  // show log, for debugging
 
 
-  //// connect to serial button
+  //////// serial connect button ////////
   // get serial state
   var connectiontimer = setInterval(function() {
     $.ajax({
@@ -175,6 +175,7 @@ $(document).ready(function(){
       $(this).width(connect_btn_width);      
     }
   );
+  //\\\\\\ serial connect button \\\\\\\\
   
   
 

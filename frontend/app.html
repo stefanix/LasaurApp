@@ -11,7 +11,6 @@
 <link rel="stylesheet" href="/css/style.css" type="text/css">
 <script src="/js/jquery-1.7.2.min.js"></script>
 <script src="/js/bootstrap.min.js"></script>
-<script src="/js/jquery-ui-1.8.9.custom.min.js"></script>
 <script src="/js/jquery.toastmessage.js"></script>
 <script src="/js/app_svgreader.js"></script>
 <script src="/js/app_gcodewriter.js"></script>
@@ -98,27 +97,46 @@
 								<img src="/img/big-arrow.png" style="float:right; margin:110px 40px 110px 20px;"/>
 							</div>
 
-							<div id="tab_mover" class="tab-pane" style="height:550px">
-								<div id="lasaur_widget" style="position:relative; width:425px; height:270px;">
-									<div id="outer_top" style="position:absolute; left:10px; top:0px; width:405px; height:10px; background-color:#546883;"></div> 
-									<div id="outer_left" style="position:absolute; left:0px; top:0px; width:10px; height:270px; background-color:#546883;"></div> 
-									<div id="outer_right" style="position:absolute; left:415px; top:0px; width:10px; height:270px; background-color:#546883;"></div> 
-									<div id="gantry_top" style="position:absolute; left:10px; top:35px; width:405px; height:10px; background-color:#83BBFF;"></div> 
-									<div id="gantry_bottom" style="position:absolute; left:10px; top:260px; width:405px; height:10px; background-color:#83BBFF;"></div> 
-									<div id="gantry_left" style="position:absolute; left:22.5px; top:45px; width:10px; height:215px; background-color:#83BBFF;"></div> 
-									<div id="gantry_right" style="position:absolute; left:392.5px; top:45px; width:10px; height:215px; background-color:#83BBFF;"></div> 
-									<div id="y_cart" style="position:absolute; left:19px; top:68px; width:387px; height:10px; background-color:#650B01;"></div> 
-									<div id="x_cart" style="position:absolute; left:54px; top:76.5px; width:12px; height:12px; background-color:#9E4301;"></div> 
-									<div id="cutting_area" style="position:absolute; left:60px; top:82.5px; width:305px; height:155px; border:1px solid #888888; opacity:0.3"></div>	
-								</div>
-								<form>
-									<div id="move_type_radio" style="margin:10px; float:left">
-										<input type="radio" id="radio_g0" name="radio" checked="checked" /><label for="radio_g0">G0</label>
-										<input type="radio" id="radio_g1" name="radio" /><label for="radio_g1">G1</label>
+							<div id="tab_mover" class="tab-pane well span6" style="height:550px; margin-left:0px">
+								<div style="width:425px; margin-left:auto; margin-right:auto; margin-top:16px">
+									<div id="lasaur_widget" style="position:relative; width:425px; height:270px;">
+										<div id="outer_top" style="position:absolute; left:10px; top:0px; width:405px; height:10px; background-color:#546883;"></div> 
+										<div id="outer_left" style="position:absolute; left:0px; top:0px; width:10px; height:270px; background-color:#546883;"></div> 
+										<div id="outer_right" style="position:absolute; left:415px; top:0px; width:10px; height:270px; background-color:#546883;"></div> 
+										<div id="gantry_top" style="position:absolute; left:10px; top:35px; width:405px; height:10px; background-color:#83BBFF;"></div> 
+										<div id="gantry_bottom" style="position:absolute; left:10px; top:260px; width:405px; height:10px; background-color:#83BBFF;"></div> 
+										<div id="gantry_left" style="position:absolute; left:22.5px; top:45px; width:10px; height:215px; background-color:#83BBFF;"></div> 
+										<div id="gantry_right" style="position:absolute; left:392.5px; top:45px; width:10px; height:215px; background-color:#83BBFF;"></div> 
+										<div id="y_cart" style="position:absolute; left:19px; top:68px; width:387px; height:10px; background-color:#650B01;"></div> 
+										<div id="x_cart" style="position:absolute; left:54px; top:76.5px; width:12px; height:12px; background-color:#9E4301;"></div> 
+										<div id="cutting_area" style="position:absolute; left:60px; top:82.5px; width:305px; height:155px; border:1px solid #888888; opacity:0.3"></div>	
 									</div>
-								</form>
-								<div id="feedrate" style="margin:23px; width:150px; float:left"></div>
-								<input id="feedrate_field" type="textfield" value="10000" style="margin:15px; width:50px; float:left">
+									<div class="row" style="width:425px; margin-left:auto; margin-right:auto; margin-top:20px">
+										<div id="seek_feed_btns" class="btn-group pull-left" data-toggle="buttons-radio">
+											<button id="seek_btn" class="btn">Seek</button>
+											<button id="feed_btn" class="btn">Feed</button>
+										</div>									
+										<div id="feedrate_btns" class="btn-group pull-right" data-toggle="buttons-radio">
+											<button id="feedrate_btn_slow" class="btn">slow</button>
+											<button id="feedrate_btn_medium" class="btn">medium</button>
+											<button id="feedrate_btn_fast" class="btn">fast</button>
+										</div>
+										<div class="pull-right" style="margin-left:5px;margin-right:5px;margin-top:3px"><span class="label label-info">mm/min</span></div>
+										<input id="feedrate_field" type="textfield" value="10000" class="pull-right" style="margin-right:5px; width:40px;">
+									</div>
+									<div class="row well" style="width:140px; height:130px; margin-left:auto; margin-right:auto; margin-top:20px;background-color:#dddddd">
+											<div class="row" style="width:44px; margin-left:auto; margin-right:auto;">
+												<button class="btn btn-large"><i class="icon-arrow-up"></i></button>
+											</div>
+											<div class="row" style="width:140px; margin-left:auto; margin-right:auto; margin-top:8px">
+												<button class="btn btn-large pull-left"><i class="icon-arrow-left"></i></button>
+												<button class="btn btn-large pull-right"><i class="icon-arrow-right"></i></button>
+											</div>
+											<div class="row" style="width:44px; margin-left:auto; margin-right:auto; margin-top:8px">
+												<button class="btn btn-large"><i class="icon-arrow-down"></i></button>
+											</div>																						
+									</div>
+								</div>
 							</div>
 
 							<div id="tab_import" class="tab-pane" style="height:550px">
