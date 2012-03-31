@@ -11,7 +11,7 @@ def flash_upload(serial_port, data_root):
     CLOCK = "16000000"
     PROGRAMMER = "avrisp"
     BITRATE = "115200"
-    BUILDNAME = "LasaurGrbl"
+    FIRMWARE = os.path.join(data_root, "firmware/LasaurGrbl.hex")
  
     if sys.platform == "darwin":  # OSX
         AVRDUDEAPP    = os.path.join(data_root, "firmware/tools_osx/avrdude")
@@ -25,8 +25,8 @@ def flash_upload(serial_port, data_root):
         AVRDUDEAPP    = os.path.join(data_root, "firmware/tools_linux/avrdude")
         AVRDUDECONFIG = os.path.join(data_root, "firmware/tools_linux/avrdude.conf")
               
-    os.system('%(dude)s -c %(programmer)s -b %(bps)s -P %(port)s -p %(device)s -C %(dudeconf)s -B 10 -F -U flash:w:%(product)s.hex:i' 
-        % {'dude':AVRDUDEAPP, 'programmer':PROGRAMMER, 'bps':BITRATE, 'port':serial_port, 'device':DEVICE, 'dudeconf':AVRDUDECONFIG, 'product':BUILDNAME})
+    os.system('%(dude)s -c %(programmer)s -b %(bps)s -P %(port)s -p %(device)s -C %(dudeconf)s -B 10 -F -U flash:w:%(firmware)s:i' 
+        % {'dude':AVRDUDEAPP, 'programmer':PROGRAMMER, 'bps':BITRATE, 'port':serial_port, 'device':DEVICE, 'dudeconf':AVRDUDECONFIG, 'firmware':FIRMWARE})
 
     # fuse setting taken over from Makefile for reference
     #os.system('%(dude)s -U hfuse:w:0xd2:m -U lfuse:w:0xff:m' % {'dude':AVRDUDEAPP})

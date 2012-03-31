@@ -208,6 +208,8 @@ argparser.add_argument('-f', '--flash', dest='build_and_flash', action='store_tr
                     default=False, help='flash Arduino with LasaurGrbl firmware')
 argparser.add_argument('-l', '--list', dest='list_serial_devices', action='store_true',
                     default=False, help='list all serial devices currently connected')
+argparser.add_argument('-d', '--debug', dest='debug', action='store_true',
+                    default=False, help='print more verbose for debugging')
 args = argparser.parse_args()
 
 
@@ -243,7 +245,9 @@ else:
         if SERIAL_PORT:
             print "Using serial device '"+ str(SERIAL_PORT) +"' by best guess."
     
-    if SERIAL_PORT:    
+    if SERIAL_PORT:
+        if args.debug and hasattr(sys, "_MEIPASS"):
+            print "Data root is: " + sys._MEIPASS        
         if args.build_and_flash:
             flash_upload(SERIAL_PORT, data_root())
         else:
