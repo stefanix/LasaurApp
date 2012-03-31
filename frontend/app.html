@@ -56,14 +56,18 @@
 					<div class="span2">
 						<ul class="nav nav-tabs" style="width:100%">			
 							<li class="active"><a href="#tab_jobs" data-toggle="tab">Laser Jobs</a></li>
+							<li><a href="#tab_import" data-toggle="tab">SVG Import</a></li>
 							<li><a href="#tab_mover" data-toggle="tab">Direct Control</a></li>
-							<li><a href="#tab_import" data-toggle="tab">Import</a></li>
 						</ul>
+						<div id="log_content" style="margin-top:5px; display:none; overflow:auto; height:295px; border:1px solid #aaaaaa">
+							<!-- log -->
+						</div>												
 					</div>
 					<!--tabbar end-->
 					<div class="span10">	
 						<div class="tab-content">				
 							<!--content start-->
+							
 							<div id="tab_jobs" class="tab-pane active" style="height:550px">
 								<div style="width:165px; float:left; padding-right:5px;">	
 									<h3>Queue</h3>
@@ -96,6 +100,58 @@
 								</form>	
 								<img src="/img/big-arrow.png" style="float:right; margin:110px 40px 110px 20px;"/>
 							</div>
+							
+							<div id="tab_import" class="tab-pane" style="height:550px">													
+								<div id="import_canvas_container" class="well">
+									<form id="svg_upload_form" action="#" onsubmit="return false;">
+										
+										<button id="svg_open_button" class="btn btn-large">
+											<i class="icon-folder-open"></i> Open
+										</button>										
+										
+										<span id="svg_loading_hint" style="display:none">loading ...</span>
+										<input type="file" id="svg_upload_file" name="data" style="visibility:hidden; position:fixed">
+										
+										<div id="dpi_radio_set" style="float:right">
+											<input type="radio" id="dpi_radio_72" name="radio" /><label for="dpi_radio_72">svg72</label>
+											<input type="radio" id="dpi_radio_90" name="radio" /><label for="dpi_radio_90">svg90</label>
+											<input type="radio" id="dpi_radio_other" name="radio" /><label for="dpi_radio_other">other</label>
+										</div>
+										
+										<div id="dpi_value_div" style="display:none; float:right; height:33px">			
+											<a href="#" id="dpi_other_back">&lt;</a>
+											<input type="textfield" id="dpi_value" value="90" style="width:30px;">
+										</div>
+										
+										<div style="float:right; clear:both; margin-top: 10px;">
+											<div style="height:20px; clear:both;">
+												<div id="import_feedrate" style="width:215px; float:right"></div>
+												<div style="float:right; margin-right:20px; color:#666666">Feedrate: <span id="feedrate_val"></span> </div>
+											</div>
+											<div style="height:20px; clear:both;">
+												<div id="import_intensity" style="width:215px; float:right;"></div>
+												<div style="float:right; margin-right:20px; color:#666666">Laser Intensity: <span id="intensity_val"> </div>
+											</div>
+										</div>
+										
+										<div id="import_results" style="display:none"></div>
+										
+									</form>
+									
+									<div style="width:610px; height:305px; background-color:#ffffff">
+										<canvas id="import_canvas" width="610px" height="305px" style="background-color:#ffffff"></canvas>
+									</div>
+									
+									<button id="import_to_queue" class="btn btn-large" style="margin-top:16px;">
+										<i class="icon-th-list"></i> Add to Queue
+									</button>
+									
+								</div> 
+						    <div class="alert">
+							    <a class="close" data-dismiss="alert">×</a>
+							    <strong>Note!</strong> All red geometry outlines are imported (stroke color: 255,0,0 or #ff0000).
+						    </div>										
+							</div> <!-- end of import tab -->							
 
 							<div id="tab_mover" class="tab-pane well span6" style="height:550px; margin-left:0px">
 								<div style="width:425px; margin-left:auto; margin-right:auto; margin-top:16px">
@@ -139,42 +195,6 @@
 								</div>
 							</div>
 
-							<div id="tab_import" class="tab-pane" style="height:550px">
-								<h3>Import SVG</h3>		
-								<div style="color:#666666">
-									<span class="label label-info">Info</span>
-									All red geometry outlines are imported (stroke color: 255,0,0 or #ff0000)
-								</div>
-								<div id="import_canvas_container" class="well">
-									<form id="svg_upload_form" action="#" onsubmit="return false;">
-									<input type="submit" id="svg_open_button" value="Open"/>
-									<span id="svg_loading_hint" style="display:none">loading ...</span>
-									<input type="file" id="svg_upload_file" name="data" style="visibility:hidden; position:fixed">
-									<div id="dpi_radio_set" style="float:right">
-										<input type="radio" id="dpi_radio_72" name="radio" /><label for="dpi_radio_72">svg72</label>
-										<input type="radio" id="dpi_radio_90" name="radio" /><label for="dpi_radio_90">svg90</label>
-										<input type="radio" id="dpi_radio_other" name="radio" /><label for="dpi_radio_other">other</label>
-									</div>
-									<div id="dpi_value_div" style="display:none; float:right; height:33px">			
-										<a href="#" id="dpi_other_back">&lt;</a>
-										<input type="textfield" id="dpi_value" value="90" style="width:30px;">
-									</div>
-									<div style="float:right; clear:both; margin-top: 10px;">
-										<div style="height:20px; clear:both;">
-											<div id="import_feedrate" style="width:215px; float:right"></div>
-											<div style="float:right; margin-right:20px; color:#666666">Feedrate: <span id="feedrate_val"></span> </div>
-										</div>
-										<div style="height:20px; clear:both;">
-											<div id="import_intensity" style="width:215px; float:right;"></div>
-											<div style="float:right; margin-right:20px; color:#666666">Laser Intensity: <span id="intensity_val"> </div>
-										</div>
-									</div>
-									<div id="import_results" style="display:none"></div>
-									</form>
-									<canvas id="import_canvas" style="margin-top:10px" width="610px" height="305px"></canvas>
-									<div id="import_to_queue" style="margin-left:0; margin-top:10px">Add to Queue</div>
-								</div> 
-							</div> <!-- end of import tab -->
 							<!--content end-->
 						</div>
 					</div>

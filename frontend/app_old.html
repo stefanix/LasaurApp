@@ -1,0 +1,900 @@
+<!DOCTYPE html> 
+<html> 
+<head> 
+	
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"> 
+<title>LasaurApp</title> 
+<link rel="stylesheet" href="/css/smoothness/jquery-ui-1.8.9.custom.css" type="text/css">	
+<link rel="stylesheet" href="/css/bootstrap.min.css" type="text/css"> 
+<link rel="stylesheet" href="/css/jquery.toastmessage.css" type="text/css">	
+<!--<link rel="stylesheet" href="/css/style.css" type="text/css">-->
+<script src="/js/jquery-1.7.2.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+<script src="/js/jquery-ui-1.8.9.custom.min.js"></script>
+<script src="/js/jquery.toastmessage.js"></script>
+<script src="/js/app_svgreader.js"></script>
+<script src="/js/app_gcodewriter.js"></script>
+<script src="/js/app_gcodereader.js"></script>
+<script src="/js/app_canvas.js"></script>
+<script src="/js/app.js"></script>
+<script src="/js/app_laserjobs.js"></script>
+<script src="/js/app_directcontrol.js"></script>
+<script src="/js/app_import.js"></script>
+
+</head>
+<body style="min-width:1000px; padding:10px">
+
+<div class="navbar navbar-fixed-top">
+	<div class="navbar-inner">
+		<div class="container">
+			<a class="brand" href="#">LasaurApp</a>			
+	    <ul class="nav">
+		    <li class="active">
+		    <a href="#">Home</a>
+		    </li>
+		    <li><a href="#">Link</a></li>
+		    <li><a href="#">Link</a></li>
+	    </ul>
+			<button id="connect_btn" class="btn btn-warning pull-right" type="submit">Disconnected</button>			
+		</div>
+	</div>
+</div>
+
+<div id="left-panel" style="width:300px; float:left; top:50px">
+	<div class="well" style="height:260px; overflow:hidden; padding:20px; margin-bottom:0px; background-color:#e4f83b">
+		<img src="/img/lasersaur-dino-lasaurapp-190.png" style="padding:10px; padding-left:15px">
+		<div style="padding:10px">
+			<button id="cancel_btn" class="btn" type="submit">Cancel</button>			
+			<ul class="nav nav-list" style="clear:both; padding-top:20px">
+				<li class="nav-header">homing</li>
+				<li><a href="#" id="find_home">homing cycle</a></li>
+				<li><a href="#" id="go_to_origin">go to origin</a></li>
+				<li class="nav-header">offsetting</li>
+				<li><a href="#" id="set_custom_offset">set offset to this</a></li>
+				<li><a href="#" id="use_table_offset">don't use offset</a></li>
+			</ul>		
+		</div>
+	</div>
+	<div id="log-container" style="margin:5px 0px;">
+		<a id="log_toggle" href="#">show log</a>
+		<div id="log_content" class="ui-corner-all" style="margin-top:5px; display:none; overflow:auto; height:295px; border:1px solid #aaaaaa">
+			<!-- log -->
+		</div>
+	</div>
+</div>  <!-- end of left-panel -->
+
+
+	
+<div id="tabs_main" style="width:680px; height:620px; margin-left:310px;overflow:hidden;">
+	<ul>
+		<li><a href="#tab_jobs">Laser Jobs</a></li>
+		<li><a href="#tab_mover">Direct Control</a></li>
+		<li><a href="#tab_import">Import</a></li>
+	</ul>
+		
+	<div id="tab_jobs" style="padding:30px">
+		<div style="width:165px; float:left; padding-right:5px;">	
+			<h3>Queue</h3>
+			<div id="gcode_queue" class="gcode_programs"></div>
+			<h3>Library</h3>
+			<div id="library_placeholder">To be replaced by Javascript</div>
+			<h3>Calibration</h3>
+			<div id="calibration_placeholder">To be replaced by Javascript</div>
+		</div>
+		<form class="well" style="padding:10px; float:right">
+			<label>Name</label>
+			<input type="text" id="gcode_name" class="span4" placeholder="Name program…">
+			<label>G-code</label>
+			<textarea id="gcode_program" class="span4" style="font-size:0.8em; height:100px"></textarea>
+			<label>Preview</label>
+			<div><canvas id="preview_canvas" width="305px" height="153px"></canvas></div>
+	    <div class="btn-group dropup" style="margin-top:20px">
+		    <button id="gcode_submit" class="btn btn-large">Send to Lasersaur</button>
+		    <button class="btn btn-large dropdown-toggle" data-toggle="dropdown">
+		    <span class="caret"></span>
+		    </button>
+		    <ul class="dropdown-menu" style="width:184px; padding:10px">
+					<div id="gcode_bbox">Send Bounding Box</div>				
+					<div id="gcode_save_to_queue" style="margin-top:10px">Save to Queue</div>	
+		    </ul>
+	    </div>			
+	    <div id="progressbar" class="progress progress-striped" style="margin-top:20px">
+		    <div class="bar" style="width:0%;"></div>
+	    </div>
+		</form>	
+		<img src="/img/big-arrow.png" style="float:right; margin:110px 40px 110px 20px;"/>
+	</div>
+
+	<div id="tab_mover" style="padding-left:128px; padding-top:60px">
+			<div id="lasaur_widget" style="position:relative; width:425px; height:270px;">
+				<div id="outer_top" style="position:absolute; left:10px; top:0px; width:405px; height:10px; background-color:#546883;"></div> 
+				<div id="outer_left" style="position:absolute; left:0px; top:0px; width:10px; height:270px; background-color:#546883;"></div> 
+				<div id="outer_right" style="position:absolute; left:415px; top:0px; width:10px; height:270px; background-color:#546883;"></div> 
+				<div id="gantry_top" style="position:absolute; left:10px; top:35px; width:405px; height:10px; background-color:#83BBFF;"></div> 
+				<div id="gantry_bottom" style="position:absolute; left:10px; top:260px; width:405px; height:10px; background-color:#83BBFF;"></div> 
+				<div id="gantry_left" style="position:absolute; left:22.5px; top:45px; width:10px; height:215px; background-color:#83BBFF;"></div> 
+				<div id="gantry_right" style="position:absolute; left:392.5px; top:45px; width:10px; height:215px; background-color:#83BBFF;"></div> 
+				<div id="y_cart" style="position:absolute; left:19px; top:68px; width:387px; height:10px; background-color:#650B01;"></div> 
+				<div id="x_cart" style="position:absolute; left:54px; top:76.5px; width:12px; height:12px; background-color:#9E4301;"></div> 
+				<div id="cutting_area" style="position:absolute; left:60px; top:82.5px; width:305px; height:155px; border:1px solid #888888; opacity:0.3"></div>	
+			</div>
+			<form>
+				<div id="move_type_radio" style="margin:10px; float:left">
+					<input type="radio" id="radio_g0" name="radio" checked="checked" /><label for="radio_g0">G0</label>
+					<input type="radio" id="radio_g1" name="radio" /><label for="radio_g1">G1</label>
+				</div>
+			</form>
+			<div id="feedrate" style="margin:23px; width:150px; float:left"></div>
+			<input id="feedrate_field" type="textfield" value="10000" style="margin:15px; width:50px; float:left">
+	</div>
+
+	<div id="tab_import" style="padding-top:10px; margin-left:auto; margin-right:auto;">
+		<div>
+			<h3>Import SVG</h3>		
+			<div style="color:#666666">
+				<span class="label label-info">Info</span>
+				All red geometry outlines are imported (stroke color: 255,0,0 or #ff0000)
+			</div>
+			<div id="import_canvas_container" class="ui-corner-all" style="margin-top:10px; padding:16px; background-color:#cccccc">
+				<form id="svg_upload_form" action="#" onsubmit="return false;">
+				<input type="submit" id="svg_open_button" value="Open"/>
+				<span id="svg_loading_hint" style="display:none">loading ...</span>
+				<input type="file" id="svg_upload_file" name="data" style="visibility:hidden; position:fixed">
+				<div id="dpi_radio_set" style="float:right">
+					<input type="radio" id="dpi_radio_72" name="radio" /><label for="dpi_radio_72">svg72</label>
+					<input type="radio" id="dpi_radio_90" name="radio" /><label for="dpi_radio_90">svg90</label>
+					<input type="radio" id="dpi_radio_other" name="radio" /><label for="dpi_radio_other">other</label>
+				</div>
+				<div id="dpi_value_div" style="display:none; float:right; height:33px">			
+					<a href="#" id="dpi_other_back">&lt;</a>
+					<input type="textfield" id="dpi_value" value="90" style="width:30px;">
+				</div>
+			
+				<div style="float:right; clear:both; margin-top: 10px;">
+					<div style="height:20px; clear:both;">
+						<div id="import_feedrate" style="width:215px; float:right"></div>
+						<div style="float:right; margin-right:20px; color:#666666">Feedrate: <span id="feedrate_val"></span> </div>
+					</div>
+					<div style="height:20px; clear:both;">
+						<div id="import_intensity" style="width:215px; float:right;"></div>
+						<div style="float:right; margin-right:20px; color:#666666">Laser Intensity: <span id="intensity_val"> </div>
+					</div>
+				</div>
+						
+				<div id="import_results" style="display:none"></div>
+				</form>
+				<canvas id="import_canvas" style="margin-top:10px" width="610px" height="305px"></canvas>
+				<div id="import_to_queue" style="margin-left:0; margin-top:10px">Add to Queue</div>
+			</div> 
+		</div>
+	</div>
+	
+</div> <!--end of tabs -->
+
+
+
+
+<!-- Gcode Library Start -->
+
+<div id="gcode_library" class="gcode_programs">
+
+<a href="#">triangle <i class="icon-arrow-right"></i></a>
+<div>%
+G21
+G90
+S255
+G1 F600
+G0 F10000
+G0 X200 Y100
+G1 X230 Y100
+G1 X230 Y130
+G1 X200 Y100
+G0X0Y0F20000
+S0
+%
+</div>
+
+<a href="#">tangram</a>	
+<div>%
+G21
+G90
+S255
+G1 F600
+G0 F10000
+G0 X60 Y120
+G1 X40 Y100
+G0 X20 Y120
+G1 X100 Y40
+G0 X100 Y80
+G1 X60 Y120
+G0 X60 Y80
+G1 X20 Y40
+G0 X20 Y40
+G1 X100 Y40
+G1 X100 Y120
+G1 X20 Y120
+G1 X20 Y40
+G0 X60 Y80
+G1 X80 Y100
+G1 X80 Y60
+G0 X0 Y0
+S0
+%
+</div>
+
+<a href="#">lasersaur</a>
+<div>%
+G21
+G90
+S255
+G1 F1200
+G0 F10000
+G00X118.032Y8.486
+G01X116.430Y8.641
+G01X113.708Y9.719
+G01X111.841Y11.177
+G01X110.933Y12.172
+G01X110.096Y13.547
+G01X108.931Y17.198
+G01X108.037Y21.231
+G01X106.926Y24.670
+G01X106.135Y25.860
+G01X105.149Y26.732
+G01X102.655Y27.988
+G01X99.453Y28.569
+G01X95.530Y28.449
+G01X93.294Y28.118
+G01X90.879Y27.483
+G01X85.467Y25.366
+G01X79.135Y23.046
+G01X73.681Y21.844
+G01X69.668Y21.561
+G01X67.541Y21.627
+G01X62.766Y22.113
+G01X53.483Y23.919
+G01X44.971Y26.439
+G01X37.725Y29.197
+G01X34.733Y30.517
+G01X28.852Y33.352
+G01X19.712Y38.560
+G01X14.430Y42.530
+G01X12.296Y44.628
+G01X11.383Y45.754
+G01X9.943Y48.180
+G01X8.714Y51.874
+G01X8.486Y54.082
+G01X8.688Y56.113
+G01X9.945Y59.827
+G01X11.600Y62.562
+G01X12.719Y63.960
+G01X13.743Y65.031
+G01X16.357Y67.172
+G01X19.675Y69.148
+G01X23.638Y70.760
+G01X25.843Y71.368
+G01X27.959Y71.799
+G01X31.404Y72.127
+G01X35.447Y71.541
+G01X38.049Y70.636
+G01X39.970Y69.735
+G01X43.570Y67.249
+G01X44.875Y65.953
+G01X46.066Y64.180
+G01X46.770Y61.805
+G01X46.868Y61.411
+G01X47.322Y62.240
+G01X48.164Y63.212
+G01X49.834Y63.566
+G01X51.666Y63.537
+G01X53.466Y63.521
+G01X54.065Y63.528
+G01X53.944Y62.647
+G01X52.884Y61.530
+G01X52.089Y60.573
+G01X51.869Y59.653
+G01X51.851Y55.721
+G01X51.948Y53.094
+G01X52.243Y51.178
+G01X53.024Y49.244
+G01X53.183Y49.037
+G01X58.510Y49.108
+G01X66.483Y48.861
+G01X74.636Y47.865
+G01X80.276Y47.168
+G01X80.737Y47.218
+G01X81.638Y47.936
+G01X82.909Y50.160
+G01X84.969Y56.107
+G01X85.815Y58.880
+G01X86.862Y62.082
+G01X87.455Y63.431
+G01X89.769Y63.672
+G01X93.012Y63.581
+G01X92.843Y62.728
+G01X91.712Y61.589
+G01X91.107Y60.855
+G01X90.985Y59.882
+G01X91.048Y55.122
+G01X91.318Y52.318
+G01X91.901Y48.938
+G01X92.448Y46.235
+G01X92.827Y45.609
+G01X93.082Y45.545
+G01X94.361Y45.346
+G01X98.390Y44.352
+G01X101.196Y43.358
+G01X103.800Y42.129
+G01X108.374Y38.900
+G01X111.947Y35.201
+G01X114.334Y31.701
+G01X115.025Y30.234
+G01X115.790Y27.993
+G01X116.497Y24.354
+G01X116.206Y20.223
+G01X115.660Y17.746
+G01X115.693Y17.212
+G01X116.604Y16.748
+G01X118.214Y16.583
+G01X120.007Y16.106
+G01X120.810Y15.559
+G01X121.058Y15.262
+G01X121.181Y15.056
+G01X120.805Y14.598
+G01X118.472Y13.765
+G01X117.918Y13.618
+G01X119.505Y13.773
+G01X121.833Y13.689
+G01X122.704Y12.219
+G01X123.139Y10.690
+G01X121.964Y9.565
+G01X119.745Y8.637
+G01X118.412Y8.503
+G01X118.225Y8.492
+G01X118.032Y8.486
+G00X118.976Y9.632
+G01X119.325Y9.787
+G01X119.470Y10.161
+G01X119.325Y10.536
+G01X118.976Y10.691
+G01X118.627Y10.536
+G01X118.482Y10.161
+G01X118.627Y9.787
+G01X118.976Y9.632
+G00X35.526Y44.716
+G01X36.571Y44.748
+G01X37.414Y44.910
+G01X38.807Y45.408
+G01X40.756Y46.527
+G01X42.465Y49.085
+G01X43.482Y51.824
+G01X45.087Y56.339
+G01X45.272Y57.575
+G01X44.300Y56.875
+G01X42.504Y56.040
+G01X40.915Y55.868
+G01X39.540Y56.251
+G01X37.896Y57.634
+G01X36.527Y60.425
+G01X36.214Y61.984
+G01X37.222Y60.846
+G01X38.970Y59.222
+G01X40.574Y58.696
+G01X42.290Y59.546
+G01X43.270Y60.573
+G01X43.685Y61.341
+G01X43.482Y63.038
+G01X42.200Y64.836
+G01X40.197Y66.596
+G01X39.037Y67.417
+G01X37.619Y68.303
+G01X34.944Y69.605
+G01X32.437Y70.287
+G01X30.046Y70.359
+G01X28.877Y70.169
+G01X26.950Y69.528
+G01X23.078Y67.172
+G01X19.726Y63.835
+G01X17.543Y60.058
+G01X17.094Y58.174
+G01X16.984Y56.757
+G01X17.139Y54.364
+G01X17.985Y52.341
+G01X19.749Y50.426
+G01X21.045Y49.426
+G01X22.389Y48.595
+G01X25.913Y46.995
+G01X29.970Y45.671
+G01X33.861Y44.858
+G01X35.526Y44.716
+S0
+G00X0Y0F15000
+%
+</div>
+
+
+<a href="#">TestCard</a>
+<div>%
+G21
+G90
+S80
+G1 F2000
+G0 F10000
+G00X108.314Y84.182
+G01X113.647Y78.849
+G01X118.798Y84.000
+G01X113.465Y89.333
+G01X108.314Y84.182
+G00X50.029Y50.548
+G01X52.569Y50.548
+G01X52.569Y53.088
+G01X50.029Y53.088
+G01X50.029Y50.548
+G00X48.800Y49.318
+G01X53.800Y49.318
+G01X53.800Y54.318
+G01X48.800Y54.318
+G01X48.800Y49.318
+G00X46.299Y46.819
+G01X56.300Y46.819
+G01X56.300Y56.819
+G01X46.299Y56.819
+G01X46.299Y46.819
+G00X41.300Y41.818
+G01X61.300Y41.818
+G01X61.300Y61.819
+G01X41.300Y61.819
+G01X41.300Y41.818
+G00X31.300Y31.819
+G01X71.299Y31.819
+G01X71.299Y71.819
+G01X31.300Y71.819
+G01X31.300Y31.819
+G00X11.300Y11.818
+G01X91.300Y11.818
+G01X91.300Y91.818
+G01X11.300Y91.818
+G01X11.300Y11.818
+G00X183.015Y53.089
+G01X183.112Y53.575
+G01X183.387Y53.987
+G01X183.799Y54.262
+G01X184.285Y54.359
+G01X184.771Y54.262
+G01X185.183Y53.987
+G01X185.459Y53.575
+G01X185.555Y53.089
+G01X185.459Y52.603
+G01X185.183Y52.191
+G01X184.771Y51.915
+G01X184.285Y51.819
+G01X183.799Y51.915
+G01X183.387Y52.191
+G01X183.112Y52.603
+G01X183.015Y53.089
+G01X183.015Y53.089
+G00X181.785Y53.089
+G01X181.833Y53.576
+G01X181.976Y54.045
+G01X182.207Y54.477
+G01X182.517Y54.856
+G01X182.896Y55.167
+G01X183.329Y55.398
+G01X183.797Y55.540
+G01X184.285Y55.588
+G01X184.773Y55.540
+G01X185.242Y55.398
+G01X185.674Y55.167
+G01X186.053Y54.856
+G01X186.364Y54.477
+G01X186.595Y54.045
+G01X186.737Y53.576
+G01X186.785Y53.089
+G01X186.737Y52.601
+G01X186.595Y52.132
+G01X186.364Y51.700
+G01X186.053Y51.321
+G01X185.674Y51.010
+G01X185.242Y50.779
+G01X184.773Y50.637
+G01X184.285Y50.589
+G01X183.797Y50.637
+G01X183.329Y50.779
+G01X182.896Y51.010
+G01X182.517Y51.321
+G01X182.207Y51.700
+G01X181.976Y52.132
+G01X181.833Y52.601
+G01X181.785Y53.089
+G01X181.785Y53.089
+G00X179.285Y53.089
+G01X179.381Y54.064
+G01X179.666Y55.002
+G01X180.128Y55.866
+G01X180.750Y56.624
+G01X181.507Y57.246
+G01X182.372Y57.708
+G01X183.310Y57.993
+G01X184.285Y58.089
+G01X185.261Y57.993
+G01X186.199Y57.708
+G01X187.063Y57.246
+G01X187.821Y56.624
+G01X188.443Y55.866
+G01X188.905Y55.002
+G01X189.189Y54.064
+G01X189.285Y53.089
+G01X189.189Y52.113
+G01X188.905Y51.175
+G01X188.443Y50.311
+G01X187.821Y49.553
+G01X187.063Y48.931
+G01X186.199Y48.469
+G01X185.261Y48.184
+G01X184.285Y48.088
+G01X183.310Y48.184
+G01X182.372Y48.469
+G01X181.507Y48.931
+G01X180.750Y49.553
+G01X180.128Y50.311
+G01X179.666Y51.175
+G01X179.381Y52.113
+G01X179.285Y53.089
+G01X179.285Y53.089
+G00X174.285Y53.088
+G01X174.333Y54.068
+G01X174.477Y55.039
+G01X174.716Y55.991
+G01X175.046Y56.915
+G01X175.466Y57.802
+G01X175.971Y58.644
+G01X176.555Y59.432
+G01X177.214Y60.159
+G01X177.941Y60.818
+G01X178.729Y61.403
+G01X179.571Y61.907
+G01X180.458Y62.327
+G01X181.382Y62.658
+G01X182.334Y62.896
+G01X183.305Y63.040
+G01X184.285Y63.088
+G01X185.265Y63.040
+G01X186.236Y62.896
+G01X187.188Y62.658
+G01X188.112Y62.327
+G01X188.999Y61.907
+G01X189.841Y61.403
+G01X190.629Y60.818
+G01X191.356Y60.159
+G01X192.015Y59.432
+G01X192.600Y58.644
+G01X193.104Y57.802
+G01X193.524Y56.915
+G01X193.855Y55.991
+G01X194.093Y55.039
+G01X194.237Y54.068
+G01X194.285Y53.088
+G01X194.237Y52.108
+G01X194.093Y51.137
+G01X193.855Y50.185
+G01X193.524Y49.261
+G01X193.104Y48.374
+G01X192.600Y47.533
+G01X192.015Y46.744
+G01X191.356Y46.017
+G01X190.629Y45.358
+G01X189.841Y44.774
+G01X188.999Y44.269
+G01X188.112Y43.849
+G01X187.188Y43.519
+G01X186.236Y43.280
+G01X185.265Y43.136
+G01X184.285Y43.088
+G01X183.305Y43.136
+G01X182.334Y43.280
+G01X181.382Y43.519
+G01X180.458Y43.849
+G01X179.571Y44.269
+G01X178.729Y44.774
+G01X177.941Y45.358
+G01X177.214Y46.017
+G01X176.555Y46.744
+G01X175.971Y47.533
+G01X175.466Y48.374
+G01X175.046Y49.261
+G01X174.716Y50.185
+G01X174.477Y51.137
+G01X174.333Y52.108
+G01X174.285Y53.088
+G01X174.285Y53.088
+G00X164.285Y53.089
+G01X164.382Y55.049
+G01X164.670Y56.990
+G01X165.146Y58.894
+G01X165.808Y60.742
+G01X166.647Y62.516
+G01X167.656Y64.200
+G01X168.825Y65.776
+G01X170.143Y67.231
+G01X171.597Y68.549
+G01X173.174Y69.718
+G01X174.857Y70.727
+G01X176.632Y71.566
+G01X178.480Y72.227
+G01X180.383Y72.704
+G01X182.325Y72.992
+G01X184.285Y73.088
+G01X186.246Y72.992
+G01X188.187Y72.704
+G01X190.091Y72.227
+G01X191.939Y71.566
+G01X193.713Y70.727
+G01X195.397Y69.718
+G01X196.973Y68.549
+G01X198.427Y67.231
+G01X199.745Y65.776
+G01X200.915Y64.200
+G01X201.924Y62.516
+G01X202.763Y60.742
+G01X203.424Y58.894
+G01X203.901Y56.990
+G01X204.189Y55.049
+G01X204.285Y53.089
+G01X204.189Y51.128
+G01X203.901Y49.187
+G01X203.424Y47.283
+G01X202.763Y45.435
+G01X201.924Y43.661
+G01X200.915Y41.977
+G01X199.745Y40.401
+G01X198.427Y38.946
+G01X196.973Y37.628
+G01X195.397Y36.459
+G01X193.713Y35.450
+G01X191.939Y34.611
+G01X190.091Y33.950
+G01X188.187Y33.473
+G01X186.246Y33.185
+G01X184.285Y33.089
+G01X182.325Y33.185
+G01X180.383Y33.473
+G01X178.480Y33.950
+G01X176.632Y34.611
+G01X174.857Y35.450
+G01X173.174Y36.459
+G01X171.597Y37.628
+G01X170.143Y38.946
+G01X168.825Y40.401
+G01X167.656Y41.977
+G01X166.647Y43.661
+G01X165.808Y45.435
+G01X165.146Y47.283
+G01X164.670Y49.187
+G01X164.382Y51.128
+G01X164.285Y53.089
+G01X164.285Y53.089
+G00X144.285Y53.088
+G01X144.333Y55.051
+G01X144.478Y57.009
+G01X144.718Y58.957
+G01X145.054Y60.892
+G01X145.484Y62.807
+G01X146.008Y64.700
+G01X146.623Y66.564
+G01X147.330Y68.396
+G01X148.126Y70.190
+G01X149.008Y71.944
+G01X149.976Y73.652
+G01X151.026Y75.311
+G01X152.157Y76.916
+G01X153.365Y78.464
+G01X154.647Y79.951
+G01X156.001Y81.372
+G01X157.423Y82.726
+G01X158.910Y84.009
+G01X160.457Y85.216
+G01X162.062Y86.347
+G01X163.721Y87.397
+G01X165.429Y88.365
+G01X167.183Y89.248
+G01X168.978Y90.043
+G01X170.810Y90.750
+G01X172.674Y91.366
+G01X174.566Y91.889
+G01X176.482Y92.320
+G01X178.416Y92.655
+G01X180.365Y92.896
+G01X182.322Y93.040
+G01X184.285Y93.088
+G01X186.248Y93.040
+G01X188.206Y92.896
+G01X190.154Y92.655
+G01X192.089Y92.320
+G01X194.004Y91.889
+G01X195.897Y91.366
+G01X197.761Y90.750
+G01X199.592Y90.043
+G01X201.387Y89.248
+G01X203.141Y88.365
+G01X204.849Y87.397
+G01X206.508Y86.347
+G01X208.113Y85.216
+G01X209.661Y84.009
+G01X211.147Y82.726
+G01X212.569Y81.372
+G01X213.923Y79.951
+G01X215.206Y78.464
+G01X216.413Y76.916
+G01X217.544Y75.311
+G01X218.594Y73.652
+G01X219.562Y71.944
+G01X220.445Y70.190
+G01X221.240Y68.396
+G01X221.947Y66.564
+G01X222.563Y64.700
+G01X223.086Y62.807
+G01X223.517Y60.892
+G01X223.852Y58.957
+G01X224.092Y57.009
+G01X224.237Y55.051
+G01X224.285Y53.088
+G01X224.237Y51.126
+G01X224.092Y49.168
+G01X223.852Y47.219
+G01X223.517Y45.285
+G01X223.086Y43.369
+G01X222.563Y41.477
+G01X221.947Y39.613
+G01X221.240Y37.781
+G01X220.445Y35.986
+G01X219.562Y34.232
+G01X218.594Y32.524
+G01X217.544Y30.865
+G01X216.413Y29.260
+G01X215.206Y27.713
+G01X213.923Y26.226
+G01X212.569Y24.804
+G01X211.147Y23.450
+G01X209.661Y22.168
+G01X208.113Y20.960
+G01X206.508Y19.830
+G01X204.849Y18.779
+G01X203.141Y17.811
+G01X201.387Y16.929
+G01X199.592Y16.133
+G01X197.761Y15.427
+G01X195.897Y14.811
+G01X194.004Y14.287
+G01X192.089Y13.857
+G01X190.154Y13.521
+G01X188.206Y13.281
+G01X186.248Y13.137
+G01X184.285Y13.088
+G01X182.322Y13.137
+G01X180.365Y13.281
+G01X178.416Y13.521
+G01X176.482Y13.857
+G01X174.566Y14.287
+G01X172.674Y14.811
+G01X170.810Y15.427
+G01X168.978Y16.133
+G01X167.183Y16.929
+G01X165.429Y17.811
+G01X163.721Y18.779
+G01X162.062Y19.830
+G01X160.457Y20.960
+G01X158.910Y22.168
+G01X157.423Y23.450
+G01X156.001Y24.804
+G01X154.647Y26.226
+G01X153.365Y27.713
+G01X152.157Y29.260
+G01X151.026Y30.865
+G01X149.976Y32.524
+G01X149.008Y34.232
+G01X148.126Y35.986
+G01X147.330Y37.781
+G01X146.623Y39.613
+G01X146.008Y41.477
+G01X145.484Y43.369
+G01X145.054Y45.285
+G01X144.718Y47.219
+G01X144.478Y49.168
+G01X144.333Y51.126
+G01X144.285Y53.088
+G01X144.285Y53.088
+G00X12.933Y108.014
+G01X12.933Y124.014
+G01X36.932Y124.014
+G01X36.932Y108.014
+G00X12.933Y140.014
+G01X12.933Y124.014
+G01X36.932Y124.014
+G01X36.932Y140.014
+G00X39.888Y136.014
+G01X55.888Y136.014
+G01X55.888Y112.013
+G01X39.888Y112.013
+G00X71.887Y136.014
+G01X55.888Y136.014
+G01X55.888Y112.013
+G01X71.887Y112.013
+G00X4.000Y4.000
+G01X233.600Y4.000
+G01X233.600Y164.000
+G01X4.000Y164.000
+G01X4.000Y4.000
+G00X118.798Y84.000
+G01X124.131Y78.667
+G01X129.282Y83.819
+G01X123.949Y89.152
+G01X118.798Y84.000
+S0
+G00X0Y0F15000
+%
+</div>
+
+</div>
+
+
+<div id="gcode_for_calibration" class="gcode_programs">
+
+<a href="#">pulse near x-axis</a>
+<div>%
+G21
+G90
+S40
+G1 F400
+G0 F10000
+G0 X100 Y100
+G1 X105 Y100
+S0
+%
+</div>
+
+<a href="#">pulse far x-axis</a>
+<div>%
+G21
+G90
+S40
+G1 F400
+G0 F10000
+G0 X100 Y520
+G1 X105 Y520
+S0
+%
+</div>
+
+<a href="#">pulse near y-axis</a>
+<div>%
+G21
+G90
+S40
+G1 F400
+G0 F10000
+G0 X100 Y300
+G1 X105 Y300
+S0
+%
+</div>
+
+<a href="#">pulse far y-axis</a>
+<div>%
+G21
+G90
+S40
+G1 F400
+G0 F10000
+G0 X1100 Y300
+G1 X1105 Y300
+S0
+%
+</div>
+
+</div>
+
+<!-- Gcode Library End -->
+
+
+</body>
+</html>
+

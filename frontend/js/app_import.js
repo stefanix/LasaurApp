@@ -71,8 +71,7 @@ $(document).ready(function(){
     return header + gcode + footer;
   }
 
-  // setting up open button
-  $('#svg_open_button').button();
+  // forwarding file open click
   $('#svg_open_button').click(function(e){
     $('#svg_upload_file').trigger('click');
   });  
@@ -123,7 +122,6 @@ $(document).ready(function(){
 
 
   // setting up add to queue button
-  $("#import_to_queue").button();  
   $("#import_to_queue").click(function(e) {
     var feedrate = $("#import_feedrate").slider("value");
     var intensity = $("#import_intensity").slider("value");

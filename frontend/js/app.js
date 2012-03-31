@@ -97,7 +97,7 @@ function preview_job(gcode, name) {
 
 
 $(document).ready(function(){
-
+  
   $('#log_toggle').toggle(function() {
     $("#log_content").fadeIn('slow');
   	$("#log_toggle").html("hide log");

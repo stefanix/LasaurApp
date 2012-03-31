@@ -39,16 +39,14 @@ $(document).ready(function(){
 	
   });
 
-  $('#seek_btn').button('toggle');
   
-  $('#move_type_radio').buttonset();
-  $("#feedrate").slider({ min:50, max:20000, value:$('#feedrate_field').val() });
-  $("#feedrate").bind( "slide", function(event, ui) {
-  	$('#feedrate_field').val($('#feedrate').slider("option", "value"));
-  });
-  $("#feedrate").bind( "slidestop", function(event, ui) {
-  	$('#feedrate_field').val($('#feedrate').slider("option", "value"));
-  });
+  // $("#feedrate").slider({ min:50, max:20000, value:$('#feedrate_field').val() });
+  // $("#feedrate").bind( "slide", function(event, ui) {
+  //  $('#feedrate_field').val($('#feedrate').slider("option", "value"));
+  // });
+  // $("#feedrate").bind( "slidestop", function(event, ui) {
+  //  $('#feedrate_field').val($('#feedrate').slider("option", "value"));
+  // });
 
   $("#cutting_area").hover(
     function () {
