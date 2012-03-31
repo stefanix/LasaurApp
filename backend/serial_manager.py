@@ -67,10 +67,13 @@ class SerialManagerClass:
 
     def close(self):
         if self.device:
-            self.device.flushOutput()
-            self.device.flushInput()
-            self.device.close()
-            self.device = None
+            try:
+                self.device.flushOutput()
+                self.device.flushInput()
+                self.device.close()
+                self.device = None
+            except:
+                self.device = None
             return True
         else:
             return False

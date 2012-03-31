@@ -41,6 +41,28 @@
 })(jQuery); 
 
 
+connect_btn_state = false;
+connect_btn_in_hover = false;
+function connect_btn_set_state(is_connected) {
+  if (is_connected) {
+    connect_btn_state = true
+    if (!connect_btn_in_hover) {
+      $("#connect_btn").html("Connected");
+    }
+    $("#connect_btn").removeClass("btn-danger");
+    $("#connect_btn").removeClass("btn-warning");
+    $("#connect_btn").addClass("btn-success");      
+  } else {
+		connect_btn_state = false
+    if (!connect_btn_in_hover) {
+      $("#connect_btn").html("Disconnected");
+    }		
+    $("#connect_btn").removeClass("btn-danger");
+	  $("#connect_btn").removeClass("btn-success");
+	  $("#connect_btn").addClass("btn-warning");     
+  }
+}
+
 
 var queue_num_index = 0;
 function add_to_job_queue(gcode, name) {
@@ -88,42 +110,73 @@ $(document).ready(function(){
 
   //// connect to serial button
   // get serial state
-  $.get('/serial/2', function(data) {
-  	if (data != "") {
-  		$().uxmessage('notice', "Serial is Connected");		
-  		$("#connection_btn").val('1');
-  		$("#connection_btn").button('option', 'label', 'Disconnect');		
-  	} else {
-  		$().uxmessage('notice', "Serial is Disconnected");
-  		$("#connection_btn").val('0');
-  		$("#connection_btn").button('option', 'label', 'Connect');
-  	}		
-  });
-  $("#connection_btn").click(function(e){	
-  	if ($("#connection_btn").val() == '1') {
+  var connectiontimer = setInterval(function() {
+    $.ajax({
+        url: '/serial/2',
+        success: function( data ) {
+        	if (data != "") {
+        	  connect_btn_set_state(true);
+        	} else {
+        	  connect_btn_set_state(false);
+        	}
+        },
+        error: function(request, status, error) {
+          // lost connection to server
+      		connect_btn_set_state(false); 
+        }
+    });
+  }, 3000);
+  connect_btn_width = $("#connect_btn").innerWidth();
+  $("#connect_btn").width(connect_btn_width);
+  $("#connect_btn").click(function(e){	
+  	if (connect_btn_state == true) {
   		$.get('/serial/0', function(data) {
   			if (data != "") {
-  				$().uxmessage('success', "Serial Disconnected");
+  				connect_btn_set_state(false);   
   			} else {
-  				$().uxmessage('success', "Serial was already disonnected.");
+  			  // was already disconnected
+  			  connect_btn_set_state(false);
   			}
-  			$("#connection_btn").val('0');
-  			$("#connection_btn").button('option', 'label', 'Connect');	
+  			$("#connect_btn").html("Disconnected");
   		});
   	}	else {
+  	  $("#connect_btn").html('Connecting...');
   		$.get('/serial/1', function(data) {
   			if (data != "") {
-  				$().uxmessage('success', "Serial Connected");
-  				$().uxmessage('notice', data);				
-  				$("#connection_btn").val('1');
-  				$("#connection_btn").button('option', 'label', 'Disconnect');
+  			  connect_btn_set_state(true);
+  			  $("#connect_btn").html("Connected");		  
   			} else {
-  				$().uxmessage('error', "Failed to Connect");
+  			  // failed to connect
+  			  connect_btn_set_state(false);
+		  	  $("#connect_btn").removeClass("btn-warning");
+      	  $("#connect_btn").addClass("btn-danger");  
   			}		
   		});
   	}	
   	e.preventDefault();		
   });	
+  $("#connect_btn").hover(
+    function () {
+      connect_btn_in_hover = true;
+      if (connect_btn_state) {
+        $(this).html("Disconnect");
+      } else {
+        $(this).html("Connect");
+      }
+      $(this).width(connect_btn_width);
+    }, 
+    function () {
+      connect_btn_in_hover = false;
+      if (connect_btn_state) {
+        $(this).html("Connected");
+      } else {
+        $(this).html("Disconnected");
+      }
+      $(this).width(connect_btn_width);      
+    }
+  );
+  
+  
 
   $("#cancel_btn").click(function(e){
   	var gcode = '!\n'  // ! is enter stop state char
