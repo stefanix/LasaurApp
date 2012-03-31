@@ -133,7 +133,7 @@ $(document).ready(function(){
     add_to_job_queue(gcodedata, filename);
     preview_job(gcodedata, filename);
 	  $().uxmessage('notice', "file added to laser job queue");
-  	$( "#tabs-main" ).tabs({selected: 0 });	// switch to jobs tab
+  	//$( "#tabs_main" ).tabs({selected: 0 });	// switch to jobs tab  // TODO
   	return false;
   });
 

@@ -76,13 +76,6 @@ function preview_job(gcode, name) {
 
 $(document).ready(function(){
 
-  $(function() {
-  	$( "#tabs-main" ).tabs({
-  		selected: 0
-  	});
-  });
-
-
   $('#log_toggle').toggle(function() {
     $("#log_content").fadeIn('slow');
   	$("#log_toggle").html("hide log");
@@ -93,39 +86,37 @@ $(document).ready(function(){
   //$('#log_toggle').trigger('click');  // show log, for debugging
 
 
-  // connect to serial button
-  //	
-  $("#serial_connection").button();
+  //// connect to serial button
   // get serial state
   $.get('/serial/2', function(data) {
   	if (data != "") {
   		$().uxmessage('notice', "Serial is Connected");		
-  		$("#serial_connection").val('1');
-  		$("#serial_connection").button('option', 'label', 'Disconnect');		
+  		$("#connection_btn").val('1');
+  		$("#connection_btn").button('option', 'label', 'Disconnect');		
   	} else {
   		$().uxmessage('notice', "Serial is Disconnected");
-  		$("#serial_connection").val('0');
-  		$("#serial_connection").button('option', 'label', 'Connect');
+  		$("#connection_btn").val('0');
+  		$("#connection_btn").button('option', 'label', 'Connect');
   	}		
   });
-  $("#serial_connection").click(function(e){	
-  	if ($("#serial_connection").val() == '1') {
+  $("#connection_btn").click(function(e){	
+  	if ($("#connection_btn").val() == '1') {
   		$.get('/serial/0', function(data) {
   			if (data != "") {
   				$().uxmessage('success', "Serial Disconnected");
   			} else {
   				$().uxmessage('success', "Serial was already disonnected.");
   			}
-  			$("#serial_connection").val('0');
-  			$("#serial_connection").button('option', 'label', 'Connect');	
+  			$("#connection_btn").val('0');
+  			$("#connection_btn").button('option', 'label', 'Connect');	
   		});
   	}	else {
   		$.get('/serial/1', function(data) {
   			if (data != "") {
   				$().uxmessage('success', "Serial Connected");
   				$().uxmessage('notice', data);				
-  				$("#serial_connection").val('1');
-  				$("#serial_connection").button('option', 'label', 'Disconnect');
+  				$("#connection_btn").val('1');
+  				$("#connection_btn").button('option', 'label', 'Disconnect');
   			} else {
   				$().uxmessage('error', "Failed to Connect");
   			}		
@@ -134,8 +125,7 @@ $(document).ready(function(){
   	e.preventDefault();		
   });	
 
-  $("#cancel_job").button();
-  $("#cancel_job").click(function(e){
+  $("#cancel_btn").click(function(e){
   	var gcode = '!\n'  // ! is enter stop state char
   	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));	
   	$.get('/gcode/'+ gcode, function(data) {
@@ -186,24 +176,11 @@ $(document).ready(function(){
   });
   
   $("#set_custom_offset").click(function(e){
-  	var gcode = 'G10L20P1\n'
+  	var gcode = 'G10L20P1\nG55\n'
   	$().uxmessage('notice', gcode);	
   	$.get('/gcode/'+ gcode, function(data) {
   		if (data != "") {
   			$().uxmessage('success', "Setting custom offset ...");
-  		} else {
-  			$().uxmessage('error', "Serial not connected.");
-  		}
-  	});
-  	e.preventDefault();		
-  });
-  
-  $("#use_custom_offset").click(function(e){
-  	var gcode = 'G55\n'
-  	$().uxmessage('notice', gcode);	
-  	$.get('/gcode/'+ gcode, function(data) {
-  		if (data != "") {
-  			$().uxmessage('success', "Using custom offset ...");
   		} else {
   			$().uxmessage('error', "Serial not connected.");
   		}

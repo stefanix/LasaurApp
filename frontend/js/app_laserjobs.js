@@ -5,7 +5,6 @@ $(document).ready(function(){
   $('#library_placeholder').replaceWith($('#gcode_library'));
   $('#gcode_library').show();
 
-
   $('#gcode_library a').click(function(){		
     preview_job($(this).next().text(), $(this).text())
   });
@@ -22,8 +21,8 @@ $(document).ready(function(){
   	$('#gcode_program').trigger('blur');	
   });
 
-  
-  $("#gcode_submit").button()
+
+  $("#progressbar").hide();  
   $("#gcode_submit").click(function(e) {
   	// send gcode string to server via POST
   	var gcode = $('#gcode_program').val();
@@ -32,53 +31,35 @@ $(document).ready(function(){
   		if (data != "") {
   			$().uxmessage('success', "G-Code sent to serial.");	
   			// show progress bar, register live updates
-  			if ($("#progressbar").progressbar( "option", "value" ) == 0) {
-  				$("#progressbar").progressbar( "option", "value", 5 )
+  			if ($("#progressbar").children().first().width() == 0) {
+  				$("#progressbar").children().first().width('5%');
   				$("#progressbar").show();
+  				var progress_not_yet_done_flag = true;
   			  var progresstimer = setInterval(function() {
   					$.get('/queue_pct_done', function(data2) {
-  						//$().uxmessage('notice', data2);
   						if (data2.length > 0) {
   							var pct = parseInt(data2);
-  							//$().uxmessage('notice', data);
-  							$('#progressbar').progressbar( "option", "value", pct );
+                $("#progressbar").children().first().width(pct+'%');  							
   						} else {
-  							$().uxmessage('notice', "Done.");
-  							$('#progressbar').hide();
-  							$('#progressbar').progressbar( "option", "value", 0 );
-  							clearInterval(progresstimer);
+  						  if (progress_not_yet_done_flag) {
+    						  $("#progressbar").children().first().width('100%');
+    						  $().uxmessage('notice', "Done.");
+    						  progress_not_yet_done_flag = false;
+    						} else {
+    							$('#progressbar').hide();
+    							$("#progressbar").children().first().width(0); 
+    							clearInterval(progresstimer);
+    						}
   						}
   					});
-  			  }, 3000);
+  			  }, 2000);
   			}
   		} else {
   			$().uxmessage('error', "Serial not connected.");
   		}
     });
-    
   	return false;
   });
-  
-  $("#gcode_submit").next().button( {
-		text: false,
-		icons: {
-			primary: "ui-icon-triangle-1-s"
-		}
-  })
-  $("#gcode_submit").next().toggle(function() {
-    var pos = $(this).position();
-    $("#gcode_more_div").css('left', pos.left-30).css('top', pos.top-30)
-    $("#gcode_more_div").show();
-    $('body').bind('click.dropdown', function(e) {
-      $("#gcode_submit").next().trigger('click')
-      // remove click event by namespace,
-      // see: http://api.jquery.com/unbind/
-      $('body').unbind('click.dropdown');
-    });
-  }, function() {
-    $("#gcode_more_div").hide();
-  });
-  $("#gcode_submit").next().parent().buttonset();
 
 
   $("#gcode_bbox").button();  
@@ -92,12 +73,6 @@ $(document).ready(function(){
   $("#gcode_save_to_queue").click(function(e) {
     add_to_job_queue($('#gcode_program').val(), $.trim($('#gcode_name').val()));
   });
-
-
-  $("#progressbar").progressbar({
-  	value: 0
-  });
-  $("#progressbar").hide();
 
 
   // G-Code Canvas Preview
