@@ -1,18 +1,17 @@
 
-import time
-import sys, os
-import os.path
-import serial
-import socket
-import argparse
-import webbrowser
+import sys, os, time
+import glob, json, argparse
+import socket, webbrowser
 import wsgiref.simple_server
 from bottle import *
+import serial
 from serial_manager import SerialManager
 from flash import flash_upload
 
 
+APPNAME = "lasaurapp"
 VERSION = "v12.03a"
+COMPANY_NAME = "com.nortd.labs"
 SERIAL_PORT = None
 BITSPERSECOND = 9600
 NETWORK_PORT = 4444
@@ -22,7 +21,7 @@ COOKIE_KEY = 'secret_key_jkn23489hsdf'
 
 
 
-def data_root():
+def resources_dir():
     """This is to be used with all relative file access.
        _MEIPASS is a special location for data files when creating
        standalone, single file python apps with pyInstaller.
@@ -34,6 +33,20 @@ def data_root():
     else:
         # root is one up from this file
         return os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../'))
+        
+        
+def storage_dir():
+    if sys.platform == 'darwin':
+        # from AppKit import NSSearchPathForDirectoriesInDomains
+        # # NSApplicationSupportDirectory = 14
+        # # NSUserDomainMask = 1
+        # # True for expanding the tilde into a fully qualified path
+        # appdata = path.join(NSSearchPathForDirectoriesInDomains(14, 1, True)[0], APPNAME)
+        return os.path.join(os.path.expanduser('~'), 'Library', 'Application Support', COMPANY_NAME, APPNAME)
+    elif sys.platform == 'win32':
+        return os.path.join(os.path.expandvars('%APPDATA%'), COMPANY_NAME, APPNAME)
+    else:
+        return os.path.join(os.path.expanduser('~'), "." + APPNAME)
 
 
 
@@ -84,25 +97,49 @@ def longtest_handler():
 
 @route('/css/:path#.+#')
 def static_css_handler(path):
-    return static_file(path, root=os.path.join(data_root(), 'frontend/css'))
+    return static_file(path, root=os.path.join(resources_dir(), 'frontend/css'))
     
 @route('/js/:path#.+#')
-def static_css_handler(path):
-    return static_file(path, root=os.path.join(data_root(), 'frontend/js'))
+def static_js_handler(path):
+    return static_file(path, root=os.path.join(resources_dir(), 'frontend/js'))
     
 @route('/img/:path#.+#')
-def static_css_handler(path):
-    return static_file(path, root=os.path.join(data_root(), 'frontend/img'))
+def static_img_handler(path):
+    return static_file(path, root=os.path.join(resources_dir(), 'frontend/img'))
+    
+@route('/library/get/:path#.+#')
+def static_library_handler(path):
+    return static_file(path, root=os.path.join(resources_dir(), 'library'), mimetype='text/plain')
+    
+@route('/library/list/:ext')
+def library_list_handler(ext):
+    # base64.urlsafe_b64encode()
+    # base64.urlsafe_b64decode()
+    # return a json list of file names
+    file_list = []
+    if ext in ('gc', 'svg'):
+        cwd_temp = os.getcwd()
+        try:
+            os.chdir(os.path.join(resources_dir(), 'library'))
+            file_list = glob.glob('*.'+ ext)
+        finally:
+            os.chdir(cwd_temp)
+    return json.dumps(file_list)
+    
+@route('/library/rm/:name')
+def library_rm_handler(ext):
+    # delete gcode item, on success return '1'
+
 
 @route('/')
 @route('/index.html')
 @route('/app.html')
 def default_handler():
-    return static_file('app.html', root=os.path.join(data_root(), 'frontend') )
+    return static_file('app.html', root=os.path.join(resources_dir(), 'frontend') )
 
 @route('/canvas')
-def default_handler():
-    return static_file('testCanvas.html', root=os.path.join(data_root(), 'frontend'))    
+def canvas_handler():
+    return static_file('testCanvas.html', root=os.path.join(resources_dir(), 'frontend'))    
 
 @route('/serial/:connect')
 def serial_handler(connect):
@@ -208,6 +245,8 @@ argparser.add_argument('-f', '--flash', dest='build_and_flash', action='store_tr
                     default=False, help='flash Arduino with LasaurGrbl firmware')
 argparser.add_argument('-l', '--list', dest='list_serial_devices', action='store_true',
                     default=False, help='list all serial devices currently connected')
+argparser.add_argument('-d', '--debug', dest='debug', action='store_true',
+                    default=False, help='print more verbose for debugging')                    
 args = argparser.parse_args()
 
 
@@ -243,11 +282,15 @@ else:
         if SERIAL_PORT:
             print "Using serial device '"+ str(SERIAL_PORT) +"' by best guess."
     
-    if SERIAL_PORT:    
+    if SERIAL_PORT:
+        if args.debug:
+            debug(True)
+            if hasattr(sys, "_MEIPASS"):
+                print "Data root is: " + sys._MEIPASS             
+            print "Persistent storage root is: " + storage_dir()
         if args.build_and_flash:
-            flash_upload(SERIAL_PORT, data_root())
+            flash_upload(SERIAL_PORT, resources_dir())
         else:
-            # debug(True)
             if args.host_on_all_interfaces:
                 run_with_callback('')
             else:

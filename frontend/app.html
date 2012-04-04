@@ -5,7 +5,6 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"> 
 <title>LasaurApp</title> 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="/css/smoothness/jquery-ui-1.8.9.custom.css" type="text/css">	
 <link rel="stylesheet" href="/css/bootstrap.min.css" type="text/css"> 
 <link rel="stylesheet" href="/css/jquery.toastmessage.css" type="text/css">	
 <link rel="stylesheet" href="/css/style.css" type="text/css">
@@ -18,7 +17,7 @@
 <script src="/js/app_canvas.js"></script>
 <script src="/js/app.js"></script>
 <script src="/js/app_laserjobs.js"></script>
-<script src="/js/app_directcontrol.js"></script>
+<script src="/js/app_mover.js"></script>
 <script src="/js/app_import.js"></script>
 
 </head>
@@ -36,10 +35,9 @@
 				<a class="brand" href="#" style="color:#666666"><img src="/img/lasersaur-dino-brand.png" style="margin-right:6px">LasaurApp</a>
 				<div class="nav-collapse">
 					<ul class="nav">
-						<li class="active"><a href="#">Home</a></li> 
-						<li><a href="#about">About</a></li> 
+						<li><a href="http://labs.nortd.com/lasersaur/">About</a></li> 
 						<li class="divider-vertical"></li>
-						<li><a href="#help">Help</a></li>
+						<li><a href="http://labs.nortd.com/lasersaur/manual/">Lasersaur Manual</a></li>
 					</ul>
 				</div>
 			</div>
@@ -50,10 +48,10 @@
 	<div class="container">
 		<div class="row">
 			<div class="span12">
-				<div class="tabbable tabs-left row">
+				<div class="tabbable row">
 					
 					<!--tabbar start-->
-					<div class="span2">
+					<div class="span2 tabs-left">
 						<ul class="nav nav-tabs" style="width:100%">			
 							<li class="active"><a href="#tab_jobs" data-toggle="tab">Laser Jobs</a></li>
 							<li><a href="#tab_import" data-toggle="tab">SVG Import</a></li>
@@ -69,129 +67,184 @@
 							<!--content start-->
 							
 							<div id="tab_jobs" class="tab-pane active" style="height:550px">
-								<div style="width:165px; float:left; padding-right:5px;">	
-									<h3>Queue</h3>
-									<div id="gcode_queue" class="gcode_programs"></div>
-									<h3>Library</h3>
-									<div id="library_placeholder">To be replaced by Javascript</div>
-									<h3>Calibration</h3>
-									<div id="calibration_placeholder">To be replaced by Javascript</div>
-								</div>
-								<form class="well" style="padding:10px; float:right">
+								<form id="gcode_widget" class="well pull-left">
 									<label>Name</label>
-									<input type="text" id="gcode_name" class="span4" placeholder="Name program…">
+									<input type="text" id="gcode_name" style="width:296px" placeholder="Name program…">
 									<label>G-code</label>
-									<textarea id="gcode_program" class="span4" style="font-size:0.8em; height:100px"></textarea>
+									<textarea id="gcode_program" style="width:296px; font-size:0.8em; height:100px"></textarea>
 									<label>Preview</label>
 									<div><canvas id="preview_canvas" width="305px" height="153px"></canvas></div>
 							    <div class="btn-group dropup" style="margin-top:20px">
 								    <button id="gcode_submit" class="btn btn-large">Send to Lasersaur</button>
 								    <button class="btn btn-large dropdown-toggle" data-toggle="dropdown">
-								    <span class="caret"></span>
+									    <span class="caret"></span>
 								    </button>
-								    <ul class="dropdown-menu" style="width:184px; padding:10px">
-											<div id="gcode_bbox">Send Bounding Box</div>				
-											<div id="gcode_save_to_queue" style="margin-top:10px">Save to Queue</div>	
+								    <ul class="dropdown-menu nav-pills nav-stacked" style="padding:10px">
+											<li><a href="#" id="gcode_bbox">Send Bounding Box</a></li>		
+											<li><a href="#" id="gcode_save_to_queue">Save to Queue</a></li>
 								    </ul>
 							    </div>			
 							    <div id="progressbar" class="progress progress-striped" style="margin-top:20px">
 								    <div class="bar" style="width:0%;"></div>
 							    </div>
-								</form>	
-								<img src="/img/big-arrow.png" style="float:right; margin:110px 40px 110px 20px;"/>
+								</form>
+								<img src="/img/big-arrow.png" class="pull-left" style="margin:110px 0px 110px 40px;"/>
+								<div class="pull-left span3">	
+									<h3>Queue</h3>
+									  <ul id="gcode_queue" class="nav nav-tabs nav-stacked"></ul>
+									<h3>Library</h3>
+									  <ul id="gcode_library" class="nav nav-tabs nav-stacked"></ul>
+								</div>								
 							</div>
 							
 							<div id="tab_import" class="tab-pane" style="height:550px">													
-								<div id="import_canvas_container" class="well">
-									<form id="svg_upload_form" action="#" onsubmit="return false;">
-										
-										<button id="svg_open_button" class="btn btn-large">
+								<div class="well">
+
+									<div class="row" style="margin-left:0px">
+										<button id="svg_open_button" class="btn btn-large pull-left" data-loading-text="loading..." autocomplete="off">
 											<i class="icon-folder-open"></i> Open
-										</button>										
-										
-										<span id="svg_loading_hint" style="display:none">loading ...</span>
-										<input type="file" id="svg_upload_file" name="data" style="visibility:hidden; position:fixed">
-										
-										<div id="dpi_radio_set" style="float:right">
-											<input type="radio" id="dpi_radio_72" name="radio" /><label for="dpi_radio_72">svg72</label>
-											<input type="radio" id="dpi_radio_90" name="radio" /><label for="dpi_radio_90">svg90</label>
-											<input type="radio" id="dpi_radio_other" name="radio" /><label for="dpi_radio_other">other</label>
+										</button>
+										<div class="pull-left">
+											<form id="svg_upload_form" action="#" onsubmit="return false;">
+												<input type="file" id="svg_upload_file" name="data" style="visibility:hidden; position:fixed">
+											</form>
 										</div>
-										
-										<div id="dpi_value_div" style="display:none; float:right; height:33px">			
-											<a href="#" id="dpi_other_back">&lt;</a>
-											<input type="textfield" id="dpi_value" value="90" style="width:30px;">
-										</div>
-										
-										<div style="float:right; clear:both; margin-top: 10px;">
-											<div style="height:20px; clear:both;">
-												<div id="import_feedrate" style="width:215px; float:right"></div>
-												<div style="float:right; margin-right:20px; color:#666666">Feedrate: <span id="feedrate_val"></span> </div>
-											</div>
-											<div style="height:20px; clear:both;">
-												<div id="import_intensity" style="width:215px; float:right;"></div>
-												<div style="float:right; margin-right:20px; color:#666666">Laser Intensity: <span id="intensity_val"> </div>
-											</div>
-										</div>
-										
-										<div id="import_results" style="display:none"></div>
-										
-									</form>
-									
-									<div style="width:610px; height:305px; background-color:#ffffff">
-										<canvas id="import_canvas" width="610px" height="305px" style="background-color:#ffffff"></canvas>
 									</div>
 									
-									<button id="import_to_queue" class="btn btn-large" style="margin-top:16px;">
+									<div class="row" style="margin-left:0px; margin-top:16px; padding-top:0">								
+										<canvas id="import_canvas" width="610px" height="305px" class="pull-left" style="border:1px dashed #aaaaaa"></canvas>										
+										<div class="pull-left" style="margin-left:14px">
+											<div id="svg_dpi_btns" class="btn-group" style="margin-bottom:8px" data-toggle="buttons-radio">
+												<button id="svg_dpi72_btn" class="btn" title="Intaglio, Illustartor, ..." data-delay="500">svg72</button>
+												<button id="svg_dpi90_btn" class="btn active" title="Inkscape, ..." data-delay="500">svg90</button>
+											</div>
+											<input type="textfield" id="svg_dpi_value" value="90" style="display:none;">
+											<button class="btn btn-small" data-toggle="button">
+												<div style="width:10px; height:10px; background-color:#dd0234"></div>
+											</button>
+											<button class="btn btn-small" data-toggle="button">
+												<div style="width:10px; height:10px; background-color:#12ff12"></div>
+											</button>
+											<button class="btn btn-small" data-toggle="button">
+												<div style="width:10px; height:10px; background-color:#1234ff"></div>
+											</button>
+										</div>												
+									</div>
+									
+									<div class="row" style="margin-top:16px">
+										<div id="pass_one_div" class="well span2 pull-left" style="padding:10px; background-color:#dddddd">
+											<label>Pass One</label>
+											<form class="form-inline">												
+												<div class="input-prepend">
+													<span class="add-on" style="margin-right:-5px;">F</span>
+													<input type="text" id="import_feedrate_0" value="2000" title="feedrate 40-20000mm/min" style="width:38px" data-delay="500">
+												</div>
+												<div class="input-prepend">
+													<span class="add-on" style="margin-right:-5px;">S</span>
+													<input id="import_intensity_0" type="textfield" value="100" title="intensity 0-100%" style="width:25px;" data-delay="500">
+												</div>
+											</form>
+											<button class="btn btn-small" data-toggle="button">
+												<div style="width:10px; height:10px; background-color:#dd0234"></div>
+											</button>
+											<button class="btn btn-small" data-toggle="button">
+												<div style="width:10px; height:10px; background-color:#12ff12"></div>
+											</button>
+											<button class="btn btn-small" data-toggle="button">
+												<div style="width:10px; height:10px; background-color:#1234ff"></div>
+											</button>											
+										</div>
+										<div id="pass_two_div" class="well span2 pull-left" style="margin-left:10px; padding:10px; background-color:#dddddd">
+											<label>Pass Two</label>
+											<form class="form-inline">												
+												<div class="input-prepend">
+													<span class="add-on" style="margin-right:-5px;">F</span>
+													<input type="text" id="import_feedrate_1" value="2000" title="feedrate 40-20000mm/min" style="width:38px" data-delay="500">
+												</div>
+												<div class="input-prepend">
+													<span class="add-on" style="margin-right:-5px;">S</span>
+													<input id="import_intensity_1" type="textfield" value="100" title="intensity 0-100%" class="span2" style="width:25px;" data-delay="500">
+												</div>													
+											</form>
+											<button class="btn btn-small" data-toggle="button">
+												<div style="width:10px; height:10px; background-color:#dd0234"></div>
+											</button>
+											<button class="btn btn-small" data-toggle="button">
+												<div style="width:10px; height:10px; background-color:#12ff12"></div>
+											</button>
+											<button class="btn btn-small" data-toggle="button">
+												<div style="width:10px; height:10px; background-color:#1234ff"></div>
+											</button>												
+										</div>											
+										<div id="pass_three_div" class="well span2 pull-left" style="margin-left:10px; padding:10px; background-color:#dddddd">
+											<label>Pass Three</label>
+											<form class="form-inline">												
+												<div class="input-prepend">
+													<span class="add-on" style="margin-right:-5px;">F</span>
+													<input type="text" id="import_feedrate_2" value="2000" title="feedrate 40-20000mm/min" style="width:38px" data-delay="500">
+												</div>
+												<div class="input-prepend">
+													<span class="add-on" style="margin-right:-5px;">S</span>
+													<input id="import_intensity_2" type="textfield" value="100" title="intensity 0-100%" class="span2" style="width:25px;" data-delay="500">
+												</div>
+											</form>
+											<button class="btn btn-small" data-toggle="button">
+												<div style="width:10px; height:10px; background-color:#dd0234"></div>
+											</button>
+											<button class="btn btn-small" data-toggle="button">
+												<div style="width:10px; height:10px; background-color:#12ff12"></div>
+											</button>
+											<button class="btn btn-small" data-toggle="button">
+												<div style="width:10px; height:10px; background-color:#1234ff"></div>
+											</button>																				
+										</div>																					
+									</div>
+									
+									<div id="import_results" style="display:none"></div>									
+									
+									<button id="import_to_queue" class="btn btn-large">
 										<i class="icon-th-list"></i> Add to Queue
 									</button>
 									
-								</div> 
+								</div> <!--end of well-->
+								
 						    <div class="alert">
 							    <a class="close" data-dismiss="alert">×</a>
-							    <strong>Note!</strong> All red geometry outlines are imported (stroke color: 255,0,0 or #ff0000).
+							    <strong>Note!</strong> New Laser intensity range: 0-100%.
 						    </div>										
 							</div> <!-- end of import tab -->							
 
-							<div id="tab_mover" class="tab-pane well span6" style="height:550px; margin-left:0px">
-								<div style="width:425px; margin-left:auto; margin-right:auto; margin-top:16px">
-									<div id="lasaur_widget" style="position:relative; width:425px; height:270px;">
-										<div id="outer_top" style="position:absolute; left:10px; top:0px; width:405px; height:10px; background-color:#546883;"></div> 
-										<div id="outer_left" style="position:absolute; left:0px; top:0px; width:10px; height:270px; background-color:#546883;"></div> 
-										<div id="outer_right" style="position:absolute; left:415px; top:0px; width:10px; height:270px; background-color:#546883;"></div> 
-										<div id="gantry_top" style="position:absolute; left:10px; top:35px; width:405px; height:10px; background-color:#83BBFF;"></div> 
-										<div id="gantry_bottom" style="position:absolute; left:10px; top:260px; width:405px; height:10px; background-color:#83BBFF;"></div> 
-										<div id="gantry_left" style="position:absolute; left:22.5px; top:45px; width:10px; height:215px; background-color:#83BBFF;"></div> 
-										<div id="gantry_right" style="position:absolute; left:392.5px; top:45px; width:10px; height:215px; background-color:#83BBFF;"></div> 
-										<div id="y_cart" style="position:absolute; left:19px; top:68px; width:387px; height:10px; background-color:#650B01;"></div> 
-										<div id="x_cart" style="position:absolute; left:54px; top:76.5px; width:12px; height:12px; background-color:#9E4301;"></div> 
-										<div id="cutting_area" style="position:absolute; left:60px; top:82.5px; width:305px; height:155px; border:1px solid #888888; opacity:0.3"></div>	
+							<div id="tab_mover" class="tab-pane well" style="width:610px; height:560px; margin-left:0px">
+								<div class="row" style="margin-left:0px">
+									<div id="cutting_area" style="width:610px; height:305px; border:1px dashed #aaaaaa;"></div>	
+								</div>
+								<div class="row" style="width:425px; margin-left:auto; margin-right:auto; margin-top:20px">
+									<div id="seek_feed_btns" class="btn-group pull-left" data-toggle="buttons-radio">
+										<button id="seek_btn" class="btn active">Seek</button>
+										<button id="feed_btn" class="btn">Feed</button>
+									</div>									
+									<div id="feedrate_btns" class="btn-group pull-right" data-toggle="buttons-radio">
+										<button id="feedrate_btn_slow" class="btn">slow</button>
+										<button id="feedrate_btn_medium" class="btn">medium</button>
+										<button id="feedrate_btn_fast" class="btn active">fast</button>
 									</div>
-									<div class="row" style="width:425px; margin-left:auto; margin-right:auto; margin-top:20px">
-										<div id="seek_feed_btns" class="btn-group pull-left" data-toggle="buttons-radio">
-											<button id="seek_btn" class="btn">Seek</button>
-											<button id="feed_btn" class="btn">Feed</button>
-										</div>									
-										<div id="feedrate_btns" class="btn-group pull-right" data-toggle="buttons-radio">
-											<button id="feedrate_btn_slow" class="btn">slow</button>
-											<button id="feedrate_btn_medium" class="btn">medium</button>
-											<button id="feedrate_btn_fast" class="btn">fast</button>
+									<div class="input-append pull-right" style="margin-right:5px;">
+										<input id="feedrate_field" type="textfield" value="10000" style="width:40px;">
+										<span class="add-on" style="margin-left:-5px; margin-bottom:9px">mm/min</span>
+									</div>										
+									
+								</div>
+								<div class="row well" style="width:140px; height:130px; margin-left:auto; margin-right:auto; margin-top:16px;background-color:#dddddd">
+										<div class="row" style="width:44px; margin-left:auto; margin-right:auto;">
+											<button class="btn btn-large"><i class="icon-arrow-up"></i></button>
 										</div>
-										<div class="pull-right" style="margin-left:5px;margin-right:5px;margin-top:3px"><span class="label label-info">mm/min</span></div>
-										<input id="feedrate_field" type="textfield" value="10000" class="pull-right" style="margin-right:5px; width:40px;">
-									</div>
-									<div class="row well" style="width:140px; height:130px; margin-left:auto; margin-right:auto; margin-top:20px;background-color:#dddddd">
-											<div class="row" style="width:44px; margin-left:auto; margin-right:auto;">
-												<button class="btn btn-large"><i class="icon-arrow-up"></i></button>
-											</div>
-											<div class="row" style="width:140px; margin-left:auto; margin-right:auto; margin-top:8px">
-												<button class="btn btn-large pull-left"><i class="icon-arrow-left"></i></button>
-												<button class="btn btn-large pull-right"><i class="icon-arrow-right"></i></button>
-											</div>
-											<div class="row" style="width:44px; margin-left:auto; margin-right:auto; margin-top:8px">
-												<button class="btn btn-large"><i class="icon-arrow-down"></i></button>
-											</div>																						
-									</div>
+										<div class="row" style="width:140px; margin-left:auto; margin-right:auto; margin-top:8px">
+											<button class="btn btn-large pull-left"><i class="icon-arrow-left"></i></button>
+											<button class="btn btn-large pull-right"><i class="icon-arrow-right"></i></button>
+										</div>
+										<div class="row" style="width:44px; margin-left:auto; margin-right:auto; margin-top:8px">
+											<button class="btn btn-large"><i class="icon-arrow-down"></i></button>
+										</div>																						
 								</div>
 							</div>
 

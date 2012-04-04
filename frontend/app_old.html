@@ -18,7 +18,7 @@
 <script src="/js/app_canvas.js"></script>
 <script src="/js/app.js"></script>
 <script src="/js/app_laserjobs.js"></script>
-<script src="/js/app_directcontrol.js"></script>
+<script src="/js/app_mover.js"></script>
 <script src="/js/app_import.js"></script>
 
 </head>
@@ -140,14 +140,14 @@
 				<input type="submit" id="svg_open_button" value="Open"/>
 				<span id="svg_loading_hint" style="display:none">loading ...</span>
 				<input type="file" id="svg_upload_file" name="data" style="visibility:hidden; position:fixed">
-				<div id="dpi_radio_set" style="float:right">
-					<input type="radio" id="dpi_radio_72" name="radio" /><label for="dpi_radio_72">svg72</label>
-					<input type="radio" id="dpi_radio_90" name="radio" /><label for="dpi_radio_90">svg90</label>
-					<input type="radio" id="dpi_radio_other" name="radio" /><label for="dpi_radio_other">other</label>
+				<div id="svg_dpi_btns" style="float:right">
+					<input type="radio" id="svg_dpi72_btn" name="radio" /><label for="svg_dpi72_btn">svg72</label>
+					<input type="radio" id="svg_dpi90_btn" name="radio" /><label for="svg_dpi90_btn">svg90</label>
+					<input type="radio" id="svg_dpiother_btn" name="radio" /><label for="svg_dpiother_btn">other</label>
 				</div>
-				<div id="dpi_value_div" style="display:none; float:right; height:33px">			
-					<a href="#" id="dpi_other_back">&lt;</a>
-					<input type="textfield" id="dpi_value" value="90" style="width:30px;">
+				<div id="svg_dpi_value_div" style="display:none; float:right; height:33px">			
+					<a href="#" id="svg_dpi_other_back">&lt;</a>
+					<input type="textfield" id="svg_dpi_value" value="90" style="width:30px;">
 				</div>
 			
 				<div style="float:right; clear:both; margin-top: 10px;">

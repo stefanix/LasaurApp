@@ -71,23 +71,75 @@ function add_to_job_queue(gcode, name) {
     var date = new Date();
     name = date.toDateString() +' - '+ queue_num_index
   }
-	if (queue_num_index > 10) {
-		// remove old items
-		$('#gcode_queue').children('a').last().remove();
-		$('#gcode_queue').children('div').last().remove();
-	}
-	$('#gcode_queue').prepend('<a href="#">'+ name +'</a>\n<div>'+ gcode +'</div>\n')
-	$('#gcode_queue a').click(function(){
-	  $('#gcode_name').val( $(this).text() );
-		$('#gcode_program').val( $(this).next().text() );
-
-		// make sure preview refreshes
-		$('#gcode_program').trigger('blur');	
-	});	
+  // store gcode - on success add to queue
+	$.post("/library/store_to_queue", { 'gcode_name':name, 'gcode_program':gcode }, function(data) {
+		if (data == "1") {
+		  // delete any queue items
+		  var num_non_starred = 0;
+      $.each($('#gcode_queue').children('li'), function(index, li_item) {
+        if (li_item.children('i:first').children('span:first') != '1') {
+          num_non_starred++;
+        }
+        if (num_non_starred > 10) {
+          remove_library_queue_item(li_item);
+        }
+      });		  
+		  
+    	if (queue_num_index > 10) {
+    		// remove old items
+    		$('#gcode_queue').children('li').last().remove();
+    	}
+    	$('#gcode_queue').prepend('<li><a href="#"><span>'+ name +'</span><i class="icon-star-empty pull-right"><span style="display:none">0</span></i></a></li>')
+	
+    	$('#gcode_queue li a').click(function(){
+    	  var name = $(this).children('span:first').text();
+        $.get("/library/get_from_queue/" + name, function(gdata) {
+          load_into_gcode_widget(gdata, name);
+        });
+    	});  	
+	    
+	    // action for star
+    	$('#gcode_queue li a i').click(function(){
+    	  add_to_library_queue($(this).siblings('div').text(), $(this).siblings('span').text());
+    	  load_into_gcode_widget($(this).siblings('div').text(), $(this).siblings('span').text())	  
+    	});
+		} else {
+			$().uxmessage('error', "Failed to store G-code.");
+		}
+  });
 }
 
 
-function preview_job(gcode, name) {
+function remove_library_queue_item(li_item) {
+  // request a delete
+  name = li_item.children('span:first').text();
+  $.get("/library/rm/" + name, function(data) {
+    if (data == "1") {
+      li_item.remove()
+    } else {
+      $().uxmessage('error', "Failed to delete.");
+    }
+  });  
+}
+
+function add_to_library_queue(gcode, name) {
+  if ((typeof(name) == 'undefined') || ($.trim(name) == '')) {
+    var date = new Date();
+    name = date.toDateString() +' - '+ queue_num_index
+  }
+	$('#gcode_library').prepend('<li><a href="#"><span>'+ name +'</span><i class="icon-star pull-right"></i><div style="display:none">'+ gcode +'</div></a></li>')
+	
+	$('#gcode_library li a').click(function(){
+	  load_into_gcode_widget($(this).next().text(), $(this).text())
+	});
+
+	$('#gcode_library li a i').click(function(){
+	  $().uxmessage('success', "star ...");
+	});
+}
+
+
+function load_into_gcode_widget(gcode, name) {
 	$('#gcode_name').val(name);
 	$('#gcode_program').val(gcode);
 	// make sure preview refreshes

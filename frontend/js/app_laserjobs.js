@@ -1,25 +1,22 @@
 $(document).ready(function(){
   
-  $('#gcode_queue').show();
-
-  $('#library_placeholder').replaceWith($('#gcode_library'));
-  $('#gcode_library').show();
-
-  $('#gcode_library a').click(function(){		
-    preview_job($(this).next().text(), $(this).text())
+  // populate library from library directory
+  $.getJSON("/library/list/gc", function(data) {
+    $.each(data, function(index, name) {
+      $('#gcode_library').prepend('<li><a href="#">'+ name +'</a></li>');
+    });
+  	$('#gcode_library li a').click(function(){
+  	  var name = $(this).text();
+      $.get("/library/get/" + name, function(gdata) {
+        load_into_gcode_widget(gdata, name);
+      });
+  	});  	
   });
-
-
-  $('#calibration_placeholder').replaceWith($('#gcode_for_calibration'));
-  $('#gcode_for_calibration').show();
-
-  $('#gcode_for_calibration a').click(function(){
-    $('#gcode_name').val( $(this).text() );
-  	$('#gcode_program').val( $(this).next().text() );
-
-  	// make sure preview refreshes
-  	$('#gcode_program').trigger('blur');	
-  });
+  // .success(function() { alert("second success"); })
+  // .error(function() { alert("error"); })
+  // .complete(function() { alert("complete"); });
+ 
+  
 
 
   $("#progressbar").hide();  
@@ -62,14 +59,12 @@ $(document).ready(function(){
   });
 
 
-  $("#gcode_bbox").button();  
   $("#gcode_bbox").click(function(e) {
     $().uxmessage('notice', "bbox not yet implemented");
     var gcodedata = $('#gcode_program').val();
     //var gcode_bbox = 
   });
 
-  $("#gcode_save_to_queue").button();  
   $("#gcode_save_to_queue").click(function(e) {
     add_to_job_queue($('#gcode_program').val(), $.trim($('#gcode_name').val()));
   });

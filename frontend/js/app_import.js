@@ -8,6 +8,7 @@ $(document).ready(function(){
   icanvas.background('ffffff'); 
   // file upload form
   $('#svg_upload_file').change(function(e){
+    $('#svg_open_button').button('loading');
     $('#svg_loading_hint').show();
     var input = $('#svg_upload_file').get(0)
     var browser_supports_file_api = true;
@@ -46,12 +47,12 @@ $(document).ready(function(){
     //alert(JSON.stringify(geo_boundarys));
     //$().uxmessage('notice', JSON.stringify(geo_boundarys));
     generateRawGcode();
-    $('#svg_loading_hint').hide();
+    $('#svg_open_button').button('reset');
   }
       
   function generateRawGcode() {
     if (geo_boundarys) {
-      var dpi = parseFloat($('#dpi_value').val());
+      var dpi = parseFloat($('#svg_dpi_value').val());
       if (!isNaN(dpi)) {
         var px2mm = 25.4*(1.0/dpi);
         raw_gcode = GcodeWriter.write(geo_boundarys, 2000, 255, px2mm, 0.0, 0.0);
@@ -78,58 +79,35 @@ $(document).ready(function(){
 
 
   // setting up dpi selector
-  $("#dpi_radio_set").buttonset();
-  $('#dpi_radio_72').click(function(e){
-    $('#dpi_value').val('72');
+  $('#svg_dpi72_btn').click(function(e){
+    $('#svg_dpi_value').val('72');
     generateRawGcode();
   });
-  $('#dpi_radio_90').click(function(e){
-    $('#dpi_value').val('90');
+  $('#svg_dpi90_btn').click(function(e){
+    $('#svg_dpi_value').val('90');
     generateRawGcode();
   });
-  $('#dpi_radio_other').click(function(e){
-    $('#dpi_radio_set').hide();
-    $('#dpi_value_div').show();
-  });
-  $('#dpi_other_back').click(function(e){
-    $('#dpi_value_div').hide();
-    $('#dpi_radio_set').show();
-    generateRawGcode();
-  });
-  $('#dpi_radio_90').attr('checked', 'checked').button("refresh");
+  $('#svg_dpi90_btn').attr('checked', 'checked').button("refresh");
+    
+    
+  $('#svg_dpi72_btn').tooltip()    
+  $('#svg_dpi90_btn').tooltip()        
+  $('#import_feedrate_0').tooltip()    
+  $('#import_intensity_0').tooltip()    
+  $('#import_feedrate_1').tooltip()    
+  $('#import_intensity_1').tooltip()
+  $('#import_feedrate_2').tooltip()    
+  $('#import_intensity_2').tooltip()  
   
-  
-  //setting up sliders for feedrate and laser intensity
-  $("#import_feedrate").slider({ min:60, max:4000, step:20, value:2000 });
-  $("#import_feedrate").bind( "slide", function(event, ui) {
-  	$('#feedrate_val').text($('#import_feedrate').slider("value"));
-  });  
-  $("#import_feedrate").bind( "slidestop", function(event, ui) {
-  	$('#feedrate_val').text($('#import_feedrate').slider("value"));
-  });
-  $('#feedrate_val').text($('#import_feedrate').slider("value"));
-  //
-  $("#import_intensity").slider({ min:0, max:255, step:5, value:80 });
-  $("#import_intensity").bind( "slide", function(event, ui) {
-  	//$('#import_intensity_field').val($('#import_intensity').slider("option", "value"));
-  	$('#intensity_val').text($('#import_intensity').slider("value"));
-  });  
-  $("#import_intensity").bind( "slidestop", function(event, ui) {
-  	$('#intensity_val').text($('#import_intensity').slider("value"));
-  });
-  $('#intensity_val').text($('#import_intensity').slider("value"));
-  
-
-
   // setting up add to queue button
   $("#import_to_queue").click(function(e) {
-    var feedrate = $("#import_feedrate").slider("value");
-    var intensity = $("#import_intensity").slider("value");
+    var feedrate = $("#import_feedrate").val();
+    var intensity = $("#import_intensity").val();
     var gcodedata = wrapGcode(raw_gcode, feedrate, intensity);
     var fullpath = $('#svg_upload_file').val();
     var filename = fullpath.split('\\').pop().split('/').pop();
     add_to_job_queue(gcodedata, filename);
-    preview_job(gcodedata, filename);
+    load_into_gcode_widget(gcodedata, filename);
 	  $().uxmessage('notice', "file added to laser job queue");
   	//$( "#tabs_main" ).tabs({selected: 0 });	// switch to jobs tab  // TODO
   	return false;

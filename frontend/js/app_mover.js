@@ -39,22 +39,14 @@ $(document).ready(function(){
 	
   });
 
-  
-  // $("#feedrate").slider({ min:50, max:20000, value:$('#feedrate_field').val() });
-  // $("#feedrate").bind( "slide", function(event, ui) {
-  //  $('#feedrate_field').val($('#feedrate').slider("option", "value"));
-  // });
-  // $("#feedrate").bind( "slidestop", function(event, ui) {
-  //  $('#feedrate_field').val($('#feedrate').slider("option", "value"));
-  // });
 
   $("#cutting_area").hover(
     function () {
-  		$(this).css('border', '1px solid #ff0000');
+  		$(this).css('border', '1px dashed #ff0000');
   		$(this).css('cursor', 'crosshair');
     },
     function () {
-  		$(this).css('border', '1px solid #888888');
+  		$(this).css('border', '1px dashed #aaaaaa');
   		$(this).css('cursor', 'pointer');			
     }
   );	
