@@ -7,7 +7,6 @@ import socket
 import argparse
 import webbrowser
 import wsgiref.simple_server
-import json
 from bottle import *
 from serial_manager import SerialManager
 from flash import flash_upload
