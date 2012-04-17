@@ -2,14 +2,12 @@ $(document).ready(function(){
   
   $('#gcode_queue').show();
 
-  $('#library_placeholder').replaceWith($('#gcode_library'));
-  $('#gcode_library').show();
-
-
-  $('#gcode_library a').click(function(){		
-    preview_job($(this).next().text(), $(this).text())
+  $('#gcode_library').load('/library', function() {
+    $('#gcode_library a').click(function(){		
+      preview_job($(this).next().text(), $(this).text())
+    });
   });
-
+  $('#gcode_library').show();
 
   $('#calibration_placeholder').replaceWith($('#gcode_for_calibration'));
   $('#gcode_for_calibration').show();

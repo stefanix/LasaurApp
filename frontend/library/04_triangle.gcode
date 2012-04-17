@@ -1,0 +1,15 @@
+<a href="#">triangle </a>
+<div>%
+G21
+G90
+S255
+G1 F600
+G0 F10000
+G0 X200 Y100
+G1 X230 Y100
+G1 X230 Y130
+G1 X200 Y100
+G0X0Y0F20000
+S0
+%
+</div>
