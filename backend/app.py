@@ -94,6 +94,22 @@ def static_css_handler(path):
 def static_css_handler(path):
     return static_file(path, root=os.path.join(data_root(), 'frontend/img'))
 
+# This route provides the HTML markup to render the library div from .gcode files located in the library folder.
+#   This allows a custom library without having to modify code, which makes it more portable    
+@route('/library')
+def library_handler():
+    dirList=os.listdir(os.path.join(data_root(), 'frontend/library'))  # First we want a list of all files
+    fileList=[]                                                        # and an array to hold the data in
+    for fname in dirList:
+      fileName, fileExtension = os.path.splitext(fname)                # get the base filename and extension for later testing
+      if fileExtension.lower() == ".gcode":                            # if this is indeed a .gcode file, read the contents (the link and g-code) 
+        fileData = open(os.path.join(data_root(), 'frontend/library/', fname)).read()
+        fileList.append(fileData)                                      # and store the data in our fileList object for later processing
+    outputString='<!-- Gcode Library Start -->'
+    for entry in fileList:
+      outputString = outputString + entry
+    return outputString
+
 @route('/')
 @route('/index.html')
 @route('/app.html')
