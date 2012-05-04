@@ -129,6 +129,7 @@ def library_list_handler(ext):
 @route('/library/rm/:name')
 def library_rm_handler(ext):
     # delete gcode item, on success return '1'
+    pass
 
 
 @route('/')
