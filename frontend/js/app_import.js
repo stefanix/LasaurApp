@@ -106,8 +106,9 @@ $(document).ready(function(){
     var gcodedata = wrapGcode(raw_gcode, feedrate, intensity);
     var fullpath = $('#svg_upload_file').val();
     var filename = fullpath.split('\\').pop().split('/').pop();
-    add_to_job_queue(gcodedata, filename);
+    save_and_add_to_job_queue(filename, gcodedata);
     load_into_gcode_widget(gcodedata, filename);
+    $('#tab_jobs_button').trigger('click');
 	  $().uxmessage('notice', "file added to laser job queue");
   	//$( "#tabs_main" ).tabs({selected: 0 });	// switch to jobs tab  // TODO
   	return false;

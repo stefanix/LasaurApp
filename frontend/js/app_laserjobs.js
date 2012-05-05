@@ -1,7 +1,14 @@
 $(document).ready(function(){
-  
+
+  // populate queue from queue directory
+  $.getJSON("/queue/list", function(data) {
+    $.each(data, function(index, name) {
+      add_to_job_queue(name);
+    });
+  });
+    
   // populate library from library directory
-  $.getJSON("/library/list/gc", function(data) {
+  $.getJSON("/library/list", function(data) {
     $.each(data, function(index, name) {
       $('#gcode_library').prepend('<li><a href="#">'+ name +'</a></li>');
     });
@@ -66,7 +73,7 @@ $(document).ready(function(){
   });
 
   $("#gcode_save_to_queue").click(function(e) {
-    add_to_job_queue($('#gcode_program').val(), $.trim($('#gcode_name').val()));
+    save_and_add_to_job_queue($.trim($('#gcode_name').val()), $('#gcode_program').val());
   });
 
 

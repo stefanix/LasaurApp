@@ -36,17 +36,24 @@ def resources_dir():
         
         
 def storage_dir():
+    directory = ""
     if sys.platform == 'darwin':
         # from AppKit import NSSearchPathForDirectoriesInDomains
         # # NSApplicationSupportDirectory = 14
         # # NSUserDomainMask = 1
         # # True for expanding the tilde into a fully qualified path
         # appdata = path.join(NSSearchPathForDirectoriesInDomains(14, 1, True)[0], APPNAME)
-        return os.path.join(os.path.expanduser('~'), 'Library', 'Application Support', COMPANY_NAME, APPNAME)
+        directory = os.path.join(os.path.expanduser('~'), 'Library', 'Application Support', COMPANY_NAME, APPNAME)
     elif sys.platform == 'win32':
-        return os.path.join(os.path.expandvars('%APPDATA%'), COMPANY_NAME, APPNAME)
+        directory = os.path.join(os.path.expandvars('%APPDATA%'), COMPANY_NAME, APPNAME)
     else:
-        return os.path.join(os.path.expanduser('~'), "." + APPNAME)
+        directory = os.path.join(os.path.expanduser('~'), "." + APPNAME)
+        
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        
+    return directory
+        
 
 
 
@@ -107,30 +114,111 @@ def static_js_handler(path):
 def static_img_handler(path):
     return static_file(path, root=os.path.join(resources_dir(), 'frontend/img'))
     
+
+### LIBRARY
+
 @route('/library/get/:path#.+#')
 def static_library_handler(path):
     return static_file(path, root=os.path.join(resources_dir(), 'library'), mimetype='text/plain')
     
-@route('/library/list/:ext')
-def library_list_handler(ext):
+@route('/library/list')
+def library_list_handler():
+    # return a json list of file names
+    file_list = []
+    cwd_temp = os.getcwd()
+    try:
+        os.chdir(os.path.join(resources_dir(), 'library'))
+        file_list = glob.glob('*')
+    finally:
+        os.chdir(cwd_temp)
+    return json.dumps(file_list)
+
+
+
+### QUEUE
+
+def encode_filename(name):
+    str(time.time()) + '-' + base64.urlsafe_b64encode(name)
+    
+def decode_filename(name):
+    index = name.find('-')
+    return base64.urlsafe_b64decode(name[index+1:])
+    
+
+@route('/queue/get/:name#.+#')
+def static_queue_handler(name): 
+    return static_file(name, root=storage_dir(), mimetype='text/plain')
+
+@route('/queue/list')
+def library_list_handler():
     # base64.urlsafe_b64encode()
     # base64.urlsafe_b64decode()
     # return a json list of file names
     file_list = []
-    if ext in ('gc', 'svg'):
-        cwd_temp = os.getcwd()
-        try:
-            os.chdir(os.path.join(resources_dir(), 'library'))
-            file_list = glob.glob('*.'+ ext)
-        finally:
-            os.chdir(cwd_temp)
+    cwd_temp = os.getcwd()
+    try:
+        os.chdir(storage_dir())
+        file_list = glob.glob('*')
+    finally:
+        os.chdir(cwd_temp)
     return json.dumps(file_list)
     
-@route('/library/rm/:name')
-def library_rm_handler(ext):
-    # delete gcode item, on success return '1'
-    pass
+@route('/queue/save', method='POST')
+def queue_save_handler():
+    ret = '0'
+    if 'gcode_name' in request.forms and 'gcode_program' in request.forms:
+        name = request.forms.get('gcode_name')
+        gcode_program = request.forms.get('gcode_program')
+        filename = os.path.abspath(os.path.join(storage_dir(), name.strip('/\\')))
+        if os.path.exists(filename) or os.path.exists(filename+'.starred'):
+            return "file_exists"
+        try:
+            fp = open(filename, 'w')
+            fp.write(gcode_program)
+            print "file saved: " + filename
+            ret = '1'
+        finally:
+            fp.close()
+    else:
+        print "error: save failed, invalid POST request"
+    return ret
 
+@route('/queue/rm/:name')
+def queue_rm_handler(name):
+    # delete gcode item, on success return '1'
+    ret = '0'
+    filename = os.path.abspath(os.path.join(storage_dir(), name.strip('/\\')))
+    if filename.startswith(storage_dir()):
+        if os.path.exists(filename):
+            try:
+                os.remove(filename);
+                print "file deleted: " + filename
+                ret = '1'
+            finally:
+                pass
+    return ret   
+    
+@route('/queue/star/:name')
+def queue_star_handler(name):
+    ret = '0'
+    filename = os.path.abspath(os.path.join(storage_dir(), name.strip('/\\')))
+    if filename.startswith(storage_dir()):
+        if os.path.exists(filename):
+            os.rename(filename, filename + '.starred')
+            ret = '1'
+    return ret    
+
+@route('/queue/unstar/:name')
+def queue_unstar_handler(name):
+    ret = '0'
+    filename = os.path.abspath(os.path.join(storage_dir(), name.strip('/\\')))
+    if filename.startswith(storage_dir()):
+        if os.path.exists(filename + '.starred'):
+            os.rename(filename + '.starred', filename)
+            ret = '1'
+    return ret 
+
+    
 
 @route('/')
 @route('/index.html')
@@ -182,7 +270,7 @@ def gcode_handler(gcode_line):
         return ""
 
 @route('/gcode', method='POST')
-def gcode_handler_submit():
+def gcode_submit_handler():
     gcode_program = request.forms.get('gcode_program')
     if gcode_program and SerialManager.is_connected():
         lines = gcode_program.split('\n')

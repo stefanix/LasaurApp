@@ -64,60 +64,108 @@ function connect_btn_set_state(is_connected) {
 }
 
 
-var queue_num_index = 0;
-function add_to_job_queue(gcode, name) {
-	queue_num_index += 1;  
+var queue_num_index = 1;
+function save_and_add_to_job_queue(name, gcode) {  
   if ((typeof(name) == 'undefined') || ($.trim(name) == '')) {
     var date = new Date();
     name = date.toDateString() +' - '+ queue_num_index
   }
-  // store gcode - on success add to queue
-	$.post("/library/store_to_queue", { 'gcode_name':name, 'gcode_program':gcode }, function(data) {
+  //// store gcode - on success add to queue
+	$.post("/queue/save", { 'gcode_name':name, 'gcode_program':gcode }, function(data) {
 		if (data == "1") {
-		  // delete any queue items
-		  var num_non_starred = 0;
-      $.each($('#gcode_queue').children('li'), function(index, li_item) {
-        if (li_item.children('i:first').children('span:first') != '1') {
-          num_non_starred++;
-        }
-        if (num_non_starred > 10) {
-          remove_library_queue_item(li_item);
-        }
-      });		  
-		  
-    	if (queue_num_index > 10) {
-    		// remove old items
-    		$('#gcode_queue').children('li').last().remove();
-    	}
-    	$('#gcode_queue').prepend('<li><a href="#"><span>'+ name +'</span><i class="icon-star-empty pull-right"><span style="display:none">0</span></i></a></li>')
-	
-    	$('#gcode_queue li a').click(function(){
-    	  var name = $(this).children('span:first').text();
-        $.get("/library/get_from_queue/" + name, function(gdata) {
-          load_into_gcode_widget(gdata, name);
-        });
-    	});  	
-	    
-	    // action for star
-    	$('#gcode_queue li a i').click(function(){
-    	  add_to_library_queue($(this).siblings('div').text(), $(this).siblings('span').text());
-    	  load_into_gcode_widget($(this).siblings('div').text(), $(this).siblings('span').text())	  
-    	});
+		  queue_num_index += 1;
+      add_to_job_queue(name);
+    } else if (data == "file_exists") {
+      // try again with numeral appendix
+      $().uxmessage('notice', "File already exists. Appending numeral.");
+      save_and_add_to_job_queue(name+' - '+ queue_num_index, gcode);
 		} else {
 			$().uxmessage('error', "Failed to store G-code.");
 		}
   });
 }
 
-
-function remove_library_queue_item(li_item) {
-  // request a delete
-  name = li_item.children('span:first').text();
-  $.get("/library/rm/" + name, function(data) {
-    if (data == "1") {
-      li_item.remove()
+function add_to_job_queue(name) {
+  //// delete excessive queue items
+  var num_non_starred = 0;
+  $.each($('#gcode_queue li'), function(index, li_item) {
+    if ($(li_item).find('a span.icon-star-empty').length > 0) {
+      num_non_starred++;
+      if (num_non_starred > 10) {
+        remove_queue_item(li_item);
+      }          
+    }
+  });
+  //// add list item to page
+  var star_class = 'icon-star-empty';
+  if (name.slice(-8) == '.starred') {
+    name = name.slice(0,-8);
+    star_class = 'icon-star';
+  }
+	$('#gcode_queue').prepend('<li><a href="#"><span>'+ name +'</span><span class="starwidget '+ star_class +' pull-right" title=" star to keep in queue"></span></a></li>')
+	$('span.starwidget').tooltip({delay:{ show: 1500, hide: 100}})  
+  //// action for loading gcode
+	$('#gcode_queue li:first a').click(function(){
+	  var name = $(this).children('span:first').text();
+	  if ($(this).find('span.icon-star').length > 0) {
+	    name = name + '.starred'
+	  }
+    $.get("/queue/get/" + name, function(gdata) {
+      if (name.slice(-8) == '.starred') {
+        name = name.slice(0,-8);
+      }      
+      load_into_gcode_widget(gdata, name);
+    }).error(function() {
+      $().uxmessage('error', "File not found: " + name);
+    });     
+	});  	
+  //// action for star
+  $('#gcode_queue li:first a span.starwidget').click(function() {
+    if ($(this).hasClass('icon-star')) {
+      //// unstar
+      $(this).removeClass('icon-star');
+      $(this).addClass('icon-star-empty');
+      $.get("/queue/unstar/" + name, function(data) {
+        // ui already cahnged
+        if (data != "1") {
+          // on failure revert ui
+          $(this).removeClass('icon-star-empty');
+          $(this).addClass('icon-star');        
+        }      
+      }).error(function() {
+        // on failure revert ui
+        $(this).removeClass('icon-star-empty');
+        $(this).addClass('icon-star');  
+      });       
     } else {
-      $().uxmessage('error', "Failed to delete.");
+      //// star
+      $(this).removeClass('icon-star-empty');
+      $(this).addClass('icon-star');
+      $.get("/queue/star/" + name, function(data) {
+        // ui already cahnged
+        if (data != "1") {
+          // on failure revert ui
+          $(this).removeClass('icon-star');
+          $(this).addClass('icon-star-empty');         
+        }
+      }).error(function() {
+        // on failure revert ui
+        $(this).removeClass('icon-star');
+        $(this).addClass('icon-star-empty');  
+      });        
+    }
+  });
+}
+
+
+function remove_queue_item(li_item) {
+  // request a delete
+  name = $(li_item).find('a span:first').text();
+  $.get("/queue/rm/" + name, function(data) {
+    if (data == "1") {
+      $(li_item).remove()
+    } else {
+      $().uxmessage('error', "Failed to delete queue item.");
     }
   });  
 }
