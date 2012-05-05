@@ -91,7 +91,7 @@ function add_to_job_queue(name) {
   $.each($('#gcode_queue li'), function(index, li_item) {
     if ($(li_item).find('a span.icon-star-empty').length > 0) {
       num_non_starred++;
-      if (num_non_starred > 10) {
+      if (num_non_starred > 7) {
         remove_queue_item(li_item);
       }          
     }
@@ -165,7 +165,7 @@ function remove_queue_item(li_item) {
     if (data == "1") {
       $(li_item).remove()
     } else {
-      $().uxmessage('error', "Failed to delete queue item.");
+      $().uxmessage('error', "Failed to delete queue item: " + name);
     }
   });  
 }
