@@ -154,14 +154,15 @@ def library_list_handler():
     # base64.urlsafe_b64encode()
     # base64.urlsafe_b64decode()
     # return a json list of file names
-    file_list = []
+    files = []
     cwd_temp = os.getcwd()
     try:
         os.chdir(storage_dir())
-        file_list = glob.glob('*')
+        files = filter(os.path.isfile, glob.glob("*"))
+        files.sort(key=lambda x: os.path.getmtime(x))
     finally:
         os.chdir(cwd_temp)
-    return json.dumps(file_list)
+    return json.dumps(files)
     
 @route('/queue/save', method='POST')
 def queue_save_handler():
