@@ -18,7 +18,7 @@ $(document).ready(function(){
 	
   	// send new pos to server, on success move graphics
     // $().uxmessage('notice', gcode);
-  	send_gcode_line(gcode, "Motion request sent via g54 coordinate system.", "Serial not connected.")	
+  	send_gcode_line(gcode, "Motion request sent.", "Serial not connected.")	
   });
 
 

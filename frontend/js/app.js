@@ -71,7 +71,9 @@ function send_gcode_line(gcode, success_msg, error_msg) {
 		} else {
 			$().uxmessage('error', error_msg);
 		}
-	});
+	}).error(function() {
+      $().uxmessage('error', "Timeout. LasaurApp server down?");
+  }); 
 }
 
 
