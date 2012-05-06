@@ -4,6 +4,11 @@ body {
 }
 
 
+a:focus { 
+    outline: none; 
+}
+
+
 .target_highlight {
   background-color:rgb(252, 248, 227);
 }

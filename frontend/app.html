@@ -216,19 +216,25 @@
 
 							<div id="tab_mover" class="tab-pane well" style="width:610px; height:560px; margin-left:0px">
 								<div class="row" style="margin-left:0px">
-									<div id="cutting_area" style="width:610px; height:305px; border:1px dashed #aaaaaa;"></div>	
+									<div id="cutting_area" style="width:609px; height:304px; border:1px dashed #aaaaaa;">
+										<div id="coordinates_info"style="margin:4px"></div>
+									</div>	
 								</div>
-								<div class="row" style="width:425px; margin-left:auto; margin-right:auto; margin-top:20px">
+								<div class="row" style="width:475px; margin-left:auto; margin-right:auto; margin-top:20px">
 									<div id="seek_feed_btns" class="btn-group pull-left" data-toggle="buttons-radio">
-										<button id="seek_btn" class="btn active">Seek</button>
-										<button id="feed_btn" class="btn">Feed</button>
+										<button id="seek_btn" class="btn active">Move</button>
+										<button id="feed_btn" class="btn">Cut</button>
+									</div>
+									<div id="intensity_input_div" class="input-prepend pull-left" style="margin-left:8px; display:none">
+										<span class="add-on" style="margin-right:-5px; margin-bottom:9px">S</span>
+										<input id="intensity_field" type="textfield" value="0" style="width:25px;">
 									</div>									
 									<div id="feedrate_btns" class="btn-group pull-right" data-toggle="buttons-radio">
 										<button id="feedrate_btn_slow" class="btn">slow</button>
 										<button id="feedrate_btn_medium" class="btn">medium</button>
 										<button id="feedrate_btn_fast" class="btn active">fast</button>
 									</div>
-									<div class="input-append pull-right" style="margin-right:5px;">
+									<div class="input-append pull-right" style="margin-right:8px;">
 										<input id="feedrate_field" type="textfield" value="10000" style="width:40px;">
 										<span class="add-on" style="margin-left:-5px; margin-bottom:9px">mm/min</span>
 									</div>										
@@ -236,14 +242,14 @@
 								</div>
 								<div class="row well" style="width:140px; height:130px; margin-left:auto; margin-right:auto; margin-top:16px;background-color:#dddddd">
 										<div class="row" style="width:44px; margin-left:auto; margin-right:auto;">
-											<button class="btn btn-large"><i class="icon-arrow-up"></i></button>
+											<button id="jog_up_btn" class="btn btn-large"><i class="icon-arrow-up"></i></button>
 										</div>
 										<div class="row" style="width:140px; margin-left:auto; margin-right:auto; margin-top:8px">
-											<button class="btn btn-large pull-left"><i class="icon-arrow-left"></i></button>
-											<button class="btn btn-large pull-right"><i class="icon-arrow-right"></i></button>
+											<button id="jog_left_btn" class="btn btn-large pull-left"><i class="icon-arrow-left"></i></button>
+											<button id="jog_right_btn" class="btn btn-large pull-right"><i class="icon-arrow-right"></i></button>
 										</div>
 										<div class="row" style="width:44px; margin-left:auto; margin-right:auto; margin-top:8px">
-											<button class="btn btn-large"><i class="icon-arrow-down"></i></button>
+											<button id="jog_down_btn" class="btn btn-large"><i class="icon-arrow-down"></i></button>
 										</div>																						
 								</div>
 							</div>
