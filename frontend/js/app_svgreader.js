@@ -65,7 +65,6 @@ SVGReader = {
         
     // let the fun begin
     var node = {}
-    this.boundarys.allcolors = []  // TODO: sort by color
     node.stroke = [0,0,0];
     node.xformToWorld = [1,0,0,1,0,0]
     this.parseChildren(svgRootElement, node)
@@ -114,19 +113,22 @@ SVGReader = {
           // 4.) parse tag 
           // with current attributes and transformation
           if (this.SVGTagMapping[tag.tagName]) {
-            if (node.stroke[0] == 255 && node.stroke[1] == 0 && node.stroke[2] == 0) {
-              this.SVGTagMapping[tag.tagName](this, tag, node)
-            }
+            this.SVGTagMapping[tag.tagName](this, tag, node)
           }
           
           // 5.) compile boundarys
-          // before adding all path data convert to world coordinates  
+          // before adding all subpaths convert to world coordinates
+          // sort subpaths by color 
           for (var k=0; k<node.path.length; k++) {
             var subpath = node.path[k];
             for (var l=0; l<node.path[k].length; l++) {
               subpath[l] =  this.matrixApply(node.xformToWorld, subpath[l]);
             }
-            this.boundarys.allcolors.push(subpath); 
+            var hexcolor = this.rgbToHex(node.stroke[0], node.stroke[1], node.stroke[2]);
+            if (!(hexcolor in this.boundarys)) {
+              this.boundarys[hexcolor] = [];
+            }
+            this.boundarys[hexcolor].push(subpath);
           }          
         }
         
@@ -136,6 +138,11 @@ SVGReader = {
     }
   },
   
+  
+  rgbToHex : function(r, g, b) {
+    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+  },
+
 
 
 

@@ -2,8 +2,7 @@
 
 GcodeReader = {
 
-  moves : [],
-
+  moves_by_color : {},
 
   parse : function (gcode, scale) {
   
@@ -32,8 +31,9 @@ GcodeReader = {
 	
   	// parse gcode
   	//
-  	this.moves = [];
+  	this.moves_by_color = {};
   	var lines = gcode.split("\n");
+  	var currentC = '#ff0000';
   	var currentX = 0.0;
   	var currentY = 0.0;
   	var currentI = 0.0;
@@ -41,6 +41,11 @@ GcodeReader = {
   	for (var i=0; i<lines.length; i++) {
   		var line = lines[i];
   		line.replace(' ', '');  // throw out any spaces
+  		if (line[0] == 'T') {
+  		 	var tnum = parseFloat(line.slice(1));
+  		 	var pos = line.indexOf('C');
+  			var currentC = line.slice(pos+1, pos+9);
+      }  		
   		if (line[0] == 'G') {
   		 	var gnum = parseFloat(line.slice(1));
   			if (gnum == 0 || gnum == 1 || gnum  == 2 || gnum == 3) { 
@@ -50,22 +55,25 @@ GcodeReader = {
   				if ('Y' in args) { currentY = args.Y*scale; }
   				if ('I' in args) { currentI = args.I*scale; }
   				if ('J' in args) { currentJ = args.J*scale; }
-  				this.moves.push( {'type':gnum, 'X':currentX, 'Y':currentY, 'I':currentI, 'J':currentJ } );
+  				if (!(currentC in this.moves_by_color)) {
+            this.moves_by_color[currentC] = [];  				  
+  				}
+  				this.moves_by_color[currentC].push( {'type':gnum, 'X':currentX, 'Y':currentY, 'I':currentI, 'J':currentJ } );
   			}
   		}
   	}
   },
   
   
-  generate_bbox_gcode : function () {
-    var move_prev = null;
-    for (var i=0; i<this.moves.length; i++) {
-      move = this.moves[i];
-      
-      
-      move_prev = move;
-    }
-  },  
+  // generate_bbox_gcode : function () {
+  //   var move_prev = null;
+  //   for (var i=0; i<this.moves.length; i++) {
+  //     move = this.moves[i];
+  //     
+  //     
+  //     move_prev = move;
+  //   }
+  // },  
 
 
   draw : function (canvas) {
@@ -76,35 +84,38 @@ GcodeReader = {
   	canvas.noFill();
   	var move_prev = {'type':0, 'X':0, 'Y':0, 'I':0, 'J':0 };
   	var move;
-  	for (var i=0; i<this.moves.length; i++) {
-  		if (i > 0) { move_prev = this.moves[i-1]; }
-  		move = this.moves[i];
+  	for (var color in this.moves_by_color) {
+  	  var colmoves = this.moves_by_color[color];
+    	for (var i=0; i<colmoves.length; i++) {
+    		if (i > 0) { move_prev = colmoves[i-1]; }
+    		move = colmoves[i];
 		
-  		if (move.type == 0 || move.type == 1) {  // line seek or cut
-  			if (move.type == 0) { canvas.stroke('#aaaaaa'); } else {canvas.stroke('#ff0000');}
-  			canvas.line(move_prev.X, move_prev.Y, move.X, move.Y);
+    		if (move.type == 0 || move.type == 1) {  // line seek or cut
+    			if (move.type == 0) { canvas.stroke('#aaaaaa'); } else {canvas.stroke(color);}
+    			canvas.line(move_prev.X, move_prev.Y, move.X, move.Y);
 			
-  		} else if (move.type == 2 || move.type == 3) {  // arc CW or CCW
-  			var ccw = false;
-        if (move.type == 3) { ccw = true;}
+    		} else if (move.type == 2 || move.type == 3) {  // arc CW or CCW
+    			var ccw = false;
+          if (move.type == 3) { ccw = true;}
 			
-  	    var centerX = move_prev.X+move.I;
-  	    var centerY = move_prev.Y+move.J;
+    	    var centerX = move_prev.X+move.I;
+    	    var centerY = move_prev.Y+move.J;
 	    
-  	    var centerToStartX = move_prev.X-centerX;
-  	    var centerToStartY = move_prev.Y-centerY;
+    	    var centerToStartX = move_prev.X-centerX;
+    	    var centerToStartY = move_prev.Y-centerY;
 
-  	    var centerToEndX = move.X-centerX;
-  	    var centerToEndY = move.Y-centerY;
+    	    var centerToEndX = move.X-centerX;
+    	    var centerToEndY = move.Y-centerY;
 	    
-  	    var phi_start = Math.atan2(centerToStartY, centerToStartX);
-  	    var phi_end = Math.atan2(centerToEndY, centerToEndX);
+    	    var phi_start = Math.atan2(centerToStartY, centerToStartX);
+    	    var phi_end = Math.atan2(centerToEndY, centerToEndX);
 	    
-  	    var radius = Math.sqrt(centerToStartX*centerToStartX + centerToStartY*centerToStartY);
+    	    var radius = Math.sqrt(centerToStartX*centerToStartX + centerToStartY*centerToStartY);
 			
-  			canvas.stroke('#ff0000');
-  			canvas.arc(centerX, centerY, radius, phi_end, phi_start, ccw);			
-  		}
+    			canvas.stroke(color);
+    			canvas.arc(centerX, centerY, radius, phi_end, phi_start, ccw);			
+    		}
+    	}
   	}
   }
 

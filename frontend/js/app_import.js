@@ -2,10 +2,11 @@ $(document).ready(function(){
   
   var geo_boundarys = null;
   var raw_gcode = null;
+  var raw_gcode_by_color = null;
   
   // G-Code Canvas Preview
   var icanvas = new Canvas('#import_canvas');
-  icanvas.background('ffffff'); 
+  icanvas.background('#ffffff'); 
   // file upload form
   $('#svg_upload_file').change(function(e){
     $('#svg_open_button').button('loading');
@@ -55,8 +56,24 @@ $(document).ready(function(){
       var dpi = parseFloat($('#svg_dpi_value').val());
       if (!isNaN(dpi)) {
         var px2mm = 25.4*(1.0/dpi);
-        raw_gcode = GcodeWriter.write(geo_boundarys, 2000, 255, px2mm, 0.0, 0.0);
-        GcodeReader.parse(raw_gcode, 0.5);
+        raw_gcode_by_color = {};
+        for (var color in geo_boundarys) {
+          raw_gcode_by_color[color] = GcodeWriter.write(geo_boundarys[color], px2mm, 0.0, 0.0);
+        }
+        for (var color in raw_gcode_by_color) {
+          GcodeReader.parse(color, 0.5);
+        }
+        //// add canvas color properties
+        $('#canvas_properties div.colorbtns').html('');  // reset colors
+        $('#pass_1_div div.colorbtns').html('');  // reset colors
+        $('#pass_2_div div.colorbtns').html('');  // reset colors
+        $('#pass_3_div div.colorbtns').html('');  // reset colors
+        for (var color in raw_gcode_by_color) {
+					$('#canvas_properties div.colorbtns').append('<button class="btn btn-small active" data-toggle="button" style="margin:3px"><div style="width:10px; height:10px; background-color:'+color+'"></div></button>');        
+					$('#pass_1_div div.colorbtns').append('<button class="btn btn-small" data-toggle="button" style="margin:3px"><div style="width:10px; height:10px; background-color:'+color+'"></div></button>');        
+					$('#pass_2_div div.colorbtns').append('<button class="btn btn-small" data-toggle="button" style="margin:3px"><div style="width:10px; height:10px; background-color:'+color+'"></div></button>');        
+					$('#pass_3_div div.colorbtns').append('<button class="btn btn-small" data-toggle="button" style="margin:3px"><div style="width:10px; height:10px; background-color:'+color+'"></div></button>');        
+        }
         GcodeReader.draw(icanvas);
       } else {
         $().uxmessage('error', "Invalid DPI setting.");
