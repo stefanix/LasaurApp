@@ -73,7 +73,7 @@
 									<label>G-code</label>
 									<textarea id="gcode_program" style="width:296px; font-size:0.8em; height:100px"></textarea>
 									<label>Preview</label>
-									<div><canvas id="preview_canvas" width="305px" height="153px"></canvas></div>
+									<div><canvas id="preview_canvas" width="305px" height="153px" style="border:1px dashed #aaaaaa"></canvas></div>
 							    <div class="btn-group dropup" style="margin-top:20px">
 								    <button id="gcode_submit" class="btn btn-large">Send to Lasersaur</button>
 								    <button class="btn btn-large dropdown-toggle" data-toggle="dropdown">
@@ -125,21 +125,7 @@
 									
 									<div class="row" style="margin-top:16px">
 										<div id="pass_1_div" class="well span2 pull-left" style="padding:10px; background-color:#dddddd">
-											<label>Pass One</label>
-											<form class="form-inline">												
-												<div class="input-prepend">
-													<span class="add-on" style="margin-right:-5px;">F</span>
-													<input type="text" id="import_feedrate_0" value="2000" title="feedrate 40-20000mm/min" style="width:38px" data-delay="500">
-												</div>
-												<div class="input-prepend">
-													<span class="add-on" style="margin-right:-5px;">S</span>
-													<input id="import_intensity_0" type="textfield" value="100" title="intensity 0-100%" style="width:25px;" data-delay="500">
-												</div>
-											</form>
-											<div class="colorbtns"></div>
-										</div>
-										<div id="pass_2_div" class="well span2 pull-left" style="margin-left:10px; padding:10px; background-color:#dddddd">
-											<label>Pass Two</label>
+											<label>Pass 1</label>
 											<form class="form-inline">												
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">F</span>
@@ -147,13 +133,13 @@
 												</div>
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">S</span>
-													<input id="import_intensity_1" type="textfield" value="100" title="intensity 0-100%" class="span2" style="width:25px;" data-delay="500">
-												</div>													
+													<input id="import_intensity_1" type="textfield" value="100" title="intensity 0-100%" style="width:25px;" data-delay="500">
+												</div>
 											</form>
-											<div class="colorbtns"></div>											
-										</div>											
-										<div id="pass_3_div" class="well span2 pull-left" style="margin-left:10px; padding:10px; background-color:#dddddd">
-											<label>Pass Three</label>
+											<div class="colorbtns"></div>
+										</div>
+										<div id="pass_2_div" class="well span2 pull-left" style="margin-left:10px; padding:10px; background-color:#dddddd">
+											<label>Pass 2</label>
 											<form class="form-inline">												
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">F</span>
@@ -162,6 +148,20 @@
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">S</span>
 													<input id="import_intensity_2" type="textfield" value="100" title="intensity 0-100%" class="span2" style="width:25px;" data-delay="500">
+												</div>													
+											</form>
+											<div class="colorbtns"></div>											
+										</div>											
+										<div id="pass_3_div" class="well span2 pull-left" style="margin-left:10px; padding:10px; background-color:#dddddd">
+											<label>Pass 3</label>
+											<form class="form-inline">												
+												<div class="input-prepend">
+													<span class="add-on" style="margin-right:-5px;">F</span>
+													<input type="text" id="import_feedrate_3" value="2000" title="feedrate 40-20000mm/min" style="width:38px" data-delay="500">
+												</div>
+												<div class="input-prepend">
+													<span class="add-on" style="margin-right:-5px;">S</span>
+													<input id="import_intensity_3" type="textfield" value="100" title="intensity 0-100%" class="span2" style="width:25px;" data-delay="500">
 												</div>
 											</form>
 											<div class="colorbtns"></div>																	

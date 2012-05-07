@@ -47,6 +47,7 @@ SVGReader = {
 
     
   parse : function(svgstring, config) {
+    this.boundarys = {};
     this.tolerance_squared = Math.pow(this.tolerance, 2);
     
     // parse xml

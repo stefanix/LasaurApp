@@ -80,12 +80,12 @@ $(document).ready(function(){
   // G-Code Canvas Preview
   //
   var canvas = new Canvas('#preview_canvas');
-  canvas.background('ffffff');
+  canvas.background('#ffffff');
 
   $('#gcode_program').blur(function() {
     var gcodedata = $('#gcode_program').val();
-  	GcodeReader.parse(gcodedata, 0.25);
-  	GcodeReader.draw(canvas);	
+    canvas.background('#ffffff'); 
+  	GcodeReader.draw(canvas, gcodedata, 0.25, '#000000');	
   });
 
 });  // ready
