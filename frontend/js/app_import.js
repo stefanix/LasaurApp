@@ -123,21 +123,6 @@ $(document).ready(function(){
     return header + gcode + footer;
   }
 
-  function mapConstrainFeedrate(rate) {
-    rate = parseFloat(rate);
-    if (rate < .1) {rate = .1;}
-    else if (rate > 400) {rate = 400;}
-    return Math.round(rate * 60).toString();
-  }
-    
-  function mapConstrainIntesity(intens) {
-    intens = parseInt(intens);
-    if (intens < 0) {intens = 0;}
-    else if (intens > 100) {intens = 100;}
-    //map to 255 for now until we change the backend
-    return Math.round(intens * 2.55).toString();
-  }
-
   // forwarding file open click
   $('#svg_open_button').click(function(e){
     $('#svg_upload_file').trigger('click');

@@ -9,10 +9,8 @@ $(document).ready(function(){
   	if($('#feed_btn').hasClass("active")){
   		g0_or_g1 = 'G1';
   	}
-  	var feedrate = parseInt($( "#feedrate_field" ).val());
-  	if (feedrate < 40) {feedrate = 40;} else if (feedrate > 30000) {feedrate = 30000;}
-  	var intensity =  parseInt($( "#intensity_field" ).val());
-  	if (intensity < 0) {intensity = 0;} else if (intensity > 255) {intensity = 255;}
+  	var feedrate = mapConstrainFeedrate($("#feedrate_field" ).val());
+  	var intensity =  mapConstrainIntesity($( "#intensity_field" ).val());
   	var gcode = 'S'+ intensity + '\nG54\n' + g0_or_g1 + ' X' + x + 'Y' + y + 'F' + feedrate + '\nS0\n';
 	
 	
@@ -42,15 +40,13 @@ $(document).ready(function(){
   	if($('#feed_btn').hasClass("active")){
   		move_or_cut = 'cut';
   	}
-  	var feedrate = parseInt($( "#feedrate_field" ).val());
-  	if (feedrate < 40) {feedrate = 40;} else if (feedrate > 30000) {feedrate = 30000;}
-  	var intensity =  parseInt($( "#intensity_field" ).val());
-  	if (intensity < 0) {intensity = 0;} else if (intensity > 255) {intensity = 255;}
+  	var feedrate = mapConstrainFeedrate($( "#feedrate_field" ).val());
+  	var intensity =  mapConstrainIntesity($( "#intensity_field" ).val());
   	var coords_text;
   	if (move_or_cut == 'cut') {
-  	  coords_text = move_or_cut + ' to (' + x + ', '+ y + ') at ' + feedrate + 'mm/min and ' + intensity + ' intensity';
+  	  coords_text = move_or_cut + ' to (' + x + ', '+ y + ') at ' + feedrate/60 + 'mm/sec and ' + Math.round(intensity/2.55) + '% intensity';
   	} else {
-  	  coords_text = move_or_cut + ' to (' + x + ', '+ y + ') at ' + feedrate + 'mm/min'
+  	  coords_text = move_or_cut + ' to (' + x + ', '+ y + ') at ' + feedrate/60 + 'mm/sec'
   	}
     $('#coordinates_info').text(coords_text);
   });  
@@ -79,13 +75,13 @@ $(document).ready(function(){
   });   
   
   $("#feedrate_btn_slow").click(function(e) {
-    $( "#feedrate_field" ).val("400");
+    $( "#feedrate_field" ).val("8");
   });  
   $("#feedrate_btn_medium").click(function(e) {
-    $( "#feedrate_field" ).val("2000");
+    $( "#feedrate_field" ).val("32");
   });  
   $("#feedrate_btn_fast").click(function(e) {
-    $( "#feedrate_field" ).val("16000");
+    $( "#feedrate_field" ).val("280");
   });  
   $("#feedrate_field").focus(function(e) {
     $("#feedrate_btn_slow").removeClass('active');

@@ -209,6 +209,21 @@ function load_into_gcode_widget(gcode, name) {
 }
 
 
+function mapConstrainFeedrate(rate) {
+  rate = parseFloat(rate);
+  if (rate < .1) {rate = .1;}
+  else if (rate > 400) {rate = 400;}
+  return Math.round(rate * 60).toString();
+}
+  
+function mapConstrainIntesity(intens) {
+  intens = parseInt(intens);
+  if (intens < 0) {intens = 0;}
+  else if (intens > 100) {intens = 100;}
+  //map to 255 for now until we change the backend
+  return Math.round(intens * 2.55).toString();
+}
+
 
 $(document).ready(function(){
   
