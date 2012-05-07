@@ -138,7 +138,7 @@ $(document).ready(function(){
     $('#svg_dpi_value').val('90');
     generateRawGcode();
   });
-  
+  $('#svg_dpi90_btn').trigger('click');
     
   $('#svg_dpi72_btn').tooltip()    
   $('#svg_dpi90_btn').tooltip()        
