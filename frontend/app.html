@@ -137,11 +137,11 @@
 											<form class="form-inline" style="margin-bottom:8px">												
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">F</span>
-													<input type="text" id="import_feedrate_1" value="2000" title="feedrate 1-20000mm/min" style="width:38px" data-delay="500">
+													<input type="text" id="import_feedrate_1" value="8" title="feedrate 1-400mm/sec" style="width:26px" data-delay="500">
 												</div>
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">S</span>
-													<input id="import_intensity_1" type="textfield" value="100" title="intensity 0-100%" style="width:22px;" data-delay="500">
+													<input id="import_intensity_1" type="textfield" value="100" title="intensity 0-100%" style="width:26px;" data-delay="500">
 												</div>
 											</form>
 											<div class="colorbtns"></div>
@@ -151,11 +151,11 @@
 											<form class="form-inline" style="margin-bottom:8px">												
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">F</span>
-													<input type="text" id="import_feedrate_2" value="2000" title="feedrate 1-20000mm/min" style="width:38px" data-delay="500">
+													<input type="text" id="import_feedrate_2" value="32" title="feedrate 1-400mm/sec" style="width:26px" data-delay="500">
 												</div>
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">S</span>
-													<input id="import_intensity_2" type="textfield" value="100" title="intensity 0-100%" class="span2" style="width:22px;" data-delay="500">
+													<input id="import_intensity_2" type="textfield" value="100" title="intensity 0-100%" class="span2" style="width:26px;" data-delay="500">
 												</div>													
 											</form>
 											<div class="colorbtns"></div>											
@@ -165,11 +165,11 @@
 											<form class="form-inline" style="margin-bottom:8px">												
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">F</span>
-													<input type="text" id="import_feedrate_3" value="2000" title="feedrate 1-20000mm/min" style="width:38px" data-delay="500">
+													<input type="text" id="import_feedrate_3" value="120" title="feedrate 1-400mm/sec" style="width:26px" data-delay="500">
 												</div>
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">S</span>
-													<input id="import_intensity_3" type="textfield" value="100" title="intensity 0-100%" class="span2" style="width:22px;" data-delay="500">
+													<input id="import_intensity_3" type="textfield" value="100" title="intensity 0-100%" class="span2" style="width:26px;" data-delay="500">
 												</div>
 											</form>
 											<div class="colorbtns"></div>																	
@@ -182,10 +182,11 @@
 									
 								</div> <!--end of well-->
 								
-						    <div class="alert">
+						    <div class="alert" style="width:500px">
 							    <a class="close" data-dismiss="alert">×</a>
-							    <strong>Note!</strong> New Laser intensity range: 0-100%.
-						    </div>										
+							    <strong>Note!</strong> New feedrate range: 0-400mm/sec and laser intensity range: 0-100%.
+							    <br>To convert from the old range divide by 60 and 2.55, respectively.
+						    </div>
 							</div> <!-- end of import tab -->							
 
 							<div id="tab_mover" class="tab-pane well" style="width:610px; height:560px; margin-left:0px">

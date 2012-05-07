@@ -123,11 +123,11 @@ $(document).ready(function(){
     return header + gcode + footer;
   }
 
-  function constrainFeedrate(rate) {
-    rate = parseInt(rate);
-    if (rate < 1) {rate = 1;}
-    else if (rate > 20000) {rate = 20000;}
-    return rate.toString();
+  function mapConstrainFeedrate(rate) {
+    rate = parseFloat(rate);
+    if (rate < .1) {rate = .1;}
+    else if (rate > 400) {rate = 400;}
+    return Math.round(rate * 60).toString();
   }
     
   function mapConstrainIntesity(intens) {
@@ -178,9 +178,9 @@ $(document).ready(function(){
       }
     });
     if (Object.keys(colors).length > 0) { 
-      feedrate = constrainFeedrate($("#import_feedrate_1").val());
+      feedrate = mapConstrainFeedrate($("#import_feedrate_1").val());
       intensity = mapConstrainIntesity($("#import_intensity_1").val());
-      gcodeparts.push("S"+intensity+"\nG1 F"+feedrate+"\nG0 F16000\n");
+      gcodeparts.push("S"+intensity+"\nG1 F"+feedrate+"\nG0 F10000\n");
       for (var color in raw_gcode_by_color) {
         if(color in colors) {
           gcodeparts.push(raw_gcode_by_color[color]);
@@ -195,9 +195,9 @@ $(document).ready(function(){
       }
     });    
     if (Object.keys(colors).length > 0) { 
-      feedrate = constrainFeedrate($("#import_feedrate_2").val());
+      feedrate = mapConstrainFeedrate($("#import_feedrate_2").val());
       intensity = mapConstrainIntesity($("#import_intensity_2").val());
-      gcodeparts.push("S"+intensity+"\nG1 F"+feedrate+"\nG0 F16000\n");
+      gcodeparts.push("S"+intensity+"\nG1 F"+feedrate+"\nG0 F10000\n");
       for (var color in raw_gcode_by_color) {
         if(color in colors) {
           gcodeparts.push(raw_gcode_by_color[color]);
@@ -212,9 +212,9 @@ $(document).ready(function(){
       }
     });    
     if (Object.keys(colors).length > 0) { 
-      feedrate = constrainFeedrate($("#import_feedrate_3").val());
+      feedrate = mapConstrainFeedrate($("#import_feedrate_3").val());
       intensity = mapConstrainIntesity($("#import_intensity_3").val());
-      gcodeparts.push("S"+intensity+"\nG1 F"+feedrate+"\nG0 F16000\n");
+      gcodeparts.push("S"+intensity+"\nG1 F"+feedrate+"\nG0 F10000\n");
       for (var color in raw_gcode_by_color) {
         if(color in colors) {
           gcodeparts.push(raw_gcode_by_color[color]);
