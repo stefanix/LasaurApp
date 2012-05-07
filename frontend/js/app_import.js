@@ -123,6 +123,21 @@ $(document).ready(function(){
     return header + gcode + footer;
   }
 
+  function constrainFeedrate(rate) {
+    rate = parseInt(rate);
+    if (rate < 1) {rate = 1;}
+    else if (rate > 20000) {rate = 20000;}
+    return rate.toString();
+  }
+    
+  function mapConstrainIntesity(intens) {
+    intens = parseInt(intens);
+    if (intens < 0) {intens = 0;}
+    else if (intens > 100) {intens = 100;}
+    //map to 255 for now until we change the backend
+    return Math.round(intens * 2.55).toString();
+  }
+
   // forwarding file open click
   $('#svg_open_button').click(function(e){
     $('#svg_upload_file').trigger('click');
@@ -142,12 +157,12 @@ $(document).ready(function(){
     
   $('#svg_dpi72_btn').tooltip()    
   $('#svg_dpi90_btn').tooltip()        
-  $('#import_feedrate_0').tooltip()    
-  $('#import_intensity_0').tooltip()    
   $('#import_feedrate_1').tooltip()    
-  $('#import_intensity_1').tooltip()
+  $('#import_intensity_1').tooltip()    
   $('#import_feedrate_2').tooltip()    
-  $('#import_intensity_2').tooltip()  
+  $('#import_intensity_2').tooltip()
+  $('#import_feedrate_3').tooltip()    
+  $('#import_intensity_3').tooltip()  
   
   // setting up add to queue button
   $("#import_to_queue").click(function(e) {            
@@ -163,8 +178,8 @@ $(document).ready(function(){
       }
     });
     if (Object.keys(colors).length > 0) { 
-      feedrate = $("#import_feedrate_1").val();
-      intensity = $("#import_intensity_1").val();
+      feedrate = constrainFeedrate($("#import_feedrate_1").val());
+      intensity = mapConstrainIntesity($("#import_intensity_1").val());
       gcodeparts.push("S"+intensity+"\nG1 F"+feedrate+"\nG0 F16000\n");
       for (var color in raw_gcode_by_color) {
         if(color in colors) {
@@ -180,8 +195,8 @@ $(document).ready(function(){
       }
     });    
     if (Object.keys(colors).length > 0) { 
-      feedrate = $("#import_feedrate_2").val();
-      intensity = $("#import_intensity_2").val();
+      feedrate = constrainFeedrate($("#import_feedrate_2").val());
+      intensity = mapConstrainIntesity($("#import_intensity_2").val());
       gcodeparts.push("S"+intensity+"\nG1 F"+feedrate+"\nG0 F16000\n");
       for (var color in raw_gcode_by_color) {
         if(color in colors) {
@@ -197,8 +212,8 @@ $(document).ready(function(){
       }
     });    
     if (Object.keys(colors).length > 0) { 
-      feedrate = $("#import_feedrate_3").val();
-      intensity = $("#import_intensity_3").val();
+      feedrate = constrainFeedrate($("#import_feedrate_3").val());
+      intensity = mapConstrainIntesity($("#import_intensity_3").val());
       gcodeparts.push("S"+intensity+"\nG1 F"+feedrate+"\nG0 F16000\n");
       for (var color in raw_gcode_by_color) {
         if(color in colors) {
