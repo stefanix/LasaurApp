@@ -6,8 +6,8 @@ $(document).ready(function(){
   
   // G-Code Canvas Preview
   var icanvas = new Canvas('#import_canvas');
-  icanvas.width = 610;  // HACK: for some reason the canvas can't figure this out herself
-  icanvas.height = 305; // HACK: for some reason the canvas can't figure this out herself
+  icanvas.width = 610;  // HACK: for some reason the canvas can't figure this out itself
+  icanvas.height = 305; // HACK: for some reason the canvas can't figure this out itself
   icanvas.background('#ffffff'); 
   
   
@@ -92,7 +92,7 @@ $(document).ready(function(){
         $().uxmessage('error', "Invalid DPI setting.");
       }        
     } else {
-      $().uxmessage('notice', "No data loaded to write G-code from.");
+      $().uxmessage('notice', "No data loaded to write G-code.");
     }   
   }
   
@@ -109,18 +109,13 @@ $(document).ready(function(){
       icanvas.background('#ffffff');
       for (var color in raw_gcode_by_color) {
         if (!(color in exclude_colors)) {
-          GcodeReader.draw(icanvas, raw_gcode_by_color[color], 0.5, color);
+          GcodeReader.parse(raw_gcode_by_color[color], 0.5);
+          GcodeReader.draw(icanvas, color);
         }
       }
     } else {
-      $().uxmessage('notice', "No data loaded to write G-code from.");
+      $().uxmessage('notice', "No data loaded to generate preview.");
     }       
-  }
-  
-  function wrapGcode(gcode, feedrate, intensity) {
-    var header = "%\nG21\nG90\nS"+intensity+"\nG1 F"+feedrate+"\nG0 F10000\n"
-    var footer = "S0\nG00X0Y0F15000\n%"
-    return header + gcode + footer;
   }
 
   // forwarding file open click
@@ -138,7 +133,8 @@ $(document).ready(function(){
     $('#svg_dpi_value').val('90');
     generateRawGcode();
   });
-  $('#svg_dpi90_btn').trigger('click');
+  // $('#svg_dpi90_btn').trigger('click');
+  // $('#svg_dpi90_btn').attr('checked', 'checked').button("refresh");
     
   $('#svg_dpi72_btn').tooltip()    
   $('#svg_dpi90_btn').tooltip()        

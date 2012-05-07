@@ -1,3 +1,41 @@
+
+function send_gcode_to_backend(gcode) {
+  // $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
+	$.post("/gcode", { 'gcode_program':gcode }, function(data) {
+		if (data != "") {
+			$().uxmessage('success', "G-Code sent to serial.");	
+			// show progress bar, register live updates
+			if ($("#progressbar").children().first().width() == 0) {
+				$("#progressbar").children().first().width('5%');
+				$("#progressbar").show();
+				var progress_not_yet_done_flag = true;
+			  var progresstimer = setInterval(function() {
+					$.get('/queue_pct_done', function(data2) {
+						if (data2.length > 0) {
+							var pct = parseInt(data2);
+              $("#progressbar").children().first().width(pct+'%');  							
+						} else {
+						  if (progress_not_yet_done_flag) {
+  						  $("#progressbar").children().first().width('100%');
+  						  $().uxmessage('notice', "Done.");
+  						  progress_not_yet_done_flag = false;
+  						} else {
+  							$('#progressbar').hide();
+  							$("#progressbar").children().first().width(0); 
+  							clearInterval(progresstimer);
+  						}
+						}
+					});
+			  }, 2000);
+			}
+		} else {
+			$().uxmessage('error', "Serial not connected.");
+		}
+  });  
+}
+
+
+
 $(document).ready(function(){
 
   // populate queue from queue directory
@@ -30,50 +68,24 @@ $(document).ready(function(){
   $("#gcode_submit").click(function(e) {
   	// send gcode string to server via POST
   	var gcode = $('#gcode_program').val();
-    // $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
-  	$.post("/gcode", { 'gcode_program':gcode }, function(data) {
-  		if (data != "") {
-  			$().uxmessage('success', "G-Code sent to serial.");	
-  			// show progress bar, register live updates
-  			if ($("#progressbar").children().first().width() == 0) {
-  				$("#progressbar").children().first().width('5%');
-  				$("#progressbar").show();
-  				var progress_not_yet_done_flag = true;
-  			  var progresstimer = setInterval(function() {
-  					$.get('/queue_pct_done', function(data2) {
-  						if (data2.length > 0) {
-  							var pct = parseInt(data2);
-                $("#progressbar").children().first().width(pct+'%');  							
-  						} else {
-  						  if (progress_not_yet_done_flag) {
-    						  $("#progressbar").children().first().width('100%');
-    						  $().uxmessage('notice', "Done.");
-    						  progress_not_yet_done_flag = false;
-    						} else {
-    							$('#progressbar').hide();
-    							$("#progressbar").children().first().width(0); 
-    							clearInterval(progresstimer);
-    						}
-  						}
-  					});
-  			  }, 2000);
-  			}
-  		} else {
-  			$().uxmessage('error', "Serial not connected.");
-  		}
-    });
+    send_gcode_to_backend(gcode);
   	return false;
   });
 
 
-  $("#gcode_bbox").click(function(e) {
-    $().uxmessage('notice', "bbox not yet implemented");
+  $("#gcode_bbox_submit").click(function(e) {
     var gcodedata = $('#gcode_program').val();
-    //var gcode_bbox = 
+    GcodeReader.parse(gcodedata, 1);
+    var gcode_bbox = GcodeReader.getBboxGcode();
+    var header = "%\nG21\nG90\nG0F16000\n"
+    var footer = "G00X0Y0F16000\n%"
+    // save_and_add_to_job_queue($('#gcode_name').val() + 'BBOX', header + gcode_bbox + footer);  // for debugging
+    send_gcode_to_backend(header + gcode_bbox + footer);
   });
 
   $("#gcode_save_to_queue").click(function(e) {
     save_and_add_to_job_queue($.trim($('#gcode_name').val()), $('#gcode_program').val());
+    return false;
   });
 
 
@@ -85,7 +97,8 @@ $(document).ready(function(){
   $('#gcode_program').blur(function() {
     var gcodedata = $('#gcode_program').val();
     canvas.background('#ffffff'); 
-  	GcodeReader.draw(canvas, gcodedata, 0.25, '#000000');	
+  	GcodeReader.parse(gcodedata, 0.25);
+  	GcodeReader.draw(canvas, '#000000');
   });
 
 });  // ready
