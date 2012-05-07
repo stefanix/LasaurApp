@@ -167,6 +167,7 @@ function add_to_job_queue(name) {
         $(this).addClass('icon-star-empty');  
       });        
     }
+    return false;
   });
 }
 

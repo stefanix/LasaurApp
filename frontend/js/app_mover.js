@@ -70,10 +70,12 @@ $(document).ready(function(){
   $( "#intensity_field" ).val('0');
   
   $("#seek_btn").click(function(e) {
-    $( "#intensity_input_div" ).hide();
+    $( "#intensity_field" ).hide();
+    $( "#intensity_field_disabled" ).show();
   });  
   $("#feed_btn").click(function(e) {
-    $( "#intensity_input_div" ).show();
+    $( "#intensity_field_disabled" ).hide();
+    $( "#intensity_field" ).show();
   });   
   
   $("#feedrate_btn_slow").click(function(e) {

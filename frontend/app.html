@@ -88,12 +88,20 @@
 								    <div class="bar" style="width:0%;"></div>
 							    </div>
 								</form>
-								<img src="/img/big-arrow.png" class="pull-left" style="margin:110px 0px 110px 40px;"/>
+								<img src="/img/big-arrow.png" class="pull-left" style="margin:40px 0px 110px 30px;"/>
 								<div class="pull-left span3">	
 									<h3>Queue</h3>
-									  <ul id="gcode_queue" class="nav nav-tabs nav-stacked"></ul>
-									<h3>Library</h3>
-									  <ul id="gcode_library" class="nav nav-tabs nav-stacked"></ul>
+									<ul id="gcode_queue" class="nav nav-tabs nav-stacked"></ul>
+										
+									<div class="btn-group">
+										<a class="btn btn-large dropdown-toggle" data-toggle="dropdown" href="#">
+										Load from Library
+										<span class="caret"></span>
+										</a>
+										<ul id="gcode_library" class="dropdown-menu"></ul>
+											<!-- stock library go here -->
+										</ul>
+									</div>
 								</div>								
 							</div>
 							
@@ -124,44 +132,44 @@
 									</div>
 									
 									<div class="row" style="margin-top:16px">
-										<div id="pass_1_div" class="well span2 pull-left" style="padding:10px; background-color:#dddddd">
+										<div id="pass_1_div" class="well span2 pull-left" style="padding:8px; background-color:#dddddd">
 											<label>Pass 1</label>
-											<form class="form-inline">												
+											<form class="form-inline" style="margin-bottom:8px">												
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">F</span>
 													<input type="text" id="import_feedrate_1" value="2000" title="feedrate 40-20000mm/min" style="width:38px" data-delay="500">
 												</div>
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">S</span>
-													<input id="import_intensity_1" type="textfield" value="100" title="intensity 0-100%" style="width:25px;" data-delay="500">
+													<input id="import_intensity_1" type="textfield" value="100" title="intensity 0-100%" style="width:22px;" data-delay="500">
 												</div>
 											</form>
 											<div class="colorbtns"></div>
 										</div>
-										<div id="pass_2_div" class="well span2 pull-left" style="margin-left:10px; padding:10px; background-color:#dddddd">
+										<div id="pass_2_div" class="well span2 pull-left" style="margin-left:10px; padding:8px; background-color:#dddddd">
 											<label>Pass 2</label>
-											<form class="form-inline">												
+											<form class="form-inline" style="margin-bottom:8px">												
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">F</span>
 													<input type="text" id="import_feedrate_2" value="2000" title="feedrate 40-20000mm/min" style="width:38px" data-delay="500">
 												</div>
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">S</span>
-													<input id="import_intensity_2" type="textfield" value="100" title="intensity 0-100%" class="span2" style="width:25px;" data-delay="500">
+													<input id="import_intensity_2" type="textfield" value="100" title="intensity 0-100%" class="span2" style="width:22px;" data-delay="500">
 												</div>													
 											</form>
 											<div class="colorbtns"></div>											
 										</div>											
-										<div id="pass_3_div" class="well span2 pull-left" style="margin-left:10px; padding:10px; background-color:#dddddd">
+										<div id="pass_3_div" class="well span2 pull-left" style="margin-left:10px; padding:8px; background-color:#dddddd">
 											<label>Pass 3</label>
-											<form class="form-inline">												
+											<form class="form-inline" style="margin-bottom:8px">												
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">F</span>
 													<input type="text" id="import_feedrate_3" value="2000" title="feedrate 40-20000mm/min" style="width:38px" data-delay="500">
 												</div>
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">S</span>
-													<input id="import_intensity_3" type="textfield" value="100" title="intensity 0-100%" class="span2" style="width:25px;" data-delay="500">
+													<input id="import_intensity_3" type="textfield" value="100" title="intensity 0-100%" class="span2" style="width:22px;" data-delay="500">
 												</div>
 											</form>
 											<div class="colorbtns"></div>																	
@@ -191,9 +199,10 @@
 										<button id="seek_btn" class="btn active">Move</button>
 										<button id="feed_btn" class="btn">Cut</button>
 									</div>
-									<div id="intensity_input_div" class="input-prepend pull-left" style="margin-left:8px; display:none">
+									<div id="intensity_input_div" class="input-prepend pull-left" style="margin-left:8px;">
 										<span class="add-on" style="margin-right:-5px; margin-bottom:9px">S</span>
-										<input id="intensity_field" type="textfield" value="0" style="width:25px;">
+										<input id="intensity_field" type="textfield" value="0" style="width:25px; display:none">
+										<input id="intensity_field_disabled" type="textfield" class="disabled" disabled="" value="0" style="width:25px;">
 									</div>									
 									<div id="feedrate_btns" class="btn-group pull-right" data-toggle="buttons-radio">
 										<button id="feedrate_btn_slow" class="btn">slow</button>

@@ -71,10 +71,10 @@ $(document).ready(function(){
         $('#pass_2_div div.colorbtns').html('');  // reset colors
         $('#pass_3_div div.colorbtns').html('');  // reset colors
         for (var color in raw_gcode_by_color) {
-  				$('#canvas_properties div.colorbtns').append('<button class="preview_color btn btn-small active" style="margin:3px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></button>');          
-  				$('#pass_1_div div.colorbtns').append('<button class="btn btn-small" data-toggle="button" style="margin:3px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
-  				$('#pass_2_div div.colorbtns').append('<button class="btn btn-small" data-toggle="button" style="margin:3px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
-  				$('#pass_3_div div.colorbtns').append('<button class="btn btn-small" data-toggle="button" style="margin:3px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
+  				$('#canvas_properties div.colorbtns').append('<button class="preview_color btn btn-small active" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></button>');          
+  				$('#pass_1_div div.colorbtns').append('<button class="btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
+  				$('#pass_2_div div.colorbtns').append('<button class="btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
+  				$('#pass_3_div div.colorbtns').append('<button class="btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
         }
         // register redraw event
   			$('button.preview_color').click(function(e){
