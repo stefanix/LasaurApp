@@ -76,13 +76,12 @@
 									<div><canvas id="preview_canvas" width="305px" height="153px" style="border:1px dashed #aaaaaa"></canvas></div>
 							    <div class="btn-group dropup" style="margin-top:20px">
 								    <button id="gcode_submit" class="btn btn-large">Send to Lasersaur</button>
-								    <button class="btn btn-large dropdown-toggle" data-toggle="dropdown">
-									    <span class="caret"></span>
+								    <button id="gcode_bbox_submit" class="btn btn-large" title="send bounding box to lasersaur" data-delay="500">
+									    <span class="icon-resize-full"></span>
 								    </button>
-								    <ul class="dropdown-menu nav-pills nav-stacked" style="padding:10px">
-											<li><a href="#" id="gcode_bbox_submit">Send Bounding Box</a></li>		
-											<li><a href="#" id="gcode_save_to_queue">Save to Queue</a></li>
-								    </ul>
+								    <button id="gcode_save_to_queue" class="btn btn-large" title="save to queue" data-delay="500">
+											<span class="icon-plus-sign"></span>
+								    </button>
 							    </div>			
 							    <div id="progressbar" class="progress progress-striped" style="margin-top:20px">
 								    <div class="bar" style="width:0%;"></div>

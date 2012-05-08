@@ -88,6 +88,9 @@ $(document).ready(function(){
     return false;
   });
 
+  $('#gcode_bbox_submit').tooltip();
+  $('#gcode_save_to_queue').tooltip();
+
 
   // G-Code Canvas Preview
   //

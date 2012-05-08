@@ -136,14 +136,14 @@ $(document).ready(function(){
   // $('#svg_dpi90_btn').trigger('click');
   // $('#svg_dpi90_btn').attr('checked', 'checked').button("refresh");
     
-  $('#svg_dpi72_btn').tooltip()    
-  $('#svg_dpi90_btn').tooltip()        
-  $('#import_feedrate_1').tooltip()    
-  $('#import_intensity_1').tooltip()    
-  $('#import_feedrate_2').tooltip()    
-  $('#import_intensity_2').tooltip()
-  $('#import_feedrate_3').tooltip()    
-  $('#import_intensity_3').tooltip()  
+  $('#svg_dpi72_btn').tooltip();
+  $('#svg_dpi90_btn').tooltip();
+  $('#import_feedrate_1').tooltip();
+  $('#import_intensity_1').tooltip();
+  $('#import_feedrate_2').tooltip();
+  $('#import_intensity_2').tooltip();
+  $('#import_feedrate_3').tooltip();
+  $('#import_intensity_3').tooltip();
   
   // setting up add to queue button
   $("#import_to_queue").click(function(e) {            
