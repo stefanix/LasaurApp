@@ -328,7 +328,7 @@ $(document).ready(function(){
   });
 
   $("#go_to_origin").click(function(e){
-  	var gcode = 'G0X0Y0F20000\n'
+  	var gcode = 'G0X0Y0F16000\n'
   	$().uxmessage('notice', gcode);	
   	send_gcode_line(gcode, "Going to origin ...", "Serial not connected.");
   	e.preventDefault();		
@@ -341,7 +341,7 @@ $(document).ready(function(){
   	e.preventDefault();		
   });
   
-  $("#use_table_offset").click(function(e){
+  $("#reset_custom_offset").click(function(e){
   	var gcode = 'G54\n'
   	$().uxmessage('notice', gcode);
   	send_gcode_line(gcode, "Using table offset ...", "Serial not connected.");

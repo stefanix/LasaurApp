@@ -1,4 +1,24 @@
 
+TODO
+-----
+- default colors R,G,B to Pass 1,2,3
+- homing cycle, home button, offsets
+- jog control, firmware seem to ignore G90 for relative motion
+- connection button status
+- error reporting in ui
+
+BUG
+---
+- invisible super slow black lines
+
+YAG
+----
+- some files cause the origin to drift
+- homing does not reset stop mode
+
+
+- sperrholz pappel 8mm
+
 
 - bed size: 48x24" or 1220x610mm
   also for direct control

@@ -30,7 +30,18 @@
 					<span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
 				</a>
 				<button id="connect_btn" class="btn btn-warning pull-right" type="submit">Disconnected</button>
-				<button id="cancel_btn" class="btn pull-right" style="margin-right:10px" type="submit">Cancel</button>			
+				
+		    <div class="btn-group pull-right" style="margin-right:10px">
+			    <button id="cancel_btn" class="btn" type="submit">Cancel</button>
+			    <button class="btn dropdown-toggle" data-toggle="dropdown">
+				    <span class="caret"></span>
+			    </button>
+			    <ul class="dropdown-menu">
+				    <li><a id="find_home" href="#">Homing</a></li>
+				    <li><a id="set_custom_offset" href="#">Set Offset</a></li>
+				    <li><a id="reset_custom_offset" href="#">Reset Offset</a></li>
+			    </ul>
+		    </div>								
 				
 				<a class="brand" href="#" style="color:#666666"><img src="/img/lasersaur-dino-brand.png" style="margin-right:6px">LasaurApp</a>
 				<div class="nav-collapse">
@@ -74,7 +85,7 @@
 									<textarea id="gcode_program" style="width:296px; font-size:0.8em; height:100px"></textarea>
 									<label>Preview</label>
 									<div><canvas id="preview_canvas" width="305px" height="153px" style="border:1px dashed #aaaaaa"></canvas></div>
-							    <div class="btn-group dropup" style="margin-top:20px">
+							    <div class="btn-group" style="margin-top:20px">
 								    <button id="gcode_submit" class="btn btn-large">Send to Lasersaur</button>
 								    <button id="gcode_bbox_submit" class="btn btn-large" title="send bounding box to lasersaur" data-delay="500">
 									    <span class="icon-resize-full"></span>
@@ -227,7 +238,7 @@
 											<button id="jog_down_btn" class="btn btn-large"><i class="icon-arrow-down"></i></button>
 										</div>																						
 								</div>
-							</div>
+							</div> <!-- end of mover tab -->					
 
 							<!--content end-->
 						</div>
