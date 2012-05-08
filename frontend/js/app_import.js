@@ -133,8 +133,7 @@ $(document).ready(function(){
     $('#svg_dpi_value').val('90');
     generateRawGcode();
   });
-  // $('#svg_dpi90_btn').trigger('click');
-  // $('#svg_dpi90_btn').attr('checked', 'checked').button("refresh");
+  $('#svg_dpi_value').val('90');  // overwrite persisten forms
     
   $('#svg_dpi72_btn').tooltip();
   $('#svg_dpi90_btn').tooltip();
