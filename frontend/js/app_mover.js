@@ -13,6 +13,23 @@ $(document).ready(function(){
       $().uxmessage('notice', gcode);
     	send_gcode_line(gcode, "Motion request sent.", "Serial not connected.");    
   }
+  
+  function assemble_info_text(x,y) {
+    var coords_text;
+  	var move_or_cut = 'move';
+  	if($('#feed_btn').hasClass("active")){
+  		move_or_cut = 'cut';
+  	}
+  	var feedrate = mapConstrainFeedrate($( "#feedrate_field" ).val());
+  	var intensity =  mapConstrainIntesity($( "#intensity_field" ).val());
+  	var coords_text;
+  	if (move_or_cut == 'cut') {
+  	  coords_text = move_or_cut + ' to (' + 2*x + ', '+ 2*y + ') at ' + feedrate/60 + 'mm/sec and ' + Math.round(intensity/2.55) + '% intensity';
+  	} else {
+  	  coords_text = move_or_cut + ' to (' + 2*x + ', '+ 2*y + ') at ' + feedrate/60 + 'mm/sec'
+  	}
+  	return coords_text;
+  }
 
   $("#cutting_area").click(function(e) {
   	var offset = $(this).offset();
@@ -72,21 +89,14 @@ $(document).ready(function(){
   	var x = (e.pageX - offset.left);
   	var y = (e.pageY - offset.top);
   	if (!gcode_coordinate_offset) {
-    	var move_or_cut = 'move';
-    	if($('#feed_btn').hasClass("active")){
-    		move_or_cut = 'cut';
-    	}
-    	var feedrate = mapConstrainFeedrate($( "#feedrate_field" ).val());
-    	var intensity =  mapConstrainIntesity($( "#intensity_field" ).val());
-    	var coords_text;
-    	if (move_or_cut == 'cut') {
-    	  coords_text = move_or_cut + ' to (' + 2*x + ', '+ 2*y + ') at ' + feedrate/60 + 'mm/sec and ' + Math.round(intensity/2.55) + '% intensity';
-    	} else {
-    	  coords_text = move_or_cut + ' to (' + 2*x + ', '+ 2*y + ') at ' + feedrate/60 + 'mm/sec'
-    	}
+  	  if(!e.shiftKey) {
+        coords_text = assemble_info_text(x,y);
+      } else {
+        coords_text = 'set offset to (' + 2*x + ', '+ 2*y + ')';
+      }
     } else {
       if(e.shiftKey) {
-        coords_text = '(' + x + ', '+ y + ')'
+        coords_text = 'set offset to (' + x + ', '+ y + ')'
       } else {
         var pos = $("#offset_area").position()
         if ((x < pos.left) || (y < pos.top)) {           
@@ -123,7 +133,7 @@ $(document).ready(function(){
     	var offset = $(this).offset();
     	var x = 2*(e.pageX - offset.left);
     	var y = 2*(e.pageY - offset.top);
-      $('#offset_info').text('(' + x + ', '+ y + ')');
+      $('#offset_info').text(assemble_info_text(x,y));
     } else {
       $('#offset_info').text('');
     }
