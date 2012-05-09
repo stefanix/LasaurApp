@@ -41,29 +41,6 @@
 })(jQuery); 
 
 
-connect_btn_state = false;
-connect_btn_in_hover = false;
-function connect_btn_set_state(is_connected) {
-  if (is_connected) {
-    connect_btn_state = true
-    if (!connect_btn_in_hover) {
-      $("#connect_btn").html("Connected");
-    }
-    $("#connect_btn").removeClass("btn-danger");
-    $("#connect_btn").removeClass("btn-warning");
-    $("#connect_btn").addClass("btn-success");      
-  } else {
-		connect_btn_state = false
-    if (!connect_btn_in_hover) {
-      $("#connect_btn").html("Disconnected");
-    }		
-    $("#connect_btn").removeClass("btn-danger");
-	  $("#connect_btn").removeClass("btn-success");
-	  $("#connect_btn").addClass("btn-warning");     
-  }
-}
-
-
 function send_gcode_line(gcode, success_msg, error_msg) {
 	$.get('/gcode/'+ gcode, function(data) {
 		if (data != "") {
@@ -226,7 +203,7 @@ function mapConstrainIntesity(intens) {
 
 
 $(document).ready(function(){
-  
+    
   $('#log_toggle').toggle(function() {
     $("#log_content").fadeIn('slow');
   	$("#log_toggle").html("hide log");
@@ -238,6 +215,28 @@ $(document).ready(function(){
 
 
   //////// serial connect button ////////
+  var connect_btn_state = false;
+  var connect_btn_in_hover = false;
+  function connect_btn_set_state(is_connected) {
+    if (is_connected) {
+      connect_btn_state = true
+      if (!connect_btn_in_hover) {
+        $("#connect_btn").html("Connected");
+      }
+      $("#connect_btn").removeClass("btn-danger");
+      $("#connect_btn").removeClass("btn-warning");
+      $("#connect_btn").addClass("btn-success");      
+    } else {
+  		connect_btn_state = false
+      if (!connect_btn_in_hover) {
+        $("#connect_btn").html("Disconnected");
+      }		
+      $("#connect_btn").removeClass("btn-danger");
+  	  $("#connect_btn").removeClass("btn-success");
+  	  $("#connect_btn").addClass("btn-warning");     
+    }
+  }
+    
   // get serial state
   var connectiontimer = setInterval(function() {
     $.ajax({
@@ -320,33 +319,20 @@ $(document).ready(function(){
   	e.preventDefault();		
   });
   
-  $("#find_home").click(function(e){
+  $("#homing_cycle").tooltip({placement:'bottom', delay: {show:500, hide:100}});
+  $("#homing_cycle").click(function(e){
   	var gcode = '~G30\n'  // ~ is the cancel stop state char
   	$().uxmessage('notice', gcode);	
   	send_gcode_line(gcode, "Homing cycle ...", "Serial not connected.");
   	e.preventDefault();		
   });
 
+  $("#go_to_origin").tooltip({placement:'bottom', delay: {show:500, hide:100}});
   $("#go_to_origin").click(function(e){
   	var gcode = 'G0X0Y0F16000\n'
   	$().uxmessage('notice', gcode);	
   	send_gcode_line(gcode, "Going to origin ...", "Serial not connected.");
   	e.preventDefault();		
-  });
-  
-  $("#set_custom_offset").click(function(e){
-  	var gcode = 'G10L20P1\nG55\n'
-  	$().uxmessage('notice', gcode);	
-  	send_gcode_line(gcode, "Setting custom offset ...", "Serial not connected.");
-  	e.preventDefault();		
-  });
-  
-  $("#reset_custom_offset").click(function(e){
-  	var gcode = 'G54\n'
-  	$().uxmessage('notice', gcode);
-  	send_gcode_line(gcode, "Using table offset ...", "Serial not connected.");
-  	e.preventDefault();		
-  });
-  
+  });  
   
 });  // ready

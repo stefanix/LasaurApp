@@ -1,29 +1,60 @@
 $(document).ready(function(){
 
+  var gcode_coordinate_offset = undefined;
+  
+  function assemble_and_send_gcode(x,y) {
+    	var g0_or_g1 = 'G0'
+    	if($('#feed_btn').hasClass("active")){
+    		g0_or_g1 = 'G1';
+    	}
+    	var feedrate = mapConstrainFeedrate($("#feedrate_field" ).val());
+    	var intensity =  mapConstrainIntesity($( "#intensity_field" ).val());
+    	var gcode = 'S'+ intensity + '\n' + g0_or_g1 + ' X' + 2*x + 'Y' + 2*y + 'F' + feedrate + '\nS0\n';	
+      $().uxmessage('notice', gcode);
+    	send_gcode_line(gcode, "Motion request sent.", "Serial not connected.");    
+  }
+
   $("#cutting_area").click(function(e) {
-  	var offset = $('#cutting_area').offset();
-  	var x = 2*(e.pageX - offset.left);
-  	var y = 2*(e.pageY - offset.top);
-	
-  	var g0_or_g1 = 'G0'
-  	if($('#feed_btn').hasClass("active")){
-  		g0_or_g1 = 'G1';
-  	}
-  	var feedrate = mapConstrainFeedrate($("#feedrate_field" ).val());
-  	var intensity =  mapConstrainIntesity($( "#intensity_field" ).val());
-  	var gcode = 'S'+ intensity + '\nG54\n' + g0_or_g1 + ' X' + x + 'Y' + y + 'F' + feedrate + '\nS0\n';
-	
-	
-  	// send new pos to server, on success move graphics
-    // $().uxmessage('notice', gcode);
-  	send_gcode_line(gcode, "Motion request sent.", "Serial not connected.")	
+  	var offset = $(this).offset();
+  	var x = (e.pageX - offset.left);
+  	var y = (e.pageY - offset.top);
+
+    if(e.shiftKey) {
+      //// set offset
+      $("#offset_area").show();
+      $("#offset_area").animate({
+        opacity: 1.0,
+        left: x,
+        top: y,
+        width: 609-x,
+        height: 304-y
+      }, 200 );
+      gcode_coordinate_offset = [x,y];
+      var gcode = 'G10 L2 P1 X'+ 2*x + ' Y' + 2*y + '\nG55\n';
+      send_gcode_line(gcode, "Offset set.", "Serial not connected.");
+  		$(this).css('border', '1px dashed #aaaaaa');
+  		$("#offset_area").css('border', '1px dashed #ff0000');
+    } else if (e.altKey) {
+      //// reset offset
+      $("#offset_area").hide();
+      $('#offset_area').css({'opacity':0.0, left:0, top:0});
+      gcode_coordinate_offset = undefined;
+  		$(this).css('border', '1px dashed #ff0000');
+  		$("#offset_area").css('border', '1px dashed #aaaaaa');
+      send_gcode_line('G54\n', "Offset reset.", "Serial not connected.");  		
+    } else if (!gcode_coordinate_offset) {	
+      assemble_and_send_gcode(x,y);
+    }
+    return false;
   });
 
 
   $("#cutting_area").hover(
     function () {
-  		$(this).css('border', '1px dashed #ff0000');
-  		$(this).css('cursor', 'crosshair');
+      if (!gcode_coordinate_offset) {
+    		$(this).css('border', '1px dashed #ff0000');
+    	}
+    	$(this).css('cursor', 'crosshair');
     },
     function () {
   		$(this).css('border', '1px dashed #aaaaaa');
@@ -35,22 +66,43 @@ $(document).ready(function(){
   $("#cutting_area").mousemove(function (e) {
   	var offset = $(this).offset();
   	var x = 2*(e.pageX - offset.left);
-  	var y = 2*(e.pageY - offset.top);    
-  	var move_or_cut = 'move';
-  	if($('#feed_btn').hasClass("active")){
-  		move_or_cut = 'cut';
-  	}
-  	var feedrate = mapConstrainFeedrate($( "#feedrate_field" ).val());
-  	var intensity =  mapConstrainIntesity($( "#intensity_field" ).val());
-  	var coords_text;
-  	if (move_or_cut == 'cut') {
-  	  coords_text = move_or_cut + ' to (' + x + ', '+ y + ') at ' + feedrate/60 + 'mm/sec and ' + Math.round(intensity/2.55) + '% intensity';
-  	} else {
-  	  coords_text = move_or_cut + ' to (' + x + ', '+ y + ') at ' + feedrate/60 + 'mm/sec'
-  	}
+  	var y = 2*(e.pageY - offset.top);
+  	if (!gcode_coordinate_offset) {
+    	var move_or_cut = 'move';
+    	if($('#feed_btn').hasClass("active")){
+    		move_or_cut = 'cut';
+    	}
+    	var feedrate = mapConstrainFeedrate($( "#feedrate_field" ).val());
+    	var intensity =  mapConstrainIntesity($( "#intensity_field" ).val());
+    	var coords_text;
+    	if (move_or_cut == 'cut') {
+    	  coords_text = move_or_cut + ' to (' + x + ', '+ y + ') at ' + feedrate/60 + 'mm/sec and ' + Math.round(intensity/2.55) + '% intensity';
+    	} else {
+    	  coords_text = move_or_cut + ' to (' + x + ', '+ y + ') at ' + feedrate/60 + 'mm/sec'
+    	}
+    } else {
+      coords_text = '(' + x + ', '+ y + ')'
+    }
     $('#coordinates_info').text(coords_text);
-  });  
+  });
+  
+  
+  $("#offset_area").click(function(e) { 
+    if(!e.shiftKey) {
+    	var offset = $(this).offset();
+    	var x = (e.pageX - offset.left);
+    	var y = (e.pageY - offset.top);     
+      assemble_and_send_gcode(x,y);
+    }
+  });
 
+  $("#offset_area").mousemove(function (e) {
+  	var offset = $(this).offset();
+  	var x = 2*(e.pageX - offset.left);
+  	var y = 2*(e.pageY - offset.top);
+    $('#offset_info').text('(' + x + ', '+ y + ')');
+  });
+  
   // function moveto (x, y) {
   //  $('#y_cart').animate({  
   //    top: y - 8.5 - 6

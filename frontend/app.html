@@ -30,19 +30,11 @@
 					<span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
 				</a>
 				<button id="connect_btn" class="btn btn-warning pull-right" type="submit">Disconnected</button>
-				
-		    <div class="btn-group pull-right" style="margin-right:10px">
-			    <button id="cancel_btn" class="btn" type="submit">Cancel</button>
-			    <button class="btn dropdown-toggle" data-toggle="dropdown">
-				    <span class="caret"></span>
-			    </button>
-			    <ul class="dropdown-menu">
-				    <li><a id="find_home" href="#">Homing</a></li>
-				    <li><a id="set_custom_offset" href="#">Set Offset</a></li>
-				    <li><a id="reset_custom_offset" href="#">Reset Offset</a></li>
-			    </ul>
-		    </div>								
-				
+				<div class="btn-group pull-right">
+					<button id="go_to_origin" class="btn" type="submit" title="move to origin">(0,0)</i></button>
+					<button id="homing_cycle" class="btn" type="submit" title="run homing cycle, find table origin"><i class="icon-home"></i></button>
+					<button id="cancel_btn" class="btn" type="submit">Cancel</button>
+				</div>		
 				<a class="brand" href="#" style="color:#666666"><img src="/img/lasersaur-dino-brand.png" style="margin-right:6px">LasaurApp</a>
 				<div class="nav-collapse">
 					<ul class="nav">
@@ -201,8 +193,11 @@
 
 							<div id="tab_mover" class="tab-pane well" style="width:610px; height:560px; margin-left:0px">
 								<div class="row" style="margin-left:0px">
-									<div id="cutting_area" style="width:609px; height:304px; border:1px dashed #aaaaaa;">
-										<div id="coordinates_info"style="margin:4px"></div>
+									<div id="cutting_area" style="position:relative; width:610px; height:305px; border:1px dashed #aaaaaa;">
+										<div id="coordinates_info" style="margin:4px"></div>
+										<div id="offset_area" style="display:none; position:absolute; top:100px; left:100px; width:100px; height:100px; border-top:1px dashed #aaaaaa; border-left:1px dashed #aaaaaa">
+											<div id="offset_info" style="margin:4px"></div>
+										</div>
 									</div>	
 								</div>
 								<div class="row" style="width:475px; margin-left:auto; margin-right:auto; margin-top:20px">
@@ -210,8 +205,8 @@
 										<button id="seek_btn" class="btn active">Move</button>
 										<button id="feed_btn" class="btn">Cut</button>
 									</div>
-									<div id="intensity_input_div" class="input-prepend pull-left" style="margin-left:8px;">
-										<span class="add-on" style="margin-right:-5px; margin-bottom:9px">%</span>
+									<div id="intensity_input_div" class="input-prepend pull-left" style="margin-left:8px; margin-top:1px;">
+										<span class="add-on" style="margin-right:-5px;">%</span>
 										<input id="intensity_field" type="textfield" value="0" style="width:26px; display:none">
 										<input id="intensity_field_disabled" type="textfield" class="disabled" disabled="" value="0" style="width:26px;">
 									</div>									
@@ -220,9 +215,9 @@
 										<button id="feedrate_btn_medium" class="btn">medium</button>
 										<button id="feedrate_btn_fast" class="btn active">fast</button>
 									</div>
-									<div class="input-append pull-right" style="margin-right:8px;">
+									<div class="input-append pull-right" style="margin-right:8px; margin-top:1px;">
 										<input id="feedrate_field" type="textfield" value="280" style="width:26px;">
-										<span class="add-on" style="margin-left:-5px; margin-bottom:9px">mm/sec</span>
+										<span class="add-on" style="margin-left:-5px;">mm/sec</span>
 									</div>										
 									
 								</div>
