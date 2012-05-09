@@ -131,8 +131,8 @@ $(document).ready(function(){
   $("#offset_area").mousemove(function (e) {
     if(!e.shiftKey) {
     	var offset = $(this).offset();
-    	var x = 2*(e.pageX - offset.left);
-    	var y = 2*(e.pageY - offset.top);
+    	var x = (e.pageX - offset.left);
+    	var y = (e.pageY - offset.top);
       $('#offset_info').text(assemble_info_text(x,y));
     } else {
       $('#offset_info').text('');
