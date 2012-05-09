@@ -261,14 +261,14 @@ def serial_handler(connect):
         return ""
         
 
-@route('/gcode/:gcode_line')
-def gcode_handler(gcode_line):
-    if SerialManager.is_connected():    
-        print gcode_line
-        SerialManager.queue_for_sending(gcode_line)
-        return "Queued for sending."
-    else:
-        return ""
+# @route('/gcode/:gcode_line')
+# def gcode_handler(gcode_line):
+#     if SerialManager.is_connected():    
+#         print gcode_line
+#         SerialManager.queue_for_sending(gcode_line)
+#         return "Queued for sending."
+#     else:
+#         return ""
 
 @route('/gcode', method='POST')
 def gcode_submit_handler():

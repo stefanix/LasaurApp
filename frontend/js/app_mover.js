@@ -1,5 +1,6 @@
 $(document).ready(function(){
 
+  var isDragging = false;
   var gcode_coordinate_offset = undefined;
   
   function assemble_and_send_gcode(x,y) {
@@ -10,8 +11,8 @@ $(document).ready(function(){
     	var feedrate = mapConstrainFeedrate($("#feedrate_field" ).val());
     	var intensity =  mapConstrainIntesity($( "#intensity_field" ).val());
     	var gcode = 'S'+ intensity + '\n' + g0_or_g1 + ' X' + 2*x + 'Y' + 2*y + 'F' + feedrate + '\nS0\n';	
-      $().uxmessage('notice', gcode);
-    	send_gcode_line(gcode, "Motion request sent.", "Serial not connected.");    
+      // $().uxmessage('notice', gcode);
+    	send_gcode(gcode, "Motion request sent.", "Serial not connected.");    
   }
   
   function assemble_info_text(x,y) {
@@ -30,6 +31,12 @@ $(document).ready(function(){
   	}
   	return coords_text;
   }
+  
+  $("#cutting_area").mousedown(function() {
+    isDragging = true;
+  }).mouseup(function() {
+    isDragging = false;
+  });  
 
   $("#cutting_area").click(function(e) {
   	var offset = $(this).offset();
@@ -48,7 +55,7 @@ $(document).ready(function(){
       }, 200 );
       gcode_coordinate_offset = [x,y];
       var gcode = 'G10 L2 P1 X'+ 2*x + ' Y' + 2*y + '\nG55\n';
-      send_gcode_line(gcode, "Offset set.", "Serial not connected.");
+      send_gcode(gcode, "Offset set.", "Serial not connected.");
   		$(this).css('border', '1px dashed #aaaaaa');
   		$("#offset_area").css('border', '1px dashed #ff0000');
     } else if (!gcode_coordinate_offset) {	
@@ -62,7 +69,7 @@ $(document).ready(function(){
         gcode_coordinate_offset = undefined;
     		$(this).css('border', '1px dashed #ff0000');
     		$("#offset_area").css('border', '1px dashed #aaaaaa');
-        send_gcode_line('G54\n', "Offset reset.", "Serial not connected.");
+        send_gcode('G54\n', "Offset reset.", "Serial not connected.");
         $('#coordinates_info').text('');
       }
     }
@@ -91,6 +98,9 @@ $(document).ready(function(){
   	if (!gcode_coordinate_offset) {
   	  if(!e.shiftKey) {
         coords_text = assemble_info_text(x,y);
+        if (e.altKey &&isDragging) {
+            assemble_and_send_gcode(x,y);
+        }
       } else {
         coords_text = 'set offset to (' + 2*x + ', '+ 2*y + ')';
       }
@@ -179,20 +189,20 @@ $(document).ready(function(){
   
   //// jog buttons
   $("#jog_up_btn").click(function(e) {
-    var gcode = 'G91\nG0Y-10F10000\nG90\n';
-    send_gcode_line(gcode, "Moving Up ...", "Serial not connected.")	
+    var gcode = 'G91\nG0Y-10F6000\nG90\n';
+    send_gcode(gcode, "Moving Up ...", "Serial not connected.")	
   });   
   $("#jog_left_btn").click(function(e) {
-    var gcode = 'G91\nG0X-10F10000\nG90\n';
-    send_gcode_line(gcode, "Moving Left ...", "Serial not connected.")	
+    var gcode = 'G91\nG0X-10F6000\nG90\n';
+    send_gcode(gcode, "Moving Left ...", "Serial not connected.")	
   });   
   $("#jog_right_btn").click(function(e) {
-    var gcode = 'G91\nG0X10F10000\nG90\n';
-    send_gcode_line(gcode, "Moving Right ...", "Serial not connected.")	
+    var gcode = 'G91\nG0X10F6000\nG90\n';
+    send_gcode(gcode, "Moving Right ...", "Serial not connected.")	
   });
   $("#jog_down_btn").click(function(e) {
-    var gcode = 'G91\nG0Y10F10000\nG90\n';
-    send_gcode_line(gcode, "Moving Down ...", "Serial not connected.")	
+    var gcode = 'G91\nG0Y10F6000\nG90\n';
+    send_gcode(gcode, "Moving Down ...", "Serial not connected.")	
   });
       
 });  // ready

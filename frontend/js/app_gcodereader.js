@@ -137,10 +137,10 @@ GcodeReader = {
   getBboxGcode : function() {
     var glist = [];
     glist.push("G00X"+this.bbox[0].toFixed(3)+"Y"+this.bbox[1].toFixed(3)+"\n");
-    glist.push("G01X"+this.bbox[2].toFixed(3)+"Y"+this.bbox[1].toFixed(3)+"\n");
-    glist.push("G01X"+this.bbox[2].toFixed(3)+"Y"+this.bbox[3].toFixed(3)+"\n");
-    glist.push("G01X"+this.bbox[0].toFixed(3)+"Y"+this.bbox[3].toFixed(3)+"\n");
-    glist.push("G01X"+this.bbox[0].toFixed(3)+"Y"+this.bbox[1].toFixed(3)+"\n");
+    glist.push("G00X"+this.bbox[2].toFixed(3)+"Y"+this.bbox[1].toFixed(3)+"\n");
+    glist.push("G00X"+this.bbox[2].toFixed(3)+"Y"+this.bbox[3].toFixed(3)+"\n");
+    glist.push("G00X"+this.bbox[0].toFixed(3)+"Y"+this.bbox[3].toFixed(3)+"\n");
+    glist.push("G00X"+this.bbox[0].toFixed(3)+"Y"+this.bbox[1].toFixed(3)+"\n");
     return glist.join('');
   }   
   

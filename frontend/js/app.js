@@ -41,8 +41,8 @@
 })(jQuery); 
 
 
-function send_gcode_line(gcode, success_msg, error_msg) {
-	$.get('/gcode/'+ gcode, function(data) {
+function send_gcode(gcode, success_msg, error_msg) {
+	$.post("/gcode", {'gcode_program':gcode}, function(data) {
 		if (data != "") {
 			$().uxmessage('success', success_msg);
 		} else {
@@ -310,11 +310,11 @@ $(document).ready(function(){
   $("#cancel_btn").click(function(e){
   	var gcode = '!\n'  // ! is enter stop state char
   	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
-  	send_gcode_line(gcode, "Stopping ...", "Serial not connected.");	
+  	send_gcode(gcode, "Stopping ...", "Serial not connected.");	
 	  var delayedresume = setTimeout(function() {
     	var gcode = '~\nG0X0Y0F20000\n'  // ~ is resume char
     	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
-    	send_gcode_line(gcode, "Resetting ...", "Serial not connected.");
+    	send_gcode(gcode, "Resetting ...", "Serial not connected.");
 	  }, 1000);
   	e.preventDefault();		
   });
@@ -323,7 +323,7 @@ $(document).ready(function(){
   $("#homing_cycle").click(function(e){
   	var gcode = '~G30\n'  // ~ is the cancel stop state char
   	$().uxmessage('notice', gcode);	
-  	send_gcode_line(gcode, "Homing cycle ...", "Serial not connected.");
+  	send_gcode(gcode, "Homing cycle ...", "Serial not connected.");
   	e.preventDefault();		
   });
 
@@ -331,7 +331,7 @@ $(document).ready(function(){
   $("#go_to_origin").click(function(e){
   	var gcode = 'G0X0Y0F16000\n'
   	$().uxmessage('notice', gcode);	
-  	send_gcode_line(gcode, "Going to origin ...", "Serial not connected.");
+  	send_gcode(gcode, "Going to origin ...", "Serial not connected.");
   	e.preventDefault();		
   });  
   

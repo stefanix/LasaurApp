@@ -73,6 +73,7 @@ $(document).ready(function(){
   });
 
 
+  $('#gcode_bbox_submit').tooltip();
   $("#gcode_bbox_submit").click(function(e) {
     var gcodedata = $('#gcode_program').val();
     GcodeReader.parse(gcodedata, 1);
@@ -81,15 +82,14 @@ $(document).ready(function(){
     var footer = "G00X0Y0F16000\n%"
     // save_and_add_to_job_queue($('#gcode_name').val() + 'BBOX', header + gcode_bbox + footer);  // for debugging
     send_gcode_to_backend(header + gcode_bbox + footer);
+    return false;
   });
 
+  $('#gcode_save_to_queue').tooltip();
   $("#gcode_save_to_queue").click(function(e) {
     save_and_add_to_job_queue($.trim($('#gcode_name').val()), $('#gcode_program').val());
     return false;
   });
-
-  $('#gcode_bbox_submit').tooltip();
-  $('#gcode_save_to_queue').tooltip();
 
 
   // G-Code Canvas Preview

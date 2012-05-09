@@ -6,6 +6,8 @@ TODO
 - jog control, firmware seem to ignore G90 for relative motion
 - connection button status
 - error reporting in ui
+- offset feature, G0F10000 causes wild pos after setting offset
+- cancel button fail on long lines
 
 BUG
 ---
