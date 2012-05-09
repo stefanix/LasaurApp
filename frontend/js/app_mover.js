@@ -34,16 +34,20 @@ $(document).ready(function(){
       send_gcode_line(gcode, "Offset set.", "Serial not connected.");
   		$(this).css('border', '1px dashed #aaaaaa');
   		$("#offset_area").css('border', '1px dashed #ff0000');
-    } else if (e.altKey) {
-      //// reset offset
-      $("#offset_area").hide();
-      $('#offset_area').css({'opacity':0.0, left:0, top:0});
-      gcode_coordinate_offset = undefined;
-  		$(this).css('border', '1px dashed #ff0000');
-  		$("#offset_area").css('border', '1px dashed #aaaaaa');
-      send_gcode_line('G54\n', "Offset reset.", "Serial not connected.");  		
     } else if (!gcode_coordinate_offset) {	
       assemble_and_send_gcode(x,y);
+    } else {
+      var pos = $("#offset_area").position()
+      if ((x < pos.left) || (y < pos.top)) {       
+        //// reset offset
+        $("#offset_area").hide();
+        $('#offset_area').css({'opacity':0.0, left:0, top:0});
+        gcode_coordinate_offset = undefined;
+    		$(this).css('border', '1px dashed #ff0000');
+    		$("#offset_area").css('border', '1px dashed #aaaaaa');
+        send_gcode_line('G54\n', "Offset reset.", "Serial not connected.");
+        $('#coordinates_info').text('');
+      }
     }
     return false;
   });
@@ -65,8 +69,8 @@ $(document).ready(function(){
   
   $("#cutting_area").mousemove(function (e) {
   	var offset = $(this).offset();
-  	var x = 2*(e.pageX - offset.left);
-  	var y = 2*(e.pageY - offset.top);
+  	var x = (e.pageX - offset.left);
+  	var y = (e.pageY - offset.top);
   	if (!gcode_coordinate_offset) {
     	var move_or_cut = 'move';
     	if($('#feed_btn').hasClass("active")){
@@ -76,12 +80,21 @@ $(document).ready(function(){
     	var intensity =  mapConstrainIntesity($( "#intensity_field" ).val());
     	var coords_text;
     	if (move_or_cut == 'cut') {
-    	  coords_text = move_or_cut + ' to (' + x + ', '+ y + ') at ' + feedrate/60 + 'mm/sec and ' + Math.round(intensity/2.55) + '% intensity';
+    	  coords_text = move_or_cut + ' to (' + 2*x + ', '+ 2*y + ') at ' + feedrate/60 + 'mm/sec and ' + Math.round(intensity/2.55) + '% intensity';
     	} else {
-    	  coords_text = move_or_cut + ' to (' + x + ', '+ y + ') at ' + feedrate/60 + 'mm/sec'
+    	  coords_text = move_or_cut + ' to (' + 2*x + ', '+ 2*y + ') at ' + feedrate/60 + 'mm/sec'
     	}
     } else {
-      coords_text = '(' + x + ', '+ y + ')'
+      if(e.shiftKey) {
+        coords_text = '(' + x + ', '+ y + ')'
+      } else {
+        var pos = $("#offset_area").position()
+        if ((x < pos.left) || (y < pos.top)) {           
+          coords_text = 'click to reset offset';
+        } else {
+          coords_text = '';
+        }
+      }
     }
     $('#coordinates_info').text(coords_text);
   });
@@ -93,14 +106,27 @@ $(document).ready(function(){
     	var x = (e.pageX - offset.left);
     	var y = (e.pageY - offset.top);     
       assemble_and_send_gcode(x,y);
+      return false
     }
   });
 
+  $("#offset_area").hover(
+    function () {
+    },
+    function () {
+  		$('#offset_info').text('');		
+    }
+  );
+  
   $("#offset_area").mousemove(function (e) {
-  	var offset = $(this).offset();
-  	var x = 2*(e.pageX - offset.left);
-  	var y = 2*(e.pageY - offset.top);
-    $('#offset_info').text('(' + x + ', '+ y + ')');
+    if(!e.shiftKey) {
+    	var offset = $(this).offset();
+    	var x = 2*(e.pageX - offset.left);
+    	var y = 2*(e.pageY - offset.top);
+      $('#offset_info').text('(' + x + ', '+ y + ')');
+    } else {
+      $('#offset_info').text('');
+    }
   });
   
   // function moveto (x, y) {
