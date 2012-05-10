@@ -329,8 +329,13 @@ $(document).ready(function(){
 
   $("#go_to_origin").tooltip({placement:'bottom', delay: {show:500, hide:100}});
   $("#go_to_origin").click(function(e){
-  	var gcode = 'G0X0Y0F16000\n'
-  	$().uxmessage('notice', gcode);	
+    var gcode;
+    if(e.shiftKey) {
+    	// also reset offset
+    	reset_offset();
+    }
+    gcode = 'G0X0Y0F16000\n'
+    // $().uxmessage('notice', gcode);  
   	send_gcode(gcode, "Going to origin ...", "Serial not connected.");
   	e.preventDefault();		
   });  

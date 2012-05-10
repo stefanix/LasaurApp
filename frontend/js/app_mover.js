@@ -1,3 +1,15 @@
+
+function reset_offset() {
+  $("#offset_area").hide();
+  $('#offset_area').css({'opacity':0.0, left:0, top:0});
+  gcode_coordinate_offset = undefined;
+	$("#cutting_area").css('border', '1px dashed #ff0000');
+	$("#offset_area").css('border', '1px dashed #aaaaaa');
+  send_gcode('G54\n', "Offset reset.", "Serial not connected.");
+  $('#coordinates_info').text('');
+}
+
+  
 $(document).ready(function(){
 
   var isDragging = false;
@@ -32,6 +44,7 @@ $(document).ready(function(){
   	return coords_text;
   }
   
+  
   $("#cutting_area").mousedown(function() {
     isDragging = true;
   }).mouseup(function() {
@@ -64,13 +77,7 @@ $(document).ready(function(){
       var pos = $("#offset_area").position()
       if ((x < pos.left) || (y < pos.top)) {       
         //// reset offset
-        $("#offset_area").hide();
-        $('#offset_area').css({'opacity':0.0, left:0, top:0});
-        gcode_coordinate_offset = undefined;
-    		$(this).css('border', '1px dashed #ff0000');
-    		$("#offset_area").css('border', '1px dashed #aaaaaa');
-        send_gcode('G54\n', "Offset reset.", "Serial not connected.");
-        $('#coordinates_info').text('');
+        reset_offset();
       }
     }
     return false;
