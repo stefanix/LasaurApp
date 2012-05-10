@@ -321,9 +321,10 @@ $(document).ready(function(){
   
   $("#homing_cycle").tooltip({placement:'bottom', delay: {show:500, hide:100}});
   $("#homing_cycle").click(function(e){
-  	var gcode = '~G30\n'  // ~ is the cancel stop state char
+  	var gcode = '~G30\nG54\n'  // ~ is the cancel stop state char
   	$().uxmessage('notice', gcode);	
   	send_gcode(gcode, "Homing cycle ...", "Serial not connected.");
+  	reset_offset();
   	e.preventDefault();		
   });
 
