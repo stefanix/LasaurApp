@@ -187,10 +187,10 @@ function load_into_gcode_widget(gcode, name) {
 
 
 function mapConstrainFeedrate(rate) {
-  rate = parseFloat(rate);
+  rate = parseInt(rate);
   if (rate < .1) {rate = .1;}
-  else if (rate > 400) {rate = 400;}
-  return Math.round(rate * 60).toString();
+  else if (rate > 24000) {rate = 24000;}
+  return rate.toString();
 }
   
 function mapConstrainIntesity(intens) {
@@ -321,7 +321,7 @@ $(document).ready(function(){
   
   $("#homing_cycle").tooltip({placement:'bottom', delay: {show:500, hide:100}});
   $("#homing_cycle").click(function(e){
-  	var gcode = '~G30\nG54\n'  // ~ is the cancel stop state char
+  	var gcode = '~G30\n'  // ~ is the cancel stop state char
   	$().uxmessage('notice', gcode);	
   	send_gcode(gcode, "Homing cycle ...", "Serial not connected.");
   	reset_offset();

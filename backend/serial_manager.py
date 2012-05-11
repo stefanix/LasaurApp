@@ -144,6 +144,8 @@ class SerialManagerClass:
                         if line.find('ok') > -1:
                             sys.stdout.write(".")  # print w/ newline
                             sys.stdout.flush()
+                        # else if line.find('error:') > -1:
+                        #     
                         else:
                             print "\ngrbl: " + line
                 

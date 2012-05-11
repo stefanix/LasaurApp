@@ -1,4 +1,6 @@
 
+var gcode_coordinate_offset = undefined;
+
 function reset_offset() {
   $("#offset_area").hide();
   $('#offset_area').css({'opacity':0.0, left:0, top:0});
@@ -13,7 +15,6 @@ function reset_offset() {
 $(document).ready(function(){
 
   var isDragging = false;
-  var gcode_coordinate_offset = undefined;
   
   function assemble_and_send_gcode(x,y) {
     	var g0_or_g1 = 'G0'
@@ -37,9 +38,9 @@ $(document).ready(function(){
   	var intensity =  mapConstrainIntesity($( "#intensity_field" ).val());
   	var coords_text;
   	if (move_or_cut == 'cut') {
-  	  coords_text = move_or_cut + ' to (' + 2*x + ', '+ 2*y + ') at ' + feedrate/60 + 'mm/sec and ' + Math.round(intensity/2.55) + '% intensity';
+  	  coords_text = move_or_cut + ' to (' + 2*x + ', '+ 2*y + ') at ' + feedrate + 'mm/min and ' + Math.round(intensity/2.55) + '% intensity';
   	} else {
-  	  coords_text = move_or_cut + ' to (' + 2*x + ', '+ 2*y + ') at ' + feedrate/60 + 'mm/sec'
+  	  coords_text = move_or_cut + ' to (' + 2*x + ', '+ 2*y + ') at ' + feedrate + 'mm/min'
   	}
   	return coords_text;
   }
@@ -180,19 +181,25 @@ $(document).ready(function(){
   });   
   
   $("#feedrate_btn_slow").click(function(e) {
-    $( "#feedrate_field" ).val("8");
+    $( "#feedrate_field" ).val("600");
   });  
   $("#feedrate_btn_medium").click(function(e) {
-    $( "#feedrate_field" ).val("32");
+    $( "#feedrate_field" ).val("2000");
   });  
   $("#feedrate_btn_fast").click(function(e) {
-    $( "#feedrate_field" ).val("280");
+    $( "#feedrate_field" ).val("16000");
   });  
   $("#feedrate_field").focus(function(e) {
     $("#feedrate_btn_slow").removeClass('active');
     $("#feedrate_btn_medium").removeClass('active');
     $("#feedrate_btn_fast").removeClass('active');
-  }); 
+  });
+  
+  if ($("#feedrate_field" ).val() != 16000) {
+    $("#feedrate_btn_slow").removeClass('active');
+    $("#feedrate_btn_medium").removeClass('active');
+    $("#feedrate_btn_fast").removeClass('active');    
+  }
   
   //// jog buttons
   $("#jog_up_btn").click(function(e) {

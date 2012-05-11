@@ -1,13 +1,18 @@
 
 TODO
 -----
+- F unit?
+- 1,2,3 keys for selecting tabs
+- simi bug
+- shape order optimization
+- automatic recognition for svg72/svg90
+- better contrast for selected colors
 - default colors R,G,B to Pass 1,2,3
-- homing cycle, home button, offsets
-- jog control, firmware seem to ignore G90 for relative motion
 - connection button status
 - error reporting in ui
 - offset feature, G0F10000 causes wild pos after setting offset
 - cancel button fail on long lines
+- door open pause, still causes problems
 
 BUG
 ---

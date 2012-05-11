@@ -77,16 +77,18 @@
 									<textarea id="gcode_program" style="width:296px; font-size:0.8em; height:100px"></textarea>
 									<label>Preview</label>
 									<div><canvas id="preview_canvas" width="305px" height="153px" style="border:1px dashed #aaaaaa"></canvas></div>
-							    <div class="btn-group" style="margin-top:20px">
-								    <button id="gcode_submit" class="btn btn-large">Send to Lasersaur</button>
-								    <button id="gcode_bbox_submit" class="btn btn-large" title="send bounding box to lasersaur" data-delay="500">
-									    <span class="icon-resize-full"></span>
-								    </button>
-								    <button id="gcode_save_to_queue" class="btn btn-large" title="save to queue" data-delay="500">
+									<div style="padding-top:20px">
+								    <div class="btn-group pull-left">
+									    <button id="gcode_submit" class="btn btn-large">Send to Lasersaur</button>
+									    <button id="gcode_bbox_submit" class="btn btn-large" title="send bounding box to lasersaur" data-delay="500">
+										    <span class="icon-resize-full"></span>
+									    </button>
+								    </div>
+								    <button id="gcode_save_to_queue" class="btn btn-large pull-right" title="save to queue" data-delay="500">
 											<span class="icon-plus-sign"></span>
 								    </button>
-							    </div>			
-							    <div id="progressbar" class="progress progress-striped" style="margin-top:20px">
+									</div>
+							    <div id="progressbar" class="progress progress-striped" style="margin-top:70px; clear:both">
 								    <div class="bar" style="width:0%;"></div>
 							    </div>
 								</form>
@@ -139,7 +141,7 @@
 											<form class="form-inline" style="margin-bottom:8px">												
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">F</span>
-													<input type="text" id="import_feedrate_1" value="8" title="feedrate 1-300mm/sec" style="width:26px" data-delay="500">
+													<input type="text" id="import_feedrate_1" value="600" title="feedrate 1-16000mm/min" style="width:36px" data-delay="500">
 												</div>
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">%</span>
@@ -153,7 +155,7 @@
 											<form class="form-inline" style="margin-bottom:8px">												
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">F</span>
-													<input type="text" id="import_feedrate_2" value="32" title="feedrate 1-300mm/sec" style="width:26px" data-delay="500">
+													<input type="text" id="import_feedrate_2" value="2000" title="feedrate 1-16000mm/min" style="width:36px" data-delay="500">
 												</div>
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">%</span>
@@ -167,7 +169,7 @@
 											<form class="form-inline" style="margin-bottom:8px">												
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">F</span>
-													<input type="text" id="import_feedrate_3" value="120" title="feedrate 1-300mm/sec" style="width:26px" data-delay="500">
+													<input type="text" id="import_feedrate_3" value="4000" title="feedrate 1-16000mm/min" style="width:36px" data-delay="500">
 												</div>
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">%</span>
@@ -186,8 +188,7 @@
 								
 						    <div class="alert" style="width:500px">
 							    <a class="close" data-dismiss="alert">×</a>
-							    <strong>Note!</strong> New feedrate range: 0-400mm/sec and laser intensity range: 0-100%.
-							    <br>To convert from the old range divide by 60 and 2.55, respectively.
+							    <strong>Note!</strong> New laser intensity range: 0-100%.
 						    </div>
 							</div> <!-- end of import tab -->							
 
@@ -216,8 +217,8 @@
 										<button id="feedrate_btn_fast" class="btn active">fast</button>
 									</div>
 									<div class="input-append pull-right" style="margin-right:8px; margin-top:1px;">
-										<input id="feedrate_field" type="textfield" value="280" style="width:26px;">
-										<span class="add-on" style="margin-left:-5px;">mm/sec</span>
+										<input id="feedrate_field" type="textfield" value="16000" style="width:36px;">
+										<span class="add-on" style="margin-left:-5px;">mm/min</span>
 									</div>										
 									
 								</div>
