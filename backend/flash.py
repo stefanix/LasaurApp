@@ -11,7 +11,7 @@ def flash_upload(serial_port, resources_dir):
     CLOCK = "16000000"
     PROGRAMMER = "avrisp"
     BITRATE = "115200"
-    FIRMWARE = os.path.join(data_root, "firmware/LasaurGrbl.hex")
+    FIRMWARE = os.path.join(resources_dir, "firmware/LasaurGrbl.hex")
  
     if sys.platform == "darwin":  # OSX
         AVRDUDEAPP    = os.path.join(resources_dir, "firmware/tools_osx/avrdude")

@@ -322,21 +322,7 @@ def queue_pct_done_handler():
 #         return "Welcome %s! You are now logged out." % username
 #     else:
 #         return "Already logged out."  
-
-
-def run_helper():
-    if args.debug:
-        debug(True)
-        if hasattr(sys, "_MEIPASS"):
-            print "Data root is: " + sys._MEIPASS             
-        print "Persistent storage root is: " + storage_dir()
-    if args.build_and_flash:
-        flash_upload(SERIAL_PORT, resources_dir())
-    else:
-        if args.host_on_all_interfaces:
-            run_with_callback('')
-        else:
-            run_with_callback('127.0.0.1')      
+  
 
 
 ### Setup Argument Parser
@@ -355,6 +341,21 @@ argparser.add_argument('-d', '--debug', dest='debug', action='store_true',
 args = argparser.parse_args()
 
 
+
+def run_helper():
+    if args.debug:
+        debug(True)
+        if hasattr(sys, "_MEIPASS"):
+            print "Data root is: " + sys._MEIPASS             
+        print "Persistent storage root is: " + storage_dir()
+    if args.build_and_flash:
+        flash_upload(SERIAL_PORT, resources_dir())
+    else:
+        if args.host_on_all_interfaces:
+            run_with_callback('')
+        else:
+            run_with_callback('127.0.0.1')    
+            
 
 
 if args.list_serial_devices:
