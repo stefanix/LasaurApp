@@ -324,6 +324,21 @@ def queue_pct_done_handler():
 #         return "Already logged out."  
 
 
+def run_helper():
+    if args.debug:
+        debug(True)
+        if hasattr(sys, "_MEIPASS"):
+            print "Data root is: " + sys._MEIPASS             
+        print "Persistent storage root is: " + storage_dir()
+    if args.build_and_flash:
+        flash_upload(SERIAL_PORT, resources_dir())
+    else:
+        if args.host_on_all_interfaces:
+            run_with_callback('')
+        else:
+            run_with_callback('127.0.0.1')      
+
+
 ### Setup Argument Parser
 argparser = argparse.ArgumentParser(description='Run LasaurApp.', prog='lasaurapp')
 argparser.add_argument('port', metavar='serial_port', nargs='?', default=False,
@@ -337,8 +352,6 @@ argparser.add_argument('-l', '--list', dest='list_serial_devices', action='store
                     default=False, help='list all serial devices currently connected')
 argparser.add_argument('-d', '--debug', dest='debug', action='store_true',
                     default=False, help='print more verbose for debugging')                    
-argparser.add_argument('-nh', '--no-hardware', dest='no_hardware', action='store_true',
-                    default=False, help='run without checking for hardware serial port')                    
 args = argparser.parse_args()
 
 
@@ -376,19 +389,8 @@ else:
         if SERIAL_PORT:
             print "Using serial device '"+ str(SERIAL_PORT) +"' by best guess."
     
-    if SERIAL_PORT or args.no_hardware:
-        if args.debug:
-            debug(True)
-            if hasattr(sys, "_MEIPASS"):
-                print "Data root is: " + sys._MEIPASS             
-            print "Persistent storage root is: " + storage_dir()
-        if args.build_and_flash:
-            flash_upload(SERIAL_PORT, resources_dir())
-        else:
-            if args.host_on_all_interfaces:
-                run_with_callback('')
-            else:
-                run_with_callback('127.0.0.1')  
+    if SERIAL_PORT:
+        run_helper()
     else:         
         print "-----------------------------------------------------------------------------"
         print "WARNING: LasaurApp doesn't know what serial device to connect to!"
@@ -400,8 +402,10 @@ else:
         print "    with the serial port string on the first line."
         print "(3) Best guess. On Linux and OSX the app can guess the serial name by"
         print "    choosing the first device it finds starting with '"+ GUESS_PPREFIX +"'."
-        print "NOTE: If you want to test without a Lasersaur run with -nh option."        
         print "-----------------------------------------------------------------------------"
+        ret = raw_input('Run anyways (y/n)? ')
+        if ret in 'yY' and ret != '':
+            run_helper()
 
         
 
