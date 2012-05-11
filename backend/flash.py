@@ -6,7 +6,7 @@
 import os, sys
 
 
-def flash_upload(serial_port, data_root):
+def flash_upload(serial_port, resources_dir):
     DEVICE = "atmega328p"
     CLOCK = "16000000"
     PROGRAMMER = "avrisp"
@@ -14,16 +14,16 @@ def flash_upload(serial_port, data_root):
     FIRMWARE = os.path.join(data_root, "firmware/LasaurGrbl.hex")
  
     if sys.platform == "darwin":  # OSX
-        AVRDUDEAPP    = os.path.join(data_root, "firmware/tools_osx/avrdude")
-        AVRDUDECONFIG = os.path.join(data_root, "firmware/tools_osx/avrdude.conf")
+        AVRDUDEAPP    = os.path.join(resources_dir, "firmware/tools_osx/avrdude")
+        AVRDUDECONFIG = os.path.join(resources_dir, "firmware/tools_osx/avrdude.conf")
     
     elif sys.platform == "win32": # Windows
-        AVRDUDEAPP    = os.path.join(data_root, "firmware/tools_win/avrdude")
-        AVRDUDECONFIG = os.path.join(data_root, "firmware/tools_win/avrdude.conf")
+        AVRDUDEAPP    = os.path.join(resources_dir, "firmware/tools_win/avrdude")
+        AVRDUDECONFIG = os.path.join(resources_dir, "firmware/tools_win/avrdude.conf")
     
     elif sys.platform == "linux" or sys.platform == "linux2":  #Linux
-        AVRDUDEAPP    = os.path.join(data_root, "firmware/tools_linux/avrdude")
-        AVRDUDECONFIG = os.path.join(data_root, "firmware/tools_linux/avrdude.conf")
+        AVRDUDEAPP    = os.path.join(resources_dir, "firmware/tools_linux/avrdude")
+        AVRDUDECONFIG = os.path.join(resources_dir, "firmware/tools_linux/avrdude.conf")
               
     os.system('%(dude)s -c %(programmer)s -b %(bps)s -P %(port)s -p %(device)s -C %(dudeconf)s -B 10 -F -U flash:w:%(firmware)s:i' 
         % {'dude':AVRDUDEAPP, 'programmer':PROGRAMMER, 'bps':BITRATE, 'port':serial_port, 'device':DEVICE, 'dudeconf':AVRDUDECONFIG, 'firmware':FIRMWARE})

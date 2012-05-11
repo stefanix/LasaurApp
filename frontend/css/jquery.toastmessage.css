@@ -1,5 +1,5 @@
 .toast-container {
-	width: 300px;
+	width: 200px;
 	z-index: 9999;
 }
 
@@ -34,7 +34,7 @@
 
 .toast-item-close {
     background:url(../img/close.gif);
-    width:22px;
+    width:0px;  /* 0 to make disappear*/
     height:22px;
     position: absolute;
     top:7px;
@@ -44,9 +44,9 @@
 .toast-item-image {
     width:32px;
     height: 32px;
-    margin-left: 10px;
-    margin-top: 10px;
-    margin-right: 10px;
+    margin-left: 8px;
+    margin-top: 0px;
+    margin-right: 8px;
     float:left;
 }
 

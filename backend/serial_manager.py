@@ -67,10 +67,13 @@ class SerialManagerClass:
 
     def close(self):
         if self.device:
-            self.device.flushOutput()
-            self.device.flushInput()
-            self.device.close()
-            self.device = None
+            try:
+                self.device.flushOutput()
+                self.device.flushInput()
+                self.device.close()
+                self.device = None
+            except:
+                self.device = None
             return True
         else:
             return False
@@ -141,6 +144,8 @@ class SerialManagerClass:
                         if line.find('ok') > -1:
                             sys.stdout.write(".")  # print w/ newline
                             sys.stdout.flush()
+                        # else if line.find('error:') > -1:
+                        #     
                         else:
                             print "\ngrbl: " + line
                 

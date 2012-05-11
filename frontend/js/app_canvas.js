@@ -7,7 +7,6 @@ function Canvas(canvas_selector) {
   this.cx = $(canvas_selector)[0].getContext("2d");
   this.width = $(canvas_selector).width();
   this.height = $(canvas_selector).height();
-  //setInterval(draw, 10);
   
   this.bFill = true;
   this.vFill = "#ffffff";

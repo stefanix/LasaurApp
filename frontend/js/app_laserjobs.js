@@ -1,114 +1,111 @@
-$(document).ready(function(){
-  
-  $('#gcode_queue').show();
 
-  $('#library_placeholder').replaceWith($('#gcode_library'));
-  $('#gcode_library').show();
-
-
-  $('#gcode_library a').click(function(){		
-    preview_job($(this).next().text(), $(this).text())
-  });
-
-
-  $('#calibration_placeholder').replaceWith($('#gcode_for_calibration'));
-  $('#gcode_for_calibration').show();
-
-  $('#gcode_for_calibration a').click(function(){
-    $('#gcode_name').val( $(this).text() );
-  	$('#gcode_program').val( $(this).next().text() );
-
-  	// make sure preview refreshes
-  	$('#gcode_program').trigger('blur');	
-  });
-
-  
-  $("#gcode_submit").button()
-  $("#gcode_submit").click(function(e) {
-  	// send gcode string to server via POST
-  	var gcode = $('#gcode_program').val();
-  	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
+function send_gcode_to_backend(gcode) {
+  if (typeof gcode === "string" && gcode != '') {
+    // $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
   	$.post("/gcode", { 'gcode_program':gcode }, function(data) {
   		if (data != "") {
   			$().uxmessage('success', "G-Code sent to serial.");	
   			// show progress bar, register live updates
-  			if ($("#progressbar").progressbar( "option", "value" ) == 0) {
-  				$("#progressbar").progressbar( "option", "value", 5 )
+  			if ($("#progressbar").children().first().width() == 0) {
+  				$("#progressbar").children().first().width('5%');
   				$("#progressbar").show();
+  				var progress_not_yet_done_flag = true;
   			  var progresstimer = setInterval(function() {
   					$.get('/queue_pct_done', function(data2) {
-  						//$().uxmessage('notice', data2);
   						if (data2.length > 0) {
   							var pct = parseInt(data2);
-  							//$().uxmessage('notice', data);
-  							$('#progressbar').progressbar( "option", "value", pct );
+                $("#progressbar").children().first().width(pct+'%');  							
   						} else {
-  							$().uxmessage('notice', "Done.");
-  							$('#progressbar').hide();
-  							$('#progressbar').progressbar( "option", "value", 0 );
-  							clearInterval(progresstimer);
+  						  if (progress_not_yet_done_flag) {
+    						  $("#progressbar").children().first().width('100%');
+    						  $().uxmessage('notice', "Done.");
+    						  progress_not_yet_done_flag = false;
+    						} else {
+    							$('#progressbar').hide();
+    							$("#progressbar").children().first().width(0); 
+    							clearInterval(progresstimer);
+    						}
   						}
   					});
-  			  }, 3000);
+  			  }, 2000);
   			}
   		} else {
   			$().uxmessage('error', "Serial not connected.");
   		}
+    });  
+  } else {
+    $().uxmessage('error', "No gcode.");
+  }
+}
+
+
+
+$(document).ready(function(){
+
+  // populate queue from queue directory
+  $.getJSON("/queue/list", function(data) {
+    $.each(data, function(index, name) {
+      add_to_job_queue(name);
     });
+  });
     
+  // populate library from library directory
+  $.getJSON("/library/list", function(data) {
+    $.each(data, function(index, name) {
+      $('#gcode_library').prepend('<li><a href="#">'+ name +'</a></li>');
+    });
+  	$('#gcode_library li a').click(function(){
+  	  var name = $(this).text();
+      $.get("/library/get/" + name, function(gdata) {
+        load_into_gcode_widget(gdata, name);
+      });
+  	});  	
+  });
+  // .success(function() { alert("second success"); })
+  // .error(function() { alert("error"); })
+  // .complete(function() { alert("complete"); });
+ 
+  
+
+
+  $("#progressbar").hide();  
+  $("#gcode_submit").click(function(e) {
+  	// send gcode string to server via POST
+  	var gcode = $('#gcode_program').val();
+    send_gcode_to_backend(gcode);
   	return false;
   });
-  
-  $("#gcode_submit").next().button( {
-		text: false,
-		icons: {
-			primary: "ui-icon-triangle-1-s"
-		}
-  })
-  $("#gcode_submit").next().toggle(function() {
-    var pos = $(this).position();
-    $("#gcode_more_div").css('left', pos.left-30).css('top', pos.top-30)
-    $("#gcode_more_div").show();
-    $('body').bind('click.dropdown', function(e) {
-      $("#gcode_submit").next().trigger('click')
-      // remove click event by namespace,
-      // see: http://api.jquery.com/unbind/
-      $('body').unbind('click.dropdown');
-    });
-  }, function() {
-    $("#gcode_more_div").hide();
-  });
-  $("#gcode_submit").next().parent().buttonset();
 
 
-  $("#gcode_bbox").button();  
-  $("#gcode_bbox").click(function(e) {
-    $().uxmessage('notice', "bbox not yet implemented");
+  $('#gcode_bbox_submit').tooltip();
+  $("#gcode_bbox_submit").click(function(e) {
     var gcodedata = $('#gcode_program').val();
-    //var gcode_bbox = 
+    GcodeReader.parse(gcodedata, 1);
+    var gcode_bbox = GcodeReader.getBboxGcode();
+    var header = "%\nG21\nG90\nG0F16000\n"
+    var footer = "G00X0Y0F16000\n%"
+    // save_and_add_to_job_queue($('#gcode_name').val() + 'BBOX', header + gcode_bbox + footer);  // for debugging
+    send_gcode_to_backend(header + gcode_bbox + footer);
+    return false;
   });
 
-  $("#gcode_save_to_queue").button();  
+  $('#gcode_save_to_queue').tooltip();
   $("#gcode_save_to_queue").click(function(e) {
-    add_to_job_queue($('#gcode_program').val(), $.trim($('#gcode_name').val()));
+    save_and_add_to_job_queue($.trim($('#gcode_name').val()), $('#gcode_program').val());
+    return false;
   });
-
-
-  $("#progressbar").progressbar({
-  	value: 0
-  });
-  $("#progressbar").hide();
 
 
   // G-Code Canvas Preview
   //
   var canvas = new Canvas('#preview_canvas');
-  canvas.background('ffffff');
+  canvas.background('#ffffff');
 
   $('#gcode_program').blur(function() {
     var gcodedata = $('#gcode_program').val();
+    canvas.background('#ffffff'); 
   	GcodeReader.parse(gcodedata, 0.25);
-  	GcodeReader.draw(canvas);	
+  	GcodeReader.draw(canvas, '#000000');
   });
 
 });  // ready

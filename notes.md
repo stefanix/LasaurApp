@@ -1,4 +1,31 @@
 
+TODO
+-----
+- F unit?
+- 1,2,3 keys for selecting tabs
+- simi bug
+- shape order optimization
+- automatic recognition for svg72/svg90
+- better contrast for selected colors
+- default colors R,G,B to Pass 1,2,3
+- connection button status
+- error reporting in ui
+- offset feature, G0F10000 causes wild pos after setting offset
+- cancel button fail on long lines
+- door open pause, still causes problems
+
+BUG
+---
+- invisible super slow black lines
+
+YAG
+----
+- some files cause the origin to drift
+- homing does not reset stop mode
+
+
+- sperrholz pappel 8mm
+
 
 - bed size: 48x24" or 1220x610mm
   also for direct control
