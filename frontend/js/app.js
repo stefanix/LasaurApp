@@ -107,7 +107,8 @@ function add_to_job_queue(name) {
       load_into_gcode_widget(gdata, name);
     }).error(function() {
       $().uxmessage('error', "File not found: " + name);
-    });     
+    });
+    return false;   
 	});  	
   //// action for star
   $('#gcode_queue li:first a span.starwidget').click(function() {
