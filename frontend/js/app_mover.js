@@ -50,7 +50,8 @@ $(document).ready(function(){
     isDragging = true;
   }).mouseup(function() {
     isDragging = false;
-  });  
+  });
+  
 
   $("#cutting_area").click(function(e) {
   	var offset = $(this).offset();
