@@ -18,7 +18,7 @@ add_resource_files( glob('../frontend/css/smoothness/images/*.png') )
 add_resource_files( glob('../frontend/img/*') )
 add_resource_files( glob('../frontend/js/*') )
 add_resource_files( glob('../firmware/*.hex') )
-add_resource_files( glob('../library/*.gc') )
+add_resource_files( glob('../library/*') )
 
 ### name of the executable
 ### depending on platform
