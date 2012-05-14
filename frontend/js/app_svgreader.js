@@ -1108,106 +1108,18 @@ SVGReader = {
     return [ (v2[0]+v1[0])/2.0, (v2[1]+v1[1])/2.0 ];
   },
   
-  
-  // Douglas Peucker path simplification algorithm
-  // http://en.wikipedia.org/wiki/Douglas-Peucker_algorithm
-  simplifyPath : function( points, tolerance2 ) {
 
-    var minimum_distance2 = function( p1, p2, p3 ) {
-      // http://local.wasp.uwa.edu.au/~pbourke/geometry/pointline/
-      // p1, p2 ... end points of a line
-      // p3 ... point to get distence to
-    	var xDelta = p2[0] - p1[0];
-    	var yDelta = p2[1] - p1[1];
-    	if ((xDelta == 0) && (yDelta == 0)) {
-        // alert("Error: in simplifyPath: p1 and p2 cannot be the same point");
-    	}
-    	var u = ((p3[0] - p1[0]) * xDelta + (p3[1] - p1[1]) * yDelta) / (xDelta * xDelta + yDelta * yDelta);
-    	var closestPoint;
-    	if (u < 0) {
-    	    closestPoint = p1;
-    	} else if (u > 1) {
-    	    closestPoint = p2;
-    	} else {
-    	    closestPoint = [p1[0] + u * xDelta, p1[1] + u * yDelta];
-    	}
-    	return Math.pow(closestPoint[0]-p3[0],2) + Math.pow(closestPoint[1]-p3[1],2)
-    }
-    
-  	var douglasPeucker = function( points, tolerance2 ) {
-  		if ( points.length <= 2 ) {
-  			return [points[0]];
-  		}
-  		var returnPoints = [];
-  		// line points from start to end 
-  		var l1 = points[0];
-  		var l2 = points[points.length-1];
-  		// find the largest distance from intermediate poitns to this line
-  		var maxDistance = 0;
-  		var maxDistanceIndex = 0;
-  		for( var i = 1; i <= points.length - 2; i++ ) {
-  			var distance = minimum_distance2(l1, l2, points[i]);
-  			if( distance > maxDistance ) {
-  				maxDistance = distance;
-  				maxDistanceIndex = i;
-  			}
-  		}
-      alert('line: ' + l1.toString() + ':' + l2.toString() + ' dmax=' + Math.sqrt(maxDistance) + ' tol=' + tolerance2);
-  		// check if the max distance is greater than our tolerance2 allows 
-  		if (maxDistance >= tolerance2) {
-  			// include this point in the output 
-  			returnPoints = returnPoints.concat( douglasPeucker( points.slice(0, maxDistanceIndex + 1), tolerance2 ) );
-  			// returnPoints.push( points[maxDistanceIndex] );
-  			returnPoints = returnPoints.concat( douglasPeucker( points.slice(maxDistanceIndex, points.length), tolerance2 ) );
-  		} else {
-  			// ditching this point
-  			returnPoints = [l1, l2];
-  		}
-  		return returnPoints;
-  	};
-  	
-    alert('in: ' + JSON.stringify(points));
-    var arr = douglasPeucker( points, tolerance2 );
-    // always have to push the very last point on so it doesn't get left off
-    // arr.push( points[points.length - 1 ] );
-    alert('out: ' + JSON.stringify(arr));
-    return arr;  	
-  },
-  
-  
-  // Copyright 2002, softSurfer (www.softsurfer.com)
-  // This code may be freely used and modified for any purpose
-  // providing that this copyright notice is included with it.
-  // SoftSurfer makes no warranty for this code, and cannot be held
-  // liable for any real or imagined damage resulting from its use.
-  // Users of this code must verify correctness for their application.
-
-  // Assume that classes are already given for the objects:
-  //    Point and Vector with
-  //        coordinates {float x, y, z;}    // as many as are needed
-  //        operators for:
-  //            == to test equality
-  //            != to test inequality
-  //            (Vector)0 = (0,0,0)         (null vector)
-  //            Point  = Point ± Vector
-  //            Vector = Point - Point
-  //            Vector = Vector ± Vector
-  //            Vector = Scalar * Vector    (scalar product)
-  //            Vector = Vector * Vector    (cross product)
-  //    Segment with defining endpoints {Point P0, P1;}
-  //===================================================================
-
-  // poly_simplify():
-  //    Input:  tol = approximation tolerance
-  //            V[] = polyline array of vertex points
-  //            n   = the number of points in V[]
-  //    Output: sV[]= simplified polyline vertices (max is n)
-  //    Return: m   = the number of points in sV[]
-  poly_simplify : function( V, tol ) {
-    
-    var n = V.length;
-    var sV = [];
-    
+  poly_simplify : function(V, tol) {
+    // V ... [[x1,y1],[x2,y2],...] polyline
+    // tol  ... approximation tolerance
+    // ============================================== 
+    // Copyright 2002, softSurfer (www.softsurfer.com)
+    // This code may be freely used and modified for any purpose
+    // providing that this copyright notice is included with it.
+    // SoftSurfer makes no warranty for this code, and cannot be held
+    // liable for any real or imagined damage resulting from its use.
+    // Users of this code must verify correctness for their application.
+    // http://softsurfer.com/Archive/algorithm_0205/algorithm_0205.htm
     var sum = function(u,v) {return [u[0]+v[0], u[1]+v[1]];}
     var diff = function(u,v) {return [u[0]-v[0], u[1]-v[1]];}
     var prod = function(u,v) {return [u[0]*v[0], u[1]*v[1]];}
@@ -1217,15 +1129,11 @@ SVGReader = {
     var d2 = function(u,v) {return norm2(diff(u,v));}
     var d = function(u,v) {return norm(diff(u,v));}
     
-    // simplifyDP():
-    //  This is the Douglas-Peucker recursive simplification routine
-    //  It just marks vertices that are part of the simplified polyline
-    //  for approximating the polyline subchain v[j] to v[k].
-    //    Input:  tol = approximation tolerance
-    //            v[] = polyline array of vertex points
-    //            j,k = indices for the subchain v[j] to v[k]
-    //    Output: mk[] = array of markers matching vertex array v[]
     var simplifyDP = function( tol, v, j, k, mk ) {
+      //  This is the Douglas-Peucker recursive simplification routine
+      //  It just marks vertices that are part of the simplified polyline
+      //  for approximating the polyline subchain v[j] to v[k].
+      //  mk[] ... array of markers matching vertex array v[]
       if (k <= j+1) { // there is nothing to simplify
         return;
       }
@@ -1236,14 +1144,12 @@ SVGReader = {
       S = [v[j], v[k]];  // segment from v[j] to v[k]
       u = diff(S[1], S[0]);   // segment direction vector
       var cu = norm2(u,u);     // segment length squared
-
       // test each vertex v[i] for max distance from S
       // compute using the Feb 2001 Algorithm's dist_Point_to_Segment()
       // Note: this works in any dimension (2D, 3D, ...)
       var  w;           // vector
       var Pb;                // point, base of perpendicular from v[i] to S
       var b, cw, dv2;        // dv2 = distance v[i] to S squared
-
       for (var i=j+1; i<k; i++) {
         // compute distance squared
         w = diff(v[i], S[0]);
@@ -1276,6 +1182,8 @@ SVGReader = {
       return;
     }    
     
+    var n = V.length;
+    var sV = [];    
     var i, k, m, pv;               // misc counters
     var tol2 = tol * tol;          // tolerance squared
     vt = [];                       // vertex buffer, points
