@@ -44,11 +44,16 @@ SVGReader = {
     // style at current parsing position
   tolerance : 0.1,
     // max tollerance when tesselating curvy shapes
+  EPSILON_SQUARED : 0.01*0.01,
+    // the distance when to concat subpath
+  join_count : 0,
+    // number of subpath joined
   ignore_tags : {'defs':undefined, 'pattern':undefined, 'clipPath':undefined},
     // tags to ignore for this parser
 
     
   parse : function(svgstring, config) {
+    this.join_count = 0;
     this.boundarys = {};
     this.tolerance_squared = Math.pow(this.tolerance, 2);
     
@@ -71,6 +76,29 @@ SVGReader = {
     node.stroke = [0,0,0];
     node.xformToWorld = [1,0,0,1,0,0]
     this.parseChildren(svgRootElement, node)
+    
+    // report if there were many segmented pseudo-polylines
+    if (this.join_count > 100) {
+      $().uxmessage('notice', 'SVGReader: joined many line segments: ' + this.join_count);
+    }  
+    
+    // optimize polylines with high-vertex counts
+    // many apps export highly tesselated polylines
+    var totalverts = 0;
+    var optiverts = 0;
+    for (var col in this.boundarys) {
+      var subpaths = this.boundarys[col];  // by color
+      for (var i=0; i<subpaths.length; i++) {
+        totalverts += subpaths[i].length;
+        subpaths[i] = this.poly_simplify(subpaths[i], 0.5*this.tolerance);
+        optiverts += subpaths[i].length;
+      }
+    }
+    var difflength = totalverts - optiverts;
+    var diffpct = (100*difflength/totalverts);
+    if (diffpct > 10) {  // if diff more than 10%
+      $().uxmessage('notice', 'SVGReader: polylines optimized by ' + diffpct.toFixed(0) + '%');
+    }
     
     return this.boundarys
   },
@@ -125,32 +153,42 @@ SVGReader = {
           
           // 5.) compile boundarys
           // before adding all subpaths convert to world coordinates
-          // sort subpaths by color 
+          // then join adjacent, same-color subpath
+          // and sort subpaths by color 
           for (var k=0; k<node.path.length; k++) {
             var subpath = node.path[k];
+            if (subpath.length == 0) {continue;}  // skip if empty subpath
+            // convert to world coordinates
             for (var l=0; l<node.path[k].length; l++) {
               subpath[l] =  this.matrixApply(node.xformToWorld, subpath[l]);
             }
-            
-            // simplify polylines to match requested tolerance
-            // this is mostly relevant when the imput was already a high-vertex count polyline.
-            var templength = subpath.length;
-            subpath = this.poly_simplify(subpath, 0.5*this.tolerance);
-            alert('length: ' + templength + ' -> ' + subpath.length);
-            
             // add to output by color
             var hexcolor = this.rgbToHex(node.stroke[0], node.stroke[1], node.stroke[2]);
-            if (!(hexcolor in this.boundarys)) {
-              this.boundarys[hexcolor] = [];
+            if (hexcolor in this.boundarys) {
+              // check for subpaths with congruent end/start points and join
+              // may apps export many short line segments instead of nice polylines              
+              var colsubpaths = this.boundarys[hexcolor];
+              var lastsubpath = colsubpaths[colsubpaths.length-1];
+              var endpoint = lastsubpath[lastsubpath.length-1];
+              var d2 = Math.pow(endpoint[0]-subpath[0][0],2) + Math.pow(endpoint[1]-subpath[0][1],2);
+              if (d2 < this.EPSILON_SQUARED) {
+                // previous subpath (of same color) end where this one starts
+                // concat subpath to previous subpath, drop first point
+                this.join_count++;
+                lastsubpath.push.apply(lastsubpath, subpath.slice(1));  //in-place concat
+              } else {
+                this.boundarys[hexcolor].push(subpath);
+              }
+            } else {
+              this.boundarys[hexcolor] = [subpath];
             }
-            this.boundarys[hexcolor].push(subpath);
-          }          
+          }                 
         }
         
         // recursive call
         this.parseChildren(tag, node)
       }
-    }
+    }  
   },
   
   

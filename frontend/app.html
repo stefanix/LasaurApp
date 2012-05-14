@@ -60,8 +60,11 @@
 							<li><a href="#tab_import" id="tab_import_button" data-toggle="tab"><i class="icon-folder-open" style="margin-right:2px"></i> SVG Import</a></li>
 							<li><a href="#tab_mover" id="tab_mover_button" data-toggle="tab"><i class="icon-move" style="margin-right:2px"></i> Direct Control</a></li>
 						</ul>
-						<div id="log_content" style="margin-top:5px; display:none; overflow:auto; height:295px; border:1px solid #aaaaaa">
-							<!-- log -->
+						<div style="margin-top:240px">
+							<button id="log_toggle" class="btn-mini pull-right" style="margin-right:10px">show log</button>
+							<div id="log_content" style="clear:both; display:none; overflow:auto; height:400px;">
+								<!-- log -->
+							</div>
 						</div>												
 					</div>
 					<!--tabbar end-->
@@ -140,7 +143,7 @@
 											<form class="form-inline" style="margin-bottom:8px">												
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">F</span>
-													<input type="text" id="import_feedrate_1" value="600" title="feedrate 1-16000mm/min" style="width:36px" data-delay="500">
+													<input type="text" id="import_feedrate_1" value="600" title="feedrate 1-8000mm/min" style="width:32px" data-delay="500">
 												</div>
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">%</span>
@@ -154,7 +157,7 @@
 											<form class="form-inline" style="margin-bottom:8px">												
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">F</span>
-													<input type="text" id="import_feedrate_2" value="2000" title="feedrate 1-16000mm/min" style="width:36px" data-delay="500">
+													<input type="text" id="import_feedrate_2" value="2000" title="feedrate 1-8000mm/min" style="width:32px" data-delay="500">
 												</div>
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">%</span>
@@ -168,7 +171,7 @@
 											<form class="form-inline" style="margin-bottom:8px">												
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">F</span>
-													<input type="text" id="import_feedrate_3" value="4000" title="feedrate 1-16000mm/min" style="width:36px" data-delay="500">
+													<input type="text" id="import_feedrate_3" value="4000" title="feedrate 1-8000mm/min" style="width:32px" data-delay="500">
 												</div>
 												<div class="input-prepend">
 													<span class="add-on" style="margin-right:-5px;">%</span>

@@ -6,27 +6,26 @@
 	    text = text.slice(0,100) + '\n...'
 	  }
 	  
-	  var div_opener = '<div class="log_item log_notice ui-corner-all" style="display:none">'
   	if (kind == 'notice') {
-  		$('#log_content').prepend('<div class="log_item log_notice ui-corner-all" style="display:none">' + text + '</div>');
+  		$('#log_content').prepend('<div class="log_item log_notice well" style="display:none">' + text + '</div>');
   		$('#log_content').children('div').first().show('blind');
   		if ($("#log_content").is(':hidden')) {
     		$().toastmessage('showNoticeToast', text);
     	}
   	} else if (kind == 'success') {
-  		$('#log_content').prepend('<div class="log_item log_success ui-corner-all" style="display:none">' + text + '</div>');
+  		$('#log_content').prepend('<div class="log_item log_success well" style="display:none">' + text + '</div>');
   		$('#log_content').children('div').first().show('blind');
   		if ($("#log_content").is(':hidden')) {
     		$().toastmessage('showSuccessToast', text);		
       }
   	} else if (kind == 'warning') {
-  		$('#log_content').prepend('<div class="log_item log_warning ui-corner-all" style="display:none">' + text + '</div>');
+  		$('#log_content').prepend('<div class="log_item log_warning well" style="display:none">' + text + '</div>');
   		$('#log_content').children('div').first().show('blind');
   		if ($("#log_content").is(':hidden')) {
     		$().toastmessage('showWarningToast', text);		
     	}
   	} else if (kind == 'error') {
-  		$('#log_content').prepend('<div class="log_item log_error ui-corner-all" style="display:none">' + text + '</div>');
+  		$('#log_content').prepend('<div class="log_item log_error well" style="display:none">' + text + '</div>');
   		$('#log_content').children('div').first().show('blind');
   		if ($("#log_content").is(':hidden')) {
     		$().toastmessage('showErrorToast', text);		
@@ -203,14 +202,20 @@ function mapConstrainIntesity(intens) {
 }
 
 
+
+
 $(document).ready(function(){
-    
+  
+  $().uxmessage('notice', "app frontend started");
+  
   $('#log_toggle').toggle(function() {
     $("#log_content").fadeIn('slow');
   	$("#log_toggle").html("hide log");
+  	return false;
   }, function() {
     $("#log_content").fadeOut('slow');
   	$("#log_toggle").html("show log");
+  	return false;
   });
   //$('#log_toggle').trigger('click');  // show log, for debugging
 
