@@ -44,6 +44,8 @@ SVGReader = {
     // style at current parsing position
   tolerance : 0.1,
     // max tollerance when tesselating curvy shapes
+  ignore_tags : {'defs':undefined, 'pattern':undefined, 'clipPath':undefined},
+    // tags to ignore for this parser
 
     
   parse : function(svgstring, config) {
@@ -75,6 +77,10 @@ SVGReader = {
   
   
   parseChildren : function(domNode, parentNode) {
+    if (domNode.tagName in this.ignore_tags) {
+      // ignore certain tags that are not relevant for this parser
+      return; 
+    }
     var childNodes = []
     for (var i=0; i<domNode.childNodes.length; i++) {
       var tag = domNode.childNodes[i]
@@ -125,6 +131,14 @@ SVGReader = {
             for (var l=0; l<node.path[k].length; l++) {
               subpath[l] =  this.matrixApply(node.xformToWorld, subpath[l]);
             }
+            
+            // simplify polylines to match requested tolerance
+            // this is mostly relevant when the imput was already a high-vertex count polyline.
+            var templength = subpath.length;
+            subpath = this.simplifyPath(subpath, Math.pow(0.5*this.tolerance,2));
+            // alert('length: ' + templength + ' -> ' + subpath.length);
+            
+            // add to output by color
             var hexcolor = this.rgbToHex(node.stroke[0], node.stroke[1], node.stroke[2]);
             if (!(hexcolor in this.boundarys)) {
               this.boundarys[hexcolor] = [];
@@ -1092,6 +1106,69 @@ SVGReader = {
   
   vertexMiddle : function(v1, v2) {
     return [ (v2[0]+v1[0])/2.0, (v2[1]+v1[1])/2.0 ];
+  },
+  
+  
+  // Douglas Peucker path simplification algorithm
+  // http://en.wikipedia.org/wiki/Douglas-Peucker_algorithm
+  simplifyPath : function( points, tolerance2 ) {
+
+    var minimum_distance2 = function( p1, p2, p3 ) {
+      // p1, p2 ... end points of a line
+      // p3 ... point to get distence to
+    	var xDelta = p2[0] - p1[0];
+    	var yDelta = p2[1] - p1[1];
+    	if ((xDelta == 0) && (yDelta == 0)) {
+    	  alert("Error: in simplifyPath: p1 and p2 cannot be the same point");
+    	}
+    	var u = ((p3[0] - p1[0]) * xDelta + (p3[1] - p1[1]) * yDelta) / (xDelta * xDelta + yDelta * yDelta);
+    	var closestPoint;
+    	if (u < 0) {
+    	    closestPoint = p1;
+    	} else if (u > 1) {
+    	    closestPoint = p2;
+    	} else {
+    	    closestPoint = [p1[0] + u * xDelta, p1[1] + u * yDelta];
+    	}
+    	return Math.pow(closestPoint[0]-p3[0],2) + Math.pow(closestPoint[1]-p3[1],2)
+    }
+    
+  	var douglasPeucker = function( points, tolerance2 ) {
+  		if ( points.length <= 2 ) {
+  			return [points[0]];
+  		}
+  		var returnPoints = [];
+  		// line points from start to end 
+  		var l1 = points[0];
+  		var l2 = points[points.length-1];
+  		// find the largest distance from intermediate poitns to this line
+  		var maxDistance = 0;
+  		var maxDistanceIndex = 0;
+  		for( var i = 1; i <= points.length - 2; i++ ) {
+  			var distance = minimum_distance2(l1, l2, points[i]);
+  			if( distance > maxDistance ) {
+  				maxDistance = distance;
+  				maxDistanceIndex = i;
+  			}
+  		}
+      // alert(maxDistance);
+  		// check if the max distance is greater than our tolerance2 allows 
+  		if (maxDistance >= tolerance2) {
+  			// include this point in the output 
+  			returnPoints = returnPoints.concat( douglasPeucker( points.slice(0, maxDistanceIndex + 1), tolerance2 ) );
+  			// returnPoints.push( points[maxDistanceIndex] );
+  			returnPoints = returnPoints.concat( douglasPeucker( points.slice(maxDistanceIndex, points.length), tolerance2 ) );
+  		} else {
+  			// ditching this point
+  			returnPoints = [points[0]];
+  		}
+  		return returnPoints;
+  	};
+  	
+    var arr = douglasPeucker( points, tolerance2 );
+    // always have to push the very last point on so it doesn't get left off
+    arr.push( points[points.length - 1 ] );
+    return arr;  	
   }  
   
 }
