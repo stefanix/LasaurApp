@@ -50,7 +50,6 @@ SVGReader = {
     // number of subpath joined
   ignore_tags : {'defs':undefined, 'pattern':undefined, 'clipPath':undefined},
     // tags to ignore for this parser
-
     
   parse : function(svgstring, config) {
     this.join_count = 0;
@@ -82,16 +81,41 @@ SVGReader = {
       $().uxmessage('notice', 'SVGReader: joined many line segments: ' + this.join_count);
     }  
     
-    // optimize polylines with high-vertex counts
-    // many apps export highly tesselated polylines
+    // optimize and sort polylines
     var totalverts = 0;
     var optiverts = 0;
     for (var col in this.boundarys) {
       var subpaths = this.boundarys[col];  // by color
-      for (var i=0; i<subpaths.length; i++) {
-        totalverts += subpaths[i].length;
-        subpaths[i] = this.poly_simplify(subpaths[i], 0.5*this.tolerance);
-        optiverts += subpaths[i].length;
+      // optimize polylines with high-vertex counts
+      // as many apps export highly tesselated polylines
+      for (var u=0; u<subpaths.length; u++) {
+        totalverts += subpaths[u].length;
+        subpaths[u] = this.poly_simplify(subpaths[u], 0.5*this.tolerance);
+        optiverts += subpaths[u].length;
+      }
+      // sort subpath to optimize seek distances in between
+      for (var i=0; i+1<subpaths.length; i++) {  // loop until one to last
+        var endpoint = subpaths[i][subpaths[i].length-1];
+        // search the rest of array for closest subpath start point
+        var d2_hash = {}  // distance2:index pairs
+        for (var j=i+1; j<subpaths.length; j++) {
+          var startpoint = subpaths[j][0];
+          d2_hash[Math.pow(endpoint[0]-startpoint[0],2) + Math.pow(endpoint[1]-startpoint[1],2)] = j;
+        }
+        var d2min = Infinity;
+        var d2minIndex = undefined;
+        for (var d2 in d2_hash) {
+          if (parseFloat(d2) < d2min) {
+            d2min = d2; 
+            d2minIndex = d2_hash[d2];
+          }
+        }
+        // make closest subpath next item
+        if (d2minIndex != i+1) {
+          var tempItem = subpaths[i+1];
+          subpaths[i+1] = subpaths[d2minIndex];
+          subpaths[d2minIndex] = tempItem;  
+        }
       }
     }
     var difflength = totalverts - optiverts;
@@ -195,7 +219,6 @@ SVGReader = {
   rgbToHex : function(r, g, b) {
     return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
   },
-
 
 
 
