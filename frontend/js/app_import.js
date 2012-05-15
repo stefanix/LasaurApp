@@ -57,41 +57,33 @@ $(document).ready(function(){
       
   function generateRawGcode() {
     if (geo_boundarys) {
-      var dpi = parseFloat($('#svg_dpi_value').val());
-      if (!isNaN(dpi)) {
-        // var px2mm = 25.4*(1.0/dpi);
-        var px2mm = 1;  // HACK
-        
-        raw_gcode_by_color = {};
-        for (var color in geo_boundarys) {
-          raw_gcode_by_color[color] = GcodeWriter.write(geo_boundarys[color], px2mm, 0.0, 0.0);
-        }
-        //// add canvas color properties
-        $('#canvas_properties div.colorbtns').html('');  // reset colors
-        $('#pass_1_div div.colorbtns').html('');  // reset colors
-        $('#pass_2_div div.colorbtns').html('');  // reset colors
-        $('#pass_3_div div.colorbtns').html('');  // reset colors
-        for (var color in raw_gcode_by_color) {
-  				$('#canvas_properties div.colorbtns').append('<button class="preview_color btn btn-small active" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></button>');          
-  				$('#pass_1_div div.colorbtns').append('<button class="btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
-  				$('#pass_2_div div.colorbtns').append('<button class="btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
-  				$('#pass_3_div div.colorbtns').append('<button class="btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
-        }
-        // register redraw event
-  			$('button.preview_color').click(function(e){
-  			  // toggling manually, had problem with automatic
-  			  if($(this).hasClass('active')) {
-  			    $(this).removeClass('active')
-  			  } else {
-  			    $(this).addClass('active')			    
-  			  }
-          generatePreview();
-        });
-        // actually redraw right now 
+      raw_gcode_by_color = {};
+      for (var color in geo_boundarys) {
+        raw_gcode_by_color[color] = GcodeWriter.write(geo_boundarys[color], 1, 0.0, 0.0);
+      }
+      //// add canvas color properties
+      $('#canvas_properties div.colorbtns').html('');  // reset colors
+      $('#pass_1_div div.colorbtns').html('');  // reset colors
+      $('#pass_2_div div.colorbtns').html('');  // reset colors
+      $('#pass_3_div div.colorbtns').html('');  // reset colors
+      for (var color in raw_gcode_by_color) {
+				$('#canvas_properties div.colorbtns').append('<button class="preview_color btn btn-small active" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></button>');          
+				$('#pass_1_div div.colorbtns').append('<button class="btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
+				$('#pass_2_div div.colorbtns').append('<button class="btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
+				$('#pass_3_div div.colorbtns').append('<button class="btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
+      }
+      // register redraw event
+			$('button.preview_color').click(function(e){
+			  // toggling manually, had problem with automatic
+			  if($(this).hasClass('active')) {
+			    $(this).removeClass('active')
+			  } else {
+			    $(this).addClass('active')			    
+			  }
         generatePreview();
-      } else {
-        $().uxmessage('error', "Invalid DPI setting.");
-      }        
+      });
+      // actually redraw right now 
+      generatePreview();      
     } else {
       $().uxmessage('notice', "No data loaded to write G-code.");
     }   
@@ -124,20 +116,7 @@ $(document).ready(function(){
     $('#svg_upload_file').trigger('click');
   });  
 
-
-  // setting up dpi selector
-  $('#svg_dpi72_btn').click(function(e){
-    $('#svg_dpi_value').val('72');
-    generateRawGcode();
-  });
-  $('#svg_dpi90_btn').click(function(e){
-    $('#svg_dpi_value').val('90');
-    generateRawGcode();
-  });
-  $('#svg_dpi_value').val('90');  // overwrite persisten forms
     
-  $('#svg_dpi72_btn').tooltip();
-  $('#svg_dpi90_btn').tooltip();
   $('#import_feedrate_1').tooltip();
   $('#import_intensity_1').tooltip();
   $('#import_feedrate_2').tooltip();
