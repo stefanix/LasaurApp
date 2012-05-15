@@ -40,6 +40,10 @@ SVGReader = {
     // hash of path by color
     // each path is a list of subpaths
     // each subpath is a list of verteces
+  dpi: undefined,
+    // the dpi with which the svg's "user unit/px" unit was exported
+  target_size: [1220,610],
+    // what the svg size (typically page dimensions) should be mapped to
   style : {},  
     // style at current parsing position
   tolerance : 0.1,
@@ -50,6 +54,8 @@ SVGReader = {
     // number of subpath joined
   ignore_tags : {'defs':undefined, 'pattern':undefined, 'clipPath':undefined},
     // tags to ignore for this parser
+
+
     
   parse : function(svgstring, config) {
     this.join_count = 0;
@@ -70,16 +76,22 @@ SVGReader = {
 			svgRootElement = xmlDoc.documentElement;
 		}
         
+    // figure out how to map px to mm, using document page size
+    this.parseRoot(svgRootElement);
+    if (this.dpi) {
+      $().uxmessage('notice', "Unit conversion from page size: " + this.dpi.toFixed(0) + 'dpi');
+    } else {
+      $().uxmessage('warning', "Cannot parse page size -> defaulting to 90dpi.");
+      this.dpi = 90;        
+    }
+    
     // let the fun begin
+    // recursively parse children
+    // output will be in this.boundarys    
     var node = {}
     node.stroke = [0,0,0];
-    node.xformToWorld = [1,0,0,1,0,0]
-    this.parseChildren(svgRootElement, node)
-    
-    // report if there were many segmented pseudo-polylines
-    if (this.join_count > 100) {
-      $().uxmessage('notice', 'SVGReader: joined many line segments: ' + this.join_count);
-    }  
+    node.xformToWorld = [1,0,0,1,0,0];    
+    this.parseChildren(svgRootElement, node);
     
     // optimize and sort polylines
     var totalverts = 0;
@@ -118,6 +130,13 @@ SVGReader = {
         }
       }
     }
+    
+    // report pseudo-polyline joining operations
+    if (this.join_count > 100) {
+      $().uxmessage('notice', 'SVGReader: joined many line segments: ' + this.join_count);
+    } 
+    
+    // report polyline optimizations    
     var difflength = totalverts - optiverts;
     var diffpct = (100*difflength/totalverts);
     if (diffpct > 10) {  // if diff more than 10%
@@ -128,16 +147,25 @@ SVGReader = {
   },
   
   
+  parseRoot : function(rootNode) {
+    // we are specifically interested in the width/height/viewBox attribute
+    // this is used to determin the page size and consequently the implied dpi of px units
+    if (rootNode.tagName == 'svg') {
+      var node = {};
+      this.SVGTagMapping[rootNode.tagName](this, rootNode, node);
+    }    
+  },
+  
   parseChildren : function(domNode, parentNode) {
-    if (domNode.tagName in this.ignore_tags) {
-      // ignore certain tags that are not relevant for this parser
-      return; 
-    }
     var childNodes = []
     for (var i=0; i<domNode.childNodes.length; i++) {
       var tag = domNode.childNodes[i]
       if (tag.childNodes) {
         if (tag.tagName) {
+          if (tag.tagName in this.ignore_tags) {
+            // ignore certain tags that are not relevant for this parser
+            continue; 
+          }          
           // we are looping here through 
           // all nodes with child nodes
           // others are irrelevant
@@ -175,21 +203,19 @@ SVGReader = {
             this.SVGTagMapping[tag.tagName](this, tag, node)
           }
           
-          // 5.) compile boundarys
-          // before adding all subpaths convert to world coordinates
-          // then join adjacent, same-color subpath
-          // and sort subpaths by color 
+          // 5.) compile boundarys + conversions
           for (var k=0; k<node.path.length; k++) {
             var subpath = node.path[k];
             if (subpath.length == 0) {continue;}  // skip if empty subpath
-            // convert to world coordinates
+            // 5a.) convert to world coordinates and then to mm units
             for (var l=0; l<node.path[k].length; l++) {
-              subpath[l] =  this.matrixApply(node.xformToWorld, subpath[l]);
+              subpath[l] = this.matrixApply(node.xformToWorld, subpath[l]);
+              subpath[l] = this.vertexScale(subpath[l], 25.4/this.dpi);
             }
-            // add to output by color
+            // 5b.) sort output by color
             var hexcolor = this.rgbToHex(node.stroke[0], node.stroke[1], node.stroke[2]);
             if (hexcolor in this.boundarys) {
-              // check for subpaths with congruent end/start points and join
+              // 5c.) join subpaths with congruent end/start points
               // may apps export many short line segments instead of nice polylines              
               var colsubpaths = this.boundarys[hexcolor];
               var lastsubpath = colsubpaths[colsubpaths.length-1];
@@ -442,17 +468,43 @@ SVGReader = {
       // has style attributes
       node.fill = 'black'
       node.stroke = 'none'
-      // // parse document dimensions
-      // node.width = 0
-      // node.height = 0
-      // var w = tag.getAttribute('width')
-      // var h = tag.getAttribute('height')
-      // if (!w) w = h
-      // else if (!h) h = w
-      // if (w) {
-      //   var wpx = parser.parseUnit(w, cn, 'x')
-      //   var hpx = parser.parseUnit(h, cn, 'y')
-      // }
+      // figure out SVG's immplied dpi
+      // SVGs have user units/pixel that have an implied dpi.
+      // Inkscape typically uses 90dpi, Illustrator and Intaglio use 72dpi.
+      // We can use the width/height and/or viewBox attributes on the svg tag
+      // and map the document neatly onto the desired dimensions.
+      var w = tag.getAttribute('width');
+      var h = tag.getAttribute('height');
+      if (!w || !h) {
+        // get size from viewBox
+        var vb = tag.getAttribute('viewBox');
+        if (vb) {
+          var vb_parts = vb.split(',');
+          if (vb_parts.length != 4) {
+            vb_parts = vb.split(' ');
+          }
+          if (vb_parts.length == 4) {
+            w = vb_parts[2];
+            h = vb_parts[3];
+          }
+        }
+      }
+      if (w && h) {
+        if (w.search(/cm$/i) != -1) {
+          $().uxmessage('error', "Not supported: Page size in 'cm'.");
+        } else if (w.search(/mm$/i) != -1) {
+          $().uxmessage('error', "Not supported: Page size in 'mm'.");
+        } else if (w.search(/pt$/i) != -1) {
+          $().uxmessage('error', "Not supported: Page size in 'pt'.");
+        } else if (w.search(/pc$/i) != -1) {
+          $().uxmessage('error', "Not supported: Page size in 'pc'.");
+        } else if (w.search(/in$/i) != -1) {
+          $().uxmessage('error', "Not supported: Page size in 'in'.");
+        }
+        w = parseFloat(w.strip());
+        h = parseFloat(h.strip());       
+        parser.dpi = Math.round(25.4*w/parser.target_size[0]);
+      }
     },
     
     
@@ -1115,18 +1167,17 @@ SVGReader = {
     if (val == null) {
       return null
     } else {
-      // assume 90dpi
       var multiplier = 1.0
       if (val.search(/cm$/i) != -1) {
-        multiplier = 35.433070869
+        multiplier = this.dpi/2.54
       } else if (val.search(/mm$/i) != -1) {
-        multiplier = 3.5433070869
+        multiplier = this.dpi/25.4
       } else if (val.search(/pt$/i) != -1) {
         multiplier = 1.25
       } else if (val.search(/pc$/i) != -1) {
         multiplier = 15.0
       } else if (val.search(/in$/i) != -1) {
-        multiplier = 90.0
+        multiplier = this.dpi
       }
       return multiplier * parseFloat(val.strip())
     }
@@ -1168,7 +1219,10 @@ SVGReader = {
   vertexMiddle : function(v1, v2) {
     return [ (v2[0]+v1[0])/2.0, (v2[1]+v1[1])/2.0 ];
   },
-  
+
+  vertexScale : function(v, f) {
+    return [ v[0]*f, v[1]*f ];
+  },  
 
   poly_simplify : function(V, tol) {
     // V ... [[x1,y1],[x2,y2],...] polyline

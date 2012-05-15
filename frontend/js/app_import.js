@@ -59,7 +59,8 @@ $(document).ready(function(){
     if (geo_boundarys) {
       var dpi = parseFloat($('#svg_dpi_value').val());
       if (!isNaN(dpi)) {
-        var px2mm = 25.4*(1.0/dpi);
+        // var px2mm = 25.4*(1.0/dpi);
+        var px2mm = 1;  // HACK
         
         raw_gcode_by_color = {};
         for (var color in geo_boundarys) {
