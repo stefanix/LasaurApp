@@ -123,11 +123,14 @@ SVGReader = {
           optiverts += subpaths[u].length;
         }
         // sort subpath to optimize seek distances in between
-        for (var i=0; i+1<subpaths.length; i++) {  // loop until one to last
-          var endpoint = subpaths[i][subpaths[i].length-1];
+        var endpoint = [0,0];  // start at the origin
+        for (var i=0; i<subpaths.length; i++) {
+          if (i > 0) {
+            endpoint = subpaths[i-1][subpaths[i-1].length-1];
+          }
           // search the rest of array for closest subpath start point
           var d2_hash = {}  // distance2:index pairs
-          for (var j=i+1; j<subpaths.length; j++) {
+          for (var j=i; j<subpaths.length; j++) {
             var startpoint = subpaths[j][0];
             d2_hash[Math.pow(endpoint[0]-startpoint[0],2) + Math.pow(endpoint[1]-startpoint[1],2)] = j;
           }
@@ -140,9 +143,9 @@ SVGReader = {
             }
           }
           // make closest subpath next item
-          if (d2minIndex != i+1) {
-            var tempItem = subpaths[i+1];
-            subpaths[i+1] = subpaths[d2minIndex];
+          if (d2minIndex != i) {
+            var tempItem = subpaths[i];
+            subpaths[i] = subpaths[d2minIndex];
             subpaths[d2minIndex] = tempItem;  
           }
         }
