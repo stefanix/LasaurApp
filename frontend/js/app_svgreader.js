@@ -57,12 +57,17 @@ SVGReader = {
     // number of subpath joined
   ignore_tags : {'defs':undefined, 'pattern':undefined, 'clipPath':undefined},
     // tags to ignore for this parser
+  optimize : true,
+    // do all kinds of path optimizations
 
 
     
   parse : function(svgstring, config) {
     this.join_count = 0;
     this.boundarys = {};
+    if ('optimize' in config) {
+      this.optimize = config['optimize'];
+    }
     
     // parse xml
     var svgRootElement;
@@ -105,53 +110,53 @@ SVGReader = {
     this.parseChildren(svgRootElement, node);
     
     // optimize and sort polylines
-    var totalverts = 0;
-    var optiverts = 0;
-    for (var col in this.boundarys) {
-      var subpaths = this.boundarys[col];  // by color
-      // optimize polylines with high-vertex counts
-      // as many apps export highly tesselated polylines
-      for (var u=0; u<subpaths.length; u++) {
-        totalverts += subpaths[u].length;
-        subpaths[u] = this.poly_simplify(subpaths[u], this.tolerance2_half);
-        optiverts += subpaths[u].length;
-      }
-      // sort subpath to optimize seek distances in between
-      for (var i=0; i+1<subpaths.length; i++) {  // loop until one to last
-        var endpoint = subpaths[i][subpaths[i].length-1];
-        // search the rest of array for closest subpath start point
-        var d2_hash = {}  // distance2:index pairs
-        for (var j=i+1; j<subpaths.length; j++) {
-          var startpoint = subpaths[j][0];
-          d2_hash[Math.pow(endpoint[0]-startpoint[0],2) + Math.pow(endpoint[1]-startpoint[1],2)] = j;
+    if (this.optimize) {
+      var totalverts = 0;
+      var optiverts = 0;
+      for (var col in this.boundarys) {
+        var subpaths = this.boundarys[col];  // by color
+        // optimize polylines with high-vertex counts
+        // as many apps export highly tesselated polylines
+        for (var u=0; u<subpaths.length; u++) {
+          totalverts += subpaths[u].length;
+          subpaths[u] = this.poly_simplify(subpaths[u], this.tolerance2_half);
+          optiverts += subpaths[u].length;
         }
-        var d2min = Infinity;
-        var d2minIndex = undefined;
-        for (var d2 in d2_hash) {
-          if (parseFloat(d2) < d2min) {
-            d2min = d2; 
-            d2minIndex = d2_hash[d2];
+        // sort subpath to optimize seek distances in between
+        for (var i=0; i+1<subpaths.length; i++) {  // loop until one to last
+          var endpoint = subpaths[i][subpaths[i].length-1];
+          // search the rest of array for closest subpath start point
+          var d2_hash = {}  // distance2:index pairs
+          for (var j=i+1; j<subpaths.length; j++) {
+            var startpoint = subpaths[j][0];
+            d2_hash[Math.pow(endpoint[0]-startpoint[0],2) + Math.pow(endpoint[1]-startpoint[1],2)] = j;
+          }
+          var d2min = Infinity;
+          var d2minIndex = undefined;
+          for (var d2 in d2_hash) {
+            if (parseFloat(d2) < d2min) {
+              d2min = d2; 
+              d2minIndex = d2_hash[d2];
+            }
+          }
+          // make closest subpath next item
+          if (d2minIndex != i+1) {
+            var tempItem = subpaths[i+1];
+            subpaths[i+1] = subpaths[d2minIndex];
+            subpaths[d2minIndex] = tempItem;  
           }
         }
-        // make closest subpath next item
-        if (d2minIndex != i+1) {
-          var tempItem = subpaths[i+1];
-          subpaths[i+1] = subpaths[d2minIndex];
-          subpaths[d2minIndex] = tempItem;  
-        }
+      }    
+      // report pseudo-polyline joining operations
+      if (this.join_count > 100) {
+        $().uxmessage('notice', 'SVGReader: joined many line segments: ' + this.join_count);
+      } 
+      // report polyline optimizations    
+      var difflength = totalverts - optiverts;
+      var diffpct = (100*difflength/totalverts);
+      if (diffpct > 10) {  // if diff more than 10%
+        $().uxmessage('notice', 'SVGReader: polylines optimized by ' + diffpct.toFixed(0) + '%');
       }
-    }
-    
-    // report pseudo-polyline joining operations
-    if (this.join_count > 100) {
-      $().uxmessage('notice', 'SVGReader: joined many line segments: ' + this.join_count);
-    } 
-    
-    // report polyline optimizations    
-    var difflength = totalverts - optiverts;
-    var diffpct = (100*difflength/totalverts);
-    if (diffpct > 10) {  // if diff more than 10%
-      $().uxmessage('notice', 'SVGReader: polylines optimized by ' + diffpct.toFixed(0) + '%');
     }
     
     return this.boundarys
@@ -232,7 +237,7 @@ SVGReader = {
               var lastsubpath = colsubpaths[colsubpaths.length-1];
               var endpoint = lastsubpath[lastsubpath.length-1];
               var d2 = Math.pow(endpoint[0]-subpath[0][0],2) + Math.pow(endpoint[1]-subpath[0][1],2);
-              if (d2 < this.epsilon2) {
+              if ((d2 < this.epsilon2) && this.optimize) {
                 // previous subpath (of same color) end where this one starts
                 // concat subpath to previous subpath, drop first point
                 this.join_count++;

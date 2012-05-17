@@ -114,10 +114,17 @@
 							<div id="tab_import" class="tab-pane">													
 								<div class="well">
 
-									<div class="row" style="margin-left:0px">
-										<button id="svg_open_button" class="btn btn-large pull-left" data-loading-text="loading..." autocomplete="off">
-											<i class="icon-folder-open"></i> Open
-										</button>
+									<div class="row" style="margin-left:0px">										
+								    <div class="btn-group pull-left">
+											<button id="svg_import_btn" class="btn btn-large" data-loading-text="loading..." autocomplete="off">
+												<i class="icon-folder-open"></i> Import
+											</button>
+									    <button class="btn btn-large dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
+									    <ul class="dropdown-menu">
+									    	<li><a id="svg_import_nop_btn" href="#">Import without Optimizing</a></li>
+									    </ul>
+								    </div>										
+										
 										<div class="pull-left">
 											<form id="svg_upload_form" action="#" onsubmit="return false;">
 												<input type="file" id="svg_upload_file" name="data" style="visibility:hidden; position:fixed">
@@ -185,11 +192,11 @@
 								
 						    <div class="alert" style="width:400px">
 							    <a class="close" data-dismiss="alert">×</a>
-							    <strong>Note!</strong> New laser intensity range: 0-100%.
-						    </div>
+							    <strong>Note!</strong> Set page size in your SVG vector app to 1220x610mm.
+						    </div>								
 						    <div class="alert" style="width:400px">
 							    <a class="close" data-dismiss="alert">×</a>
-							    <strong>Note!</strong> Set page size in your SVG vector app to 1220x610mm.
+							    <strong>Note!</strong> New laser intensity range: 0-100%.
 						    </div>						
 							</div> <!-- end of import tab -->							
 
