@@ -47,9 +47,12 @@ SVGReader = {
   style : {},  
     // style at current parsing position
   tolerance : 0.1,
-    // max tollerance when tesselating curvy shapes
-  EPSILON_SQUARED : 0.01*0.01,
-    // the distance when to concat subpath
+  tolerance2 : undefined,
+  tolerance2_px: undefined,
+  tolerance2_half: undefined,
+  epsilon : undefined,
+  epsilon2 : undefined,
+    // tolerance optimizing (tesselating, simplifying) curvy shapes (mm)
   join_count : 0,
     // number of subpath joined
   ignore_tags : {'defs':undefined, 'pattern':undefined, 'clipPath':undefined},
@@ -60,7 +63,6 @@ SVGReader = {
   parse : function(svgstring, config) {
     this.join_count = 0;
     this.boundarys = {};
-    this.tolerance_squared = Math.pow(this.tolerance, 2);
     
     // parse xml
     var svgRootElement;
@@ -85,6 +87,15 @@ SVGReader = {
       this.dpi = 90;        
     }
     
+    // adjust tolerances to px units
+    var mm2px = this.dpi/25.4;
+    this.tolerance2 = this.tolerance*this.tolerance;
+    this.tolerance2_px = (mm2px*this.tolerance)*(mm2px*this.tolerance);
+    this.tolerance2_half = (0.5*this.tolerance)*(0.5*this.tolerance);
+    this.epsilon = 0.1*this.tolerance;
+    this.epsilon2 = this.epsilon*this.epsilon;
+    
+    
     // let the fun begin
     // recursively parse children
     // output will be in this.boundarys    
@@ -102,7 +113,7 @@ SVGReader = {
       // as many apps export highly tesselated polylines
       for (var u=0; u<subpaths.length; u++) {
         totalverts += subpaths[u].length;
-        subpaths[u] = this.poly_simplify(subpaths[u], 0.5*this.tolerance);
+        subpaths[u] = this.poly_simplify(subpaths[u], this.tolerance2_half);
         optiverts += subpaths[u].length;
       }
       // sort subpath to optimize seek distances in between
@@ -208,7 +219,7 @@ SVGReader = {
             var subpath = node.path[k];
             if (subpath.length == 0) {continue;}  // skip if empty subpath
             // 5a.) convert to world coordinates and then to mm units
-            for (var l=0; l<node.path[k].length; l++) {
+            for (var l=0; l<subpath.length; l++) {
               subpath[l] = this.matrixApply(node.xformToWorld, subpath[l]);
               subpath[l] = this.vertexScale(subpath[l], 25.4/this.dpi);
             }
@@ -221,7 +232,7 @@ SVGReader = {
               var lastsubpath = colsubpaths[colsubpaths.length-1];
               var endpoint = lastsubpath[lastsubpath.length-1];
               var d2 = Math.pow(endpoint[0]-subpath[0][0],2) + Math.pow(endpoint[1]-subpath[0][1],2);
-              if (d2 < this.EPSILON_SQUARED) {
+              if (d2 < this.epsilon2) {
                 // previous subpath (of same color) end where this one starts
                 // concat subpath to previous subpath, drop first point
                 this.join_count++;
@@ -680,7 +691,7 @@ SVGReader = {
   addPath : function(d, node) {
     // http://www.w3.org/TR/SVG11/paths.html#PathData
     
-    var tolerance2 = this.tolerance_squared
+    var tolerance2 = this.tolerance2_px;
     var totalMaxScale = this.matrixGetScale(node.xformToWorld);
     if (totalMaxScale != 0) {
       // adjust for possible transforms
@@ -1224,9 +1235,9 @@ SVGReader = {
     return [ v[0]*f, v[1]*f ];
   },  
 
-  poly_simplify : function(V, tol) {
+  poly_simplify : function(V, tol2) {
     // V ... [[x1,y1],[x2,y2],...] polyline
-    // tol  ... approximation tolerance
+    // tol2  ... approximation tolerance squared
     // ============================================== 
     // Copyright 2002, softSurfer (www.softsurfer.com)
     // This code may be freely used and modified for any purpose
@@ -1244,7 +1255,7 @@ SVGReader = {
     var d2 = function(u,v) {return norm2(diff(u,v));}
     var d = function(u,v) {return norm(diff(u,v));}
     
-    var simplifyDP = function( tol, v, j, k, mk ) {
+    var simplifyDP = function( tol2, v, j, k, mk ) {
       //  This is the Douglas-Peucker recursive simplification routine
       //  It just marks vertices that are part of the simplified polyline
       //  for approximating the polyline subchain v[j] to v[k].
@@ -1255,7 +1266,6 @@ SVGReader = {
       // check for adequate approximation by segment S from v[j] to v[k]
       var maxi = j;          // index of vertex farthest from S
       var maxd2 = 0;         // distance squared of farthest vertex
-      var tol2 = tol * tol;  // tolerance squared
       S = [v[j], v[k]];  // segment from v[j] to v[k]
       u = diff(S[1], S[0]);   // segment direction vector
       var cu = norm2(u,u);     // segment length squared
@@ -1290,8 +1300,8 @@ SVGReader = {
         // split the polyline at the farthest vertex from S
         mk[maxi] = 1;      // mark v[maxi] for the simplified polyline
         // recursively simplify the two subpolylines at v[maxi]
-        simplifyDP( tol, v, j, maxi, mk );  // polyline v[j] to v[maxi]
-        simplifyDP( tol, v, maxi, k, mk );  // polyline v[maxi] to v[k]
+        simplifyDP( tol2, v, j, maxi, mk );  // polyline v[j] to v[maxi]
+        simplifyDP( tol2, v, maxi, k, mk );  // polyline v[maxi] to v[k]
       }
       // else the approximation is OK, so ignore intermediate vertices
       return;
@@ -1300,7 +1310,6 @@ SVGReader = {
     var n = V.length;
     var sV = [];    
     var i, k, m, pv;               // misc counters
-    var tol2 = tol * tol;          // tolerance squared
     vt = [];                       // vertex buffer, points
     mk = [];                       // marker buffer, ints
 
@@ -1319,7 +1328,7 @@ SVGReader = {
 
     // STAGE 2.  Douglas-Peucker polyline simplification
     mk[0] = mk[k-1] = 1;       // mark the first and last vertices
-    simplifyDP( tol, vt, 0, k-1, mk );
+    simplifyDP( tol2, vt, 0, k-1, mk );
 
     // copy marked vertices to the output simplified polyline
     for (i=m=0; i<k; i++) {
