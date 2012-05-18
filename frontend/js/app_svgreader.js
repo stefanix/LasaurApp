@@ -87,6 +87,9 @@ SVGReader = {
       } else if (svghead.search(/CorelDraw/i) != -1) {
         this.dpi = 96;
         $().uxmessage('notice', "SVG exported with CorelDraw -> 96dpi.");
+      } else if (svghead.search(/Qt/i) != -1) {
+        this.dpi = 90;
+        $().uxmessage('notice', "SVG exported with Qt lib -> 90dpi.");
       }
     }
     

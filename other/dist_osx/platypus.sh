@@ -1,0 +1,3 @@
+
+chmod +x lasaurapp;
+./lasaurapp

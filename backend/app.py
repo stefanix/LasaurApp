@@ -10,7 +10,7 @@ from flash import flash_upload
 
 
 APPNAME = "lasaurapp"
-VERSION = "v12.06b"
+VERSION = "v12.06c"
 COMPANY_NAME = "com.nortd.labs"
 SERIAL_PORT = None
 BITSPERSECOND = 9600
@@ -237,7 +237,9 @@ def serial_handler(connect):
         print 'js is asking to connect serial'      
         if not SerialManager.is_connected():
             try:
-                global SERIAL_PORT, BITSPERSECOND
+                global SERIAL_PORT, BITSPERSECOND, GUESS_PPREFIX
+                if not SERIAL_PORT and os.name == 'posix':
+                    SERIAL_PORT = SerialManager.match_device(GUESS_PPREFIX)
                 SerialManager.connect(SERIAL_PORT, BITSPERSECOND)
                 ret = "Serial connected to %s:%d." % (SERIAL_PORT, BITSPERSECOND)  + '<br>'
                 time.sleep(1.0) # allow some time to receive a prompt/welcome
@@ -245,6 +247,7 @@ def serial_handler(connect):
                 SerialManager.flush_output()
                 return ret
             except serial.SerialException:
+                SERIAL_PORT = None
                 print "Failed to connect to serial."    
                 return ""          
     elif connect == '0':
@@ -259,7 +262,15 @@ def serial_handler(connect):
     else:
         print 'ambigious connect request from js: ' + connect            
         return ""
-        
+
+@route('/flash_firmware')
+def flash_firmware_handler():
+    if SerialManager.is_connected():
+        SerialManager.close()
+    if os.name == 'posix':
+        SERIAL_PORT = SerialManager.match_device(GUESS_PPREFIX)        
+    flash_upload(SERIAL_PORT, resources_dir())
+    return '<h2>flashing finished!</h2> Check Log window for possible errors.<br><a href="/">return</a>'
 
 # @route('/gcode/:gcode_line')
 # def gcode_handler(gcode_line):
@@ -357,7 +368,7 @@ def run_helper():
             run_with_callback('127.0.0.1')    
             
 
-
+print "LasaurApp " + VERSION
 if args.list_serial_devices:
     SerialManager.list_devices()
 else:
@@ -390,19 +401,19 @@ else:
         if SERIAL_PORT:
             print "Using serial device '"+ str(SERIAL_PORT) +"' by best guess."
     
-    if SERIAL_PORT:
-        run_helper()
-    else:         
+    if SERIAL_PORT or os.name == 'posix':
+        # with posix system we can also guess the serial port later
         print "-----------------------------------------------------------------------------"
         print "WARNING: LasaurApp doesn't know what serial device to connect to!"
-        print "On Linux or OSX this is something like '/dev/tty.usbmodemfd121' and on"
-        print "Windows this is something like 'COM1', 'COM2', 'COM3', ..."
-        print "The serial port can be supplied in one of the following ways:"
-        print "(1) First argument on the  command line."
-        print "(2) In a config file named '" + CONFIG_FILE + "' (located in same directory)"
-        print "    with the serial port string on the first line."
-        print "(3) Best guess. On Linux and OSX the app can guess the serial name by"
-        print "    choosing the first device it finds starting with '"+ GUESS_PPREFIX +"'."
+        print "Make sure the Lasersaur hardware is connectd to the USB interface." 
+        print "-----------------------------------------------------------------------------"        
+        run_helper()     
+    else:
+        print "-----------------------------------------------------------------------------"
+        print "WARNING: LasaurApp doesn't know what serial device to connect to!"
+        print "Please specify the com port as the first argument, e.g:" 
+        print "lasaurapp COM7"
+        print "where COM7 is the actual com port the Lasersaur is connected to."
         print "-----------------------------------------------------------------------------"
         ret = raw_input('Run anyways (y/n)? ')
         if ret in 'yY' and ret != '':

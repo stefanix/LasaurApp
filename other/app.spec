@@ -52,4 +52,7 @@ exe = EXE(pyz,
           strip=None,
           upx=True,
           console=True )
+
+# app = BUNDLE(exe,
+#              name=target_location + '.app')
    
