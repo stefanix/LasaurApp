@@ -69,6 +69,27 @@ SVGReader = {
       this.optimize = config['optimize'];
     }
     
+    if ('dpi' in config && config['dpi']) {
+      this.dpi = config['dpi'];
+      $().uxmessage('notice', "SVG import forced to "+this.dpi+"dpi.");
+    } else {
+      // look for clues  of svg generator app and it's DPI
+      var svghead = svgstring.slice(0,400);
+      if (svghead.search(/Inkscape/i) != -1) {
+        this.dpi = 90;
+        $().uxmessage('notice', "SVG exported with Inkscape -> 90dpi.");      
+      } else if (svghead.search(/Illustrator/i) != -1) {
+        this.dpi = 72;
+        $().uxmessage('notice', "SVG exported with Illustrator -> 72dpi.");
+      } else if (svghead.search(/Intaglio/i) != -1) {
+        this.dpi = 72;
+        $().uxmessage('notice', "SVG exported with Intaglio -> 72dpi.");
+      } else if (svghead.search(/CorelDraw/i) != -1) {
+        this.dpi = 96;
+        $().uxmessage('notice', "SVG exported with CorelDraw -> 96dpi.");
+      }
+    }
+    
     // parse xml
     var svgRootElement;
 		if (window.DOMParser) {
@@ -84,12 +105,14 @@ SVGReader = {
 		}
         
     // figure out how to map px to mm, using document page size
-    this.parseRoot(svgRootElement);
-    if (this.dpi) {
-      $().uxmessage('notice', "Unit conversion from page size: " + this.dpi.toFixed(0) + 'dpi');
-    } else {
-      $().uxmessage('warning', "Cannot parse page size -> defaulting to 90dpi.");
-      this.dpi = 90;        
+    if (!this.dpi) {
+      this.parseRoot(svgRootElement);
+      if (this.dpi) {
+        $().uxmessage('notice', "Unit conversion from page size: " + this.dpi.toFixed(0) + 'dpi');
+      } else {
+        $().uxmessage('warning', "Cannot parse page size -> defaulting to 90dpi.");
+        this.dpi = 90;        
+      }
     }
     
     // adjust tolerances to px units
