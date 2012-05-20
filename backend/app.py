@@ -10,7 +10,7 @@ from flash import flash_upload
 
 
 APPNAME = "lasaurapp"
-VERSION = "v12.06c"
+VERSION = "v12.06d"
 COMPANY_NAME = "com.nortd.labs"
 SERIAL_PORT = None
 BITSPERSECOND = 9600
