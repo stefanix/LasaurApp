@@ -147,7 +147,8 @@ class SerialManagerClass:
                         # else if line.find('error:') > -1:
                         #     
                         else:
-                            print "\ngrbl: " + line
+                            sys.stdout.write(line + '\n')
+                            sys.stdout.flush()
                 
                 if self.tx_buffer:
                     if self.remoteXON:

@@ -10,7 +10,7 @@ from flash import flash_upload
 
 
 APPNAME = "lasaurapp"
-VERSION = "v12.06d"
+VERSION = "v12.06e"
 COMPANY_NAME = "com.nortd.labs"
 SERIAL_PORT = None
 BITSPERSECOND = 9600
@@ -64,6 +64,7 @@ def run_with_callback(host):
     handler = default_app()
     server = wsgiref.simple_server.make_server(host, NETWORK_PORT, handler)
     server.timeout = 0.01
+    server.quiet = True
     print "-----------------------------------------------------------------------------"
     print "Bottle server starting up ..."
     print "Serial is set to %d bps" % BITSPERSECOND
@@ -78,6 +79,7 @@ def run_with_callback(host):
         webbrowser.open_new_tab('http://127.0.0.1:'+str(NETWORK_PORT))
     except webbrowser.Error:
         print "Cannot open Webbrowser, please do so manually."
+    sys.stdout.flush()  # make sure everything gets flushed
     while 1:
         try:
             SerialManager.send_queue_as_ready()
@@ -234,7 +236,7 @@ def canvas_handler():
 @route('/serial/:connect')
 def serial_handler(connect):
     if connect == '1':
-        print 'js is asking to connect serial'      
+        # print 'js is asking to connect serial'      
         if not SerialManager.is_connected():
             try:
                 global SERIAL_PORT, BITSPERSECOND, GUESS_PPREFIX
@@ -251,12 +253,12 @@ def serial_handler(connect):
                 print "Failed to connect to serial."    
                 return ""          
     elif connect == '0':
-        print 'js is asking to close serial'    
+        # print 'js is asking to close serial'    
         if SerialManager.is_connected():
             if SerialManager.close(): return "1"
             else: return ""  
     elif connect == "2":
-        print 'js is asking if serial connected'
+        # print 'js is asking if serial connected'
         if SerialManager.is_connected(): return "1"
         else: return ""
     else:

@@ -259,7 +259,7 @@ $(document).ready(function(){
       		connect_btn_set_state(false); 
         }
     });
-  }, 3000);
+  }, 4000);
   connect_btn_width = $("#connect_btn").innerWidth();
   $("#connect_btn").width(connect_btn_width);
   $("#connect_btn").click(function(e){	
