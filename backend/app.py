@@ -10,7 +10,7 @@ from flash import flash_upload
 
 
 APPNAME = "lasaurapp"
-VERSION = "v12.06f"
+VERSION = "v12.06g"
 COMPANY_NAME = "com.nortd.labs"
 SERIAL_PORT = None
 BITSPERSECOND = 9600
@@ -356,7 +356,9 @@ argparser.add_argument('-f', '--flash', dest='build_and_flash', action='store_tr
 argparser.add_argument('-l', '--list', dest='list_serial_devices', action='store_true',
                     default=False, help='list all serial devices currently connected')
 argparser.add_argument('-d', '--debug', dest='debug', action='store_true',
-                    default=False, help='print more verbose for debugging')                    
+                    default=False, help='print more verbose for debugging')
+argparser.add_argument('-m', '--match', dest='match', action='string',
+                    default=GUESS_PPREFIX, help='match serial device with this string')                                        
 args = argparser.parse_args()
 
 
@@ -380,7 +382,13 @@ print "LasaurApp " + VERSION
 if args.list_serial_devices:
     SerialManager.list_devices()
 else:
-    if args.port:
+    if args.match:
+        GUESS_PREFIX = args.match
+        SERIAL_PORT = SerialManager.match_device(GUESS_PPREFIX)
+        if SERIAL_PORT:
+            print "Using serial device '"+ str(SERIAL_PORT)
+            print "(first device to match: " + args.match + ")"
+    elif args.port:
         # (1) get the serial device from the argument list
         SERIAL_PORT = args.port
         print "Using serial device '"+ SERIAL_PORT +"' from command line."
