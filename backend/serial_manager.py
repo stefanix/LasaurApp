@@ -1,4 +1,5 @@
 
+import os
 import sys
 import time
 import serial
@@ -32,7 +33,10 @@ class SerialManagerClass:
 
 
     def list_devices(self):
-        iterator = sorted(serial_list_ports.grep('tty'))
+        if os.name == 'posix':
+            iterator = sorted(serial_list_ports.grep('tty'))
+        else:
+            iterator = sorted(serial_list_ports.grep(''))
         for port, desc, hwid in iterator:
             print "%-20s" % (port,)
             print "    desc: %s" % (desc,)
