@@ -398,23 +398,14 @@ else:
         if SERIAL_PORT:
             print "Using serial device '"+ str(SERIAL_PORT) +"' by best guess."
     
-    if SERIAL_PORT or os.name == 'posix':
-        # with posix system we can also guess the serial port later
+    if not SERIAL_PORT:
         print "-----------------------------------------------------------------------------"
         print "WARNING: LasaurApp doesn't know what serial device to connect to!"
-        print "Make sure the Lasersaur hardware is connectd to the USB interface." 
+        print "Make sure the Lasersaur hardware is connectd to the USB interface."
         print "-----------------------------------------------------------------------------"        
-        run_helper()     
-    else:
-        print "-----------------------------------------------------------------------------"
-        print "WARNING: LasaurApp doesn't know what serial device to connect to!"
-        print "Please specify the com port as the first argument, e.g:" 
-        print "lasaurapp COM7"
-        print "where COM7 is the actual com port the Lasersaur is connected to."
-        print "-----------------------------------------------------------------------------"
-        ret = raw_input('Run anyways (y/n)? ')
-        if ret in 'yY' and ret != '':
-            run_helper()
+    
+    # run
+    run_helper()     
 
         
 
