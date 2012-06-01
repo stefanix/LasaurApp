@@ -275,6 +275,7 @@ def serial_handler(connect):
 def flash_firmware_handler():
     if SerialManager.is_connected():
         SerialManager.close()
+    global SERIAL_PORT, GUESS_PREFIX
     if not SERIAL_PORT:
         SERIAL_PORT = SerialManager.match_device(GUESS_PREFIX)        
     flash_upload(SERIAL_PORT, resources_dir())
