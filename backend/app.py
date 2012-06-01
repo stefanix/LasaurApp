@@ -10,7 +10,7 @@ from flash import flash_upload
 
 
 APPNAME = "lasaurapp"
-VERSION = "v12.06e"
+VERSION = "v12.06f"
 COMPANY_NAME = "com.nortd.labs"
 SERIAL_PORT = None
 BITSPERSECOND = 9600
@@ -19,7 +19,7 @@ CONFIG_FILE = "lasaurapp.conf"
 COOKIE_KEY = 'secret_key_jkn23489hsdf'
 
 if os.name == 'nt': #sys.platform == 'win32': 
-    GUESS_PPREFIX = "HHD"   
+    GUESS_PPREFIX = "Arduino"   
 elif os.name == 'posix':
     GUESS_PPREFIX = "tty.usbmodem"   
 else:
