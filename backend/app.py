@@ -19,11 +19,11 @@ CONFIG_FILE = "lasaurapp.conf"
 COOKIE_KEY = 'secret_key_jkn23489hsdf'
 
 if os.name == 'nt': #sys.platform == 'win32': 
-    GUESS_PPREFIX = "Arduino"   
+    GUESS_PREFIX = "Arduino"   
 elif os.name == 'posix':
-    GUESS_PPREFIX = "tty.usbmodem"   
+    GUESS_PREFIX = "tty.usbmodem"   
 else:
-    GUESS_PPREFIX = "no prefix"    
+    GUESS_PREFIX = "no prefix"    
 
 
 
@@ -245,9 +245,9 @@ def serial_handler(connect):
         # print 'js is asking to connect serial'      
         if not SerialManager.is_connected():
             try:
-                global SERIAL_PORT, BITSPERSECOND, GUESS_PPREFIX
+                global SERIAL_PORT, BITSPERSECOND, GUESS_PREFIX
                 if not SERIAL_PORT:
-                    SERIAL_PORT = SerialManager.match_device(GUESS_PPREFIX)
+                    SERIAL_PORT = SerialManager.match_device(GUESS_PREFIX)
                 SerialManager.connect(SERIAL_PORT, BITSPERSECOND)
                 ret = "Serial connected to %s:%d." % (SERIAL_PORT, BITSPERSECOND)  + '<br>'
                 time.sleep(1.0) # allow some time to receive a prompt/welcome
@@ -276,7 +276,7 @@ def flash_firmware_handler():
     if SerialManager.is_connected():
         SerialManager.close()
     if not SERIAL_PORT:
-        SERIAL_PORT = SerialManager.match_device(GUESS_PPREFIX)        
+        SERIAL_PORT = SerialManager.match_device(GUESS_PREFIX)        
     flash_upload(SERIAL_PORT, resources_dir())
     return '<h2>flashing finished!</h2> Check Log window for possible errors.<br><a href="/">return</a>'
 
@@ -357,8 +357,8 @@ argparser.add_argument('-l', '--list', dest='list_serial_devices', action='store
                     default=False, help='list all serial devices currently connected')
 argparser.add_argument('-d', '--debug', dest='debug', action='store_true',
                     default=False, help='print more verbose for debugging')
-argparser.add_argument('-m', '--match', dest='match', action='string',
-                    default=GUESS_PPREFIX, help='match serial device with this string')                                        
+argparser.add_argument('-m', '--match', dest='match',
+                    default=GUESS_PREFIX, help='match serial device with this string')                                        
 args = argparser.parse_args()
 
 
@@ -382,29 +382,30 @@ print "LasaurApp " + VERSION
 if args.list_serial_devices:
     SerialManager.list_devices()
 else:
-    if args.match:
-        GUESS_PREFIX = args.match
-        SERIAL_PORT = SerialManager.match_device(GUESS_PPREFIX)
-        if SERIAL_PORT:
-            print "Using serial device '"+ str(SERIAL_PORT)
-            print "(first device to match: " + args.match + ")"
-    elif args.port:
+    if args.port:
         # (1) get the serial device from the argument list
         SERIAL_PORT = args.port
         print "Using serial device '"+ SERIAL_PORT +"' from command line."
-    else:    
+    else:
+        # (2) get the serial device from the config file        
         if os.path.isfile(CONFIG_FILE):
-            # (2) get the serial device from the config file
             fp = open(CONFIG_FILE)
             line = fp.readline().strip()
             if len(line) > 3:
                 SERIAL_PORT = line
                 print "Using serial device '"+ SERIAL_PORT +"' from '" + CONFIG_FILE + "'."
-            
+
     if not SERIAL_PORT:
-        SERIAL_PORT = SerialManager.match_device(GUESS_PPREFIX)
-        if SERIAL_PORT:
-            print "Using serial device '"+ str(SERIAL_PORT) +"' by best guess."
+        if args.match:
+            GUESS_PREFIX = args.match
+            SERIAL_PORT = SerialManager.match_device(GUESS_PREFIX)
+            if SERIAL_PORT:
+                print "Using serial device '"+ str(SERIAL_PORT)
+                print "(first device to match: " + args.match + ")"            
+        else:
+            SERIAL_PORT = SerialManager.match_device(GUESS_PREFIX)
+            if SERIAL_PORT:
+                print "Using serial device '"+ str(SERIAL_PORT) +"' by best guess."
     
     if not SERIAL_PORT:
         print "-----------------------------------------------------------------------------"
