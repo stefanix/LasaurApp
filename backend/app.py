@@ -412,7 +412,7 @@ else:
         print "-----------------------------------------------------------------------------"
         print "WARNING: LasaurApp doesn't know what serial device to connect to!"
         print "Make sure the Lasersaur hardware is connectd to the USB interface."
-        print "-----------------------------------------------------------------------------"        
+        print "-----------------------------------------------------------------------------"      
     
     # run
     run_helper()     
