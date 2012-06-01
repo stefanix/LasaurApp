@@ -16,8 +16,14 @@ SERIAL_PORT = None
 BITSPERSECOND = 9600
 NETWORK_PORT = 4444
 CONFIG_FILE = "lasaurapp.conf"
-GUESS_PPREFIX = "tty.usbmodem"
 COOKIE_KEY = 'secret_key_jkn23489hsdf'
+
+if os.name == 'nt': #sys.platform == 'win32': 
+    GUESS_PPREFIX = "HHD"   
+elif os.name == 'posix':
+    GUESS_PPREFIX = "tty.usbmodem"   
+else:
+    GUESS_PPREFIX = "no prefix"    
 
 
 
@@ -240,7 +246,7 @@ def serial_handler(connect):
         if not SerialManager.is_connected():
             try:
                 global SERIAL_PORT, BITSPERSECOND, GUESS_PPREFIX
-                if not SERIAL_PORT and os.name == 'posix':
+                if not SERIAL_PORT:
                     SERIAL_PORT = SerialManager.match_device(GUESS_PPREFIX)
                 SerialManager.connect(SERIAL_PORT, BITSPERSECOND)
                 ret = "Serial connected to %s:%d." % (SERIAL_PORT, BITSPERSECOND)  + '<br>'
@@ -269,7 +275,7 @@ def serial_handler(connect):
 def flash_firmware_handler():
     if SerialManager.is_connected():
         SerialManager.close()
-    if os.name == 'posix':
+    if not SERIAL_PORT:
         SERIAL_PORT = SerialManager.match_device(GUESS_PPREFIX)        
     flash_upload(SERIAL_PORT, resources_dir())
     return '<h2>flashing finished!</h2> Check Log window for possible errors.<br><a href="/">return</a>'
@@ -388,18 +394,7 @@ else:
                 print "Using serial device '"+ SERIAL_PORT +"' from '" + CONFIG_FILE + "'."
             
     if not SERIAL_PORT:
-        # (3) try best guess the serial device if on linux or osx
-        # if os.path.isdir("/dev"):
-        #     devices = os.listdir("/dev")
-        #     for device in devices:
-        #         if device[:len(GUESS_PPREFIX)] == GUESS_PPREFIX:
-        #             SERIAL_PORT = "/dev/" + device
-        #             print "Using serial device '"+ SERIAL_PORT +"' by best guess."
-        #             break
-        if os.name == 'nt': #sys.platform == 'win32':    
-            SERIAL_PORT = SerialManager.match_device('Arduino')
-        elif os.name == 'posix':
-            SERIAL_PORT = SerialManager.match_device(GUESS_PPREFIX)
+        SERIAL_PORT = SerialManager.match_device(GUESS_PPREFIX)
         if SERIAL_PORT:
             print "Using serial device '"+ str(SERIAL_PORT) +"' by best guess."
     
