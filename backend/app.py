@@ -1,34 +1,18 @@
-import wx
+import wx 
+import wx.html2 
 
+class MyBrowser(wx.Dialog): 
+  def __init__(self, *args, **kwds): 
+    wx.Dialog.__init__(self, *args, **kwds) 
+    sizer = wx.BoxSizer(wx.VERTICAL) 
+    self.browser = wx.html2.WebView.New(self) 
+    sizer.Add(self.browser, 1, wx.EXPAND, 10) 
+    self.SetSizer(sizer) 
+    self.SetSize((1024, 700)) 
 
-class Example(wx.Frame):
-           
-    def __init__(self, *args, **kw):
-        super(Example, self).__init__(*args, **kw) 
-        
-        self.InitUI()
-        
-    def InitUI(self):   
-
-        pnl = wx.Panel(self)
-        cbtn = wx.Button(pnl, label='Close', pos=(20, 30))
-
-        cbtn.Bind(wx.EVT_BUTTON, self.OnClose)
-
-        self.SetSize((250, 200))
-        self.SetTitle('wx.Button')
-        self.Centre()
-        self.Show(True)          
-        
-    def OnClose(self, e):
-        
-        self.Close(True)                  
-        
-def main():
-    
-    ex = wx.App()
-    Example(None)
-    ex.MainLoop()    
-
-if __name__ == '__main__':
-    main()  
+if __name__ == '__main__': 
+  app = wx.App() 
+  dialog = MyBrowser(None, -1) 
+  dialog.browser.LoadURL("http://127.0.0.1:4444/") 
+  dialog.Show() 
+  app.MainLoop() 
