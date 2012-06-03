@@ -26,35 +26,48 @@ target_location = os.path.join('dist', 'lasaurapp')
 if sys.platform == "darwin":
     target_location = os.path.join('dist_osx2', 'lasaurapp')
     add_resource_files( glob('../firmware/tools_osx/*') )
+    a = Analysis(['../backend/app.py'],
+                 pathex=[os.path.abspath(__file__)],
+                 hiddenimports=[],
+                 hookspath=None)
+    pyz = PYZ(a.pure)
+    exe = EXE(pyz,
+              a.scripts,
+              exclude_binaries=1,
+              name=os.path.join('build/pyi.darwin/app', 'app'),
+              debug=False,
+              strip=None,
+              upx=True,
+              console=False )
+    coll = COLLECT(exe,
+                   a.binaries,
+                   a.zipfiles,
+                   a.datas + resource_files,
+                   strip=None,
+                   upx=True,
+                   name=target_location)
+
+    app = BUNDLE(coll,
+                 name=target_location + '.app')    
 elif sys.platform == "win32":
     target_location = os.path.join('dist_win', 'lasaurapp.exe')
     add_resource_files( glob('../firmware/tools_win/*') )
-elif sys.platform == "linux" or sys.platform == "linux2":
-    target_location = os.path.join('dist_linux', 'lasaurapp')
-    add_resource_files( glob('../firmware/tools_linux/*') )
+    a = Analysis(['../backend/app.py'],
+                 pathex=[os.path.abspath(__file__)],
+                 hiddenimports=[],
+                 hookspath=None)
+    pyz = PYZ(a.pure)
+    exe = EXE(pyz,
+              a.scripts,
+              a.binaries,
+              a.zipfiles,
+              a.datas + resource_files,
+              name=target_location,
+              debug=False,
+              strip=None,
+              upx=True,
+              console=False )
+# elif sys.platform == "linux" or sys.platform == "linux2":
+#     target_location = os.path.join('dist_linux', 'lasaurapp')
+#     add_resource_files( glob('../firmware/tools_linux/*') )
 
-
-### build TOC
-a = Analysis(['../backend/app.py'],
-             pathex=[os.path.abspath(__file__)],
-             hiddenimports=[],
-             hookspath=None)
-pyz = PYZ(a.pure)
-exe = EXE(pyz,
-          a.scripts,
-          exclude_binaries=1,
-          name=os.path.join('build/pyi.darwin/app', 'app'),
-          debug=False,
-          strip=None,
-          upx=True,
-          console=False )
-coll = COLLECT(exe,
-               a.binaries,
-               a.zipfiles,
-               a.datas + resource_files,
-               strip=None,
-               upx=True,
-               name=target_location)
-
-app = BUNDLE(coll,
-             name=target_location + '.app')
