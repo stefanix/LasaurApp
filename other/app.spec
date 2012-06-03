@@ -26,6 +26,7 @@ target_location = os.path.join('dist', 'lasaurapp')
 if sys.platform == "darwin":
     target_location = os.path.join('dist_osx2', 'lasaurapp')
     add_resource_files( glob('../firmware/tools_osx/*') )
+    resource_files.append( ('.', '../other/Python', 'DATA') )  # bugfix: adding python manually
     a = Analysis(['../backend/app.py'],
                  pathex=[os.path.abspath(__file__)],
                  hiddenimports=[],

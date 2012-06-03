@@ -8,7 +8,7 @@ class MyBrowser(wx.Dialog):
     self.browser = wx.html2.WebView.New(self) 
     sizer.Add(self.browser, 1, wx.EXPAND, 10) 
     self.SetSizer(sizer) 
-    self.SetSize((1024, 700)) 
+    self.SetSize((1024, 768)) 
 
 if __name__ == '__main__': 
   app = wx.App() 
