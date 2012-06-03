@@ -24,9 +24,10 @@ add_resource_files( glob('../library/*') )
 ### depending on platform
 target_location = os.path.join('dist', 'lasaurapp')
 if sys.platform == "darwin":
-    target_location = os.path.join('dist_osx2', 'lasaurapp')
+    ## to force 32bit use in Terminal "export VERSIONER_PYTHON_PREFER_32_BIT=yes"
+    target_location = os.path.join('dist_osx', 'LasaurApp')
     add_resource_files( glob('../firmware/tools_osx/*') )
-    resource_files.append( ('.', '../other/Python', 'DATA') )  # bugfix: adding python manually
+    resource_files.append( ('.', '../other/dist_osx/python-osx-2.7.1/Python', 'DATA') )  # bugfix: adding python manually
     a = Analysis(['../backend/app.py'],
                  pathex=[os.path.abspath(__file__)],
                  hiddenimports=[],
