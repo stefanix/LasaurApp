@@ -40,6 +40,12 @@
 })(jQuery); 
 
 
+/**
+ * Send G-Code to the backend for processing.
+ * @param {string} gcode
+ * @param {string} success_msg
+ * @param {string} error_msg
+ */
 function send_gcode(gcode, success_msg, error_msg) {
 	$.post("/gcode", {'gcode_program':gcode}, function(data) {
 		if (data != "") {
@@ -54,6 +60,11 @@ function send_gcode(gcode, success_msg, error_msg) {
 
 
 var queue_num_index = 1;
+/**
+ * Store and add a job to the queue.
+ * @param {string} name
+ * @param {string} gcode
+ */
 function save_and_add_to_job_queue(name, gcode) {  
   if ((typeof(name) == 'undefined') || ($.trim(name) == '')) {
     var date = new Date();
@@ -74,6 +85,12 @@ function save_and_add_to_job_queue(name, gcode) {
   });
 }
 
+
+/**
+ * Add a job queue list.
+ * @param {string} name
+ * @return {bool}
+ */
 function add_to_job_queue(name) {
   //// delete excessive queue items
   var num_non_starred = 0;
@@ -81,7 +98,15 @@ function add_to_job_queue(name) {
     if ($(li_item).find('a span.icon-star-empty').length > 0) {
       num_non_starred++;
       if (num_non_starred > 7) {
-        remove_queue_item(li_item);
+        // request a delete
+        name = $(li_item).find('a span:first').text();
+        $.get("/queue/rm/" + name, function(data) {
+          if (data == "1") {
+            $(li_item).remove()
+          } else {
+            $().uxmessage('error', "Failed to delete queue item: " + name);
+          }
+        });        
       }          
     }
   });
@@ -149,18 +174,11 @@ function add_to_job_queue(name) {
 }
 
 
-function remove_queue_item(li_item) {
-  // request a delete
-  name = $(li_item).find('a span:first').text();
-  $.get("/queue/rm/" + name, function(data) {
-    if (data == "1") {
-      $(li_item).remove()
-    } else {
-      $().uxmessage('error', "Failed to delete queue item: " + name);
-    }
-  });  
-}
-
+/**
+ * Add to library list.
+ * @param {string} gcode
+ * @param {string} name
+ */
 function add_to_library_queue(gcode, name) {
   if ((typeof(name) == 'undefined') || ($.trim(name) == '')) {
     var date = new Date();
@@ -178,6 +196,11 @@ function add_to_library_queue(gcode, name) {
 }
 
 
+/**
+ * Load G-Code into preview widget.
+ * @param {string} gcode
+ * @param {string} name
+ */
 function load_into_gcode_widget(gcode, name) {
 	$('#gcode_name').val(name);
 	$('#gcode_program').val(gcode);
@@ -186,13 +209,23 @@ function load_into_gcode_widget(gcode, name) {
 }
 
 
+/**
+ * Map and constrain feedrate.
+ * @param {number} rate
+ * @return {number} 
+ */
 function mapConstrainFeedrate(rate) {
   rate = parseInt(rate);
   if (rate < .1) {rate = .1;}
   else if (rate > 24000) {rate = 24000;}
   return rate.toString();
 }
-  
+
+/**
+ * Map and constrain intensity.
+ * @param {number} intens
+ * @return {number} 
+ */
 function mapConstrainIntesity(intens) {
   intens = parseInt(intens);
   if (intens < 0) {intens = 0;}
