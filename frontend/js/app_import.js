@@ -76,6 +76,7 @@ $(document).ready(function(){
 				$('#pass_2_div div.colorbtns').append('<button class="select_color btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
 				$('#pass_3_div div.colorbtns').append('<button class="select_color btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
       }
+      $('#canvas_properties div.colorbtns').append('<div style="margin-top:10px">These color toggles affect the preview only.</div>');      
       // register redraw event
 			$('button.preview_color').click(function(e){
 			  // toggling manually, had problem with automatic
@@ -114,22 +115,40 @@ $(document).ready(function(){
       });
       
       icanvas.background('#ffffff');
+      // var bbox_list = [];
+      var scale = 0.5;
       for (var color in raw_gcode_by_color) {
         if (!(color in exclude_colors)) {
-          var scale = 0.5;
           GcodeReader.parse(raw_gcode_by_color[color], scale);
           GcodeReader.draw(icanvas, color);
-          var bbox_width = (GcodeReader.bbox[2] - GcodeReader.bbox[0]) / scale;
-          var bbox_height = (GcodeReader.bbox[3] - GcodeReader.bbox[1]) / scale;
-          $().uxmessage('notice', "The calculated bounding box is " 
-            + bbox_width.toFixed(1) + 'x' + bbox_height.toFixed(1) + 'mm'
-            + ' (' + (bbox_width/25.4).toFixed(1) + 'x' + (bbox_height/25.4).toFixed(1) + 'in).');
+          // bbox_list.push([GcodeReader.bbox[0],GcodeReader.bbox[1],GcodeReader.bbox[2],GcodeReader.bbox[3]]);
         }
       }
+      // // combine all bounding boxes and report on log
+      // var overall_bbox = [0,0,0,0];
+      // for (var bbidx in bbox_list) {
+      //   var bbox = bbox_list[bbidx];
+      //   overall_bbox = bboxExpand(overall_bbox, bbox[0], bbox[1])
+      //   overall_bbox = bboxExpand(overall_bbox, bbox[2], bbox[3])
+      // }
+      // var bbox_width = (overall_bbox[2] - overall_bbox[0]) / scale;
+      // var bbox_height = (overall_bbox[3] - overall_bbox[1]) / scale;
+      // $().uxmessage('notice', "The calculated bounding box is " 
+      //   + bbox_width.toFixed(1) + 'x' + bbox_height.toFixed(1) + 'mm'
+      //   + ' (' + (bbox_width/25.4).toFixed(1) + 'x' + (bbox_height/25.4).toFixed(1) + 'in).');      
     } else {
       $().uxmessage('notice', "No data loaded to generate preview.");
     }       
   }
+
+  // function bboxExpand(bbox, x,y) {
+  //   var bbox_new = [bbox[0],bbox[1],bbox[2],bbox[3]];
+  //   if (x < bbox[0]) {bbox_new[0] = x;}
+  //   else if (x > bbox[2]) {bbox_new[2] = x;}
+  //   if (y < bbox[1]) {bbox_new[1] = y;}
+  //   else if (y > bbox[3]) {bbox_new[3] = y;}
+  //   return bbox_new;
+  // }
 
   // forwarding file open click
   $('#svg_import_btn').click(function(e){
@@ -175,6 +194,7 @@ $(document).ready(function(){
     var feedrate;
     var intensity;
     var colors = {};
+    var any_assingments = false;
     //// pass 1
     $('#pass_1_div div.colorbtns button').each(function(index) {
       if ($(this).hasClass('active')) {
@@ -182,6 +202,7 @@ $(document).ready(function(){
       }
     });
     if (Object.keys(colors).length > 0) { 
+      any_assingments = true;
       feedrate = mapConstrainFeedrate($("#import_feedrate_1").val());
       intensity = mapConstrainIntesity($("#import_intensity_1").val());
       gcodeparts.push("S"+intensity+"\nG1 F"+feedrate+"\nG0 F10000\n");
@@ -199,6 +220,7 @@ $(document).ready(function(){
       }
     });    
     if (Object.keys(colors).length > 0) { 
+      any_assingments = true;
       feedrate = mapConstrainFeedrate($("#import_feedrate_2").val());
       intensity = mapConstrainIntesity($("#import_intensity_2").val());
       gcodeparts.push("S"+intensity+"\nG1 F"+feedrate+"\nG0 F10000\n");
@@ -216,6 +238,7 @@ $(document).ready(function(){
       }
     });    
     if (Object.keys(colors).length > 0) { 
+      any_assingments = true;
       feedrate = mapConstrainFeedrate($("#import_feedrate_3").val());
       intensity = mapConstrainIntesity($("#import_intensity_3").val());
       gcodeparts.push("S"+intensity+"\nG1 F"+feedrate+"\nG0 F10000\n");
@@ -224,16 +247,19 @@ $(document).ready(function(){
           gcodeparts.push(raw_gcode_by_color[color]);
         }
       }
-    }       
-    gcodeparts.push("S0\nG00X0Y0F16000\n%");
-    var gcodestring = gcodeparts.join('');
-    var fullpath = $('#svg_upload_file').val();
-    var filename = fullpath.split('\\').pop().split('/').pop();
-    save_and_add_to_job_queue(filename, gcodestring);
-    load_into_gcode_widget(gcodestring, filename);
-    $('#tab_jobs_button').trigger('click');
-    // $().uxmessage('notice', "file added to laser job queue");
-  	//$( "#tabs_main" ).tabs({selected: 0 });	// switch to jobs tab  // TODO
+    }
+    if (any_assingments == true) {     
+      gcodeparts.push("S0\nG00X0Y0F16000\n%");
+      var gcodestring = gcodeparts.join('');
+      var fullpath = $('#svg_upload_file').val();
+      var filename = fullpath.split('\\').pop().split('/').pop();
+      save_and_add_to_job_queue(filename, gcodestring);
+      load_into_gcode_widget(gcodestring, filename);
+      $('#tab_jobs_button').trigger('click');
+      // $().uxmessage('notice', "file added to laser job queue");
+    } else {
+      $().uxmessage('warning', "nothing to cut -> please assign colors to passes");
+    }
   	return false;
   });
 
