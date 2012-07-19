@@ -50,7 +50,7 @@ GcodeWriter = {
     }
     // report if there were many suspiciously many congruent points
     if (del_count > 20) {
-      $().uxmessage('warning', "GcodeWriter: deleted many congruent points: " + del_count);
+      $().uxmessage('notice', "GcodeWriter: deleted many congruent points: " + del_count);
     }       
     // $().uxmessage('notice', "wrote " + nsegment + " G-code toolpath segments");
     return glist.join('');

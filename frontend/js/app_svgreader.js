@@ -68,6 +68,7 @@ SVGReader = {
     if ('optimize' in config) {
       this.optimize = config['optimize'];
     }
+    this.dpi = undefined;
     
     if ('dpi' in config && config['dpi']) {
       this.dpi = config['dpi'];
@@ -107,13 +108,13 @@ SVGReader = {
 			svgRootElement = xmlDoc.documentElement;
 		}
         
-    // figure out how to map px to mm, using document page size
+    // figure out how to map px to mm, using document page size, if necessary
     if (!this.dpi) {
       this.parseRoot(svgRootElement);
       if (this.dpi) {
-        $().uxmessage('notice', "Unit conversion from page size: " + this.dpi.toFixed(0) + 'dpi');
+        $().uxmessage('notice', "Unit conversion from page size: " + this.dpi.toFixed(4) + 'dpi');
       } else {
-        $().uxmessage('warning', "Cannot parse page size -> defaulting to 90dpi.");
+        $().uxmessage('warning', "Failed to use page size to infere implied px unit conversion -> defaulting to 90dpi.");
         this.dpi = 90;        
       }
     }
@@ -536,19 +537,26 @@ SVGReader = {
       }
       if (w && h) {
         if (w.search(/cm$/i) != -1) {
-          $().uxmessage('error', "Not supported: Page size in 'cm'.");
+          $().uxmessage('notice', "Page size in 'cm' -> setting up dpi to treat px (and no) units as 'cm'.");
+          parser.dpi = 2.54
         } else if (w.search(/mm$/i) != -1) {
-          $().uxmessage('error', "Not supported: Page size in 'mm'.");
+          $().uxmessage('notice', "Page size in 'mm' -> setting up dpi to treat px (and no) units as 'mm'.");
+          parser.dpi = 25.4
         } else if (w.search(/pt$/i) != -1) {
-          $().uxmessage('error', "Not supported: Page size in 'pt'.");
+          $().uxmessage('notice', "Page size in 'pt' -> setting up dpi to treat px (and no) units as 'pt'.");
+          parser.dpi = 1.25
         } else if (w.search(/pc$/i) != -1) {
-          $().uxmessage('error', "Not supported: Page size in 'pc'.");
+          $().uxmessage('notice', "Page size in 'pc' -> setting up dpi to treat px (and no) units as 'pc'.");
+          parser.dpi = 15.0
         } else if (w.search(/in$/i) != -1) {
-          $().uxmessage('error', "Not supported: Page size in 'in'.");
+          $().uxmessage('notice', "Page size in 'in' -> setting up dpi to treat px (and no) units as 'in'.");
+          parser.dpi = 1.0
+        } else {
+          // calculate scaling (dpi) from page size under the assumption the it equals the target size.
+          w = parseFloat(w.strip());
+          h = parseFloat(h.strip());       
+          parser.dpi = Math.round(25.4*w/parser.target_size[0]);
         }
-        w = parseFloat(w.strip());
-        h = parseFloat(h.strip());       
-        parser.dpi = Math.round(25.4*w/parser.target_size[0]);
       }
     },
     
