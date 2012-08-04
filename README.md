@@ -5,7 +5,7 @@ LasaurApp
 LasaurApp is the official app to control [Lasersaur](http://lasersaur.com) laser cutters. At the moment it has the following features:
 
 - send G-code to the lasersaur
-- convert SVG files to G-code
+- convert SVG files to G-code (and optimize)
 - GUI widget to move the laser head
 - handy G-code programs for the optics calibration process
 
@@ -13,17 +13,16 @@ This app is written mostly in cross-platform, cross-browser Javascript. The idea
 
 This is done this way because we imagine laser cutters being shared in shops. We see people  controlling laser cutters from their laptops and not wanting to go through annoying setup processes. Besides this, html-based GUIs are just awesome :)
 
-**DISCLAIMER:** Please be aware that operating a DIY laser cutter can be dangerous and requires full awareness of the risks involved. You build the machine and you will have to make sure it is safe. The instructions of the Lasersaur project and related software come without any warranty or guarantees whatsoever. All information is provided as-is and without claims to mechanical or electrical fitness, safety, or usefulness. You are fully responsible for doing your own evaluations and making sure your system does not burn, blind, or electrocute people.
+**DISCLAIMER:** Please be aware that operating a self-built laser cutter can be dangerous and requires full awareness of the risks involved. NORTD Labs does not warrant for any contents of the manual and does not assume any risks whatsoever with regard to the contents of this manual or the machine assembled by you. NORTD Labs further does not warrant for and does not assume any risks whatsoever with regard to any parts of the machine contained in this manual which are provided by third parties. You need to have the necessary experience in handling high-voltage electrical devices and class 4 laser beams to build the machine described in this manual. Otherwise you should seek professional advice for building the machine. 
 
 
 How to Use this App
 -------------------
 
 * make sure you have Python 2.7
-* install [pyserial](http://pyserial.sourceforge.net/)
-* run *python app.py*
-* open *http://localhost:4444* 
-  (in current Firefox or Chrome, future Safari 6 or IE 10)
+* run *python backend/app.py*
+* The GUI will open in a browser at *http://localhost:4444* 
+  (supported are Firefox, Chrome, and likely future Safari 6+ or IE 10+)
 
 For more information see the [Lasersaur Software Setup Guide](http://labs.nortd.com/lasersaur/manual/software_setup).
 
@@ -32,7 +31,7 @@ For more information see the [Lasersaur Software Setup Guide](http://labs.nortd.
 Notes on Creating Standalone Apps
 ----------------------------------
 
-With [PyInstaller](http://www.pyinstaller.org) it's possible to convert a python app to a standalone, single file executable. This allows us to make the setup process much easier and remove all the the prerequisites on the target machine (including python and pyserial).
+With [PyInstaller](http://www.pyinstaller.org) it's possible to convert a python app to a standalone, single file executable. This allows us to make the setup process much easier and remove all the the prerequisites on the target machine (including python).
 
 From a shell/Terminal do the following:
 
