@@ -4,7 +4,6 @@ import glob, json, argparse
 import socket, webbrowser
 import wsgiref.simple_server
 from bottle import *
-import serial
 from serial_manager import SerialManager
 from flash import flash_upload
 
@@ -24,7 +23,6 @@ elif os.name == 'posix':
     GUESS_PREFIX = "tty.usbmodem"   
 else:
     GUESS_PREFIX = "no prefix"    
-
 
 
 def resources_dir():

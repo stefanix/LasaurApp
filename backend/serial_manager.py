@@ -3,8 +3,8 @@ import os
 import sys
 import time
 import serial
+from serial.tools import list_ports
 from collections import deque
-import serial_list_ports
 
 
 class SerialManagerClass:
@@ -34,9 +34,9 @@ class SerialManagerClass:
 
     def list_devices(self):
         if os.name == 'posix':
-            iterator = sorted(serial_list_ports.grep('tty'))
+            iterator = sorted(list_ports.grep('tty'))
         else:
-            iterator = sorted(serial_list_ports.grep(''))
+            iterator = sorted(list_ports.grep(''))
         for port, desc, hwid in iterator:
             print "%-20s" % (port,)
             print "    desc: %s" % (desc,)
@@ -44,7 +44,7 @@ class SerialManagerClass:
 
             
     def match_device(self, search_regex):
-        matched_ports = serial_list_ports.grep(search_regex)
+        matched_ports = list_ports.grep(search_regex)
         if matched_ports:
             for match_tuple in matched_ports:
                 if match_tuple:
