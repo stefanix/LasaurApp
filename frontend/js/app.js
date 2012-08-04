@@ -204,6 +204,8 @@ function mapConstrainIntesity(intens) {
 
 
 
+
+
 $(document).ready(function(){
   
   $().uxmessage('notice', "app frontend started");
@@ -243,21 +245,53 @@ $(document).ready(function(){
     }
   }
     
-  // get serial state
+  // get hardware status
+  var door_open_status = false;
+  var chiller_off_status = false;
+  var power_off_status = false;
+  var limit_hit_status = false;
   var connectiontimer = setInterval(function() {
-    $.ajax({
-        url: '/serial/2',
-        success: function( data ) {
-        	if (data != "") {
-        	  connect_btn_set_state(true);
-        	} else {
-        	  connect_btn_set_state(false);
-        	}
-        },
-        error: function(request, status, error) {
-          // lost connection to server
-      		connect_btn_set_state(false); 
+    $.getJSON('/status', function(data) {
+      // serial connected
+      if (data.serial_connected) {
+        connect_btn_set_state(true);
+      } else {
+        connect_btn_set_state(false);
+      }
+      // door open
+      if (data.door_open != door_open_status) {
+        if (data.door_open) {
+          $().uxmessage('warning', "Door is open!"); 
         }
+        door_open_status = data.door_open
+      }
+      // chiller off
+      if (data.chiller_off != chiller_off_status) {
+        if (data.chiller_off) {
+          $().uxmessage('warning', "Chiller is off!"); 
+        }
+        chiller_off_status = data.chiller_off
+      }
+      // power off
+      if (data.power_off != power_off_status) {
+        if (data.power_off) {
+          $().uxmessage('error', "Power is off!"); 
+          $().uxmessage('notice', "Run homing cycle to recover.");          
+        }
+        power_off_status = data.power_off
+      }      
+      // limit hit
+      if (data.limit_hit != limit_hit_status) {
+        if (data.limit_hit) {
+          $().uxmessage('error', "Limit hit!");
+          $().uxmessage('notice', "Run homing cycle to recover.");
+        }
+        limit_hit_status = data.limit_hit
+      }        
+    }).error(function() {
+      alert('woot!')
+      // lost connection to server
+      connect_btn_set_state(false); 
     });
   }, 4000);
   connect_btn_width = $("#connect_btn").innerWidth();

@@ -1,6 +1,6 @@
 
 import sys, os, time
-import glob, json, argparse
+import glob, json, argparse, copy
 import socket, webbrowser
 import wsgiref.simple_server
 from bottle import *
@@ -268,6 +268,15 @@ def serial_handler(connect):
     else:
         print 'ambigious connect request from js: ' + connect            
         return ""
+
+
+
+@route('/status')
+def get_status():
+    status = copy.deepcopy(SerialManager.get_hardware_status())
+    status['serial_connected'] = SerialManager.is_connected()
+    return json.dumps(status)
+
 
 @route('/flash_firmware')
 def flash_firmware_handler():

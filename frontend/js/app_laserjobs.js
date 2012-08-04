@@ -1,5 +1,6 @@
 
 function send_gcode_to_backend(gcode) {
+  // get gcode out
   if (typeof gcode === "string" && gcode != '') {
     // $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
   	$.post("/gcode", { 'gcode_program':gcode }, function(data) {

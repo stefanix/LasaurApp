@@ -31,6 +31,25 @@ class SerialManagerClass:
         self.job_size = 0
         self.job_active = False
 
+        # status flags
+        self.status = {}
+        self.reset_status()
+
+
+
+    def reset_status(self):
+        self.status = {
+            'bad_number_format_error': False,
+            'expected_command_letter_error': False,
+            'unsupported_statement_error': False,
+            'foating_point_error': False,
+            'power_off': False,
+            'limit_hit': False,
+            'door_open': False,
+            'chiller_off': False
+        }
+
+
 
     def list_devices(self):
         if os.name == 'posix':
@@ -58,6 +77,7 @@ class SerialManagerClass:
         self.tx_buffer = ""        
         self.remoteXON = True
         self.job_size = 0
+        self.reset_status()
                 
         # Create serial device with both read timeout set to 0.
         # This results in the read() being non-blocking
@@ -85,6 +105,14 @@ class SerialManagerClass:
     def is_connected(self):
         return bool(self.device)
 
+    def get_hardware_status(self):
+        if self.is_queue_empty():
+            # trigger a status report
+            # will update for the next status request
+            self.queue_for_sending('?\n')
+        return self.status
+
+
     def flush_input(self):
         if self.device:
             self.device.flushInput()
@@ -98,12 +126,13 @@ class SerialManagerClass:
         if gcode:
             gcode = gcode.strip()
     
-            if gcode[:4] == '!':
+            if gcode[0] == '%':
+                return
+            elif gcode.find('!') > -1:
               # cancel current job
               self.tx_buffer = ""
               self.job_size = 0
-            elif gcode[0] == '%':
-                return
+              self.reset_status()     
                     
             self.tx_buffer += gcode + '\n'
             self.job_size += len(gcode) + 1
@@ -145,14 +174,38 @@ class SerialManagerClass:
                     if posNewline >= 0:  # we got a line
                         line = self.rx_buffer[:posNewline]
                         self.rx_buffer = self.rx_buffer[posNewline+1:]
-                        if line.find('ok') > -1:
+                        if 'N' in line:
+                            self.status['bad_number_format_error'] = True
+                        elif 'E' in line:
+                            self.status['expected_command_letter_error'] = True
+                        elif 'U' in line:
+                            self.status['unsupported_statement_error'] = True
+                        elif 'F' in line:
+                            self.status['foating_point_error'] = True
+                        elif 'P' in line:
+                            self.status['power_off'] = True
+                        elif 'L' in line:
+                            self.status['limit_hit'] = True
+                        else:
+                            # no error markers in return line
                             sys.stdout.write(".")  # print w/ newline
                             sys.stdout.flush()
-                        # else if line.find('error:') > -1:
-                        #     
-                        else:
-                            sys.stdout.write(line + '\n')
-                            sys.stdout.flush()
+
+                        if 'D' in line:  # Warning: Door Open
+                            if line[line.find('D')+1] == '1':
+                                self.status['door_open'] = True
+                            else:
+                                self.status['door_open'] = False
+
+                        if 'C' in line:  # Warning: Chiller Off
+                            if line[line.find('C')+1] == '1':
+                                self.status['chiller_off'] = True
+                            else:
+                                self.status['chiller_off'] = False
+
+                        # debug, print line no matter
+                        sys.stdout.write(line + "\n")
+                        sys.stdout.flush()                       
                 
                 if self.tx_buffer:
                     if self.remoteXON:
