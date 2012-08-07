@@ -289,7 +289,6 @@ $(document).ready(function(){
         limit_hit_status = data.limit_hit
       }        
     }).error(function() {
-      alert('woot!')
       // lost connection to server
       connect_btn_set_state(false); 
     });

@@ -42,9 +42,9 @@ class SerialManagerClass:
             'bad_number_format_error': False,
             'expected_command_letter_error': False,
             'unsupported_statement_error': False,
-            'foating_point_error': False,
             'power_off': False,
             'limit_hit': False,
+            'serial_stop_request': False,
             'door_open': False,
             'chiller_off': False
         }
@@ -180,31 +180,30 @@ class SerialManagerClass:
                             self.status['expected_command_letter_error'] = True
                         elif 'U' in line:
                             self.status['unsupported_statement_error'] = True
-                        elif 'F' in line:
-                            self.status['foating_point_error'] = True
                         elif 'P' in line:
                             self.status['power_off'] = True
                         elif 'L' in line:
                             self.status['limit_hit'] = True
+                        elif 'R' in line:
+                            self.status['serial_stop_request'] = True
                         else:
                             # no error markers in return line
-                            sys.stdout.write(".")  # print w/ newline
-                            sys.stdout.flush()
+                            # sys.stdout.write(".")  # print w/ newline
+                            # sys.stdout.flush()
+                            pass
 
                         if 'D' in line:  # Warning: Door Open
-                            if line[line.find('D')+1] == '1':
-                                self.status['door_open'] = True
-                            else:
-                                self.status['door_open'] = False
+                            self.status['door_open'] = True
+                        else:
+                            self.status['door_open'] = False
 
                         if 'C' in line:  # Warning: Chiller Off
-                            if line[line.find('C')+1] == '1':
-                                self.status['chiller_off'] = True
-                            else:
-                                self.status['chiller_off'] = False
+                            self.status['chiller_off'] = True
+                        else:
+                            self.status['chiller_off'] = False
 
-                        # debug, print line no matter
-                        sys.stdout.write(line + "\n")
+                        # sys.stdout.write(line + "\n")
+                        sys.stdout.write(".")
                         sys.stdout.flush()                       
                 
                 if self.tx_buffer:
@@ -214,8 +213,8 @@ class SerialManagerClass:
                         self.tx_buffer = self.tx_buffer[actuallySent:]  
                 else:
                     if self.job_active:
-                        print "\nG-code stream finished!"
-                        print "(LasaurGrbl may take some extra time to finalize)"
+                        # print "\nG-code stream finished!"
+                        # print "(LasaurGrbl may take some extra time to finalize)"
                         self.job_size = 0
                         self.job_active = False
             except OSError:
