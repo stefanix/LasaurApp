@@ -3,7 +3,7 @@
 # Copyright (c) 2011 Nortd Labs
 # Open Source by the terms of the Gnu Public License (GPL3) or higher.
 
-import os, sys
+import os, sys, subprocess
 
 
 def flash_upload(serial_port, resources_dir):
@@ -25,8 +25,10 @@ def flash_upload(serial_port, resources_dir):
         AVRDUDEAPP    = os.path.join(resources_dir, "firmware/tools_linux/avrdude")
         AVRDUDECONFIG = os.path.join(resources_dir, "firmware/tools_linux/avrdude.conf")
 
-    os.system('%(dude)s -c %(programmer)s -b %(bps)s -P %(port)s -p %(device)s -C %(dudeconf)s -D -Uflash:w:%(firmware)s:i' 
-        % {'dude':AVRDUDEAPP, 'programmer':PROGRAMMER, 'bps':BITRATE, 'port':serial_port, 'device':DEVICE, 'dudeconf':AVRDUDECONFIG, 'firmware':FIRMWARE})
+    # call avrdude, returns 0 on success
+    return subprocess.call('%(dude)s -c %(programmer)s -b %(bps)s -P %(port)s -p %(device)s -C %(dudeconf)s -Uflash:w:%(firmware)s:i' 
+        % {'dude':AVRDUDEAPP, 'programmer':PROGRAMMER, 'bps':BITRATE, 'port':serial_port, 'device':DEVICE, 'dudeconf':AVRDUDECONFIG, 'firmware':FIRMWARE},
+        shell=True)
 
     # PROGRAMMER = "avrisp"  # old way, required pressing the reset button            
     # os.system('%(dude)s -c %(programmer)s -b %(bps)s -P %(port)s -p %(device)s -C %(dudeconf)s -B 10 -F -U flash:w:%(firmware)s:i' 

@@ -280,13 +280,34 @@ def get_status():
 
 @route('/flash_firmware')
 def flash_firmware_handler():
+    global SERIAL_PORT, GUESS_PREFIX
     if SerialManager.is_connected():
         SerialManager.close()
-    global SERIAL_PORT, GUESS_PREFIX
+    if 'port' in request.GET.keys():
+        serial_port = request.GET['port']
+        if serial_port[:3] == "COM" or serial_port[:4] == "tty.":
+            SERIAL_PORT = serial_port
     if not SERIAL_PORT:
-        SERIAL_PORT = SerialManager.match_device(GUESS_PREFIX, BITSPERSECOND)        
-    flash_upload(SERIAL_PORT, resources_dir())
-    return '<h2>flashing finished!</h2> Check Log window for possible errors.<br><a href="/">return</a>'
+        SERIAL_PORT = SerialManager.match_device(GUESS_PREFIX, BITSPERSECOND)
+    return_code = flash_upload(SERIAL_PORT, resources_dir())
+    if return_code == 0:
+        print "SUCCESS: Arduino appears to be flashed."
+        ret = []
+        ret.append('<h2>Successfully Flashed!</h2><br>')
+        ret.append('Using com port: %s<br>' % (SERIAL_PORT))
+        ret.append('<a href="/">return</a>')
+        return ''.join(ret)
+    else:
+        print "ERROR: Failed to flash Arduino."
+        ret = []
+        ret.append('<h2>Flashing Failed!</h2> Check Log window for possible errors. ')
+        ret. append('Most likely LasaurApp could not find the right serial port.<br><a href="/">return</a><br>')
+        if os.name != 'posix':
+            ret. append('If you know the COM ports the Arduino is connected to you can specifically select it here:<br><br>')
+            for i in range(1,12):
+                ret. append('<br><a href="/flash_firmware?port=COM%s">COM%s</a>' % (i))
+        return ''.join(ret)
+    
 
 # @route('/gcode/:gcode_line')
 # def gcode_handler(gcode_line):
@@ -378,7 +399,11 @@ def run_helper():
             print "Data root is: " + sys._MEIPASS             
         print "Persistent storage root is: " + storage_dir()
     if args.build_and_flash:
-        flash_upload(SERIAL_PORT, resources_dir())
+        return_code = flash_upload(SERIAL_PORT, resources_dir())
+        if return_code == 0:
+            print "SUCCESS: Arduino appears to be flashed."
+        else:
+            print "ERROR: Failed to flash Arduino."
     else:
         if args.host_on_all_interfaces:
             run_with_callback('')
@@ -409,7 +434,9 @@ else:
             SERIAL_PORT = SerialManager.match_device(GUESS_PREFIX, BITSPERSECOND)
             if SERIAL_PORT:
                 print "Using serial device '"+ str(SERIAL_PORT)
-                print "(first device to match: " + args.match + ")"            
+                if os.name == 'posix':
+                    # not for windows for now
+                    print "(first device to match: " + args.match + ")"            
         else:
             SERIAL_PORT = SerialManager.match_device(GUESS_PREFIX, BITSPERSECOND)
             if SERIAL_PORT:

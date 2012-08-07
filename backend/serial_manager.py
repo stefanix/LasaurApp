@@ -35,6 +35,8 @@ class SerialManagerClass:
         self.status = {}
         self.reset_status()
 
+        self.LASAURGRBL_FIRST_STRING = "LasaurGrbl"
+
 
 
     def reset_status(self):
@@ -90,7 +92,7 @@ class SerialManagerClass:
                 try:
                     s = serial.Serial(port=i, baudrate=baudrate)
                     lasaur_hello = s.read(12)
-                    if lasaur_hello.find('LasaurGrbl'):
+                    if lasaur_hello.find(self.LASAURGRBL_FIRST_STRING) > -1:
                         return s.portstr
                     s.close()
                 except serial.SerialException:
