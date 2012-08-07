@@ -301,9 +301,9 @@ def flash_firmware_handler():
         print "ERROR: Failed to flash Arduino."
         ret = []
         ret.append('<h2>Flashing Failed!</h2> Check Log window for possible errors. ')
-        ret. append('Most likely LasaurApp could not find the right serial port.<br><a href="/">return</a><br>')
+        ret. append('Most likely LasaurApp could not find the right serial port.<br><a href="/">return</a><br><br>')
         if os.name != 'posix':
-            ret. append('If you know the COM ports the Arduino is connected to you can specifically select it here:<br><br>')
+            ret. append('If you know the COM ports the Arduino is connected to you can specifically select it here:')
             for i in range(1,12):
                 ret. append('<br><a href="/flash_firmware?port=COM%s">COM%s</a>' % (i, i))
         return ''.join(ret)
