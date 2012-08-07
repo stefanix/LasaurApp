@@ -51,15 +51,30 @@ class SerialManagerClass:
 
 
 
-    def list_devices(self):
+    def list_devices(self, baudrate):
         if os.name == 'posix':
             iterator = sorted(list_ports.grep('tty'))
+            print "Found ports:"
+            for port, desc, hwid in iterator:
+                print "%-20s" % (port,)
+                print "    desc: %s" % (desc,)
+                print "    hwid: %s" % (hwid,)            
         else:
-            iterator = sorted(list_ports.grep(''))
-        for port, desc, hwid in iterator:
-            print "%-20s" % (port,)
-            print "    desc: %s" % (desc,)
-            print "    hwid: %s" % (hwid,)
+            # iterator = sorted(list_ports.grep(''))  # does not return USB-style
+            # scan for available ports. return a list of tuples (num, name)
+            available = []
+            for i in range(256):
+                try:
+                    s = serial.Serial(port=i, baudrate=baudrate)
+                    # lasaur_hello = s.read(12)
+                    # if lasaur_hello.find('LasaurGrbl'):
+                    available.append( (i, s.portstr))
+                    s.close()
+                except serial.SerialException:
+                    pass
+            print "Found ports:"
+            for n,s in available: print "(%d) %s" % (n,s)
+
 
             
     def match_device(self, search_regex):

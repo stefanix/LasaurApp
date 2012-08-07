@@ -388,7 +388,7 @@ def run_helper():
 
 print "LasaurApp " + VERSION
 if args.list_serial_devices:
-    SerialManager.list_devices()
+    SerialManager.list_devices(BITSPERSECOND)
 else:
     if args.port:
         # (1) get the serial device from the argument list
