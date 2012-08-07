@@ -305,7 +305,7 @@ def flash_firmware_handler():
         if os.name != 'posix':
             ret. append('If you know the COM ports the Arduino is connected to you can specifically select it here:<br><br>')
             for i in range(1,12):
-                ret. append('<br><a href="/flash_firmware?port=COM%s">COM%s</a>' % (i))
+                ret. append('<br><a href="/flash_firmware?port=COM%s">COM%s</a>' % (i, i))
         return ''.join(ret)
     
 
