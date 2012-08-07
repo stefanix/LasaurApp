@@ -91,7 +91,7 @@ class SerialManagerClass:
             for i in range(256):
                 try:
                     s = serial.Serial(port=i, baudrate=baudrate)
-                    lasaur_hello = s.read(12)
+                    lasaur_hello = s.read(16)
                     if lasaur_hello.find(self.LASAURGRBL_FIRST_STRING) > -1:
                         return s.portstr
                     s.close()
