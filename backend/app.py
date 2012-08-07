@@ -298,6 +298,7 @@ def flash_firmware_handler():
         ret.append('<a href="/">return</a>')
         return ''.join(ret)
     else:
+        SERIAL_PORT = None
         print "ERROR: Failed to flash Arduino."
         ret.append('<h2>Flashing Failed!</h2> Check Log window for possible errors. ')
         ret. append('Most likely LasaurApp could not find the right serial port.<br><a href="/">return</a><br><br>')
