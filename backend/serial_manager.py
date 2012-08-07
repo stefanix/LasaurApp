@@ -66,8 +66,6 @@ class SerialManagerClass:
             for i in range(256):
                 try:
                     s = serial.Serial(port=i, baudrate=baudrate)
-                    # lasaur_hello = s.read(12)
-                    # if lasaur_hello.find('LasaurGrbl'):
                     available.append( (i, s.portstr))
                     s.close()
                 except serial.SerialException:
@@ -77,14 +75,27 @@ class SerialManagerClass:
 
 
             
-    def match_device(self, search_regex):
-        matched_ports = list_ports.grep(search_regex)
-        if matched_ports:
-            for match_tuple in matched_ports:
-                if match_tuple:
-                    return match_tuple[0]
-        print "No serial port match for anything like: " + search_regex
-        return None
+    def match_device(self, search_regex, baudrate):
+        if os.name == 'posix':
+            matched_ports = list_ports.grep(search_regex)
+            if matched_ports:
+                for match_tuple in matched_ports:
+                    if match_tuple:
+                        return match_tuple[0]
+            print "No serial port match for anything like: " + search_regex
+            return None
+        else:
+            # windows hack because pyserial does not enumerate USB-style com ports
+            for i in range(256):
+                try:
+                    s = serial.Serial(port=i, baudrate=baudrate)
+                    lasaur_hello = s.read(12)
+                    if lasaur_hello.find('LasaurGrbl'):
+                        return s.portstr
+                    s.close()
+                except serial.SerialException:
+                    pass      
+            return None      
         
 
     def connect(self, port, baudrate):

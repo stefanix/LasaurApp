@@ -245,7 +245,7 @@ def serial_handler(connect):
             try:
                 global SERIAL_PORT, BITSPERSECOND, GUESS_PREFIX
                 if not SERIAL_PORT:
-                    SERIAL_PORT = SerialManager.match_device(GUESS_PREFIX)
+                    SERIAL_PORT = SerialManager.match_device(GUESS_PREFIX, BITSPERSECOND)
                 SerialManager.connect(SERIAL_PORT, BITSPERSECOND)
                 ret = "Serial connected to %s:%d." % (SERIAL_PORT, BITSPERSECOND)  + '<br>'
                 time.sleep(1.0) # allow some time to receive a prompt/welcome
@@ -284,7 +284,7 @@ def flash_firmware_handler():
         SerialManager.close()
     global SERIAL_PORT, GUESS_PREFIX
     if not SERIAL_PORT:
-        SERIAL_PORT = SerialManager.match_device(GUESS_PREFIX)        
+        SERIAL_PORT = SerialManager.match_device(GUESS_PREFIX, BITSPERSECOND)        
     flash_upload(SERIAL_PORT, resources_dir())
     return '<h2>flashing finished!</h2> Check Log window for possible errors.<br><a href="/">return</a>'
 
@@ -406,12 +406,12 @@ else:
     if not SERIAL_PORT:
         if args.match:
             GUESS_PREFIX = args.match
-            SERIAL_PORT = SerialManager.match_device(GUESS_PREFIX)
+            SERIAL_PORT = SerialManager.match_device(GUESS_PREFIX, BITSPERSECOND)
             if SERIAL_PORT:
                 print "Using serial device '"+ str(SERIAL_PORT)
                 print "(first device to match: " + args.match + ")"            
         else:
-            SERIAL_PORT = SerialManager.match_device(GUESS_PREFIX)
+            SERIAL_PORT = SerialManager.match_device(GUESS_PREFIX, BITSPERSECOND)
             if SERIAL_PORT:
                 print "Using serial device '"+ str(SERIAL_PORT) +"' by best guess."
     
