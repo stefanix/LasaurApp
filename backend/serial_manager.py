@@ -48,7 +48,8 @@ class SerialManagerClass:
             'limit_hit': False,
             'serial_stop_request': False,
             'door_open': False,
-            'chiller_off': False
+            'chiller_off': False,
+            'firmware_version': None
         }
 
 
@@ -237,6 +238,9 @@ class SerialManagerClass:
                             self.status['chiller_off'] = True
                         else:
                             self.status['chiller_off'] = False
+
+                        if 'V' in line:
+                            self.status['firmware_version'] = line[line.find('V')+1:]
 
                         # sys.stdout.write(line + "\n")
                         sys.stdout.write(".")

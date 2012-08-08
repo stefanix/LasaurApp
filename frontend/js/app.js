@@ -246,10 +246,7 @@ $(document).ready(function(){
   }
     
   // get hardware status
-  var door_open_status = false;
-  var chiller_off_status = false;
-  var power_off_status = false;
-  var limit_hit_status = false;
+  var firmware_version_reported = false
   var connectiontimer = setInterval(function() {
     $.getJSON('/status', function(data) {
       // serial connected
@@ -258,40 +255,27 @@ $(document).ready(function(){
       } else {
         connect_btn_set_state(false);
       }
-      // door open
-      if (data.door_open != door_open_status) {
+      // door, chiller, power, limit
+      if (data.serial_connected) {
         if (data.door_open) {
           $().uxmessage('warning', "Door is open!"); 
-        } else {
-          $().uxmessage('notice', "Door is closed."); 
         }
-        door_open_status = data.door_open
-      }
-      // chiller off
-      if (data.chiller_off != chiller_off_status) {
         if (data.chiller_off) {
           $().uxmessage('warning', "Chiller is off!"); 
-        } else {
-          $().uxmessage('notice', "Chiller is on.");           
         }
-        chiller_off_status = data.chiller_off
-      }
-      // power off
-      if (data.power_off != power_off_status) {
         if (data.power_off) {
           $().uxmessage('error', "Power is off!"); 
-          $().uxmessage('notice', "Run homing cycle to reset stop mode.");          
+          // $().uxmessage('notice', "Turn on Lasersaur power then run homing cycle to reset.");          
         }
-        power_off_status = data.power_off
-      }      
-      // limit hit
-      if (data.limit_hit != limit_hit_status) {
         if (data.limit_hit) {
           $().uxmessage('error', "Limit hit!");
-          $().uxmessage('notice', "Run homing cycle to reset stop mode.");
+          // $().uxmessage('notice', "Run homing cycle to reset stop mode.");
         }
-        limit_hit_status = data.limit_hit
-      }        
+        if (data.firmware_version && !firmware_version_reported) {
+          $().uxmessage('notice', "LasaurGrbl " + data.firmware_version);
+          firmware_version_reported = true
+        }
+      }
     }).error(function() {
       // lost connection to server
       connect_btn_set_state(false); 
