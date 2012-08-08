@@ -69,7 +69,7 @@ class SerialManagerClass:
             available = []
             for i in range(1,13):
                 try:
-                    s = serial.Serial(port=i, baudrate=baudrate)
+                    s = serial.Serial(port=i, baudrate=baudrate, timeout=1.0)
                     port.append(s.portstr)                
                     available.append( (i, s.portstr))
                     s.close()
