@@ -208,21 +208,25 @@ class SerialManagerClass:
                         self.rx_buffer = self.rx_buffer[posNewline+1:]
                         if 'N' in line:
                             self.status['bad_number_format_error'] = True
-                        elif 'E' in line:
+                        if 'E' in line:
                             self.status['expected_command_letter_error'] = True
-                        elif 'U' in line:
+                        if 'U' in line:
                             self.status['unsupported_statement_error'] = True
-                        elif 'P' in line:
+
+                        if 'P' in line:  # Stop: Power is off
                             self.status['power_off'] = True
-                        elif 'L' in line:
+                        else:
+                            self.status['power_off'] = False
+
+                        if 'L' in line:  # Stop: A limit was hit
                             self.status['limit_hit'] = True
-                        elif 'R' in line:
+                        else:
+                            self.status['limit_hit'] = False
+
+                        if 'R' in line:  # Stop: by serial requested
                             self.status['serial_stop_request'] = True
                         else:
-                            # no error markers in return line
-                            # sys.stdout.write(".")  # print w/ newline
-                            # sys.stdout.flush()
-                            pass
+                            self.status['serial_stop_request'] = False
 
                         if 'D' in line:  # Warning: Door Open
                             self.status['door_open'] = True

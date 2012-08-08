@@ -262,6 +262,8 @@ $(document).ready(function(){
       if (data.door_open != door_open_status) {
         if (data.door_open) {
           $().uxmessage('warning', "Door is open!"); 
+        } else {
+          $().uxmessage('notice', "Door is closed."); 
         }
         door_open_status = data.door_open
       }
@@ -269,6 +271,8 @@ $(document).ready(function(){
       if (data.chiller_off != chiller_off_status) {
         if (data.chiller_off) {
           $().uxmessage('warning', "Chiller is off!"); 
+        } else {
+          $().uxmessage('notice', "Chiller is on.");           
         }
         chiller_off_status = data.chiller_off
       }
@@ -276,7 +280,7 @@ $(document).ready(function(){
       if (data.power_off != power_off_status) {
         if (data.power_off) {
           $().uxmessage('error', "Power is off!"); 
-          $().uxmessage('notice', "Run homing cycle to recover.");          
+          $().uxmessage('notice', "Run homing cycle to reset stop mode.");          
         }
         power_off_status = data.power_off
       }      
@@ -284,7 +288,7 @@ $(document).ready(function(){
       if (data.limit_hit != limit_hit_status) {
         if (data.limit_hit) {
           $().uxmessage('error', "Limit hit!");
-          $().uxmessage('notice', "Run homing cycle to recover.");
+          $().uxmessage('notice', "Run homing cycle to reset stop mode.");
         }
         limit_hit_status = data.limit_hit
       }        
