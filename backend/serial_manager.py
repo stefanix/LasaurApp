@@ -54,10 +54,12 @@ class SerialManagerClass:
 
 
     def list_devices(self, baudrate):
+        ports = []
         if os.name == 'posix':
             iterator = sorted(list_ports.grep('tty'))
             print "Found ports:"
             for port, desc, hwid in iterator:
+                port.append(port)
                 print "%-20s" % (port,)
                 print "    desc: %s" % (desc,)
                 print "    hwid: %s" % (hwid,)            
@@ -68,12 +70,14 @@ class SerialManagerClass:
             for i in range(256):
                 try:
                     s = serial.Serial(port=i, baudrate=baudrate)
+                    port.append(s.portstr)                
                     available.append( (i, s.portstr))
                     s.close()
                 except serial.SerialException:
                     pass
             print "Found ports:"
             for n,s in available: print "(%d) %s" % (n,s)
+        return ports
 
 
             

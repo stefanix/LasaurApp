@@ -281,15 +281,32 @@ def get_status():
 @route('/flash_firmware')
 def flash_firmware_handler():
     global SERIAL_PORT, GUESS_PREFIX
+    return_code = 1
     if SerialManager.is_connected():
         SerialManager.close()
+    # get serial port by url argument
+    # e.g: /flash_firmware?port=COM3
     if 'port' in request.GET.keys():
         serial_port = request.GET['port']
         if serial_port[:3] == "COM" or serial_port[:4] == "tty.":
             SERIAL_PORT = serial_port
+    # get serial port by enumeration method
+    # currenty this works on windows only for updating the firmware
     if not SERIAL_PORT:
         SERIAL_PORT = SerialManager.match_device(GUESS_PREFIX, BITSPERSECOND)
-    return_code = flash_upload(SERIAL_PORT, resources_dir())
+    # resort to brute force methode
+    # find available com ports and try them all
+    if not SERIAL_PORT:
+        comport_list = SerialManager.list_devices(BITSPERSECOND)
+        for port in comport_list:
+            print "Trying com port: " + port
+            return_code = flash_upload(port, resources_dir())
+            if return_code == 0:
+                print "Success with com port: " + port
+                SERIAL_PORT = port
+                break
+    else:
+        return_code = flash_upload(SERIAL_PORT, resources_dir())
     ret = []
     ret.append('Using com port: %s<br>' % (SERIAL_PORT))    
     if return_code == 0:
