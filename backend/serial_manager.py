@@ -67,7 +67,7 @@ class SerialManagerClass:
             # iterator = sorted(list_ports.grep(''))  # does not return USB-style
             # scan for available ports. return a list of tuples (num, name)
             available = []
-            for i in range(256):
+            for i in range(1,13):
                 try:
                     s = serial.Serial(port=i, baudrate=baudrate)
                     port.append(s.portstr)                
