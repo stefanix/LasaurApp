@@ -265,11 +265,11 @@ $(document).ready(function(){
         }
         if (data.power_off) {
           $().uxmessage('error', "Power is off!"); 
-          // $().uxmessage('notice', "Turn on Lasersaur power then run homing cycle to reset.");          
+          $().uxmessage('notice', "Turn on Lasersaur power then run homing cycle to reset.");          
         }
         if (data.limit_hit) {
           $().uxmessage('error', "Limit hit!");
-          // $().uxmessage('notice', "Run homing cycle to reset stop mode.");
+          $().uxmessage('notice', "Run homing cycle to reset stop mode.");
         }
         if (data.firmware_version && !firmware_version_reported) {
           $().uxmessage('notice', "LasaurGrbl " + data.firmware_version);

@@ -186,6 +186,7 @@ class SerialManagerClass:
         """Continuously call this to keep processing queue."""    
         if self.device:
             try:
+                ### receiving
                 chars = self.device.read(self.RX_CHUNK_SIZE)
                 if len(chars) > 0:
                     ## check for flow control chars
@@ -207,45 +208,51 @@ class SerialManagerClass:
                     if posNewline >= 0:  # we got a line
                         line = self.rx_buffer[:posNewline]
                         self.rx_buffer = self.rx_buffer[posNewline+1:]
-                        if 'N' in line:
-                            self.status['bad_number_format_error'] = True
-                        if 'E' in line:
-                            self.status['expected_command_letter_error'] = True
-                        if 'U' in line:
-                            self.status['unsupported_statement_error'] = True
-
-                        if 'P' in line:  # Stop: Power is off
-                            self.status['power_off'] = True
+                        if '#' in line[:3]:
+                            # print and ignore
+                            sys.stdout.write(line + "\n")
+                            sys.stdout.flush()                             
                         else:
-                            self.status['power_off'] = False
+                            # parse
+                            sys.stdout.write(".")
+                            sys.stdout.flush()
 
-                        if 'L' in line:  # Stop: A limit was hit
-                            self.status['limit_hit'] = True
-                        else:
-                            self.status['limit_hit'] = False
+                            if 'N' in line:
+                                self.status['bad_number_format_error'] = True
+                            if 'E' in line:
+                                self.status['expected_command_letter_error'] = True
+                            if 'U' in line:
+                                self.status['unsupported_statement_error'] = True
 
-                        if 'R' in line:  # Stop: by serial requested
-                            self.status['serial_stop_request'] = True
-                        else:
-                            self.status['serial_stop_request'] = False
+                            if 'P' in line:  # Stop: Power is off
+                                self.status['power_off'] = True
+                            else:
+                                self.status['power_off'] = False
 
-                        if 'D' in line:  # Warning: Door Open
-                            self.status['door_open'] = True
-                        else:
-                            self.status['door_open'] = False
+                            if 'L' in line:  # Stop: A limit was hit
+                                self.status['limit_hit'] = True
+                            else:
+                                self.status['limit_hit'] = False
 
-                        if 'C' in line:  # Warning: Chiller Off
-                            self.status['chiller_off'] = True
-                        else:
-                            self.status['chiller_off'] = False
+                            if 'R' in line:  # Stop: by serial requested
+                                self.status['serial_stop_request'] = True
+                            else:
+                                self.status['serial_stop_request'] = False
 
-                        if 'V' in line:
-                            self.status['firmware_version'] = line[line.find('V')+1:]
+                            if 'D' in line:  # Warning: Door Open
+                                self.status['door_open'] = True
+                            else:
+                                self.status['door_open'] = False
 
-                        # sys.stdout.write(line + "\n")
-                        sys.stdout.write(".")
-                        sys.stdout.flush()                       
+                            if 'C' in line:  # Warning: Chiller Off
+                                self.status['chiller_off'] = True
+                            else:
+                                self.status['chiller_off'] = False
+
+                            if 'V' in line:
+                                self.status['firmware_version'] = line[line.find('V')+1:]                     
                 
+                ### sending
                 if self.tx_buffer:
                     if self.remoteXON:
                         actuallySent = self.device.write(self.tx_buffer[:self.TX_CHUNK_SIZE])
