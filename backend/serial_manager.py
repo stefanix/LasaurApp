@@ -60,7 +60,7 @@ class SerialManagerClass:
             iterator = sorted(list_ports.grep('tty'))
             print "Found ports:"
             for port, desc, hwid in iterator:
-                port.append(port)
+                ports.append(port)
                 print "%-20s" % (port,)
                 print "    desc: %s" % (desc,)
                 print "    hwid: %s" % (hwid,)            

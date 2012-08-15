@@ -9,7 +9,7 @@ from flash import flash_upload
 
 
 APPNAME = "lasaurapp"
-VERSION = "12.08b"
+VERSION = "12.08c"
 COMPANY_NAME = "com.nortd.labs"
 SERIAL_PORT = None
 BITSPERSECOND = 9600
@@ -20,7 +20,10 @@ COOKIE_KEY = 'secret_key_jkn23489hsdf'
 if os.name == 'nt': #sys.platform == 'win32': 
     GUESS_PREFIX = "Arduino"   
 elif os.name == 'posix':
-    GUESS_PREFIX = "tty.usbmodem"   
+    if sys.platform == "linux" or sys.platform == "linux2":
+        GUESS_PREFIX = "2341"  # match by arduino VID
+    else:
+        GUESS_PREFIX = "tty.usbmodem"    
 else:
     GUESS_PREFIX = "no prefix"    
 
@@ -75,7 +78,11 @@ def run_with_callback(host):
     print "Point your browser to: "    
     print "http://%s:%d/      (local)" % ('127.0.0.1', NETWORK_PORT)    
     if host == '':
-        print "http://%s:%d/   (public)" % (socket.gethostbyname(socket.gethostname()), NETWORK_PORT)
+        try:
+            print "http://%s:%d/   (public)" % (socket.gethostbyname(socket.gethostname()), NETWORK_PORT)
+        except socket.gaierror:
+            # print "http://beaglebone.local:4444/      (public)"
+            pass
     print "Use Ctrl-C to quit."
     print "-----------------------------------------------------------------------------"    
     print
