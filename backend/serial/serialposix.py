@@ -466,6 +466,7 @@ class PosixSerial(SerialBase):
         if not self._isOpen: raise portNotOpenError
         t = len(data)
         d = data
+        nWritten = 0  # BUGFIX by stefan
         if self._writeTimeout is not None and self._writeTimeout > 0:
             timeout = time.time() + self._writeTimeout
         else:
@@ -473,6 +474,7 @@ class PosixSerial(SerialBase):
         while t > 0:
             try:
                 n = os.write(self.fd, d)
+                nWritten += n  # BUGFIX by stefan
                 if timeout:
                     # when timeout is set, use select to wait for being ready
                     # with the time left as timeout
@@ -487,7 +489,8 @@ class PosixSerial(SerialBase):
             except OSError, v:
                 if v.errno != errno.EAGAIN:
                     raise SerialException('write failed: %s' % (v,))
-        return len(data)
+        # return len(data)
+        return nWritten  # BUGFIX by stefan
 
     def flush(self):
         """Flush of file like objects. In this case, wait until all data

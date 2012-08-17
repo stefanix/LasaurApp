@@ -255,7 +255,7 @@ $(document).ready(function(){
       } else {
         connect_btn_set_state(false);
       }
-      // door, chiller, power, limit
+      // door, chiller, power, limit, buffer
       if (data.serial_connected) {
         if (data.door_open) {
           $().uxmessage('warning', "Door is open!"); 
@@ -271,6 +271,10 @@ $(document).ready(function(){
           $().uxmessage('error', "Limit hit!");
           $().uxmessage('notice', "Run homing cycle to reset stop mode.");
         }
+        if (data.buffer_overflow) {
+          $().uxmessage('error', "Rx Buffer Overflow!");
+          $().uxmessage('notice', "Please report this to the author of this software.");
+        }        
         if (data.firmware_version && !firmware_version_reported) {
           $().uxmessage('notice', "LasaurGrbl " + data.firmware_version);
           firmware_version_reported = true

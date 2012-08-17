@@ -16,6 +16,9 @@ class SerialManagerClass:
         self.tx_buffer = ""        
         self.remoteXON = True
 
+        self.XON = '>'
+        self.XOFF = '<'
+
         # TX_CHUNK_SIZE - this is the number of bytes to be 
         # written to the device in one go.
         # IMPORTANT: The remote device is required to send an
@@ -41,6 +44,7 @@ class SerialManagerClass:
 
     def reset_status(self):
         self.status = {
+            'buffer_overflow': False,
             'bad_number_format_error': False,
             'expected_command_letter_error': False,
             'unsupported_statement_error': False,
@@ -120,7 +124,7 @@ class SerialManagerClass:
         # serialposix.py that the write function does not correctly report the
         # number of bytes actually written. It appears to simply report back
         # the number of bytes passed to the function.
-        # self.device = serial.Serial(port, baudrate, timeout=0, writeTimeout=0)
+        # self.device = serial.Serial(port, baudrate, timeout=0, writeTimeout=0.1)
 
     def close(self):
         if self.device:
@@ -190,8 +194,8 @@ class SerialManagerClass:
                 chars = self.device.read(self.RX_CHUNK_SIZE)
                 if len(chars) > 0:
                     ## check for flow control chars
-                    iXON = chars.rfind(serial.XON)
-                    iXOFF = chars.rfind(serial.XOFF)
+                    iXON = chars.rfind(self.XON)
+                    iXOFF = chars.rfind(self.XOFF)
                     if iXON != -1 or iXOFF != -1:
                         if iXON > iXOFF:
                             # print "=========================== XON"
@@ -200,7 +204,7 @@ class SerialManagerClass:
                             # print "=========================== XOFF"
                             self.remoteXON = False
                         #remove control chars
-                        for c in serial.XON+serial.XOFF: 
+                        for c in self.XON+self.XOFF: 
                             chars = chars.replace(c, "")
                     ## assemble lines
                     self.rx_buffer += chars
@@ -214,7 +218,8 @@ class SerialManagerClass:
                             sys.stdout.flush()                             
                         else:
                             # parse
-                            sys.stdout.write(".")
+                            # sys.stdout.write(".")
+                            sys.stdout.write(line + "\n")
                             sys.stdout.flush()
 
                             if 'N' in line:
@@ -223,6 +228,11 @@ class SerialManagerClass:
                                 self.status['expected_command_letter_error'] = True
                             if 'U' in line:
                                 self.status['unsupported_statement_error'] = True
+
+                            if 'B' in line:  # Stop: Buffer Overflow
+                                self.status['buffer_overflow'] = True
+                            else:
+                                self.status['buffer_overflow'] = False
 
                             if 'P' in line:  # Stop: Power is off
                                 self.status['power_off'] = True
