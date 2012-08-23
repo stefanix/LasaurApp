@@ -275,6 +275,10 @@ $(document).ready(function(){
           $().uxmessage('error', "Rx Buffer Overflow!");
           $().uxmessage('notice', "Please report this to the author of this software.");
         }        
+        if (data.transmission_error) {
+          $().uxmessage('error', "Transmission Error!");
+          $().uxmessage('notice', "If this happens a lot tell the author of this software.");
+        }    
         if (data.firmware_version && !firmware_version_reported) {
           $().uxmessage('notice', "LasaurGrbl " + data.firmware_version);
           firmware_version_reported = true

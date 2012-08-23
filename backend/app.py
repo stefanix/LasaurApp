@@ -12,7 +12,7 @@ APPNAME = "lasaurapp"
 VERSION = "12.08c"
 COMPANY_NAME = "com.nortd.labs"
 SERIAL_PORT = None
-BITSPERSECOND = 4800
+BITSPERSECOND = 9600
 NETWORK_PORT = 4444
 CONFIG_FILE = "lasaurapp.conf"
 COOKIE_KEY = 'secret_key_jkn23489hsdf'
@@ -87,7 +87,8 @@ def run_with_callback(host):
     print "-----------------------------------------------------------------------------"    
     print
     try:
-        webbrowser.open_new_tab('http://127.0.0.1:'+str(NETWORK_PORT))
+        # webbrowser.open_new_tab('http://127.0.0.1:'+str(NETWORK_PORT))
+        pass
     except webbrowser.Error:
         print "Cannot open Webbrowser, please do so manually."
     sys.stdout.flush()  # make sure everything gets flushed
@@ -110,7 +111,7 @@ def hello_handler():
 def longtest_handler():
     fp = open("longtest.ngc")
     for line in fp:
-        SerialManager.queue_for_sending(line)
+        SerialManager.queue_gcode_line(line)
     return "Longtest queued."
     
 
@@ -337,7 +338,7 @@ def flash_firmware_handler():
 # def gcode_handler(gcode_line):
 #     if SerialManager.is_connected():    
 #         print gcode_line
-#         SerialManager.queue_for_sending(gcode_line)
+#         SerialManager.queue_gcode_line(gcode_line)
 #         return "Queued for sending."
 #     else:
 #         return ""
@@ -349,7 +350,7 @@ def gcode_submit_handler():
         lines = gcode_program.split('\n')
         print "Adding to queue %s lines" % len(lines)
         for line in lines:
-            SerialManager.queue_for_sending(line)
+            SerialManager.queue_gcode_line(line)
         return "Queued for sending."
     else:
         return ""

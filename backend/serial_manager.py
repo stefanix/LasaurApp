@@ -16,9 +16,6 @@ class SerialManagerClass:
         self.tx_buffer = ""        
         self.remoteXON = True
 
-        self.XON = '>'
-        self.XOFF = '<'
-
         # TX_CHUNK_SIZE - this is the number of bytes to be 
         # written to the device in one go.
         # IMPORTANT: The remote device is required to send an
@@ -40,11 +37,14 @@ class SerialManagerClass:
 
         self.LASAURGRBL_FIRST_STRING = "LasaurGrbl"
 
+        self.fec_redundancy = 1  # use forward error correction
+
 
 
     def reset_status(self):
         self.status = {
             'buffer_overflow': False,
+            'transmission_error': False,
             'bad_number_format_error': False,
             'expected_command_letter_error': False,
             'unsupported_statement_error': False,
@@ -146,7 +146,7 @@ class SerialManagerClass:
         if self.is_queue_empty():
             # trigger a status report
             # will update for the next status request
-            self.queue_for_sending('?\n')
+            self.queue_gcode_line('?\n')
         return self.status
 
 
@@ -159,7 +159,7 @@ class SerialManagerClass:
             self.device.flushOutput()
 
 
-    def queue_for_sending(self, gcode):
+    def queue_gcode_line(self, gcode):
         if gcode:
             gcode = gcode.strip()
     
@@ -169,11 +169,27 @@ class SerialManagerClass:
               # cancel current job
               self.tx_buffer = ""
               self.job_size = 0
+              self.job_active = False
               self.reset_status()     
-                    
-            self.tx_buffer += gcode + '\n'
-            self.job_size += len(gcode) + 1
-            self.job_active = True
+            else:
+                if self.fec_redundancy > 0:  # using error correction
+                    # prepend marker and checksum
+                    checksum = 0
+                    for c in gcode:
+                        ascii_ord = ord(c)
+                        if ascii_ord > ord(' '):  #ignore 32 and lower
+                            checksum += ascii_ord
+                            if checksum >= 128:
+                                checksum -= 128
+                    checksum = (checksum >> 1) + 128
+                    # sys.stdout.write("sum(" + str(chr(checksum)) + ',' + str(checksum) + ')')
+                    # sys.stdout.write(str(chr(checksum)) + '\n')
+                    # sys.stdout.flush()
+
+                    gcode = '*' + chr(checksum) + gcode
+                self.tx_buffer += gcode + '\n'
+                self.job_size += len(gcode) + 1
+                self.job_active = True
 
     def is_queue_empty(self):
         return len(self.tx_buffer) == 0
@@ -194,8 +210,8 @@ class SerialManagerClass:
                 chars = self.device.read(self.RX_CHUNK_SIZE)
                 if len(chars) > 0:
                     ## check for flow control chars
-                    iXON = chars.rfind(self.XON)
-                    iXOFF = chars.rfind(self.XOFF)
+                    iXON = chars.rfind(serial.XON)
+                    iXOFF = chars.rfind(serial.XOFF)
                     if iXON != -1 or iXOFF != -1:
                         if iXON > iXOFF:
                             # print "=========================== XON"
@@ -204,7 +220,7 @@ class SerialManagerClass:
                             # print "=========================== XOFF"
                             self.remoteXON = False
                         #remove control chars
-                        for c in self.XON+self.XOFF: 
+                        for c in serial.XON+serial.XOFF: 
                             chars = chars.replace(c, "")
                     ## assemble lines
                     self.rx_buffer += chars
@@ -218,8 +234,13 @@ class SerialManagerClass:
                             sys.stdout.flush()                             
                         else:
                             # parse
-                            # sys.stdout.write(".")
                             sys.stdout.write(line + "\n")
+                            # sys.stdout.write(".")
+                            # if (line[:2] == 'G0' or line[:2] == 'G1'):
+                            #     first_period = line.find('.')
+                            #     second_period = line.find('.', first_period+1)
+                            #     if first_period == -1 or second_period == -1:
+                            #         sys.stdout.write('\n' + line + " ERROR\n")
                             sys.stdout.flush()
 
                             if 'N' in line:
@@ -233,6 +254,11 @@ class SerialManagerClass:
                                 self.status['buffer_overflow'] = True
                             else:
                                 self.status['buffer_overflow'] = False
+
+                            if 'T' in line:  # Stop: Transmission Error
+                                self.status['transmission_error'] = True
+                            else:
+                                self.status['transmission_error'] = False                                
 
                             if 'P' in line:  # Stop: Power is off
                                 self.status['power_off'] = True
