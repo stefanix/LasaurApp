@@ -46,7 +46,7 @@ SVGReader = {
     // what the svg size (typically page dimensions) should be mapped to
   style : {},  
     // style at current parsing position
-  tolerance : 0.1,
+  tolerance : 0.18,
   tolerance2 : undefined,
   tolerance2_px: undefined,
   tolerance2_half: undefined,

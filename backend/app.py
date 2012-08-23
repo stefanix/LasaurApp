@@ -87,7 +87,7 @@ def run_with_callback(host):
     print "-----------------------------------------------------------------------------"    
     print
     try:
-        # webbrowser.open_new_tab('http://127.0.0.1:'+str(NETWORK_PORT))
+        webbrowser.open_new_tab('http://127.0.0.1:'+str(NETWORK_PORT))
         pass
     except webbrowser.Error:
         print "Cannot open Webbrowser, please do so manually."
