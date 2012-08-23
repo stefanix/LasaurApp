@@ -37,7 +37,7 @@ class SerialManagerClass:
 
         self.LASAURGRBL_FIRST_STRING = "LasaurGrbl"
 
-        self.fec_redundancy = 1  # use forward error correction
+        self.fec_redundancy = 2  # use forward error correction
 
 
 
@@ -146,7 +146,7 @@ class SerialManagerClass:
         if self.is_queue_empty():
             # trigger a status report
             # will update for the next status request
-            self.queue_gcode_line('?\n')
+            self.queue_gcode_line('?')
         return self.status
 
 
@@ -165,31 +165,34 @@ class SerialManagerClass:
     
             if gcode[0] == '%':
                 return
-            elif gcode.find('!') > -1:
-              # cancel current job
-              self.tx_buffer = ""
-              self.job_size = 0
-              self.job_active = False
-              self.reset_status()     
             else:
                 if self.fec_redundancy > 0:  # using error correction
                     # prepend marker and checksum
                     checksum = 0
                     for c in gcode:
                         ascii_ord = ord(c)
-                        if ascii_ord > ord(' '):  #ignore 32 and lower
+                        if ascii_ord > ord(' ') and c != '~' and c != '!':  #ignore 32 and lower, ~, !
                             checksum += ascii_ord
                             if checksum >= 128:
                                 checksum -= 128
                     checksum = (checksum >> 1) + 128
-                    # sys.stdout.write("sum(" + str(chr(checksum)) + ',' + str(checksum) + ')')
-                    # sys.stdout.write(str(chr(checksum)) + '\n')
-                    # sys.stdout.flush()
+                    gcode_redundant = ""
+                    for n in range(self.fec_redundancy-1):
+                        gcode_redundant += '^' + chr(checksum) + gcode + '\n'
+                    gcode = gcode_redundant + '*' + chr(checksum) + gcode
 
-                    gcode = '*' + chr(checksum) + gcode
-                self.tx_buffer += gcode + '\n'
-                self.job_size += len(gcode) + 1
+                if gcode.find('!') > -1:
+                  # cancel current job
+                  self.tx_buffer = gcode + '\n'
+                  self.job_size = 0
+                  self.reset_status()  
+                else:                    
+                    self.tx_buffer += gcode + '\n'
+                    self.job_size += len(gcode) + 1
+                    
                 self.job_active = True
+
+                  
 
     def is_queue_empty(self):
         return len(self.tx_buffer) == 0
@@ -231,16 +234,13 @@ class SerialManagerClass:
                         if '#' in line[:3]:
                             # print and ignore
                             sys.stdout.write(line + "\n")
-                            sys.stdout.flush()                             
+                            sys.stdout.flush()
+                        elif '^' in line:
+                            sys.stdout.write("\nCorrected Transmission Error!\n")
+                            sys.stdout.flush()                                              
                         else:
-                            # parse
-                            sys.stdout.write(line + "\n")
-                            # sys.stdout.write(".")
-                            # if (line[:2] == 'G0' or line[:2] == 'G1'):
-                            #     first_period = line.find('.')
-                            #     second_period = line.find('.', first_period+1)
-                            #     if first_period == -1 or second_period == -1:
-                            #         sys.stdout.write('\n' + line + " ERROR\n")
+                            # sys.stdout.write(line + "\n")
+                            sys.stdout.write(".")
                             sys.stdout.flush()
 
                             if 'N' in line:
