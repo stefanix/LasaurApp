@@ -97,6 +97,7 @@ class SerialManagerClass:
             return None
         else:
             # windows hack because pyserial does not enumerate USB-style com ports
+            print "Trying to find Controller ..."
             for i in range(24):
                 try:
                     s = serial.Serial(port=i, baudrate=baudrate, timeout=2.0)
