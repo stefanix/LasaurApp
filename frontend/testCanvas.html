@@ -147,7 +147,7 @@ $(document).ready(function(){
       icanvas.background('#ffffff');
       for (var color in raw_gcode_by_color) {
         if (!(color in exclude_colors)) {
-          GcodeReader.parse(raw_gcode_by_color[color], 2.0);
+          GcodeReader.parse(raw_gcode_by_color[color], 8.0);
           GcodeReader.draw(icanvas, color);
         }
       }

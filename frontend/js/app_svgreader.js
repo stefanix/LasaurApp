@@ -46,7 +46,7 @@ SVGReader = {
     // what the svg size (typically page dimensions) should be mapped to
   style : {},  
     // style at current parsing position
-  tolerance : 0.18,
+  tolerance : 0.1,
   tolerance2 : undefined,
   tolerance2_px: undefined,
   tolerance2_half: undefined,
@@ -146,7 +146,7 @@ SVGReader = {
         // as many apps export highly tesselated polylines
         for (var u=0; u<subpaths.length; u++) {
           totalverts += subpaths[u].length;
-          subpaths[u] = this.poly_simplify(subpaths[u], this.tolerance2_half);
+          subpaths[u] = this.poly_simplify(subpaths[u], this.tolerance2);
           optiverts += subpaths[u].length;
         }
         // sort subpath to optimize seek distances in between
