@@ -236,7 +236,7 @@ class SerialManagerClass:
                             sys.stdout.write(line + "\n")
                             sys.stdout.flush()
                         elif '^' in line:
-                            sys.stdout.write("\nCorrected Transmission Error!\n")
+                            sys.stdout.write("\nFEC Correction!\n")
                             sys.stdout.flush()                                              
                         else:
                             # sys.stdout.write(line + "\n")
