@@ -72,7 +72,7 @@ class SerialManagerClass:
             # iterator = sorted(list_ports.grep(''))  # does not return USB-style
             # scan for available ports. return a list of tuples (num, name)
             available = []
-            for i in range(1,13):
+            for i in range(24):
                 try:
                     s = serial.Serial(port=i, baudrate=baudrate)
                     ports.append(s.portstr)                
@@ -97,10 +97,10 @@ class SerialManagerClass:
             return None
         else:
             # windows hack because pyserial does not enumerate USB-style com ports
-            for i in range(256):
+            for i in range(24):
                 try:
-                    s = serial.Serial(port=i, baudrate=baudrate, timeout=1.0)
-                    lasaur_hello = s.read(16)
+                    s = serial.Serial(port=i, baudrate=baudrate, timeout=2.0)
+                    lasaur_hello = s.read(32)
                     if lasaur_hello.find(self.LASAURGRBL_FIRST_STRING) > -1:
                         return s.portstr
                     s.close()
