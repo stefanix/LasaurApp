@@ -24,7 +24,7 @@ class SerialManagerClass:
         # report back the correct size of actually written bytes.
         # It simply returns the num is was handed to. This is a problem
         # when it cannot write at least TX_CHUNK_SIZE. 8 seems to be fine.
-        self.TX_CHUNK_SIZE = 32
+        self.TX_CHUNK_SIZE = 64
         self.RX_CHUNK_SIZE = 256
         self.nRequested = 0
         
@@ -40,8 +40,9 @@ class SerialManagerClass:
 
         self.fec_redundancy = 2  # use forward error correction
 
-        self.may_i_send_char = '\x14'
-        self.last_may_i = 0
+        self.ready_char = '\x12'
+        self.request_ready_char = '\x14'
+        self.last_request_ready = 0
 
 
 
@@ -218,11 +219,11 @@ class SerialManagerClass:
                 chars = self.device.read(self.RX_CHUNK_SIZE)
                 if len(chars) > 0:
                     ## check for data request
-                    if serial.XON in chars:
-                        # print "=========================== XON"
+                    if self.ready_char in chars:
+                        # print "=========================== READY"
                         self.nRequested = self.TX_CHUNK_SIZE
                         #remove control chars
-                        chars = chars.replace(serial.XON, "")
+                        chars = chars.replace(self.ready_char, "")
                     ## assemble lines
                     self.rx_buffer += chars
                     posNewline = self.rx_buffer.find('\n')
@@ -294,14 +295,16 @@ class SerialManagerClass:
                         self.tx_buffer = self.tx_buffer[actuallySent:]
                         self.nRequested -= actuallySent
                         if self.nRequested <= 0:
-                            self.last_may_i = 0  # make sure to ask again
+                            self.last_request_ready = 0  # make sure to request ready
                     else:
-                        if (time.time()-self.last_may_i) > 2.0:
-                            # ask to send a chunk
-                            # print "=========================== MAY"
-                            actuallySent = self.device.write(self.may_i_send_char)
+                        if (time.time()-self.last_request_ready) > 2.0:
+                            # ask to send a ready indicator
+                            # only ask for this when sending is on hold
+                            # only ask once and after time out
+                            # print "=========================== REQUEST READY"
+                            actuallySent = self.device.write(self.request_ready_char)
                             if actuallySent == 1:
-                                self.last_may_i = time.time()
+                                self.last_request_ready = time.time()
                          
                 else:
                     if self.job_active:
