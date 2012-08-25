@@ -24,8 +24,9 @@ class SerialManagerClass:
         # report back the correct size of actually written bytes.
         # It simply returns the num is was handed to. This is a problem
         # when it cannot write at least TX_CHUNK_SIZE. 8 seems to be fine.
-        self.TX_CHUNK_SIZE = 8
+        self.TX_CHUNK_SIZE = 32
         self.RX_CHUNK_SIZE = 256
+        self.nRequested = 0
         
         # used for calculating percentage done
         self.job_size = 0
@@ -38,6 +39,9 @@ class SerialManagerClass:
         self.LASAURGRBL_FIRST_STRING = "LasaurGrbl"
 
         self.fec_redundancy = 2  # use forward error correction
+
+        self.may_i_send_char = '\x14'
+        self.last_may_i = 0
 
 
 
@@ -213,19 +217,12 @@ class SerialManagerClass:
                 ### receiving
                 chars = self.device.read(self.RX_CHUNK_SIZE)
                 if len(chars) > 0:
-                    ## check for flow control chars
-                    iXON = chars.rfind(serial.XON)
-                    iXOFF = chars.rfind(serial.XOFF)
-                    if iXON != -1 or iXOFF != -1:
-                        if iXON > iXOFF:
-                            # print "=========================== XON"
-                            self.remoteXON = True
-                        else:
-                            # print "=========================== XOFF"
-                            self.remoteXON = False
+                    ## check for data request
+                    if serial.XON in chars:
+                        # print "=========================== XON"
+                        self.nRequested = self.TX_CHUNK_SIZE
                         #remove control chars
-                        for c in serial.XON+serial.XOFF: 
-                            chars = chars.replace(c, "")
+                        chars = chars.replace(serial.XON, "")
                     ## assemble lines
                     self.rx_buffer += chars
                     posNewline = self.rx_buffer.find('\n')
@@ -291,10 +288,21 @@ class SerialManagerClass:
                 
                 ### sending
                 if self.tx_buffer:
-                    if self.remoteXON:
-                        actuallySent = self.device.write(self.tx_buffer[:self.TX_CHUNK_SIZE])
+                    if self.nRequested > 0:
+                        actuallySent = self.device.write(self.tx_buffer[:self.nRequested])
                         # sys.stdout.write(self.tx_buffer[:actuallySent])  # print w/ newline
-                        self.tx_buffer = self.tx_buffer[actuallySent:]  
+                        self.tx_buffer = self.tx_buffer[actuallySent:]
+                        self.nRequested -= actuallySent
+                        if self.nRequested <= 0:
+                            self.last_may_i = 0  # make sure to ask again
+                    else:
+                        if (time.time()-self.last_may_i) > 2.0:
+                            # ask to send a chunk
+                            # print "=========================== MAY"
+                            actuallySent = self.device.write(self.may_i_send_char)
+                            if actuallySent == 1:
+                                self.last_may_i = time.time()
+                         
                 else:
                     if self.job_active:
                         # print "\nG-code stream finished!"
