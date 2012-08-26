@@ -17,13 +17,10 @@ class SerialManagerClass:
         self.remoteXON = True
 
         # TX_CHUNK_SIZE - this is the number of bytes to be 
-        # written to the device in one go.
-        # IMPORTANT: The remote device is required to send an
-        # XOFF if TX_CHUNK_SIZE bytes would overflow it's buffer.
-        # BUG WARNING: it appears pyserial's write() does not
-        # report back the correct size of actually written bytes.
-        # It simply returns the num is was handed to. This is a problem
-        # when it cannot write at least TX_CHUNK_SIZE. 8 seems to be fine.
+        # written to the device in one go. It needs to match the device.
+        # BUG WARNING: it appears pyserial's write() does not report 
+        # back the correct size of actually written bytes.
+        # The pyserial included with this app is patched in serialposix.py:write(...)
         self.TX_CHUNK_SIZE = 64
         self.RX_CHUNK_SIZE = 256
         self.nRequested = 0
@@ -124,13 +121,8 @@ class SerialManagerClass:
                 
         # Create serial device with both read timeout set to 0.
         # This results in the read() being non-blocking
-        self.device = serial.Serial(port, baudrate, timeout=0)
-        
-        # I would like to use write with a timeout but it appears from checking
-        # serialposix.py that the write function does not correctly report the
-        # number of bytes actually written. It appears to simply report back
-        # the number of bytes passed to the function.
-        # self.device = serial.Serial(port, baudrate, timeout=0, writeTimeout=0.1)
+        self.device = serial.Serial(port, baudrate, timeout=0, writeTimeout=0)
+
 
     def close(self):
         if self.device:
@@ -298,9 +290,9 @@ class SerialManagerClass:
                             self.last_request_ready = 0  # make sure to request ready
                     else:
                         if (time.time()-self.last_request_ready) > 2.0:
-                            # ask to send a ready indicator
+                            # ask to send a ready byte
                             # only ask for this when sending is on hold
-                            # only ask once and after time out
+                            # only ask once (and after a big time out)
                             # print "=========================== REQUEST READY"
                             actuallySent = self.device.write(self.request_ready_char)
                             if actuallySent == 1:
