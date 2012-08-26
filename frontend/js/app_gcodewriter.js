@@ -12,7 +12,7 @@ GcodeWriter = {
   // short lines into one segment.
   // TODO: include angles into the deletion check
   DELETION_EPSILON_SQUARED : Math.pow(0.01, 2),
-  NDIGITS : 1,
+  NDIGITS : 2,
 
   write : function(segments, scale, xoff, yoff) {
     var glist = [];
