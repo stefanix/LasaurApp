@@ -284,7 +284,12 @@ class SerialManagerClass:
                 ### sending
                 if self.tx_buffer:
                     if self.nRequested > 0:
-                        actuallySent = self.device.write(self.tx_buffer[:self.nRequested])
+                        try:
+                            actuallySent = self.device.write(self.tx_buffer[:self.nRequested])
+                        except serial.writeTimeoutError:
+                            actuallySent = 0  # pyserial does not report this sufficiently
+                            sys.stdout.write("\nsend_queue_as_ready: writeTimeoutError\n")
+                            sys.stdout.flush()
                         # sys.stdout.write(self.tx_buffer[:actuallySent])  # print w/ newline
                         self.tx_buffer = self.tx_buffer[actuallySent:]
                         self.nRequested -= actuallySent
