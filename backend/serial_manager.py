@@ -286,8 +286,9 @@ class SerialManagerClass:
                     if self.nRequested > 0:
                         try:
                             actuallySent = self.device.write(self.tx_buffer[:self.nRequested])
-                        except serial.writeTimeoutError:
-                            actuallySent = 0  # pyserial does not report this sufficiently
+                        except serial.SerialTimeoutException:
+                            # skip, report
+                            actuallySent = self.nRequested  # pyserial does not report this sufficiently
                             sys.stdout.write("\nsend_queue_as_ready: writeTimeoutError\n")
                             sys.stdout.flush()
                         # sys.stdout.write(self.tx_buffer[:actuallySent])  # print w/ newline
@@ -301,7 +302,13 @@ class SerialManagerClass:
                             # only ask for this when sending is on hold
                             # only ask once (and after a big time out)
                             # print "=========================== REQUEST READY"
-                            actuallySent = self.device.write(self.request_ready_char)
+                            try:
+                                actuallySent = self.device.write(self.request_ready_char)
+                            except serial.SerialTimeoutException:
+                                # skip, report
+                                actuallySent = self.nRequested  # pyserial does not report this sufficiently
+                                sys.stdout.write("\nsend_queue_as_ready: writeTimeoutError, on ready request\n")
+                                sys.stdout.flush()
                             if actuallySent == 1:
                                 self.last_request_ready = time.time()
                          
