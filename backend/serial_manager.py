@@ -118,12 +118,12 @@ class SerialManagerClass:
                 
         # Create serial device with both read timeout set to 0.
         # This results in the read() being non-blocking
-        # BUG WARNING: the pyserial write function is majorly broken as it
-        # doesn't report correctly how many bytes were actually written.
-        # The pyserial included with this app is patched in serialposix.py:write(...)        
-        # The serialwin.py variant works if there is a write timeout set. 
-        # With a 0 timeout it also fails.
-        self.device = serial.Serial(port, baudrate, timeout=0, writeTimeout=0.0001)
+        # Write on the other hand uses a large timeout but should not be blocking
+        # much because we ask it only to write TX_CHUNK_SIZE at a time.
+        # BUG WARNING: the pyserial write function does not report how
+        # many bytes were actually written if this is different from requested.
+        # Work around: use a big enough timeout and a small enough chunk size.
+        self.device = serial.Serial(port, baudrate, timeout=0, writeTimeout=1.0)
 
 
     def close(self):

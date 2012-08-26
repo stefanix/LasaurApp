@@ -41,3 +41,18 @@ From a shell/Terminal do the following:
 
 Most of the setup for making this happen is in the app.spec file. Here all the accessory data and frontend files are listed for inclusion in the executable. In the actual code the data root directory can be found in 'sys._MEIPASS'.
 
+
+Notes on Testing on a Virtual Windows System
+---------------------------------------------
+When running VirtualBox on OSX it has troubles accessing the USB port even when all the VirtualBox settings are correct. This is because OSX captures the device. To make it available in VirtualBox one has to unload it in OSX first. The following works for Arduino Unos:
+
+- sudo kextunload -b com.apple.driver.AppleUSBCDC 
+
+After the VirtualBox session this can be undone with:
+
+- sudo kextload -b com.apple.driver.AppleUSBCDC
+
+For other USB devices thee following may be useful too:
+- sudo kextunload -b com.apple.driver.AppleUSBCDCWCM
+- sudo kextunload -b com.apple.driver.AppleUSBCDCACMData
+- sudo kextunload -b com.apple.driver.AppleUSBCDCACMControl 
