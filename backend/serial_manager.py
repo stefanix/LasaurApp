@@ -123,7 +123,7 @@ class SerialManagerClass:
         # BUG WARNING: the pyserial write function does not report how
         # many bytes were actually written if this is different from requested.
         # Work around: use a big enough timeout and a small enough chunk size.
-        self.device = serial.Serial(port, baudrate, timeout=0, writeTimeout=1.0)
+        self.device = serial.Serial(port, baudrate, timeout=0, writeTimeout=0.1)
 
 
     def close(self):
