@@ -18,9 +18,6 @@ class SerialManagerClass:
 
         # TX_CHUNK_SIZE - this is the number of bytes to be 
         # written to the device in one go. It needs to match the device.
-        # BUG WARNING: it appears pyserial's write() does not report 
-        # back the correct size of actually written bytes.
-        # The pyserial included with this app is patched in serialposix.py:write(...)
         self.TX_CHUNK_SIZE = 64
         self.RX_CHUNK_SIZE = 256
         self.nRequested = 0
@@ -121,7 +118,12 @@ class SerialManagerClass:
                 
         # Create serial device with both read timeout set to 0.
         # This results in the read() being non-blocking
-        self.device = serial.Serial(port, baudrate, timeout=0, writeTimeout=0)
+        # BUG WARNING: the pyserial write function is majorly broken as it
+        # doesn't report correctly how many bytes were actually written.
+        # The pyserial included with this app is patched in serialposix.py:write(...)        
+        # The serialwin.py variant works if there is a write timeout set. 
+        # With a 0 timeout it also fails.
+        self.device = serial.Serial(port, baudrate, timeout=0, writeTimeout=0.0001)
 
 
     def close(self):
