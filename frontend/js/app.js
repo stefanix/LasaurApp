@@ -356,11 +356,16 @@ $(document).ready(function(){
   
   $("#homing_cycle").tooltip({placement:'bottom', delay: {show:500, hide:100}});
   $("#homing_cycle").click(function(e){
-  	var gcode = '~G30\n'  // ~ is the cancel stop state char
-  	$().uxmessage('notice', gcode);	
-  	send_gcode(gcode, "Homing cycle ...", "Serial not connected.");
-  	reset_offset();
-  	e.preventDefault();		
+    var gcode = '!\n'  // ! is enter stop state char
+    $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
+    send_gcode(gcode, "Resetting ...", "Serial not connected."); 
+    var delayedresume = setTimeout(function() {
+      var gcode = '~\nG30\n'  // ~ is resume char
+      $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
+      send_gcode(gcode, "Homing cycle ...", "Serial not connected.");
+    }, 1000);
+    e.preventDefault(); 
+
   });
 
   $("#go_to_origin").tooltip({placement:'bottom', delay: {show:500, hide:100}});

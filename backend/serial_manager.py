@@ -184,7 +184,7 @@ class SerialManagerClass:
                 if gcode.find('!') > -1:
                   # cancel current job
                   self.tx_buffer = gcode + '\n'
-                  self.job_size = 0
+                  self.job_size = len(gcode) + 1
                   self.reset_status()  
                 else:                    
                     self.tx_buffer += gcode + '\n'
@@ -220,66 +220,14 @@ class SerialManagerClass:
                         chars = chars.replace(self.ready_char, "")
                     ## assemble lines
                     self.rx_buffer += chars
-                    posNewline = self.rx_buffer.find('\n')
-                    if posNewline >= 0:  # we got a line
-                        line = self.rx_buffer[:posNewline]
-                        self.rx_buffer = self.rx_buffer[posNewline+1:]
-                        if '#' in line[:3]:
-                            # print and ignore
-                            sys.stdout.write(line + "\n")
-                            sys.stdout.flush()
-                        elif '^' in line:
-                            sys.stdout.write("\nFEC Correction!\n")
-                            sys.stdout.flush()                                              
-                        else:
-                            # sys.stdout.write(line + "\n")
-                            sys.stdout.write(".")
-                            sys.stdout.flush()
-
-                            if 'N' in line:
-                                self.status['bad_number_format_error'] = True
-                            if 'E' in line:
-                                self.status['expected_command_letter_error'] = True
-                            if 'U' in line:
-                                self.status['unsupported_statement_error'] = True
-
-                            if 'B' in line:  # Stop: Buffer Overflow
-                                self.status['buffer_overflow'] = True
-                            else:
-                                self.status['buffer_overflow'] = False
-
-                            if 'T' in line:  # Stop: Transmission Error
-                                self.status['transmission_error'] = True
-                            else:
-                                self.status['transmission_error'] = False                                
-
-                            if 'P' in line:  # Stop: Power is off
-                                self.status['power_off'] = True
-                            else:
-                                self.status['power_off'] = False
-
-                            if 'L' in line:  # Stop: A limit was hit
-                                self.status['limit_hit'] = True
-                            else:
-                                self.status['limit_hit'] = False
-
-                            if 'R' in line:  # Stop: by serial requested
-                                self.status['serial_stop_request'] = True
-                            else:
-                                self.status['serial_stop_request'] = False
-
-                            if 'D' in line:  # Warning: Door Open
-                                self.status['door_open'] = True
-                            else:
-                                self.status['door_open'] = False
-
-                            if 'C' in line:  # Warning: Chiller Off
-                                self.status['chiller_off'] = True
-                            else:
-                                self.status['chiller_off'] = False
-
-                            if 'V' in line:
-                                self.status['firmware_version'] = line[line.find('V')+1:]                     
+                    while(1):  # process all lines in buffer
+                        posNewline = self.rx_buffer.find('\n')
+                        if posNewline == -1:
+                            break  # no more complete lines
+                        else:  # we got a line
+                            line = self.rx_buffer[:posNewline]
+                            self.rx_buffer = self.rx_buffer[posNewline+1:]
+                        self.process_status_line(line)
                 
                 ### sending
                 if self.tx_buffer:
@@ -324,6 +272,69 @@ class SerialManagerClass:
             except ValueError:
                 # Serial port appears closed => reset
                 self.close()            
+
+
+
+    def process_status_line(self, line):
+        if '#' in line[:3]:
+            # print and ignore
+            sys.stdout.write(line + "\n")
+            sys.stdout.flush()
+        elif '^' in line:
+            sys.stdout.write("\nFEC Correction!\n")
+            sys.stdout.flush()                                              
+        else:
+            # sys.stdout.write(line + "\n")
+            sys.stdout.write(".")
+            sys.stdout.flush()
+
+            if 'N' in line:
+                self.status['bad_number_format_error'] = True
+            if 'E' in line:
+                self.status['expected_command_letter_error'] = True
+            if 'U' in line:
+                self.status['unsupported_statement_error'] = True
+
+            if 'B' in line:  # Stop: Buffer Overflow
+                self.status['buffer_overflow'] = True
+            else:
+                self.status['buffer_overflow'] = False
+
+            if 'T' in line:  # Stop: Transmission Error
+                self.status['transmission_error'] = True
+            else:
+                self.status['transmission_error'] = False                                
+
+            if 'P' in line:  # Stop: Power is off
+                self.status['power_off'] = True
+            else:
+                self.status['power_off'] = False
+
+            if 'L' in line:  # Stop: A limit was hit
+                self.status['limit_hit'] = True
+            else:
+                self.status['limit_hit'] = False
+
+            if 'R' in line:  # Stop: by serial requested
+                self.status['serial_stop_request'] = True
+            else:
+                self.status['serial_stop_request'] = False
+
+            if 'D' in line:  # Warning: Door Open
+                self.status['door_open'] = True
+            else:
+                self.status['door_open'] = False
+
+            if 'C' in line:  # Warning: Chiller Off
+                self.status['chiller_off'] = True
+            else:
+                self.status['chiller_off'] = False
+
+            if 'V' in line:
+                self.status['firmware_version'] = line[line.find('V')+1:]                     
+
+
+
 
             
 # singelton
