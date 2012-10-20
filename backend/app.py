@@ -9,7 +9,7 @@ from flash import flash_upload
 
 
 APPNAME = "lasaurapp"
-VERSION = "12.08f"
+VERSION = "12.08g"
 COMPANY_NAME = "com.nortd.labs"
 SERIAL_PORT = None
 BITSPERSECOND = 57600
@@ -411,6 +411,8 @@ argparser.add_argument('-l', '--list', dest='list_serial_devices', action='store
                     default=False, help='list all serial devices currently connected')
 argparser.add_argument('-d', '--debug', dest='debug', action='store_true',
                     default=False, help='print more verbose for debugging')
+argparser.add_argument('--beaglebone', dest='beaglebone', action='store_true',
+                    default=False, help='use this for running on beaglebone')
 argparser.add_argument('-m', '--match', dest='match',
                     default=GUESS_PREFIX, help='match serial device with this string')                                        
 args = argparser.parse_args()
@@ -437,6 +439,19 @@ def run_helper():
             
 
 print "LasaurApp " + VERSION
+
+# if running on beaglebone, setup UART1 (pin muxing)
+if args.beaglebone:
+    # for details see: http://www.nathandumont.com/node/250
+    # echo 0 > /sys/kernel/debug/omap_mux/uart1_txd
+    fw = file("/sys/kernel/debug/omap_mux/uart1_txd", "w")
+    fw.write("%X" % (0))
+    fw.close()
+    # echo 20 > /sys/kernel/debug/omap_mux/uart1_rxd
+    fw = file("/sys/kernel/debug/omap_mux/uart1_rxd", "w")
+    fw.write("%X" % ((1 << 5) | 0))
+    fw.close()
+
 if args.list_serial_devices:
     SerialManager.list_devices(BITSPERSECOND)
 else:
