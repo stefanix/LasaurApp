@@ -39,6 +39,11 @@ $(document).ready(function(){
       // $().uxmessage('notice', "Using fallback: file form upload.");
     }
     
+    // reset file input form field so change event also triggers if
+    // same file is chosen again (but with different dpi)
+    $('#svg_upload_file_temp').val($('#svg_upload_file').val())
+    $('#svg_upload_file').val('')
+
   	e.preventDefault();		
   });
 
@@ -251,7 +256,7 @@ $(document).ready(function(){
     if (any_assingments == true) {     
       gcodeparts.push("S0\nG00X0Y0F16000\n%");
       var gcodestring = gcodeparts.join('');
-      var fullpath = $('#svg_upload_file').val();
+      var fullpath = $('#svg_upload_file_temp').val();
       var filename = fullpath.split('\\').pop().split('/').pop();
       save_and_add_to_job_queue(filename, gcodestring);
       load_into_gcode_widget(gcodestring, filename);

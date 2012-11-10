@@ -440,9 +440,10 @@ def run_helper():
 
 print "LasaurApp " + VERSION
 
-# if running on beaglebone, setup UART1 (pin muxing)
 if args.beaglebone:
+    ### if running on beaglebone, setup (pin muxing) and use UART1
     # for details see: http://www.nathandumont.com/node/250
+    SERIAL_PORT = "/dev/ttyO1"
     # echo 0 > /sys/kernel/debug/omap_mux/uart1_txd
     fw = file("/sys/kernel/debug/omap_mux/uart1_txd", "w")
     fw.write("%X" % (0))
@@ -455,18 +456,19 @@ if args.beaglebone:
 if args.list_serial_devices:
     SerialManager.list_devices(BITSPERSECOND)
 else:
-    if args.port:
-        # (1) get the serial device from the argument list
-        SERIAL_PORT = args.port
-        print "Using serial device '"+ SERIAL_PORT +"' from command line."
-    else:
-        # (2) get the serial device from the config file        
-        if os.path.isfile(CONFIG_FILE):
-            fp = open(CONFIG_FILE)
-            line = fp.readline().strip()
-            if len(line) > 3:
-                SERIAL_PORT = line
-                print "Using serial device '"+ SERIAL_PORT +"' from '" + CONFIG_FILE + "'."
+    if not SERIAL_PORT:
+        if args.port:
+            # (1) get the serial device from the argument list
+            SERIAL_PORT = args.port
+            print "Using serial device '"+ SERIAL_PORT +"' from command line."
+        else:
+            # (2) get the serial device from the config file        
+            if os.path.isfile(CONFIG_FILE):
+                fp = open(CONFIG_FILE)
+                line = fp.readline().strip()
+                if len(line) > 3:
+                    SERIAL_PORT = line
+                    print "Using serial device '"+ SERIAL_PORT +"' from '" + CONFIG_FILE + "'."
 
     if not SERIAL_PORT:
         if args.match:
