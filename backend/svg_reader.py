@@ -4,6 +4,12 @@ import re
 import logging
 import xml.etree.ElementTree as ET
 
+from svg_tag_reader import svgTagReader
+from svg_attribute_reader import svgAttributeReader
+from svg_path_reader import svgPathReader
+
+
+
 # SVG parser for the Lasersaur.
 # Converts SVG DOM to a flat collection of paths.
 #
@@ -40,29 +46,29 @@ import xml.etree.ElementTree as ET
 class SVGReader:
 
     def __init__(self):
-        boundarys = {}
+        self.boundarys = {}
             # output path flattened (world coords)
             # hash of path by color
             # each path is a list of subpaths
             # each subpath is a list of verteces
-        dpi = None
+        self.dpi = None
             # the dpi with which the svg's "user unit/px" unit was exported
-        target_size = [1220,610]
+        self.target_size = [1220,610]
             # what the svg size (typically page dimensions) should be mapped to
-        style = {}  
+        self.style = {}  
             # style at current parsing position
-        tolerance = 0.08
-        tolerance2 = None
-        tolerance2_px = None
-        tolerance2_half = None
-        epsilon = None
-        epsilon2 = None
+        self.tolerance = 0.08
+        self.tolerance2 = None
+        self.tolerance2_px = None
+        self.tolerance2_half = None
+        self.epsilon = None
+        self.epsilon2 = None
             # tolerance optimizing (tesselating, simplifying) curvy shapes (mm)
-        join_count = 0
+        self.join_count = 0
             # number of subpath joined
-        ignore_tags = {'defs':None, 'pattern':None, 'clipPath':None}
+        self.ignore_tags = {'defs':None, 'pattern':None, 'clipPath':None}
             # tags to ignore for this parser
-        optimize = true
+        self.optimize = true
             # do all kinds of path optimizations
 
 
@@ -101,7 +107,13 @@ class SVGReader:
                 
         # figure out how to map px to mm, using document page size, if necessary
         if not self.dpi:
-            self.parseRoot(svgRootElement)
+            # we are specifically interested in the width/height/viewBox attribute
+            # this is used to determin the page size and consequently the implied dpi of px units
+            tagName = self.getTag(svgRootElement)
+            if tagName == 'svg':
+                node = {}
+                self.dpi = self.SVGTagReader['svg'](rootNode, node, self.target_size)
+
             if self.dpi:
                 logging.info("Unit conversion from page size: " + str(round(self.dpi,4)) + 'dpi')
             else:
@@ -172,16 +184,6 @@ class SVGReader:
         return self.boundarys
 
 
-
-    def parseRoot(self, rootNode):
-        # we are specifically interested in the width/height/viewBox attribute
-        # this is used to determin the page size and consequently the implied dpi of px units
-        tagName = self.getTag(rootNode)
-        if tagName == 'svg':
-            node = {}
-            self._SVGTagMapping[tagName](this, rootNode, node)
-
-
     
     def parseChildren(self, domNode, parentNode):
         childNodes = []
@@ -214,16 +216,16 @@ class SVGReader:
                     if tag.attributes:
                         for j in range(len(tag.attributes)):
                             attr = tag.attributes[j]
-                            if attr.nodeName and attr.nodeValue and self._SVGAttributeMapping[attr.nodeName]:
-                                self._SVGAttributeMapping[attr.nodeName](self, node, attr.nodeValue)
+                            if attr.nodeName and attr.nodeValue and self._svgAttributeReader[attr.nodeName]:
+                                self._svgAttributeReader[attr.nodeName](self, node, attr.nodeValue)
                     
                     # 3.) accumulate transformations
                     node.xformToWorld = self.matrixMult(parentNode.xformToWorld, node.xform)
                     
                     # 4.) parse tag 
                     # with current attributes and transformation
-                    if self._SVGTagMapping[tag.tagName]:
-                        self._SVGTagMapping[tag.tagName](self, tag, node)
+                    if self.SVGTagReader[tag.tagName]:
+                        self.SVGTagReader[tag.tagName](self, tag, node)
                     
                     # 5.) compile boundarys + conversions
                     for k in range(len(node.path)):
@@ -275,7 +277,7 @@ class SVGReader:
         if (val == null) {
             return null
         } else {
-            var multiplier = 1.0
+            multiplier = 1.0
             if (val.search(/cm$/i) != -1) {
                 multiplier = this.dpi/2.54
             } else if (val.search(/mm$/i) != -1) {
@@ -327,16 +329,16 @@ class SVGReader:
         // liable for any real or imagined damage resulting from its use.
         // Users of this code must verify correctness for their application.
         // http://softsurfer.com/Archive/algorithm_0205/algorithm_0205.htm
-        var sum = function(u,v) {return [u[0]+v[0], u[1]+v[1]];}
-        var diff = function(u,v) {return [u[0]-v[0], u[1]-v[1]];}
-        var prod = function(u,v) {return [u[0]*v[0], u[1]*v[1]];}
-        var dot = function(u,v) {return u[0]*v[0] + u[1]*v[1];}
-        var norm2 = function(v) {return v[0]*v[0] + v[1]*v[1];}
-        var norm = function(v) {return Math.sqrt(norm2(v));}
-        var d2 = function(u,v) {return norm2(diff(u,v));}
-        var d = function(u,v) {return norm(diff(u,v));}
+        sum = function(u,v) {return [u[0]+v[0], u[1]+v[1]];}
+        diff = function(u,v) {return [u[0]-v[0], u[1]-v[1]];}
+        prod = function(u,v) {return [u[0]*v[0], u[1]*v[1]];}
+        dot = function(u,v) {return u[0]*v[0] + u[1]*v[1];}
+        norm2 = function(v) {return v[0]*v[0] + v[1]*v[1];}
+        norm = function(v) {return Math.sqrt(norm2(v));}
+        d2 = function(u,v) {return norm2(diff(u,v));}
+        d = function(u,v) {return norm(diff(u,v));}
         
-        var simplifyDP = function( tol2, v, j, k, mk ) {
+        simplifyDP = function( tol2, v, j, k, mk ) {
             //  This is the Douglas-Peucker recursive simplification routine
             //  It just marks vertices that are part of the simplified polyline
             //  for approximating the polyline subchain v[j] to v[k].
@@ -345,18 +347,18 @@ class SVGReader:
                 return;
             }
             // check for adequate approximation by segment S from v[j] to v[k]
-            var maxi = j;          // index of vertex farthest from S
-            var maxd2 = 0;         // distance squared of farthest vertex
+            maxi = j;          // index of vertex farthest from S
+            maxd2 = 0;         // distance squared of farthest vertex
             S = [v[j], v[k]];  // segment from v[j] to v[k]
             u = diff(S[1], S[0]);   // segment direction vector
-            var cu = norm2(u,u);     // segment length squared
+            cu = norm2(u,u);     // segment length squared
             // test each vertex v[i] for max distance from S
             // compute using the Feb 2001 Algorithm's dist_Point_to_Segment()
             // Note: this works in any dimension (2D, 3D, ...)
-            var  w;           // vector
-            var Pb;                // point, base of perpendicular from v[i] to S
-            var b, cw, dv2;        // dv2 = distance v[i] to S squared
-            for (var i=j+1; i<k; i++) {
+             w;           // vector
+            Pb;                // point, base of perpendicular from v[i] to S
+            b, cw, dv2;        // dv2 = distance v[i] to S squared
+            for (i=j+1; i<k; i++) {
                 // compute distance squared
                 w = diff(v[i], S[0]);
                 cw = dot(w,u);
@@ -388,9 +390,9 @@ class SVGReader:
             return;
         }    
         
-        var n = V.length;
-        var sV = [];    
-        var i, k, m, pv;               // misc counters
+        n = V.length;
+        sV = [];    
+        i, k, m, pv;               // misc counters
         vt = [];                       // vertex buffer, points
         mk = [];                       // marker buffer, ints
 
@@ -421,867 +423,6 @@ class SVGReader:
     },
     
 }
-
-
-
-
-
-
-
-
-_SVGTagMapping : {
-    svg : function(parser, tag, node) {
-        // has style attributes
-        node.fill = 'black'
-        node.stroke = 'none'
-        // figure out SVG's immplied dpi
-        // SVGs have user units/pixel that have an implied dpi.
-        // Inkscape typically uses 90dpi, Illustrator and Intaglio use 72dpi.
-        // We can use the width/height and/or viewBox attributes on the svg tag
-        // and map the document neatly onto the desired dimensions.
-        var w = tag.getAttribute('width');
-        var h = tag.getAttribute('height');
-        if (!w || !h) {
-            // get size from viewBox
-            var vb = tag.getAttribute('viewBox');
-            if (vb) {
-                var vb_parts = vb.split(',');
-                if (vb_parts.length != 4) {
-                    vb_parts = vb.split(' ');
-                }
-                if (vb_parts.length == 4) {
-                    w = vb_parts[2];
-                    h = vb_parts[3];
-                }
-            }
-        }
-        if (w && h) {
-            if (w.search(/cm$/i) != -1) {
-                $().uxmessage('notice', "Page size in 'cm' -> setting up dpi to treat px (and no) units as 'cm'.");
-                parser.dpi = 2.54
-            } else if (w.search(/mm$/i) != -1) {
-                $().uxmessage('notice', "Page size in 'mm' -> setting up dpi to treat px (and no) units as 'mm'.");
-                parser.dpi = 25.4
-            } else if (w.search(/pt$/i) != -1) {
-                $().uxmessage('notice', "Page size in 'pt' -> setting up dpi to treat px (and no) units as 'pt'.");
-                parser.dpi = 1.25
-            } else if (w.search(/pc$/i) != -1) {
-                $().uxmessage('notice', "Page size in 'pc' -> setting up dpi to treat px (and no) units as 'pc'.");
-                parser.dpi = 15.0
-            } else if (w.search(/in$/i) != -1) {
-                $().uxmessage('notice', "Page size in 'in' -> setting up dpi to treat px (and no) units as 'in'.");
-                parser.dpi = 1.0
-            } else {
-                // calculate scaling (dpi) from page size under the assumption the it equals the target size.
-                w = parseFloat(w.strip());
-                h = parseFloat(h.strip());       
-                parser.dpi = Math.round(25.4*w/parser.target_size[0]);
-            }
-        }
-    },
-    
-    
-    g : function(parser, tag, node) {
-        // http://www.w3.org/TR/SVG11/struct.html#Groups
-        // has transform and style attributes
-    },
-
-
-    polygon : function(parser, tag, node) {
-        // http://www.w3.org/TR/SVG11/shapes.html#PolygonElement
-        // has transform and style attributes
-        var d = this.__getPolyPath(tag)
-        d.append('z')
-        parser.addPath(d, node)      
-    },
-
-
-    polyline : function(parser, tag, node) {
-        // http://www.w3.org/TR/SVG11/shapes.html#PolylineElement
-        // has transform and style attributes
-        var d = this.__getPolyPath(tag)
-        parser.addPath(d, node)
-    },
-    
-    __getPolyPath : function(tag) {
-        // has transform and style attributes
-        var subpath = []
-        var vertnums = tag.getAttribute("points").toString().strip().split(/[\s,]+/).map(parseFloat)
-        if (vertnums.length % 2 == 0) {
-            var d = ['M']
-            d.append(vertnums[0])
-            d.append(vertnums[1])
-            for (var i=2; i<vertnums.length; i+=2) {
-                d.append(vertnums[i])
-                d.append(vertnums[i+1])
-            }
-            return d
-        } else {
-            $().uxmessage('error', "in __getPolyPath: odd number of verteces");
-        }
-    },
-
-    rect : function(parser, tag, node) {
-        // http://www.w3.org/TR/SVG11/shapes.html#RectElement
-        // has transform and style attributes      
-        var w = parser.parseUnit(tag.getAttribute('width')) || 0
-        var h = parser.parseUnit(tag.getAttribute('height')) || 0
-        var x = parser.parseUnit(tag.getAttribute('x')) || 0
-        var y = parser.parseUnit(tag.getAttribute('y')) || 0
-        var rx = parser.parseUnit(tag.getAttribute('rx'))
-        var ry = parser.parseUnit(tag.getAttribute('ry'))
-        
-        if(rx == null || ry == null) {  // no rounded corners
-            var d = ['M', x, y, 'h', w, 'v', h, 'h', -w, 'z'];
-            parser.addPath(d, node)
-        } else {                       // rounded corners
-            if ('ry' == null) { ry = rx; }
-            if (rx < 0.0) { rx *=-1; }
-            if (ry < 0.0) { ry *=-1; }
-            d = ['M', x+rx , y ,
-                     'h', w-2*rx,
-                     'c', rx, 0.0, rx, ry, rx, ry,
-                     'v', h-ry,
-                     'c', '0.0', ry, -rx, ry, -rx, ry,
-                     'h', -w+2*rx,
-                     'c', -rx, '0.0', -rx, -ry, -rx, -ry,
-                     'v', -h+ry,
-                     'c', '0.0','0.0','0.0', -ry, rx, -ry,
-                     'z'];
-            parser.addPath(d, node)        
-        }
-    },
-
-
-    line : function(parser, tag, node) {
-        // http://www.w3.org/TR/SVG11/shapes.html#LineElement
-        // has transform and style attributes
-        var x1 = parser.parseUnit(tag.getAttribute('x1')) || 0
-        var y1 = parser.parseUnit(tag.getAttribute('y1')) || 0
-        var x2 = parser.parseUnit(tag.getAttribute('x2')) || 0
-        var y2 = parser.parseUnit(tag.getAttribute('y2')) || 0      
-        var d = ['M', x1, y1, 'L', x2, y2]
-        parser.addPath(d, node)        
-    },
-
-
-    circle : function(parser, tag, node) {
-        // http://www.w3.org/TR/SVG11/shapes.html#CircleElement
-        // has transform and style attributes      
-        var r = parser.parseUnit(tag.getAttribute('r'))
-        var cx = parser.parseUnit(tag.getAttribute('cx')) || 0
-        var cy = parser.parseUnit(tag.getAttribute('cy')) || 0
-        
-        if (r > 0.0) {
-            var d = ['M', cx-r, cy,                  
-                             'A', r, r, 0, 0, 0, cx, cy+r,
-                             'A', r, r, 0, 0, 0, cx+r, cy,
-                             'A', r, r, 0, 0, 0, cx, cy-r,
-                             'A', r, r, 0, 0, 0, cx-r, cy,
-                             'Z'];
-            parser.addPath(d, node);
-        }
-    },
-
-
-    ellipse : function(parser, tag, node) {
-        // has transform and style attributes
-        var rx = parser.parseUnit(tag.getAttribute('rx'))
-        var ry = parser.parseUnit(tag.getAttribute('ry'))
-        var cx = parser.parseUnit(tag.getAttribute('cx')) || 0
-        var cy = parser.parseUnit(tag.getAttribute('cy')) || 0
-        
-        if (rx > 0.0 && ry > 0.0) {    
-            var d = ['M', cx-rx, cy,                  
-                             'A', rx, ry, 0, 0, 0, cx, cy+ry,
-                             'A', rx, ry, 0, 0, 0, cx+rx, cy,
-                             'A', rx, ry, 0, 0, 0, cx, cy-ry,
-                             'A', rx, ry, 0, 0, 0, cx-rx, cy,
-                             'Z'];          
-            parser.addPath(d, node);
-        }
-    },
-
-    
-    path : function(parser, tag, node) {
-        // http://www.w3.org/TR/SVG11/paths.html
-        // has transform and style attributes
-        var d = tag.getAttribute("d")
-        parser.addPath(d, node) 
-    },    
-    
-    image : function(parser, tag, node) {
-        // not supported
-        // has transform and style attributes
-    },
-    
-    defs : function(parser, tag, node) {
-        // not supported
-        // http://www.w3.org/TR/SVG11/struct.html#Head
-        // has transform and style attributes      
-    },
-    
-    style : function(parser, tag, node) {
-        # // not supported: embedded style sheets
-        # // http://www.w3.org/TR/SVG11/styling.html#StyleElement
-        # // instead presentation attributes and the 'style' attribute 
-    }    
-            
-},
-
-
-
-
-
-
-_SVGAttributeMapping : {
-    DEG_TO_RAD : Math.PI / 180,
-    RAD_TO_DEG : 180 / Math.PI,
-
-    id : function(parser, node, val) {
-        node.id = val
-    },   
-
-    transform : function(parser, node, val) {
-        // http://www.w3.org/TR/SVG11/coords.html#EstablishingANewUserSpace
-        var xforms = []
-        var segs = val.match(/[a-z]+\s*\([^)]*\)/ig)
-        for (var i=0; i<segs.length; i++) {
-            var kv = segs[i].split("(");
-            var xformKind = kv[0].strip();
-            var paramsTemp = kv[1].strip().slice(0,-1);
-            var params = paramsTemp.split(/[\s,]+/).map(parseFloat)
-            // double check params
-            for (var j=0; j<params.length; j++) {
-                if ( isNaN(params[j]) ) {
-                    $().uxmessage('warning', 'transform skipped; contains non-numbers');
-                    continue  // skip this transform
-                }
-            }
-            
-            // translate
-            if (xformKind == 'translate') {
-                if (params.length == 1) {
-                    xforms.append([1, 0, 0, 1, params[0], params[0]])
-                } else if (params.length == 2) {
-                    xforms.append([1, 0, 0, 1, params[0], params[1]])
-                } else {
-                    $().uxmessage('warning', 'translate skipped; invalid num of params');
-                }
-            // rotate         
-            } else if (xformKind == 'rotate') {
-                if (params.length == 3) {
-                    var angle = params[0] * this.DEG_TO_RAD
-                    xforms.append([1, 0, 0, 1, params[1], params[2]])
-                    xforms.append([Math.cos(angle), Math.sin(angle), -Math.sin(angle), Math.cos(angle), 0, 0])
-                    xforms.append([1, 0, 0, 1, -params[1], -params[2]])
-                } else if (params.length == 1) {
-                    var angle = params[0] * this.DEG_TO_RAD
-                    xforms.append([Math.cos(angle), Math.sin(angle), -Math.sin(angle), Math.cos(angle), 0, 0])
-                } else {
-                    $().uxmessage('warning', 'rotate skipped; invalid num of params');
-                }
-            //scale       
-            } else if (xformKind == 'scale') {
-                if (params.length == 1) {
-                    xforms.append([params[0], 0, 0, params[0], 0, 0])
-                } else if (params.length == 2) {
-                    xforms.append([params[0], 0, 0, params[1], 0, 0])
-                } else {
-                    $().uxmessage('warning', 'scale skipped; invalid num of params');
-                }
-            // matrix
-            } else if (xformKind == 'matrix') {
-                if (params.length == 6) {
-                    xforms.append(params)
-                }
-            // skewX        
-            } else if (xformKind == 'skewX') {
-                if (params.length == 1) {
-                    var angle = params[0]*this.DEG_TO_RAD
-                    xforms.append([1, 0, Math.tan(angle), 1, 0, 0])
-                } else {
-                    $().uxmessage('warning', 'skewX skipped; invalid num of params');
-                }
-            // skewY
-            } else if (xformKind == 'skewY') {
-                if (params.length == 1) {
-                    var angle = params[0]*this.DEG_TO_RAD
-                    xforms.append([1, Math.tan(angle), 0, 1, 0, 0])
-                } else {
-                    $().uxmessage('warning', 'skewY skipped; invalid num of params');
-                }
-            }
-        }
-
-        //calculate combined transformation matrix
-        xform_combined = [1,0,0,1,0,0]
-        for (var i=0; i<xforms.length; i++) {
-            xform_combined = parser.matrixMult(xform_combined, xforms[i])
-        }
-        
-        // assign
-        node.xform = xform_combined  
-    },
-
-    style : function(parser, node, val) {
-        // style attribute
-        // http://www.w3.org/TR/SVG11/styling.html#StyleAttribute
-        // example: <rect x="200" y="100" width="600" height="300" 
-        //          style="fill: red; stroke: blue; stroke-width: 3"/>
-        
-        // relay to parse style attributes the same as Presentation Attributes
-        var segs = val.split(";")
-        for (var i=0; i<segs.length; i++) {
-            var kv = segs[i].split(":")
-            var k = kv[0].strip()
-            if (this[k]) {
-                var v = kv[1].strip()
-                this[k](parser, node, v)
-            }
-        }
-    }, 
-    
-    ///////////////////////////
-    // Presentations Attributes 
-    // http://www.w3.org/TR/SVG11/styling.html#UsingPresentationAttributes
-    // example: <rect x="200" y="100" width="600" height="300" 
-    //          fill="red" stroke="blue" stroke-width="3"/>
-    
-    opacity : function(parser, node, val) {
-        node.opacity = parseFloat(val)
-    },
-
-    display : function (parser, node, val) {
-        node.display = val
-    },
-
-    visibility : function (parser, node, val) {
-        node.visibility = val
-    },
-
-    fill : function(parser, node, val) {
-        node.fill = this.__parseColor(val, node.color)
-    },
-
-    stroke : function(parser, node, val) {
-        node.stroke = this.__parseColor(val, node.color)
-    },
-
-    color : function(parser, node, val) {
-        if (val == 'inherit') return
-        node.color = this.__parseColor(val, node.color)
-    },
-
-    'fill-opacity' : function(parser, node, val) {
-        node.fillOpacity = Math.min(1,Math.max(0,parseFloat(val)))
-    },
-
-    'stroke-opacity' : function(parser, node, val) {
-        node.strokeOpacity = Math.min(1,Math.max(0,parseFloat(val)))
-    },
-
-    // Presentations Attributes 
-    ///////////////////////////
-
-    __parseColor : function(val, currentColor) {
-
-        if (val.charAt(0) == '#') {
-            if (val.length == 4)
-                val = val.replace(/([^#])/g, '$1$1')
-            var a = val.slice(1).match(/../g).map(
-                function(i) { return parseInt(i, 16) })
-            return a
-
-        } else if (val.search(/^rgb\(/) != -1) {
-            var a = val.slice(4,-1).split(",")
-            for (var i=0; i<a.length; i++) {
-                var c = a[i].strip()
-                if (c.charAt(c.length-1) == '%')
-                    a[i] = Math.round(parseFloat(c.slice(0,-1)) * 2.55)
-                else
-                    a[i] = parseInt(c)
-            }
-            return a
-
-        } else if (val.search(/^rgba\(/) != -1) {
-            var a = val.slice(5,-1).split(",")
-            for (var i=0; i<3; i++) {
-                var c = a[i].strip()
-                if (c.charAt(c.length-1) == '%')
-                    a[i] = Math.round(parseFloat(c.slice(0,-1)) * 2.55)
-                else
-                    a[i] = parseInt(c)
-            }
-            var c = a[3].strip()
-            if (c.charAt(c.length-1) == '%')
-                a[3] = Math.round(parseFloat(c.slice(0,-1)) * 0.01)
-            else
-                a[3] = Math.max(0, Math.min(1, parseFloat(c)))
-            return a
-
-        } else if (val.search(/^url\(/) != -1) {
-            $().uxmessage('error', "defs are not supported at the moment");
-        } else if (val == 'currentColor') {
-            return currentColor
-        } else if (val == 'none') {
-            return 'none'
-        } else if (val == 'freeze') { // SMIL is evil, but so are we
-            return null
-        } else if (val == 'remove') {
-            return null
-        } else { // unknown value, maybe it's an ICC color
-            return val
-        }
-    }
-},
-
-
-
-
-
-
-class _PathGeometryConverter:
-    """
-    Handle SVG path data.
-
-    This is where all the geometry gets 
-    converted for the boundarys output.
-    """
-
-    def __init__(self, tolerance2):
-        # tolerance2 is in pixel units
-        self._tolerance2_global = tolerance2
-        self._tolerance2 = tolerance2
-
-    def addPath(self, d, node):
-        # http://www.w3.org/TR/SVG11/paths.html#PathData
-
-        def _matrixExtractcale(mat):
-            # extract absolute scale from matrix
-            sx = math.sqrt(mat[0]*mat[0] + mat[1]*mat[1])
-            sy = math.sqrt(mat[2]*mat[2] + mat[3]*mat[3])
-            # return dominant axis
-            if sx > sy:
-                return sx
-            else:
-                return sy
-
-        # adjust tolerance for possible transforms
-        self._tolerance2 = self._tolerance2_global
-        totalMaxScale = _matrixExtractScale(node.xformToWorld)
-        if totalMaxScale != 0 and totalMaxScale != 1.0:
-            self._tolerance2 /= (totalMaxScale)**2
-        
-        # parse path string
-        # HINT: d would perform better as a linked list or iterator (re.finditer)
-        d = re.findall('([A-Za-z]|-?[0-9]+\.?[0-9]*(?:e-?[0-9]*)?)', d)
-        for i in range(len(d)):
-            try:
-                num = float(d[i])
-                d[i] = num
-            except ValueError:
-                # probably a letter, do not convert
-                pass
-        
-        def nextIsNum():
-            return (len(d) > 0) and (type(d[0]) is float)
-        }
-        
-        def getNext():
-            if len(d) > 0:
-                next = d[0]
-                d = d[1:] # remove first item
-                return next
-            else:
-                logging.error("not enough parameters")
-                return None
-        
-        x = 0
-        y = 0
-        cmdPrev = ''
-        xPrevCp
-        yPrevCp
-        subpath = []    
-        
-        while d:
-            cmd = getNext()
-            if cmd == 'M':  # moveto absolute
-                # start new subpath
-                if subpath:
-                    node.path.append(subpath)
-                    subpath = []
-                implicitVerts = 0
-                while nextIsNum():
-                    x = getNext()
-                    y = getNext()
-                    subpath.append([x, y])
-                    implicitVerts += 1
-            elif cmd == 'm':  # moveto relative
-                # start new subpath
-                if subpath:
-                    node.path.append(subpath)
-                    subpath = []
-                if cmdPrev == '':
-                    # first treated absolute
-                    x = getNext()
-                    y = getNext()
-                    subpath.append([x, y])
-                implicitVerts = 0       
-                while nextIsNum():
-                    # subsequent treated realtive
-                    x += getNext()
-                    y += getNext()
-                    subpath.append([x, y])
-                    implicitVerts += 1            
-            elif cmd == 'Z':  # closepath
-                # loop and finalize subpath
-                if subpath:
-                    subpath.append(subpath[0])  # close
-                    node.path.append(subpath);
-                    subpath = [];
-                }      
-            elif cmd == 'z':  # closepath
-                # loop and finalize subpath
-                if subpath:
-                    subpath.append(subpath[0])  # close
-                    node.path.append(subpath)
-                    subpath = []
-            elif cmd == 'L':  # lineto absolute
-                while nextIsNum():
-                    x = getNext()
-                    y = getNext()
-                    subpath.append([x, y])
-            elif cmd == 'l':  # lineto relative
-                while nextIsNum():
-                    x += getNext()
-                    y += getNext()
-                    subpath.append([x, y])
-            elif cmd == 'H':  # lineto horizontal absolute
-                while nextIsNum():
-                    x = getNext()
-                    subpath.append([x, y])
-            elif cmd == 'h':  # lineto horizontal relative
-                while nextIsNum():
-                    x += getNext()
-                    subpath.append([x, y])
-            elif cmd == 'V':  # lineto vertical absolute
-                while nextIsNum():
-                    y = getNext()
-                    subpath.append([x, y])
-            elif cmd == 'v':  # lineto vertical realtive
-                while nextIsNum():
-                    y += getNext()
-                    subpath.append([x, y])
-            elif cmd == 'C':  # curveto cubic absolute
-                while nextIsNum():
-                    x2 = getNext()
-                    y2 = getNext()
-                    x3 = getNext()
-                    y3 = getNext()
-                    x4 = getNext()
-                    y4 = getNext()
-                    subpath.append([x,y])
-                    self.addCubicBezier(subpath, x, y, x2, y2, x3, y3, x4, y4, 0)
-                    subpath.append([x4,y4])
-                    x = x4
-                    y = y4
-                    xPrevCp = x3
-                    yPrevCp = y3
-            elif cmd == 'c':  # curveto cubic relative
-                while nextIsNum():
-                    x2 = x + getNext()
-                    y2 = y + getNext()
-                    x3 = x + getNext()
-                    y3 = y + getNext()
-                    x4 = x + getNext()
-                    y4 = y + getNext()
-                    subpath.append([x,y])
-                    self.addCubicBezier(subpath, x, y, x2, y2, x3, y3, x4, y4, 0)
-                    subpath.append([x4,y4])
-                    x = x4
-                    y = y4
-                    xPrevCp = x3
-                    yPrevCp = y3
-            elif cmd == 'S':  # curveto cubic absolute shorthand
-                while nextIsNum():
-                    if cmdPrev in 'CcSs]':
-                        x2 = x-(xPrevCp-x)
-                        y2 = y-(yPrevCp-y) 
-                    else:
-                        x2 = x
-                        y2 = y              
-                    x3 = getNext()
-                    y3 = getNext()
-                    x4 = getNext()
-                    y4 = getNext()
-                    subpath.append([x,y])
-                    self.addCubicBezier(subpath, x, y, x2, y2, x3, y3, x4, y4, 0)
-                    subpath.append([x4,y4])
-                    x = x4
-                    y = y4
-                    xPrevCp = x3
-                    yPrevCp = y3
-            elif cmd == 's':  # curveto cubic relative shorthand
-                while nextIsNum():
-                    if cmdPrev in 'CcSs]':
-                        x2 = x-(xPrevCp-x)
-                        y2 = y-(yPrevCp-y) 
-                    else:
-                        x2 = x
-                        y2 = y              
-                    x3 = x + getNext()
-                    y3 = y + getNext()
-                    x4 = x + getNext()
-                    y4 = y + getNext()
-                    subpath.append([x,y])
-                    self.addCubicBezier(subpath, x, y, x2, y2, x3, y3, x4, y4, 0)
-                    subpath.append([x4,y4])
-                    x = x4
-                    y = y4
-                    xPrevCp = x3
-                    yPrevCp = y3
-            elif cmd == 'Q':  # curveto quadratic absolute
-                while nextIsNum():
-                    x2 = getNext()
-                    y2 = getNext()
-                    x3 = getNext()
-                    y3 = getNext()
-                    subpath.append([x,y])
-                    self.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0)
-                    subpath.append([x3,y3])
-                    x = x3
-                    y = y3
-            elif cmd == 'q':  # curveto quadratic relative
-                while nextIsNum():
-                    x2 = x + getNext()
-                    y2 = y + getNext()
-                    x3 = x + getNext()
-                    y3 = y + getNext()
-                    subpath.append([x,y])
-                    self.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0)
-                    subpath.append([x3,y3])
-                    x = x3
-                    y = y3        
-            elif cmd == 'T':  # curveto quadratic absolute shorthand
-                while nextIsNum():
-                    if cmdPrev in 'QqTt':
-                        x2 = x-(xPrevCp-x)
-                        y2 = y-(yPrevCp-y) 
-                    else:
-                        x2 = x
-                        y2 = y              
-                    x3 = getNext()
-                    y3 = getNext()
-                    subpath.append([x,y])
-                    self.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0)
-                    subpath.append([x3,y3])
-                    x = x3
-                    y = y3 
-                    xPrevCp = x2
-                    yPrevCp = y2
-            elif cmd == 't':  # curveto quadratic relative shorthand
-                while nextIsNum():
-                    if cmdPrev in 'QqTt':
-                        x2 = x-(xPrevCp-x)
-                        y2 = y-(yPrevCp-y) 
-                    else:
-                        x2 = x
-                        y2 = y
-                    x3 = x + getNext()
-                    y3 = y + getNext()
-                    subpath.append([x,y])
-                    self.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0)
-                    subpath.append([x3,y3])
-                    x = x3
-                    y = y3 
-                    xPrevCp = x2
-                    yPrevCp = y2
-            elif cmd == 'A':  # eliptical arc absolute
-                while nextIsNum():
-                    rx = getNext()
-                    ry = getNext()
-                    xrot = getNext()
-                    large = getNext()
-                    sweep = getNext()
-                    x2 = getNext()
-                    y2 = getNext()        
-                    self.addArc(subpath, x, y, rx, ry, xrot, large, sweep, x2, y2)
-                    x = x2
-                    y = y2
-            elif cmd == 'a':  # elliptical arc relative
-                while nextIsNum():
-                    rx = getNext()
-                    ry = getNext()
-                    xrot = getNext()
-                    large = getNext()
-                    sweep = getNext()
-                    x2 = x + getNext()
-                    y2 = y + getNext()
-                    self.addArc(subpath, x, y, rx, ry, xrot, large, sweep, x2, y2)
-                    x = x2
-                    y = y2
-
-            cmdPrev = cmd
-
-        # finalize subpath
-        if subpath:
-            node.path.append(subpath)
-            subpath = []
-        
-    
-
-    def addCubicBezier(self, subpath, x1, y1, x2, y2, x3, y3, x4, y4, level):
-        # for details see:
-        # http://www.antigrain.com/research/adaptive_bezier/index.html
-        # based on DeCasteljau Algorithm
-        # The reason we use a subdivision algo over an incremental one
-        # is we want to have control over the deviation to the curve.
-        # This mean we subdivide more and have more curve points in
-        # curvy areas and less in flatter areas of the curve.
-        
-        if level > 18:
-            # protect from deep recursion cases
-            # max 2**18 = 262144 segments
-            return
-        
-        # Calculate all the mid-points of the line segments
-        x12   = (x1 + x2) / 2.0
-        y12   = (y1 + y2) / 2.0
-        x23   = (x2 + x3) / 2.0
-        y23   = (y2 + y3) / 2.0
-        x34   = (x3 + x4) / 2.0
-        y34   = (y3 + y4) / 2.0
-        x123  = (x12 + x23) / 2.0
-        y123  = (y12 + y23) / 2.0
-        x234  = (x23 + x34) / 2.0
-        y234  = (y23 + y34) / 2.0
-        x1234 = (x123 + x234) / 2.0
-        y1234 = (y123 + y234) / 2.0
-
-        # Try to approximate the full cubic curve by a single straight line
-        dx = x4-x1
-        dy = y4-y1
-
-        d2 = math.abs(((x2 - x4) * dy - (y2 - y4) * dx))
-        d3 = math.abs(((x3 - x4) * dy - (y3 - y4) * dx))
-
-        if (d2+d3)**2 < 5.0 * self._tolerance2 * (dx*dx + dy*dy):
-            # added factor of 5.0 to match circle resolution
-            subpath.append([x1234, y1234])
-            return
-
-        # Continue subdivision
-        self.addCubicBezier(subpath, x1, y1, x12, y12, x123, y123, x1234, y1234, level+1)
-        self.addCubicBezier(subpath, x1234, y1234, x234, y234, x34, y34, x4, y4, level+1)
-
-
-
-    def addQuadraticBezier(self, subpath, x1, y1, x2, y2, x3, y3, level):
-        if level > 18:
-            # protect from deep recursion cases
-            # max 2**18 = 262144 segments
-            return
-        
-        # Calculate all the mid-points of the line segments
-        x12   = (x1 + x2) / 2.0                
-        y12   = (y1 + y2) / 2.0
-        x23   = (x2 + x3) / 2.0
-        y23   = (y2 + y3) / 2.0
-        x123  = (x12 + x23) / 2.0
-        y123  = (y12 + y23) / 2.0
-
-        dx = x3-x1
-        dy = y3-y1
-        d = math.abs(((x2 - x3) * dy - (y2 - y3) * dx))
-
-        if d*d <= 5.0 * self._tolerance2 * (dx*dx + dy*dy):
-            # added factor of 5.0 to match circle resolution      
-            subpath.append([x123, y123])
-            return                 
-        
-        # Continue subdivision
-        self.addQuadraticBezier(subpath, x1, y1, x12, y12, x123, y123, level + 1)
-        self.addQuadraticBezier(subpath, x123, y123, x23, y23, x3, y3, level + 1)
-
-    
-    
-    def addArc(self, subpath, x1, y1, rx, ry, phi, large_arc, sweep, x2, y2):
-        # Implemented based on the SVG implementation notes
-        # plus some recursive sugar for incrementally refining the
-        # arc resolution until the requested tolerance is met.
-        # http://www.w3.org/TR/SVG/implnote.html#ArcImplementationNotes
-        cp = math.cos(phi)
-        sp = math.sin(phi)
-        dx = 0.5 * (x1 - x2)
-        dy = 0.5 * (y1 - y2)
-        x_ = cp * dx + sp * dy
-        y_ = -sp * dx + cp * dy
-        r2 = ((rx*ry)**2-(rx*y_)**2-(ry*x_)**2) / ((rx*y_)**2+(ry*x_)**2)
-        if r2 < 0:
-            r2 = 0
-        r = math.sqrt(r2)
-        if large_arc == sweep:
-            r = -r
-        cx_ = r*rx*y_ / ry
-        cy_ = -r*ry*x_ / rx
-        cx = cp*cx_ - sp*cy_ + 0.5*(x1 + x2)
-        cy = sp*cx_ + cp*cy_ + 0.5*(y1 + y2)
-        
-        def _angle(u, v):
-            a = math.acos((u[0]*v[0] + u[1]*v[1]) /
-                            math.sqrt(((u[0])**2 + (u[1])**2) *
-                            ((v[0])**2 + (v[1])**2)))
-            sgn = -1
-            if u[0]*v[1] > u[1]*v[0]:
-                sgn = 1
-            return sgn * a
-    
-        psi = _angle([1,0], [(x_-cx_)/rx, (y_-cy_)/ry])
-        delta = _angle([(x_-cx_)/rx, (y_-cy_)/ry], [(-x_-cx_)/rx, (-y_-cy_)/ry])
-        if sweep && delta < 0:
-            delta += Math.PI * 2
-        if !sweep && delta > 0:
-            delta -= Math.PI * 2
-        
-        def _getVertex(pct):
-            theta = psi + delta * pct
-            ct = Math.cos(theta)
-            st = Math.sin(theta)
-            return [cp*rx*ct-sp*ry*st+cx, sp*rx*ct+cp*ry*st+cy]        
-        
-        # let the recursive fun begin
-        def _recursiveArc(t1, t2, c1, c5, level, tolerance2):
-            def _vertexDistanceSquared(self, v1, v2):
-                return (v2[0]-v1[0])**2 + (v2[1]-v1[1])**2
-            
-            def _vertexMiddle(self, v1, v2):
-                return [ (v2[0]+v1[0])/2.0, (v2[1]+v1[1])/2.0 ]
-
-            if level > 18:
-                # protect from deep recursion cases
-                # max 2**18 = 262144 segments
-                return
-
-            tRange = t2-t1
-            tHalf = t1 + 0.5*tRange
-            c2 = _getVertex(t1 + 0.25*tRange)
-            c3 = _getVertex(tHalf)
-            c4 = _getVertex(t1 + 0.75*tRange)
-            if _vertexDistanceSquared(c2, _vertexMiddle(c1,c3)) > tolerance2:
-                _recursiveArc(t1, tHalf, c1, c3, level+1, tolerance2)
-            subpath.append(c3)
-            if _vertexDistanceSquared(c4, _vertexMiddle(c3,c5)) > tolerance2:
-                _recursiveArc(tHalf, t2, c3, c5, level+1, tolerance2)
-                
-        t1Init = 0.0
-        t2Init = 1.0
-        c1Init = _getVertex(t1Init)
-        c5Init = _getVertex(t2Init)
-        subpath.append(c1Init)
-        _recursiveArc(t1Init, t2Init, c1Init, c5Init, 0, self._tolerance2)
-        subpath.append(c5Init)
-
 
 
 
