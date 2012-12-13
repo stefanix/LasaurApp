@@ -249,7 +249,7 @@ class SVGReader:
                                 self.join_count += 1
                                 lastsubpath.push.apply(lastsubpath, subpath.slice(1))  #in-place concat
                             else:
-                                self.boundarys[hexcolor].push(subpath)
+                                self.boundarys[hexcolor].append(subpath)
                         else:
                             self.boundarys[hexcolor] = [subpath]
                 
@@ -491,7 +491,7 @@ _SVGTagMapping : {
         // http://www.w3.org/TR/SVG11/shapes.html#PolygonElement
         // has transform and style attributes
         var d = this.__getPolyPath(tag)
-        d.push('z')
+        d.append('z')
         parser.addPath(d, node)      
     },
 
@@ -509,11 +509,11 @@ _SVGTagMapping : {
         var vertnums = tag.getAttribute("points").toString().strip().split(/[\s,]+/).map(parseFloat)
         if (vertnums.length % 2 == 0) {
             var d = ['M']
-            d.push(vertnums[0])
-            d.push(vertnums[1])
+            d.append(vertnums[0])
+            d.append(vertnums[1])
             for (var i=2; i<vertnums.length; i+=2) {
-                d.push(vertnums[i])
-                d.push(vertnums[i+1])
+                d.append(vertnums[i])
+                d.append(vertnums[i+1])
             }
             return d
         } else {
@@ -662,9 +662,9 @@ _SVGAttributeMapping : {
             // translate
             if (xformKind == 'translate') {
                 if (params.length == 1) {
-                    xforms.push([1, 0, 0, 1, params[0], params[0]])
+                    xforms.append([1, 0, 0, 1, params[0], params[0]])
                 } else if (params.length == 2) {
-                    xforms.push([1, 0, 0, 1, params[0], params[1]])
+                    xforms.append([1, 0, 0, 1, params[0], params[1]])
                 } else {
                     $().uxmessage('warning', 'translate skipped; invalid num of params');
                 }
@@ -672,34 +672,34 @@ _SVGAttributeMapping : {
             } else if (xformKind == 'rotate') {
                 if (params.length == 3) {
                     var angle = params[0] * this.DEG_TO_RAD
-                    xforms.push([1, 0, 0, 1, params[1], params[2]])
-                    xforms.push([Math.cos(angle), Math.sin(angle), -Math.sin(angle), Math.cos(angle), 0, 0])
-                    xforms.push([1, 0, 0, 1, -params[1], -params[2]])
+                    xforms.append([1, 0, 0, 1, params[1], params[2]])
+                    xforms.append([Math.cos(angle), Math.sin(angle), -Math.sin(angle), Math.cos(angle), 0, 0])
+                    xforms.append([1, 0, 0, 1, -params[1], -params[2]])
                 } else if (params.length == 1) {
                     var angle = params[0] * this.DEG_TO_RAD
-                    xforms.push([Math.cos(angle), Math.sin(angle), -Math.sin(angle), Math.cos(angle), 0, 0])
+                    xforms.append([Math.cos(angle), Math.sin(angle), -Math.sin(angle), Math.cos(angle), 0, 0])
                 } else {
                     $().uxmessage('warning', 'rotate skipped; invalid num of params');
                 }
             //scale       
             } else if (xformKind == 'scale') {
                 if (params.length == 1) {
-                    xforms.push([params[0], 0, 0, params[0], 0, 0])
+                    xforms.append([params[0], 0, 0, params[0], 0, 0])
                 } else if (params.length == 2) {
-                    xforms.push([params[0], 0, 0, params[1], 0, 0])
+                    xforms.append([params[0], 0, 0, params[1], 0, 0])
                 } else {
                     $().uxmessage('warning', 'scale skipped; invalid num of params');
                 }
             // matrix
             } else if (xformKind == 'matrix') {
                 if (params.length == 6) {
-                    xforms.push(params)
+                    xforms.append(params)
                 }
             // skewX        
             } else if (xformKind == 'skewX') {
                 if (params.length == 1) {
                     var angle = params[0]*this.DEG_TO_RAD
-                    xforms.push([1, 0, Math.tan(angle), 1, 0, 0])
+                    xforms.append([1, 0, Math.tan(angle), 1, 0, 0])
                 } else {
                     $().uxmessage('warning', 'skewX skipped; invalid num of params');
                 }
@@ -707,7 +707,7 @@ _SVGAttributeMapping : {
             } else if (xformKind == 'skewY') {
                 if (params.length == 1) {
                     var angle = params[0]*this.DEG_TO_RAD
-                    xforms.push([1, Math.tan(angle), 0, 1, 0, 0])
+                    xforms.append([1, Math.tan(angle), 0, 1, 0, 0])
                 } else {
                     $().uxmessage('warning', 'skewY skipped; invalid num of params');
                 }
@@ -936,244 +936,197 @@ class _PathGeometryConverter:
                     implicitVerts += 1            
             elif cmd == 'Z':  # closepath
                 # loop and finalize subpath
-                if ( subpath.length > 0) {
-                    subpath.push(subpath[0]);  # close
-                    node.path.push(subpath);
+                if subpath:
+                    subpath.append(subpath[0])  # close
+                    node.path.append(subpath);
                     subpath = [];
                 }      
-                break;
-            case 'z':  # closepath
+            elif cmd == 'z':  # closepath
                 # loop and finalize subpath
-                if ( subpath.length > 0) {
-                    subpath.push(subpath[0]);  # close
-                    node.path.push(subpath);
-                    subpath = [];
-                }  
-                break          
-            case 'L':  # lineto absolute
-                while (nextIsNum()) {
-                    x = getNext();
-                    y = getNext();
-                    subpath.push([x, y]);
-                }
-                break
-            case 'l':  # lineto relative
-                while (nextIsNum()) {
-                    x += getNext();
-                    y += getNext();
-                    subpath.push([x, y]);
-                }
-                break
-            case 'H':  # lineto horizontal absolute
-                while (nextIsNum()) {
-                    x = getNext();
-                    subpath.push([x, y]);
-                }
-                break
-            case 'h':  # lineto horizontal relative
-                while (nextIsNum()) {
-                    x += getNext();
-                    subpath.push([x, y]);
-                }
-                break;
-            case 'V':  # lineto vertical absolute
-                while (nextIsNum()) {
+                if subpath:
+                    subpath.append(subpath[0])  # close
+                    node.path.append(subpath)
+                    subpath = []
+            elif cmd == 'L':  # lineto absolute
+                while nextIsNum():
+                    x = getNext()
                     y = getNext()
-                    subpath.push([x, y])
-                }
-                break;
-            case 'v':  # lineto vertical realtive
-                while (nextIsNum()) {
-                    y += getNext();
-                    subpath.push([x, y]);
-                }
-                break;
-            case 'C':  # curveto cubic absolute
-                while (nextIsNum()) {
-                    x2 = getNext();
-                    y2 = getNext();
-                    x3 = getNext();
-                    y3 = getNext();
-                    x4 = getNext();
-                    y4 = getNext();
-                    subpath.push([x,y]);
-                    self.addCubicBezier(subpath, x, y, x2, y2, x3, y3, x4, y4, 0);
-                    subpath.push([x4,y4]);
-                    x = x4;
-                    y = y4;
-                    xPrevCp = x3;
-                    yPrevCp = y3;
-                }
-                break
-            case 'c':  # curveto cubic relative
-                while (nextIsNum()) {
-                    x2 = x + getNext();
-                    y2 = y + getNext();
-                    x3 = x + getNext();
-                    y3 = y + getNext();
-                    x4 = x + getNext();
-                    y4 = y + getNext();
-                    subpath.push([x,y]);
-                    self.addCubicBezier(subpath, x, y, x2, y2, x3, y3, x4, y4, 0);
-                    subpath.push([x4,y4]);
-                    x = x4;
-                    y = y4;
-                    xPrevCp = x3;
-                    yPrevCp = y3;
-                }        
-                break
-            case 'S':  # curveto cubic absolute shorthand
-                while (nextIsNum()) {
-                    x2;
-                    y2;
-                    if (cmdPrev.match(/[CcSs]/)) {
-                        x2 = x-(xPrevCp-x);
-                        y2 = y-(yPrevCp-y); 
-                    } else {
-                        x2 = x;
-                        y2 = y;              
-                    }
-                    x3 = getNext();
-                    y3 = getNext();
-                    x4 = getNext();
-                    y4 = getNext();
-                    subpath.push([x,y]);
-                    self.addCubicBezier(subpath, x, y, x2, y2, x3, y3, x4, y4, 0);
-                    subpath.push([x4,y4]);
-                    x = x4;
-                    y = y4;
-                    xPrevCp = x3;
-                    yPrevCp = y3;
-                }                                 
-                break
-            case 's':  # curveto cubic relative shorthand
-                while (nextIsNum()) {
-                    x2;
-                    y2;
-                    if (cmdPrev.match(/[CcSs]/)) {
-                        x2 = x-(xPrevCp-x);
-                        y2 = y-(yPrevCp-y); 
-                    } else {
-                        x2 = x;
-                        y2 = y;              
-                    }
-                    x3 = x + getNext();
-                    y3 = y + getNext();
-                    x4 = x + getNext();
-                    y4 = y + getNext();
-                    subpath.push([x,y]);
-                    self.addCubicBezier(subpath, x, y, x2, y2, x3, y3, x4, y4, 0);
-                    subpath.push([x4,y4]);
-                    x = x4;
-                    y = y4;
-                    xPrevCp = x3;
-                    yPrevCp = y3;
-                }         
-                break
-            case 'Q':  # curveto quadratic absolute
-                while (nextIsNum()) {
-                    x2 = getNext();
-                    y2 = getNext();
-                    x3 = getNext();
-                    y3 = getNext();
-                    subpath.push([x,y]);
-                    self.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0);
-                    subpath.push([x3,y3]);
-                    x = x3;
-                    y = y3;        
-                }
-                break
-            case 'q':  # curveto quadratic relative
-                while (nextIsNum()) {
-                    x2 = x + getNext();
-                    y2 = y + getNext();
-                    x3 = x + getNext();
-                    y3 = y + getNext();
-                    subpath.push([x,y]);
-                    self.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0);
-                    subpath.push([x3,y3]);
-                    x = x3;
-                    y = y3;        
-                }
-                break
-            case 'T':  # curveto quadratic absolute shorthand
-                while (nextIsNum()) {
-                    x2;
-                    y2;
-                    if (cmdPrev.match(/[QqTt]/)) {
-                        x2 = x-(xPrevCp-x);
-                        y2 = y-(yPrevCp-y); 
-                    } else {
-                        x2 = x;
-                        y2 = y;              
-                    }
-                    x3 = getNext();
-                    y3 = getNext();
-                    subpath.push([x,y]);
-                    self.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0);
-                    subpath.push([x3,y3]);
-                    x = x3;
-                    y = y3; 
-                    xPrevCp = x2;
-                    yPrevCp = y2;
-                }        
-                break
-            case 't':  # curveto quadratic relative shorthand
-                while (nextIsNum()) {
-                    x2;
-                    y2;
-                    if (cmdPrev.match(/[QqTt]/)) {
-                        x2 = x-(xPrevCp-x);
-                        y2 = y-(yPrevCp-y); 
-                    } else {
-                        x2 = x;
-                        y2 = y;              
-                    }
-                    x3 = x + getNext();
-                    y3 = y + getNext();
-                    subpath.push([x,y]);
-                    self.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0);
-                    subpath.push([x3,y3]);
-                    x = x3;
-                    y = y3; 
-                    xPrevCp = x2;
-                    yPrevCp = y2;
-                }
-                break
-            case 'A':  # eliptical arc absolute
-                while (nextIsNum()) {
-                    rx = getNext();
-                    ry = getNext();
-                    xrot = getNext();
-                    large = getNext();        
-                    sweep = getNext();
-                    x2 = getNext();
-                    y2 = getNext();        
-                    self.addArc(subpath, x, y, rx, ry, xrot, large, sweep, x2, y2); 
+                    subpath.append([x, y])
+            elif cmd == 'l':  # lineto relative
+                while nextIsNum():
+                    x += getNext()
+                    y += getNext()
+                    subpath.append([x, y])
+            elif cmd == 'H':  # lineto horizontal absolute
+                while nextIsNum():
+                    x = getNext()
+                    subpath.append([x, y])
+            elif cmd == 'h':  # lineto horizontal relative
+                while nextIsNum():
+                    x += getNext()
+                    subpath.append([x, y])
+            elif cmd == 'V':  # lineto vertical absolute
+                while nextIsNum():
+                    y = getNext()
+                    subpath.append([x, y])
+            elif cmd == 'v':  # lineto vertical realtive
+                while nextIsNum():
+                    y += getNext()
+                    subpath.append([x, y])
+            elif cmd == 'C':  # curveto cubic absolute
+                while nextIsNum():
+                    x2 = getNext()
+                    y2 = getNext()
+                    x3 = getNext()
+                    y3 = getNext()
+                    x4 = getNext()
+                    y4 = getNext()
+                    subpath.append([x,y])
+                    self.addCubicBezier(subpath, x, y, x2, y2, x3, y3, x4, y4, 0)
+                    subpath.append([x4,y4])
+                    x = x4
+                    y = y4
+                    xPrevCp = x3
+                    yPrevCp = y3
+            elif cmd == 'c':  # curveto cubic relative
+                while nextIsNum():
+                    x2 = x + getNext()
+                    y2 = y + getNext()
+                    x3 = x + getNext()
+                    y3 = y + getNext()
+                    x4 = x + getNext()
+                    y4 = y + getNext()
+                    subpath.append([x,y])
+                    self.addCubicBezier(subpath, x, y, x2, y2, x3, y3, x4, y4, 0)
+                    subpath.append([x4,y4])
+                    x = x4
+                    y = y4
+                    xPrevCp = x3
+                    yPrevCp = y3
+            elif cmd == 'S':  # curveto cubic absolute shorthand
+                while nextIsNum():
+                    if cmdPrev in 'CcSs]':
+                        x2 = x-(xPrevCp-x)
+                        y2 = y-(yPrevCp-y) 
+                    else:
+                        x2 = x
+                        y2 = y              
+                    x3 = getNext()
+                    y3 = getNext()
+                    x4 = getNext()
+                    y4 = getNext()
+                    subpath.append([x,y])
+                    self.addCubicBezier(subpath, x, y, x2, y2, x3, y3, x4, y4, 0)
+                    subpath.append([x4,y4])
+                    x = x4
+                    y = y4
+                    xPrevCp = x3
+                    yPrevCp = y3
+            elif cmd == 's':  # curveto cubic relative shorthand
+                while nextIsNum():
+                    if cmdPrev in 'CcSs]':
+                        x2 = x-(xPrevCp-x)
+                        y2 = y-(yPrevCp-y) 
+                    else:
+                        x2 = x
+                        y2 = y              
+                    x3 = x + getNext()
+                    y3 = y + getNext()
+                    x4 = x + getNext()
+                    y4 = y + getNext()
+                    subpath.append([x,y])
+                    self.addCubicBezier(subpath, x, y, x2, y2, x3, y3, x4, y4, 0)
+                    subpath.append([x4,y4])
+                    x = x4
+                    y = y4
+                    xPrevCp = x3
+                    yPrevCp = y3
+            elif cmd == 'Q':  # curveto quadratic absolute
+                while nextIsNum():
+                    x2 = getNext()
+                    y2 = getNext()
+                    x3 = getNext()
+                    y3 = getNext()
+                    subpath.append([x,y])
+                    self.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0)
+                    subpath.append([x3,y3])
+                    x = x3
+                    y = y3
+            elif cmd == 'q':  # curveto quadratic relative
+                while nextIsNum():
+                    x2 = x + getNext()
+                    y2 = y + getNext()
+                    x3 = x + getNext()
+                    y3 = y + getNext()
+                    subpath.append([x,y])
+                    self.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0)
+                    subpath.append([x3,y3])
+                    x = x3
+                    y = y3        
+            elif cmd == 'T':  # curveto quadratic absolute shorthand
+                while nextIsNum():
+                    if cmdPrev in 'QqTt':
+                        x2 = x-(xPrevCp-x)
+                        y2 = y-(yPrevCp-y) 
+                    else:
+                        x2 = x
+                        y2 = y              
+                    x3 = getNext()
+                    y3 = getNext()
+                    subpath.append([x,y])
+                    self.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0)
+                    subpath.append([x3,y3])
+                    x = x3
+                    y = y3 
+                    xPrevCp = x2
+                    yPrevCp = y2
+            elif cmd == 't':  # curveto quadratic relative shorthand
+                while nextIsNum():
+                    if cmdPrev in 'QqTt':
+                        x2 = x-(xPrevCp-x)
+                        y2 = y-(yPrevCp-y) 
+                    else:
+                        x2 = x
+                        y2 = y
+                    x3 = x + getNext()
+                    y3 = y + getNext()
+                    subpath.append([x,y])
+                    self.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0)
+                    subpath.append([x3,y3])
+                    x = x3
+                    y = y3 
+                    xPrevCp = x2
+                    yPrevCp = y2
+            elif cmd == 'A':  # eliptical arc absolute
+                while nextIsNum():
+                    rx = getNext()
+                    ry = getNext()
+                    xrot = getNext()
+                    large = getNext()
+                    sweep = getNext()
+                    x2 = getNext()
+                    y2 = getNext()        
+                    self.addArc(subpath, x, y, rx, ry, xrot, large, sweep, x2, y2)
                     x = x2
                     y = y2
-                }
-                break
-            case 'a':  # elliptical arc relative
-                while (nextIsNum()) {
-                    rx = getNext();
-                    ry = getNext();
-                    xrot = getNext();
-                    large = getNext();        
-                    sweep = getNext();
-                    x2 = x + getNext();
-                    y2 = y + getNext();        
-                    self.addArc(subpath, x, y, rx, ry, xrot, large, sweep, x2, y2); 
+            elif cmd == 'a':  # elliptical arc relative
+                while nextIsNum():
+                    rx = getNext()
+                    ry = getNext()
+                    xrot = getNext()
+                    large = getNext()
+                    sweep = getNext()
+                    x2 = x + getNext()
+                    y2 = y + getNext()
+                    self.addArc(subpath, x, y, rx, ry, xrot, large, sweep, x2, y2)
                     x = x2
                     y = y2
-                }
-                break
 
             cmdPrev = cmd
 
         # finalize subpath
         if subpath:
-            node.path.push(subpath)
+            node.path.append(subpath)
             subpath = []
         
     
@@ -1187,11 +1140,10 @@ class _PathGeometryConverter:
         # This mean we subdivide more and have more curve points in
         # curvy areas and less in flatter areas of the curve.
         
-        if (level > 18) {
+        if level > 18:
             # protect from deep recursion cases
             # max 2**18 = 262144 segments
             return
-        }
         
         # Calculate all the mid-points of the line segments
         x12   = (x1 + x2) / 2.0
@@ -1211,27 +1163,25 @@ class _PathGeometryConverter:
         dx = x4-x1
         dy = y4-y1
 
-        d2 = Math.abs(((x2 - x4) * dy - (y2 - y4) * dx))
-        d3 = Math.abs(((x3 - x4) * dy - (y3 - y4) * dx))
+        d2 = math.abs(((x2 - x4) * dy - (y2 - y4) * dx))
+        d3 = math.abs(((x3 - x4) * dy - (y3 - y4) * dx))
 
-        if ( Math.pow(d2+d3, 2) < 5.0 * self._tolerance2 * (dx*dx + dy*dy) ) {
+        if (d2+d3)**2 < 5.0 * self._tolerance2 * (dx*dx + dy*dy):
             # added factor of 5.0 to match circle resolution
-            subpath.push([x1234, y1234])
+            subpath.append([x1234, y1234])
             return
-        }
 
         # Continue subdivision
-        self.addCubicBezier(subpath, x1, y1, x12, y12, x123, y123, x1234, y1234, level+1);
-        self.addCubicBezier(subpath, x1234, y1234, x234, y234, x34, y34, x4, y4, level+1);
+        self.addCubicBezier(subpath, x1, y1, x12, y12, x123, y123, x1234, y1234, level+1)
+        self.addCubicBezier(subpath, x1234, y1234, x234, y234, x34, y34, x4, y4, level+1)
 
 
 
     def addQuadraticBezier(self, subpath, x1, y1, x2, y2, x3, y3, level):
-        if (level > 18) {
+        if level > 18:
             # protect from deep recursion cases
             # max 2**18 = 262144 segments
             return
-        }
         
         # Calculate all the mid-points of the line segments
         x12   = (x1 + x2) / 2.0                
@@ -1243,13 +1193,12 @@ class _PathGeometryConverter:
 
         dx = x3-x1
         dy = y3-y1
-        d = Math.abs(((x2 - x3) * dy - (y2 - y3) * dx))
+        d = math.abs(((x2 - x3) * dy - (y2 - y3) * dx))
 
-        if ( d*d <= 5.0 * self._tolerance2 * (dx*dx + dy*dy) ) {
+        if d*d <= 5.0 * self._tolerance2 * (dx*dx + dy*dy):
             # added factor of 5.0 to match circle resolution      
-            subpath.push([x123, y123])
+            subpath.append([x123, y123])
             return                 
-        }
         
         # Continue subdivision
         self.addQuadraticBezier(subpath, x1, y1, x12, y12, x123, y123, level + 1)
@@ -1262,35 +1211,38 @@ class _PathGeometryConverter:
         # plus some recursive sugar for incrementally refining the
         # arc resolution until the requested tolerance is met.
         # http://www.w3.org/TR/SVG/implnote.html#ArcImplementationNotes
-        cp = Math.cos(phi);
-        sp = Math.sin(phi);
-        dx = 0.5 * (x1 - x2);
-        dy = 0.5 * (y1 - y2);
-        x_ = cp * dx + sp * dy;
-        y_ = -sp * dx + cp * dy;
-        r2 = (Math.pow(rx*ry,2)-Math.pow(rx*y_,2)-Math.pow(ry*x_,2)) /
-                         (Math.pow(rx*y_,2)+Math.pow(ry*x_,2));
-        if (r2 < 0) { r2 = 0; }
-        r = Math.sqrt(r2);
-        if (large_arc == sweep) { r = -r; }
-        cx_ = r*rx*y_ / ry;
-        cy_ = -r*ry*x_ / rx;
-        cx = cp*cx_ - sp*cy_ + 0.5*(x1 + x2);
-        cy = sp*cx_ + cp*cy_ + 0.5*(y1 + y2);
+        cp = math.cos(phi)
+        sp = math.sin(phi)
+        dx = 0.5 * (x1 - x2)
+        dy = 0.5 * (y1 - y2)
+        x_ = cp * dx + sp * dy
+        y_ = -sp * dx + cp * dy
+        r2 = ((rx*ry)**2-(rx*y_)**2-(ry*x_)**2) / ((rx*y_)**2+(ry*x_)**2)
+        if r2 < 0:
+            r2 = 0
+        r = math.sqrt(r2)
+        if large_arc == sweep:
+            r = -r
+        cx_ = r*rx*y_ / ry
+        cy_ = -r*ry*x_ / rx
+        cx = cp*cx_ - sp*cy_ + 0.5*(x1 + x2)
+        cy = sp*cx_ + cp*cy_ + 0.5*(y1 + y2)
         
-        function angle(u, v) {
-            a = Math.acos((u[0]*v[0] + u[1]*v[1]) /
-                            Math.sqrt((Math.pow(u[0],2) + Math.pow(u[1],2)) *
-                            (Math.pow(v[0],2) + Math.pow(v[1],2))));
-            sgn = -1;
-            if (u[0]*v[1] > u[1]*v[0]) { sgn = 1; }
-            return sgn * a;
-        }
+        def _angle(u, v):
+            a = math.acos((u[0]*v[0] + u[1]*v[1]) /
+                            math.sqrt(((u[0])**2 + (u[1])**2) *
+                            ((v[0])**2 + (v[1])**2)))
+            sgn = -1
+            if u[0]*v[1] > u[1]*v[0]:
+                sgn = 1
+            return sgn * a
     
-        psi = angle([1,0], [(x_-cx_)/rx, (y_-cy_)/ry]);
-        delta = angle([(x_-cx_)/rx, (y_-cy_)/ry], [(-x_-cx_)/rx, (-y_-cy_)/ry]);
-        if (sweep && delta < 0) { delta += Math.PI * 2; }
-        if (!sweep && delta > 0) { delta -= Math.PI * 2; }
+        psi = _angle([1,0], [(x_-cx_)/rx, (y_-cy_)/ry])
+        delta = _angle([(x_-cx_)/rx, (y_-cy_)/ry], [(-x_-cx_)/rx, (-y_-cy_)/ry])
+        if sweep && delta < 0:
+            delta += Math.PI * 2
+        if !sweep && delta > 0:
+            delta -= Math.PI * 2
         
         def _getVertex(pct):
             theta = psi + delta * pct
@@ -1306,31 +1258,29 @@ class _PathGeometryConverter:
             def _vertexMiddle(self, v1, v2):
                 return [ (v2[0]+v1[0])/2.0, (v2[1]+v1[1])/2.0 ]
 
-            if (level > 18) {
+            if level > 18:
                 # protect from deep recursion cases
                 # max 2**18 = 262144 segments
                 return
-            }
+
             tRange = t2-t1
-            tHalf = t1 + 0.5*tRange;
-            c2 = _getVertex(t1 + 0.25*tRange);
-            c3 = _getVertex(tHalf);
-            c4 = _getVertex(t1 + 0.75*tRange);
-            if (_vertexDistanceSquared(c2, _vertexMiddle(c1,c3)) > tolerance2) { 
-                _recursiveArc(t1, tHalf, c1, c3, level+1, tolerance2);
-            }
-            subpath.push(c3);
-            if (_vertexDistanceSquared(c4, _vertexMiddle(c3,c5)) > tolerance2) { 
-                _recursiveArc(tHalf, t2, c3, c5, level+1, tolerance2);
-            }
+            tHalf = t1 + 0.5*tRange
+            c2 = _getVertex(t1 + 0.25*tRange)
+            c3 = _getVertex(tHalf)
+            c4 = _getVertex(t1 + 0.75*tRange)
+            if _vertexDistanceSquared(c2, _vertexMiddle(c1,c3)) > tolerance2:
+                _recursiveArc(t1, tHalf, c1, c3, level+1, tolerance2)
+            subpath.append(c3)
+            if _vertexDistanceSquared(c4, _vertexMiddle(c3,c5)) > tolerance2:
+                _recursiveArc(tHalf, t2, c3, c5, level+1, tolerance2)
                 
-        t1Init = 0.0;
-        t2Init = 1.0;
-        c1Init = _getVertex(t1Init);
-        c5Init = _getVertex(t2Init);
-        subpath.push(c1Init);
-        _recursiveArc(t1Init, t2Init, c1Init, c5Init, 0, self._tolerance2);
-        subpath.push(c5Init);
+        t1Init = 0.0
+        t2Init = 1.0
+        c1Init = _getVertex(t1Init)
+        c5Init = _getVertex(t2Init)
+        subpath.append(c1Init)
+        _recursiveArc(t1Init, t2Init, c1Init, c5Init, 0, self._tolerance2)
+        subpath.append(c5Init)
 
 
 
