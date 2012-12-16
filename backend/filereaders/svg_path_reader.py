@@ -1,11 +1,7 @@
 
-import math
-import re
-import logging
 
 
-
-class SVGPathReaderClass:
+class _SVGPathReader:
     """
     Handle SVG path data.
 
@@ -16,10 +12,11 @@ class SVGPathReaderClass:
     from svg_path_reader import svgPathReader
     """
 
-    def __init__(self, tolerance2):
+    def __init__(self, tolerance):
         # tolerance2 is in pixel units
-        self._tolerance2_global = tolerance2
-        self._tolerance2 = tolerance2
+        self._tolerance2 = tolerance**2
+        self._tolerance2_global = self._tolerance2
+
 
     def addPath(self, d, node):
         # http://www.w3.org/TR/SVG11/paths.html#PathData
@@ -76,7 +73,7 @@ class SVGPathReaderClass:
             if cmd == 'M':  # moveto absolute
                 # start new subpath
                 if subpath:
-                    node.path.append(subpath)
+                    node.paths.append(subpath)
                     subpath = []
                 implicitVerts = 0
                 while nextIsNum():
@@ -87,7 +84,7 @@ class SVGPathReaderClass:
             elif cmd == 'm':  # moveto relative
                 # start new subpath
                 if subpath:
-                    node.path.append(subpath)
+                    node.paths.append(subpath)
                     subpath = []
                 if cmdPrev == '':
                     # first treated absolute
@@ -105,14 +102,14 @@ class SVGPathReaderClass:
                 # loop and finalize subpath
                 if subpath:
                     subpath.append(subpath[0])  # close
-                    node.path.append(subpath);
+                    node.paths.append(subpath);
                     subpath = [];
                 }      
             elif cmd == 'z':  # closepath
                 # loop and finalize subpath
                 if subpath:
                     subpath.append(subpath[0])  # close
-                    node.path.append(subpath)
+                    node.paths.append(subpath)
                     subpath = []
             elif cmd == 'L':  # lineto absolute
                 while nextIsNum():
@@ -293,7 +290,7 @@ class SVGPathReaderClass:
 
         # finalize subpath
         if subpath:
-            node.path.append(subpath)
+            node.paths.append(subpath)
             subpath = []
         
     
@@ -448,7 +445,3 @@ class SVGPathReaderClass:
         subpath.append(c1Init)
         _recursiveArc(t1Init, t2Init, c1Init, c5Init, 0, self._tolerance2)
         subpath.append(c5Init)
-
-
-# singelton
-svgPathReader = SVGPathReaderClass()

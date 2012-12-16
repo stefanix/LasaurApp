@@ -4,10 +4,8 @@ import re
 import logging
 import xml.etree.ElementTree as ET
 
-from svg_tag_reader import svgTagReader
-from svg_attribute_reader import svgAttributeReader
-from svg_path_reader import svgPathReader
-
+from .webcolors import hex_to_rgb
+from .utilities import matrixMult, matrixApply, vertexScale
 
 
 # SVG parser for the Lasersaur.
@@ -46,11 +44,15 @@ from svg_path_reader import svgPathReader
 class SVGReader:
 
     def __init__(self, target_size, tolerance):
+        # init helper object for tag reading
+        self.tagReader = SVGTagReader(tolerance, target_size)
+
         self.boundarys = {}
             # output path flattened (world coords)
             # hash of path by color
             # each path is a list of subpaths
             # each subpath is a list of verteces
+            # each vertex is two floats
         self.dpi = None
             # the dpi with which the svg's "user unit/px" unit was exported
         self.target_size = target_size
@@ -108,7 +110,9 @@ class SVGReader:
             tagName = self.getTag(svgRootElement)
             if tagName == 'svg':
                 node = {}
-                self.dpi = self.SVGTagReader['svg'](rootNode, node, self.target_size)
+                self.tagReader.readTag(svgRootElement, node)
+                if node.has_key('dpi'):
+                    self.dpi = node['dpi']
 
             if self.dpi:
                 logging.info("Unit conversion from page size: " + str(round(self.dpi,4)) + 'dpi')
@@ -133,22 +137,21 @@ class SVGReader:
 
     
     def parseChildren(self, domNode, parentNode):
-        childNodes = []
-        for i in range(len(domNode.childNodes)):
-            tag = domNode.childNodes[i]
-            if tag.childNodes:
-                if tag.tagName:
-                    if tag.tagName in self.ignore_tags:
+        for child in domNode.getchildren():
+            if child.getchildren():
+                if node.tag:
+                    tagName = self.tagReader._getTag(child)
+                    if tagName in self.ignore_tags:
                         # ignore certain tags that are not relevant for this parser
                         continue
                     # we are looping here through 
                     # all nodes with child nodes
                     # others are irrelevant
 
-                    # 1.) setup a new node
+                    # 1. setup a new node
                     # and inherit from parent
                     node = {}
-                    node.path = []
+                    node.paths = []
                     node.xform = [1,0,0,1,0,0]
                     node.opacity = parentNode.opacity
                     node.display = parentNode.display
@@ -158,95 +161,31 @@ class SVGReader:
                     node.color = parentNode.color
                     node.fillOpacity = parentNode.fillOpacity
                     node.strokeOpacity = parentNode.strokeOpacity
-                    
-                    # 2.) parse own attributes and overwrite
-                    if tag.attributes:
-                        for j in range(len(tag.attributes)):
-                            attr = tag.attributes[j]
-                            if attr.nodeName and attr.nodeValue and self._svgAttributeReader[attr.nodeName]:
-                                self._svgAttributeReader[attr.nodeName](self, node, attr.nodeValue)
-                    
-                    # 3.) accumulate transformations
-                    node.xformToWorld = self.matrixMult(parentNode.xformToWorld, node.xform)
-                    
-                    # 4.) parse tag 
+
+                    # 2. parse child 
                     # with current attributes and transformation
-                    if self.SVGTagReader[tag.tagName]:
-                        self.SVGTagReader[tag.tagName](self, tag, node)
+                    self.tagReader.readTag(child, node)
                     
-                    # 5.) compile boundarys + conversions
-                    for k in range(len(node.path)):
-                        subpath = node.path[k]
-                        if len(subpath) == 0:
-                            continue  # skip if empty subpath
-                        # 5a.) convert to world coordinates and then to mm units
-                        for l in range(len(subpath)):
-                            subpath[l] = self.matrixApply(node.xformToWorld, subpath[l])
-                            subpath[l] = self.vertexScale(subpath[l], 25.4/self.dpi)
-                        # 5b.) sort output by color
-                        hexcolor = self.rgbToHex(node.stroke[0], node.stroke[1], node.stroke[2])
-                        if hexcolor in self.boundarys:
-                            self.boundarys[hexcolor].append(subpath)
-                        else:
-                            self.boundarys[hexcolor] = [subpath]
+                    # 3.) compile boundarys + conversions
+                    for path in node.paths:
+                        if path:  # skip if empty subpath
+                            # 3a.) convert to world coordinates and then to mm units
+                            for vert in path:
+                                vert = matrixApply(node.xformToWorld, vert)
+                                vert = vertexScale(vert, 25.4/self.dpi)
+                            # 3b.) sort output by color
+                            hexcolor = rgb_to_hex(node.stroke)
+                            if hexcolor in self.boundarys:
+                                self.boundarys[hexcolor].append(path)
+                            else:
+                                self.boundarys[hexcolor] = [path]
                 
                 # recursive call
-                self.parseChildren(tag, node)
-
-    
-    
-    def rgbToHex(self, r, g, b):
-        return '%02x%02x%02x' % (r, g, b)
-
-
-    
-
-    def getTag(self, node):
-        """Get tag name without possible namespace prefix."""
-        tag = node.tag
-        return tag[tag.rfind('}')+1:]
+                self.parseChildren(child, node)
 
 
 
-    def parseUnit(val):
-        if val is None:
-            return None
-        else:
-            p = re.search('(-?[0-9]+\.?[0-9]*(?:e-?[0-9]*)?)(cm|mm|pt|pc|in)?',
-                          val, re.IGNORECASE).groups()
-            num = p[0]
-            unit = p[1]
-            multiplier = 1.0
-            if unit is not None:
-                unit = unit.lower()
-                if unit == 'cm':
-                    multiplier = this.dpi/2.54
-                elif unit == 'mm':
-                    multiplier = this.dpi/25.4
-                elif unit == 'pt':
-                    multiplier = 1.25
-                elif unit == 'pc':
-                    multiplier = 15.0
-                elif unit == 'in':
-                    multiplier = this.dpi
-            return multiplier * float(num)
-
-    
-    
-    def matrixMult(mA, mB):
-        return [ mA[0]*mB[0] + mA[2]*mB[1],
-                         mA[1]*mB[0] + mA[3]*mB[1],
-                         mA[0]*mB[2] + mA[2]*mB[3],
-                         mA[1]*mB[2] + mA[3]*mB[3],
-                         mA[0]*mB[4] + mA[2]*mB[5] + mA[4],
-                         mA[1]*mB[4] + mA[3]*mB[5] + mA[5] ]
-    
-    
-    def matrixApply(mat, vec):
-        return [ mat[0]*vec[0] + mat[2]*vec[1] + mat[4],
-                         mat[1]*vec[0] + mat[3]*vec[1] + mat[5] ]
 
 
-    def vertexScale(v, f):
-        return [ v[0]*f, v[1]*f ]
-    
+# if __name__ == "__main__":
+#     # do something here when used directly
