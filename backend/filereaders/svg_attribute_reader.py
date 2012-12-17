@@ -13,11 +13,8 @@ class SVGAttributeReader:
 
         self._handlers = {
             'id': self.stringAttrib,
-            # xform
-            'transform': self.transform,
-            'viewBox': ,
-            # styles
-            'style': self.style,
+            'transform': self.transformAttrib,
+            'style': self.styleAttrib,               # styles
             'opacity': self.opacityAttrib,
             'display': self.stringAttrib,
             'visibility': self.stringAttrib,
@@ -26,11 +23,10 @@ class SVGAttributeReader:
             'color': self.colorAttrib,
             'fill-opacity': self.opacityAttrib,
             'stroke-opacity': self.opacityAttrib,
-            # geometry
-            'width': self.dimensionAttrib,
+            'width': self.dimensionAttrib,          # geometry
             'height': self.dimensionAttrib,
-            'd'
-            'points'
+            'd': self.stringAttrib,
+            'points': pointsAttrib,
             'x': self.dimensionAttrib,
             'y': self.dimensionAttrib,
             'rx': self.dimensionAttrib,
@@ -46,29 +42,40 @@ class SVGAttributeReader:
 
 
     def readAttrib(self, node, attr, value):
+    	"""Read any attribute.
+
+    	This function delegates according to the _handlers map.
+    	"""
         if attr in self._handlers:
             self._handlers[attr](node, attr, value)
 
 
+
     def stringAttrib(self, node, attr, value):
+    	"""Read a string attribute."""
         node[attr] = value
 
     def opacityAttrib(self, node, attr, value):
+    	"""Read a opacity attribute."""
         try:
             node[attr] = min(1.0,max(0.0,float(val)))
         except ValueError:
+        	logging.warn("invalid opacity, default to 1.0")
             node[attr] = 1.0
 
     def dimensionAttrib(self, node, attr, value):
+    	"""Read a dimension attribute."""
         node[attr] = self._parseUnit(value)
 
     def colorAttrib(self, node, attr, value):
-        if value == 'inherit':
-            return
-        node[attr] = self._parseColor(value, node.get(attr))
+    	"""Read a color attribute."""
+        col = self._parseColor(value)
+        if col:
+	        node[attr] = col
 
 
-    def transform(self, node, attr, val):
+
+    def transformAttrib(self, node, attr, val):
         # http://www.w3.org/TR/SVG11/coords.html#EstablishingANewUserSpace
         xforms = []
         matches = re.findall('(([a-z]+\s*)\(([^)]*)\))', val, re.IGNORECASE)
@@ -134,9 +141,10 @@ class SVGAttributeReader:
         node.xform = xform_combined  
 
 
-    def style(self, node, attr, val):
+    def styleAttrib(self, node, attr, val):
         # style attribute
-        # http:#www.w3.org/TR/SVG11/styling.html#StyleAttribute
+        # http://www.w3.org/TR/SVG11/styling.html#StyleAttribute
+        # http://www.w3.org/TR/SVG11/styling.html#SVGStylingProperties
         # example: <rect x="200" y="100" width="600" height="300" 
         #          style="fill: red; stroke: blue; stroke-width: 3"/>
         
@@ -154,66 +162,64 @@ class SVGAttributeReader:
         #          fill="red" stroke="blue" stroke-width="3"/>
     
 
+    def pointsAttrib(self, node, attr, value):
+    	"""Read the 'points' attribute."""
+    	floats = parseFloats(value)
+        if len(floats) % 2 == 0:
+            node[attr] = floats
+        else:
+        	logging.error("odd number of vertices")
+
+
+
 
     def _parseUnit(self, val):
-        if val is None:
-            return None
-        else:
-            p = re.search('(-?[0-9]+\.?[0-9]*(?:e-?[0-9]*)?)(cm|mm|pt|pc|in)?',
-                          val, re.IGNORECASE).groups()
-            num = p[0]
-            unit = p[1]
-            multiplier = 1.0
-            if unit is not None:
-                unit = unit.lower()
-                if unit == 'cm':
-                    multiplier = this.dpi/2.54
-                elif unit == 'mm':
-                    multiplier = this.dpi/25.4
-                elif unit == 'pt':
-                    multiplier = 1.25
-                elif unit == 'pc':
-                    multiplier = 15.0
-                elif unit == 'in':
-                    multiplier = this.dpi
-            return multiplier * float(num)
+        if val is not None:
+        	val = val.strip().lower()
+        	floats = parseFloats(val)
+        	if len(floats) = 1:
+	            num = floats[0]
+	            if val.endswith('cm'):
+	            	num *= this.dpi/2.54
+	            elif val.endswith('mm'):
+                    num *= this.dpi/25.4
+                elif val.endswith('pt'):
+                    num *= 1.25
+                elif val.endswith('pc'):
+                    num *= 15.0
+                elif val.endswith('in'):
+                    num* = this.dpi
+                elif val.endswith('%') or val.endswith('em') or val.endswith('ex'):
+                	logging.error("%, em, ex dimension units not supported, use px or mm instead")
+                return num     		
+		logging.error("invalid dimension")
+		return None
 
 
-    def _parseColor(val, currentColor):
+    def _parseColor(val):
+    	# http://www.w3.org/TR/SVG11/color.html	
         # http://www.w3.org/TR/2008/REC-CSS2-20080411/syndata.html#color-units
+        val = val.strip()
         if val[0] == '#':
             return hex_to_rgb(val)
         elif val.startswith('rgba'):
             floats = parseFloats(val[5:-1])
-            if len(floats) != 4:
-                logging.error("invalid color")
-            else:
+            if len(floats) == 4:
                 logging.warn("opacity in rgba is ignored, \
                               use stroke-opacity/fill-opacity instead")
                 return floats
         elif val.startswith('rgb'):
             floats = parseFloats(val[4:-1])
-            if len(floats) != 3:
-                logging.error("invalid color")
-            else:
+            if len(floats) == 3:
                 return floats
+        elif val.startswith('hsl'):
+            logging.warn("hsl/hsla color spaces are not supported")
         elif val.startswith('url'):
-            logging.error("defs are not supported");
-        elif val == 'currentColor':
-            return currentColor
-        elif val == 'none'
-            logging.warn("color 'none' may be ignored")
-            return None
-        elif val == 'freeze': # SMIL is evil, but so are we
-            logging.warn("color 'freeze' may be ignored")
-            return None
-        elif val == 'remove':
-            logging.warn("color 'remove' may be ignored")
-            return None
-        elif css3_names_to_hex.has_key(val):  # named colors
+            logging.warn("defs are not supported");
+        elif val in css3_names_to_hex:  # named colors
             return hex_to_rgb(css3_names_to_hex[val])
         else:
-            logging.error("invalid color")
-            return None
+	        logging.warn("invalid color, skipped")
+	        return None
 
 

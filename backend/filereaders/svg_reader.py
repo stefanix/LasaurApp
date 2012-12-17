@@ -5,7 +5,7 @@ import logging
 import xml.etree.ElementTree as ET
 
 from .webcolors import hex_to_rgb
-from .utilities import matrixMult, matrixApply, vertexScale
+from .utilities import matrixMult, matrixApply, vertexScale, parseFloats
 
 
 # SVG parser for the Lasersaur.
@@ -43,7 +43,7 @@ from .utilities import matrixMult, matrixApply, vertexScale
 
 class SVGReader:
 
-    def __init__(self, target_size, tolerance):
+    def __init__(self, tolerance, target_size):
         # init helper object for tag reading
         self.tagReader = SVGTagReader(tolerance, target_size)
 
@@ -55,7 +55,7 @@ class SVGReader:
             # each vertex is two floats
         self.dpi = None
             # the dpi with which the svg's "user unit/px" unit was exported
-        self.target_size = target_size
+        self._target_size = target_size
             # what the svg size (typically page dimensions) should be mapped to
         self.style = {}  
             # style at current parsing position
@@ -64,8 +64,6 @@ class SVGReader:
         self.tolerance2_half = (0.5*tolerance)**2
         self.tolerance2_px = None
             # tolerance optimizing (tesselating, simplifying) curvy shapes (mm)
-        self.join_count = 0
-            # number of subpath joined
         self.ignore_tags = {'defs':None, 'pattern':None, 'clipPath':None}
             # tags to ignore for this parser
         self.optimize = true
@@ -73,15 +71,77 @@ class SVGReader:
 
 
         
-    def parse(self, svgstring, dpi=None):
-        self.dpi = None
-        self.join_count = 0
-        self.boundarys = {}
+    def parse(self, svgstring, force_dpi=None):
+        """ Parse a SVG document.
+
+        This traverses through the document tree and collects all path
+        data and converts it to polylines of the requested tolerance.
+
+        Path data is returned as paths by color:
+        {'#ff0000': [[path0, path1, ..], [path0, ..], ..]}
+        Each path is a list of vertices which is a list of two floats.
         
-        if dpi is not None:
-            self.dpi = dpi
-            logging.info("SVG import forced to "+str(self.dpi)+"dpi.")
-        else:
+        One issue with svg documents is that they use px (or unit-less)
+        dimensions and most vector apps are not explicit how to convert
+        these to real-world units. This method tries to be smart about
+        figuring the implied px unit DPIs with the following strategy:
+
+        1. from argument (force_dpi)
+        2. from units of page size 
+        3. from hints of (known) originating apps
+        4. from ratio of page and target size
+        5. defaults to 90 DPI
+        """        
+        self.dpi = None
+        self.boundarys = {}
+
+        # parse xml
+        svgRootElement = ET.fromstring(svgstring)
+        tagName = self.getTag(svgRootElement)
+
+        if tagName != 'svg':
+            logging.error("Invalid file, no 'svg' tag found.")
+            return self.boundarys
+
+        # 1. Get px unit DPIs from argument
+        if force_dpi is not None:
+            self.dpi = force_dpi
+            logging.info("SVG import forced to "+str(self.dpi)+"dpi.")            
+
+        # get page size
+        w = svgRootElement.attrib.get('width')
+        h = svgRootElement.attrib.get('height')
+        if !w or !h:
+            # get size from viewBox
+            # http://www.w3.org/TR/SVG11/coords.html#ViewBoxAttribute
+            vb = tag.attrib.get('viewBox')
+            if vb:
+                floats = parseFloats(vb)
+                if len(floats) == 4):
+                    w = vb_parts[2]
+                    h = vb_parts[3]        
+
+        # 2. Try to get px unit DPIs from page size unit.
+        # If page size has real-world units make px (and unit-less) the same.
+        if w and h:
+            if w.endswith('cm'):
+                logging.info("Page size in 'cm' -> setting up dpi to treat px (and no) units as 'cm'.")
+                self.dpi = 2.54
+            elif w.endswith('mm'):
+                logging.info("Page size in 'mm' -> setting up dpi to treat px (and no) units as 'mm'.")
+                self.dpi = 25.4
+            elif w.endswith('pt'):
+                logging.info("Page size in 'pt' -> setting up dpi to treat px (and no) units as 'pt'.")
+                self.dpi = 1.25
+            elif w.endswith('pc'):
+                logging.info("Page size in 'pc' -> setting up dpi to treat px (and no) units as 'pc'.")
+                self.dpi = 15.0
+            elif w.endswith('in'):
+                logging.info("Page size in 'in' -> setting up dpi to treat px (and no) units as 'in'.")
+                self.dpi = 1.0
+
+        # 3. Try to get px unit DPIs from hints about the originating SVG app
+        if not self.dpi:
             # look for clues  of svg generator app and it's DPI
             svghead = svgstring[0:400]
             if 'Inkscape' in svghead:
@@ -98,27 +158,27 @@ class SVGReader:
                 logging.info("SVG exported with CorelDraw -> 96dpi.")
             elif 'Qt' in svghead:
                 self.dpi = 90
-                logging.info("SVG exported with Qt lib -> 90dpi.")
+                logging.info("SVG exported with Qt lib -> 90dpi.")            
         
-        # parse xml
-        svgRootElement = ET.fromstring(svgstring)
-                
-        # figure out how to map px to mm, using document page size, if necessary
-        if not self.dpi:
-            # we are specifically interested in the width/height/viewBox attribute
-            # this is used to determin the page size and consequently the implied dpi of px units
-            tagName = self.getTag(svgRootElement)
-            if tagName == 'svg':
-                node = {}
-                self.tagReader.readTag(svgRootElement, node)
-                if node.has_key('dpi'):
-                    self.dpi = node['dpi']
 
-            if self.dpi:
-                logging.info("Unit conversion from page size: " + str(round(self.dpi,4)) + 'dpi')
-            else:
-                logging.warn("Failed to use page size to infere implied px unit conversion -> defaulting to 90dpi.")
-                self.dpi = 90
+                
+        # 4. Try to get px unit DPIs from the ratio of page size to target size
+        if not self.dpi and w and h:
+            try:
+                lw = parseFloats(w)
+                lh = parseFloats(h)
+                if lw and lh:
+                    w = lw[0]
+                    h = lh[0]
+                    self.dpi = round(25.4*w/self._target_size[0])  # round, assume integer dpi
+                    logging.info("px unit DPIs from page and target size -> " + str(round(self.dpi,2))
+            except ValueError:
+                logging.warn("invalid w, h numerals") 
+
+        # 5. Fall back on px unit DPIs default value
+        if not self.dpi:
+            logging.warn("All smart px unit DPIs infering methods failed -> defaulting to 90dpi.")
+            self.dpi = 90.0
         
         # adjust tolerances to px units
         mm2px = self.dpi/25.4
@@ -127,11 +187,15 @@ class SVGReader:
         # let the fun begin
         # recursively parse children
         # output will be in self.boundarys    
-        node = {}
-        node.stroke = [0,0,0]
-        node.xformToWorld = [1,0,0,1,0,0]    
+        node = {
+            'fill': 'black',
+            'stroke': 'none',
+            'stroke' = [0,0,0],
+            'xformToWorld' = [1,0,0,1,0,0]
+        }
         self.parseChildren(svgRootElement, node)
         
+        # paths by colors will be returned
         return self.boundarys
 
 
