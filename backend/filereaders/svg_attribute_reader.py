@@ -1,7 +1,12 @@
 
-import math
 import re
+import math
 import logging
+
+from webcolors import hex_to_rgb, css3_names_to_hex
+from utilities import matrixMult, parseFloats
+
+log = logging.getLogger("svg_reader")
 
 
 
@@ -26,7 +31,7 @@ class SVGAttributeReader:
             'width': self.dimensionAttrib,          # geometry
             'height': self.dimensionAttrib,
             'd': self.stringAttrib,
-            'points': pointsAttrib,
+            'points': self.pointsAttrib,
             'x': self.dimensionAttrib,
             'y': self.dimensionAttrib,
             'rx': self.dimensionAttrib,
@@ -47,7 +52,8 @@ class SVGAttributeReader:
     	This function delegates according to the _handlers map.
     	"""
         if attr in self._handlers:
-            self._handlers[attr](node, attr, value)
+        	log.debug("reading attrib: " + attr + ":" + value)
+        	self._handlers[attr](node, attr, value)
 
 
 
@@ -58,10 +64,10 @@ class SVGAttributeReader:
     def opacityAttrib(self, node, attr, value):
     	"""Read a opacity attribute."""
         try:
-            node[attr] = min(1.0,max(0.0,float(val)))
+            node[attr] = min(1.0,max(0.0,float(value)))
         except ValueError:
-        	logging.warn("invalid opacity, default to 1.0")
-            node[attr] = 1.0
+        	log.warn("invalid opacity, default to 1.0")
+        	node[attr] = 1.0
 
     def dimensionAttrib(self, node, attr, value):
     	"""Read a dimension attribute."""
@@ -75,10 +81,10 @@ class SVGAttributeReader:
 
 
 
-    def transformAttrib(self, node, attr, val):
+    def transformAttrib(self, node, attr, value):
         # http://www.w3.org/TR/SVG11/coords.html#EstablishingANewUserSpace
         xforms = []
-        matches = re.findall('(([a-z]+\s*)\(([^)]*)\))', val, re.IGNORECASE)
+        matches = re.findall('(([a-z]+\s*)\(([^)]*)\))', value, re.IGNORECASE)
         # this parses  something like "translate(50,50), rotate(56)"" to
         # [('translate(50,50)', 'translate', '50,50'), ('rotate(56)', 'rotate', '56')]
         for match in matches:
@@ -86,13 +92,13 @@ class SVGAttributeReader:
             params = parseFloats(match[2])
 
             # translate
-            if (xformKind == 'translate') {
+            if xformKind == 'translate':
                 if len(params) == 1:
                     xforms.append([1, 0, 0, 1, params[0], params[0]])
                 elif len(params) == 2:
                     xforms.append([1, 0, 0, 1, params[0], params[1]])
                 else:
-                    logging.warn('translate skipped; invalid num of params')
+                    log.warn('translate skipped; invalid num of params')
             # rotate         
             elif xformKind == 'rotate':
                 if len(params) == 3:
@@ -104,7 +110,7 @@ class SVGAttributeReader:
                     angle = params[0] * self.DEG_TO_RAD
                     xforms.append([math.cos(angle), math.sin(angle), -math.sin(angle), math.cos(angle), 0, 0])
                 else:
-                    logging.warn('rotate skipped; invalid num of params')
+                    log.warn('rotate skipped; invalid num of params')
             #scale       
             elif xformKind == 'scale':
                 if len(params) == 1:
@@ -112,7 +118,7 @@ class SVGAttributeReader:
                 elif len(params) == 2:
                     xforms.append([params[0], 0, 0, params[1], 0, 0])
                 else:
-                    logging.warn('scale skipped; invalid num of params')
+                    log.warn('scale skipped; invalid num of params')
             # matrix
             elif xformKind == 'matrix':
                 if len(params) == 6:
@@ -123,14 +129,14 @@ class SVGAttributeReader:
                     angle = params[0]*self.DEG_TO_RAD
                     xforms.append([1, 0, math.tan(angle), 1, 0, 0])
                 else:
-                    logging.warn('skewX skipped; invalid num of params')
+                    log.warn('skewX skipped; invalid num of params')
             # skewY
             elif xformKind == 'skewY':
                 if len(params) == 1:
                     angle = params[0]*self.DEG_TO_RAD
                     xforms.append([1, math.tan(angle), 0, 1, 0, 0])
                 else:
-                    logging.warn('skewY skipped; invalid num of params')
+                    log.warn('skewY skipped; invalid num of params')
 
         #calculate combined transformation matrix
         xform_combined = [1,0,0,1,0,0]
@@ -138,18 +144,17 @@ class SVGAttributeReader:
             xform_combined = matrixMult(xform_combined, xform)
         
         # assign
-        node.xform = xform_combined  
+        node['xform'] = xform_combined  
 
 
-    def styleAttrib(self, node, attr, val):
+    def styleAttrib(self, node, attr, value):
         # style attribute
         # http://www.w3.org/TR/SVG11/styling.html#StyleAttribute
         # http://www.w3.org/TR/SVG11/styling.html#SVGStylingProperties
         # example: <rect x="200" y="100" width="600" height="300" 
         #          style="fill: red; stroke: blue; stroke-width: 3"/>
-        
         # relay to parse style attributes the same as Presentation Attributes
-        segs = val.split(";")
+        segs = value.split(";")
         for seg in segs:
             kv = seg.split(":")
             k = kv[0].strip()
@@ -168,7 +173,7 @@ class SVGAttributeReader:
         if len(floats) % 2 == 0:
             node[attr] = floats
         else:
-        	logging.error("odd number of vertices")
+        	log.error("odd number of vertices")
 
 
 
@@ -177,26 +182,26 @@ class SVGAttributeReader:
         if val is not None:
         	val = val.strip().lower()
         	floats = parseFloats(val)
-        	if len(floats) = 1:
+        	if len(floats) == 1:
 	            num = floats[0]
 	            if val.endswith('cm'):
 	            	num *= this.dpi/2.54
 	            elif val.endswith('mm'):
-                    num *= this.dpi/25.4
+                	num *= this.dpi/25.4
                 elif val.endswith('pt'):
-                    num *= 1.25
+                    num *= this.dpi/72.0
                 elif val.endswith('pc'):
-                    num *= 15.0
+                    num *= 12*this.dpi/72
                 elif val.endswith('in'):
-                    num* = this.dpi
+                    num *= this.dpi
                 elif val.endswith('%') or val.endswith('em') or val.endswith('ex'):
-                	logging.error("%, em, ex dimension units not supported, use px or mm instead")
+                	log.error("%, em, ex dimension units not supported, use px or mm instead")
                 return num     		
-		logging.error("invalid dimension")
+		log.error("invalid dimension")
 		return None
 
 
-    def _parseColor(val):
+    def _parseColor(self, val):
     	# http://www.w3.org/TR/SVG11/color.html	
         # http://www.w3.org/TR/2008/REC-CSS2-20080411/syndata.html#color-units
         val = val.strip()
@@ -205,7 +210,7 @@ class SVGAttributeReader:
         elif val.startswith('rgba'):
             floats = parseFloats(val[5:-1])
             if len(floats) == 4:
-                logging.warn("opacity in rgba is ignored, \
+                log.warn("opacity in rgba is ignored, \
                               use stroke-opacity/fill-opacity instead")
                 return floats
         elif val.startswith('rgb'):
@@ -213,13 +218,13 @@ class SVGAttributeReader:
             if len(floats) == 3:
                 return floats
         elif val.startswith('hsl'):
-            logging.warn("hsl/hsla color spaces are not supported")
+            log.warn("hsl/hsla color spaces are not supported")
         elif val.startswith('url'):
-            logging.warn("defs are not supported");
+            log.warn("defs are not supported");
         elif val in css3_names_to_hex:  # named colors
             return hex_to_rgb(css3_names_to_hex[val])
         else:
-	        logging.warn("invalid color, skipped")
+	        log.warn("invalid color, skipped: " + str(val))
 	        return None
 
 

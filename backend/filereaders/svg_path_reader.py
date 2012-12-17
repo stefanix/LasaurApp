@@ -1,7 +1,12 @@
 
+import re
+import math
+import logging
+
+log = logging.getLogger("svg_reader")
 
 
-class _SVGPathReader:
+class SVGPathReader:
     """
     Handle SVG path data.
 
@@ -33,118 +38,128 @@ class _SVGPathReader:
 
         # adjust tolerance for possible transforms
         self._tolerance2 = self._tolerance2_global
-        totalMaxScale = _matrixExtractScale(node.xformToWorld)
+        totalMaxScale = _matrixExtractScale(node['xformToWorld'])
         if totalMaxScale != 0 and totalMaxScale != 1.0:
             self._tolerance2 /= (totalMaxScale)**2
         
         # parse path string
-        # HINT: d would perform better as a linked list or iterator (re.finditer)
-        d = re.findall('([A-Za-z]|-?[0-9]+\.?[0-9]*(?:e-?[0-9]*)?)', d)
-        for i in range(len(d)):
+        # use finditer (over findall) for performance reasons
+        d_ = re.finditer('([A-Za-z]|-?[0-9]+\.?[0-9]*(?:e-?[0-9]*)?)', d)  # letters or float
+        limbo = [None]
+
+        def _nextIsNum(d_, limbo):
             try:
-                num = float(d[i])
-                d[i] = num
+                limbo[0] = d_.next().group()
+            except StopIteration:
+                return False
+            try:
+                limbo[0] = float(limbo[0])
+                return True
             except ValueError:
-                # probably a letter, do not convert
-                pass
-        
-        def nextIsNum():
+                return False
+
             return (len(d) > 0) and (type(d[0]) is float)
-        }
         
-        def getNext():
-            if len(d) > 0:
-                next = d[0]
-                d = d[1:] # remove first item
-                return next
-            else:
-                logging.error("not enough parameters")
-                return None
+        def _getNext(d_, limbo):
+            if limbo[0] is None:
+                try:
+                    limbo[0] = d_.next().group()
+                except StopIteration:
+                    return None
+            item = limbo[0]
+            try:
+                item = float(limbo[0])
+            except ValueError:
+                pass  # probably a letter
+            limbo[0] = None
+            return item
+
         
         x = 0
         y = 0
         cmdPrev = ''
-        xPrevCp
-        yPrevCp
+        xPrevCp = 0
+        yPrevCp = 0
         subpath = []    
         
-        while d:
-            cmd = getNext()
+        while 1:
+            cmd = _getNext(d_, limbo)
+            if cmd is None:
+                break
             if cmd == 'M':  # moveto absolute
                 # start new subpath
                 if subpath:
-                    node.paths.append(subpath)
+                    node['paths'].append(subpath)
                     subpath = []
                 implicitVerts = 0
-                while nextIsNum():
-                    x = getNext()
-                    y = getNext()
+                while _nextIsNum(d_, limbo):
+                    x = _getNext(d_, limbo)
+                    y = _getNext(d_, limbo)
                     subpath.append([x, y])
                     implicitVerts += 1
             elif cmd == 'm':  # moveto relative
                 # start new subpath
                 if subpath:
-                    node.paths.append(subpath)
+                    node['paths'].append(subpath)
                     subpath = []
                 if cmdPrev == '':
                     # first treated absolute
-                    x = getNext()
-                    y = getNext()
+                    x = _getNext(d_, limbo)
+                    y = _getNext(d_, limbo)
                     subpath.append([x, y])
                 implicitVerts = 0       
-                while nextIsNum():
+                while _nextIsNum(d_, limbo):
                     # subsequent treated realtive
-                    x += getNext()
-                    y += getNext()
+                    x += _getNext(d_, limbo)
+                    y += _getNext(d_, limbo)
                     subpath.append([x, y])
                     implicitVerts += 1            
             elif cmd == 'Z':  # closepath
                 # loop and finalize subpath
                 if subpath:
                     subpath.append(subpath[0])  # close
-                    node.paths.append(subpath);
+                    node['paths'].append(subpath);
                     subpath = [];
-                }      
             elif cmd == 'z':  # closepath
                 # loop and finalize subpath
                 if subpath:
                     subpath.append(subpath[0])  # close
-                    node.paths.append(subpath)
+                    node['paths'].append(subpath)
                     subpath = []
             elif cmd == 'L':  # lineto absolute
-                while nextIsNum():
-                    x = getNext()
-                    y = getNext()
+                while _nextIsNum(d_, limbo):
+                    x = _getNext(d_, limbo)
+                    y = _getNext(d_, limbo)
                     subpath.append([x, y])
             elif cmd == 'l':  # lineto relative
-                while nextIsNum():
-                    x += getNext()
-                    y += getNext()
+                while _nextIsNum(d_, limbo):
+                    x += _getNext(d_, limbo)
+                    y += _getNext(d_, limbo)
                     subpath.append([x, y])
             elif cmd == 'H':  # lineto horizontal absolute
-                while nextIsNum():
-                    x = getNext()
+                while _nextIsNum(d_, limbo):
+                    x = _getNext(d_, limbo)
                     subpath.append([x, y])
             elif cmd == 'h':  # lineto horizontal relative
-                while nextIsNum():
-                    x += getNext()
+                while _nextIsNum(d_, limbo):
+                    x += _getNext(d_, limbo)
                     subpath.append([x, y])
             elif cmd == 'V':  # lineto vertical absolute
-                while nextIsNum():
-                    y = getNext()
+                while _nextIsNum(d_, limbo):
+                    y = _getNext(d_, limbo)
                     subpath.append([x, y])
             elif cmd == 'v':  # lineto vertical realtive
-                while nextIsNum():
-                    y += getNext()
+                while _nextIsNum(d_, limbo):
+                    y += _getNext(d_, limbo)
                     subpath.append([x, y])
             elif cmd == 'C':  # curveto cubic absolute
-                while nextIsNum():
-                    x2 = getNext()
-                    y2 = getNext()
-                    x3 = getNext()
-                    y3 = getNext()
-                    x4 = getNext()
-                    y4 = getNext()
+                while _nextIsNum(d_, limbo):
+                    x2 = _getNext(d_, limbo)
+                    y2 = _getNext(d_, limbo)
+                    x3 = _getNext(d_, limbo)
+                    y3 = _getNext(d_, limbo)
+                    x4 = _getNext(d_, limbo)
+                    y4 = _getNext(d_, limbo)
                     subpath.append([x,y])
                     self.addCubicBezier(subpath, x, y, x2, y2, x3, y3, x4, y4, 0)
                     subpath.append([x4,y4])
@@ -153,13 +168,13 @@ class _SVGPathReader:
                     xPrevCp = x3
                     yPrevCp = y3
             elif cmd == 'c':  # curveto cubic relative
-                while nextIsNum():
-                    x2 = x + getNext()
-                    y2 = y + getNext()
-                    x3 = x + getNext()
-                    y3 = y + getNext()
-                    x4 = x + getNext()
-                    y4 = y + getNext()
+                while _nextIsNum(d_, limbo):
+                    x2 = x + _getNext(d_, limbo)
+                    y2 = y + _getNext(d_, limbo)
+                    x3 = x + _getNext(d_, limbo)
+                    y3 = y + _getNext(d_, limbo)
+                    x4 = x + _getNext(d_, limbo)
+                    y4 = y + _getNext(d_, limbo)
                     subpath.append([x,y])
                     self.addCubicBezier(subpath, x, y, x2, y2, x3, y3, x4, y4, 0)
                     subpath.append([x4,y4])
@@ -168,17 +183,17 @@ class _SVGPathReader:
                     xPrevCp = x3
                     yPrevCp = y3
             elif cmd == 'S':  # curveto cubic absolute shorthand
-                while nextIsNum():
+                while _nextIsNum(d_, limbo):
                     if cmdPrev in 'CcSs]':
                         x2 = x-(xPrevCp-x)
                         y2 = y-(yPrevCp-y) 
                     else:
                         x2 = x
                         y2 = y              
-                    x3 = getNext()
-                    y3 = getNext()
-                    x4 = getNext()
-                    y4 = getNext()
+                    x3 = _getNext(d_, limbo)
+                    y3 = _getNext(d_, limbo)
+                    x4 = _getNext(d_, limbo)
+                    y4 = _getNext(d_, limbo)
                     subpath.append([x,y])
                     self.addCubicBezier(subpath, x, y, x2, y2, x3, y3, x4, y4, 0)
                     subpath.append([x4,y4])
@@ -187,17 +202,17 @@ class _SVGPathReader:
                     xPrevCp = x3
                     yPrevCp = y3
             elif cmd == 's':  # curveto cubic relative shorthand
-                while nextIsNum():
+                while _nextIsNum(d_, limbo):
                     if cmdPrev in 'CcSs]':
                         x2 = x-(xPrevCp-x)
                         y2 = y-(yPrevCp-y) 
                     else:
                         x2 = x
                         y2 = y              
-                    x3 = x + getNext()
-                    y3 = y + getNext()
-                    x4 = x + getNext()
-                    y4 = y + getNext()
+                    x3 = x + _getNext(d_, limbo)
+                    y3 = y + _getNext(d_, limbo)
+                    x4 = x + _getNext(d_, limbo)
+                    y4 = y + _getNext(d_, limbo)
                     subpath.append([x,y])
                     self.addCubicBezier(subpath, x, y, x2, y2, x3, y3, x4, y4, 0)
                     subpath.append([x4,y4])
@@ -206,37 +221,37 @@ class _SVGPathReader:
                     xPrevCp = x3
                     yPrevCp = y3
             elif cmd == 'Q':  # curveto quadratic absolute
-                while nextIsNum():
-                    x2 = getNext()
-                    y2 = getNext()
-                    x3 = getNext()
-                    y3 = getNext()
+                while _nextIsNum(d_, limbo):
+                    x2 = _getNext(d_, limbo)
+                    y2 = _getNext(d_, limbo)
+                    x3 = _getNext(d_, limbo)
+                    y3 = _getNext(d_, limbo)
                     subpath.append([x,y])
                     self.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0)
                     subpath.append([x3,y3])
                     x = x3
                     y = y3
             elif cmd == 'q':  # curveto quadratic relative
-                while nextIsNum():
-                    x2 = x + getNext()
-                    y2 = y + getNext()
-                    x3 = x + getNext()
-                    y3 = y + getNext()
+                while _nextIsNum(d_, limbo):
+                    x2 = x + _getNext(d_, limbo)
+                    y2 = y + _getNext(d_, limbo)
+                    x3 = x + _getNext(d_, limbo)
+                    y3 = y + _getNext(d_, limbo)
                     subpath.append([x,y])
                     self.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0)
                     subpath.append([x3,y3])
                     x = x3
                     y = y3        
             elif cmd == 'T':  # curveto quadratic absolute shorthand
-                while nextIsNum():
+                while _nextIsNum(d_, limbo):
                     if cmdPrev in 'QqTt':
                         x2 = x-(xPrevCp-x)
                         y2 = y-(yPrevCp-y) 
                     else:
                         x2 = x
                         y2 = y              
-                    x3 = getNext()
-                    y3 = getNext()
+                    x3 = _getNext(d_, limbo)
+                    y3 = _getNext(d_, limbo)
                     subpath.append([x,y])
                     self.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0)
                     subpath.append([x3,y3])
@@ -245,15 +260,15 @@ class _SVGPathReader:
                     xPrevCp = x2
                     yPrevCp = y2
             elif cmd == 't':  # curveto quadratic relative shorthand
-                while nextIsNum():
+                while _nextIsNum(d_, limbo):
                     if cmdPrev in 'QqTt':
                         x2 = x-(xPrevCp-x)
                         y2 = y-(yPrevCp-y) 
                     else:
                         x2 = x
                         y2 = y
-                    x3 = x + getNext()
-                    y3 = y + getNext()
+                    x3 = x + _getNext(d_, limbo)
+                    y3 = y + _getNext(d_, limbo)
                     subpath.append([x,y])
                     self.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0)
                     subpath.append([x3,y3])
@@ -262,26 +277,26 @@ class _SVGPathReader:
                     xPrevCp = x2
                     yPrevCp = y2
             elif cmd == 'A':  # eliptical arc absolute
-                while nextIsNum():
-                    rx = getNext()
-                    ry = getNext()
-                    xrot = getNext()
-                    large = getNext()
-                    sweep = getNext()
-                    x2 = getNext()
-                    y2 = getNext()        
+                while _nextIsNum(d_, limbo):
+                    rx = _getNext(d_, limbo)
+                    ry = _getNext(d_, limbo)
+                    xrot = _getNext(d_, limbo)
+                    large = _getNext(d_, limbo)
+                    sweep = _getNext(d_, limbo)
+                    x2 = _getNext(d_, limbo)
+                    y2 = _getNext(d_, limbo)        
                     self.addArc(subpath, x, y, rx, ry, xrot, large, sweep, x2, y2)
                     x = x2
                     y = y2
             elif cmd == 'a':  # elliptical arc relative
-                while nextIsNum():
-                    rx = getNext()
-                    ry = getNext()
-                    xrot = getNext()
-                    large = getNext()
-                    sweep = getNext()
-                    x2 = x + getNext()
-                    y2 = y + getNext()
+                while _nextIsNum(d_, limbo):
+                    rx = _getNext(d_, limbo)
+                    ry = _getNext(d_, limbo)
+                    xrot = _getNext(d_, limbo)
+                    large = _getNext(d_, limbo)
+                    sweep = _getNext(d_, limbo)
+                    x2 = x + _getNext(d_, limbo)
+                    y2 = y + _getNext(d_, limbo)
                     self.addArc(subpath, x, y, rx, ry, xrot, large, sweep, x2, y2)
                     x = x2
                     y = y2
@@ -290,7 +305,7 @@ class _SVGPathReader:
 
         # finalize subpath
         if subpath:
-            node.paths.append(subpath)
+            node['paths'].append(subpath)
             subpath = []
         
     
@@ -327,8 +342,8 @@ class _SVGPathReader:
         dx = x4-x1
         dy = y4-y1
 
-        d2 = math.abs(((x2 - x4) * dy - (y2 - y4) * dx))
-        d3 = math.abs(((x3 - x4) * dy - (y3 - y4) * dx))
+        d2 = abs(((x2 - x4) * dy - (y2 - y4) * dx))
+        d3 = abs(((x3 - x4) * dy - (y3 - y4) * dx))
 
         if (d2+d3)**2 < 5.0 * self._tolerance2 * (dx*dx + dy*dy):
             # added factor of 5.0 to match circle resolution
@@ -357,7 +372,7 @@ class _SVGPathReader:
 
         dx = x3-x1
         dy = y3-y1
-        d = math.abs(((x2 - x3) * dy - (y2 - y3) * dx))
+        d = abs(((x2 - x3) * dy - (y2 - y3) * dx))
 
         if d*d <= 5.0 * self._tolerance2 * (dx*dx + dy*dy):
             # added factor of 5.0 to match circle resolution      
@@ -403,23 +418,23 @@ class _SVGPathReader:
     
         psi = _angle([1,0], [(x_-cx_)/rx, (y_-cy_)/ry])
         delta = _angle([(x_-cx_)/rx, (y_-cy_)/ry], [(-x_-cx_)/rx, (-y_-cy_)/ry])
-        if sweep && delta < 0:
-            delta += Math.PI * 2
-        if !sweep && delta > 0:
-            delta -= Math.PI * 2
+        if sweep and delta < 0:
+            delta += math.pi * 2
+        if not sweep and delta > 0:
+            delta -= math.pi * 2
         
         def _getVertex(pct):
             theta = psi + delta * pct
-            ct = Math.cos(theta)
-            st = Math.sin(theta)
+            ct = math.cos(theta)
+            st = math.sin(theta)
             return [cp*rx*ct-sp*ry*st+cx, sp*rx*ct+cp*ry*st+cy]        
         
         # let the recursive fun begin
         def _recursiveArc(t1, t2, c1, c5, level, tolerance2):
-            def _vertexDistanceSquared(self, v1, v2):
+            def _vertexDistanceSquared(v1, v2):
                 return (v2[0]-v1[0])**2 + (v2[1]-v1[1])**2
             
-            def _vertexMiddle(self, v1, v2):
+            def _vertexMiddle(v1, v2):
                 return [ (v2[0]+v1[0])/2.0, (v2[1]+v1[1])/2.0 ]
 
             if level > 18:

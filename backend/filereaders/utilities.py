@@ -1,9 +1,5 @@
 
-
-
-# now in the webcolors module
-# def rgbToHex(r, g, b):
-#     return '%02x%02x%02x' % (r, g, b)
+import re
 
 
 
@@ -13,8 +9,8 @@ def parseFloats(float_strings):
 	The function can deal with pretty much any separation chars.
 	"""
 	float_strings = re.findall('(-?[0-9]+\.?[0-9]*(?:e-?[0-9]*)?)', float_strings)
-	for float_string in float_strings:
-		float_string = float(float_string)
+	for i in range(len(float_strings)):  # use index so we can edit in-place
+		float_strings[i] = float(float_strings[i])
 	return float_strings
 
 

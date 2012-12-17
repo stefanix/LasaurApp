@@ -1,13 +1,14 @@
 
-import math
 import re
+import math
 import logging
 
-from .webcolors import hex_to_rgb, css3_names_to_hex
-from .utilities import matrixMult, parseFloats
+from utilities import matrixMult, parseFloats
 
 from svg_attribute_reader import SVGAttributeReader
 from svg_path_reader import SVGPathReader
+
+log = logging.getLogger("svg_reader")
 
 
 class SVGTagReader:
@@ -30,7 +31,7 @@ class SVGTagReader:
             'ellipse': self.ellipse,
             'image': self.image,
             'defs': self.defs,
-            'style' self.style
+            'style': self.style
         }
 
 
@@ -49,16 +50,22 @@ class SVGTagReader:
         addPath(...).
 
         """
-        # parse own attributes and overwrite in node
-        for attr,value in tag.attrib.items():
-            self._attribReader.readAttrib(node, attr, value)
-        # accumulate transformations
-        node.xformToWorld = matrixMult(parentNode.xformToWorld, node.xform)
-        # read tag
         tagName = self._getTag(tag)
         if tagName in self._handlers:
-            self._handlers[tagName](tag, node)
+            log.debug("reading tag: " + tagName)
+            # parse own attributes and overwrite in node
+            for attr,value in tag.attrib.items():
+                log.debug("considering attrib: " + attr)
+                self._attribReader.readAttrib(node, attr, value)
+            # accumulate transformations
+            node['xformToWorld'] = matrixMult(node['xformToWorld'], node['xform'])
+            # read tag
+            self._handlers[tagName](node)
 
+
+    def has_handler(self, tag):
+        tagName = self._getTag(tag)
+        return bool(tagName in self._handlers)
     
     
     def g(self, node):
@@ -71,7 +78,7 @@ class SVGTagReader:
         # http://www.w3.org/TR/SVG11/paths.html
         # has transform and style attributes
         d = node.get("d")
-        self._svgPathReader.addPath(d, node) 
+        self._pathReader.addPath(d, node) 
 
 
     def polygon(self, node):
@@ -79,7 +86,7 @@ class SVGTagReader:
         # has transform and style attributes
         d = ['M'] + node['points'] + ['z']
         node['points'] = None
-        self._svgPathReader.addPath(d, node)      
+        self._pathReader.addPath(d, node)      
 
 
     def polyline(self, node):
@@ -87,115 +94,107 @@ class SVGTagReader:
         # has transform and style attributes
         d = ['M'] + node['points']
         node['points'] = None
-        self._svgPathReader.addPath(d, node)  
+        self._pathReader.addPath(d, node)  
 
 
-    def rect(self, tag, node):
+    def rect(self, node):
         # http://www.w3.org/TR/SVG11/shapes.html#RectElement
         # has transform and style attributes      
-        w = self._parseUnit(tag.getAttribute('width')) || 0
-        h = self._parseUnit(tag.getAttribute('height')) || 0
-        x = self._parseUnit(tag.getAttribute('x')) || 0
-        y = self._parseUnit(tag.getAttribute('y')) || 0
-        rx = self._parseUnit(tag.getAttribute('rx'))
-        ry = self._parseUnit(tag.getAttribute('ry'))
-        
-        if(rx == null || ry == null) {  # no rounded corners
-            d = ['M', x, y, 'h', w, 'v', h, 'h', -w, 'z'];
-            self._svgPathReader.addPath(d, node)
-        } else {                       # rounded corners
-            if ('ry' == null) { ry = rx; }
-            if (rx < 0.0) { rx *=-1; }
-            if (ry < 0.0) { ry *=-1; }
+        w = node.get('width') or 0
+        h = node.get('height') or 0
+        x = node.get('x') or 0
+        y = node.get('y') or 0
+        rx = node.get('rx')
+        ry = node.get('ry')
+        if rx is None or ry is None:  # no rounded corners
+            d = ['M', x, y, 'h', w, 'v', h, 'h', -w, 'z']
+            self._pathReader.addPath(d, node)
+        else:                         # rounded corners
+            if 'ry' is None: ry = rx
+            if rx < 0.0: rx *=-1
+            if ry < 0.0: ry *=-1
             d = ['M', x+rx , y ,
-                     'h', w-2*rx,
-                     'c', rx, 0.0, rx, ry, rx, ry,
-                     'v', h-ry,
-                     'c', '0.0', ry, -rx, ry, -rx, ry,
-                     'h', -w+2*rx,
-                     'c', -rx, '0.0', -rx, -ry, -rx, -ry,
-                     'v', -h+ry,
-                     'c', '0.0','0.0','0.0', -ry, rx, -ry,
-                     'z'];
-            self._svgPathReader.addPath(d, node)        
-        }
+                 'h', w-2*rx,
+                 'c', rx, 0.0, rx, ry, rx, ry,
+                 'v', h-ry,
+                 'c', '0.0', ry, -rx, ry, -rx, ry,
+                 'h', -w+2*rx,
+                 'c', -rx, '0.0', -rx, -ry, -rx, -ry,
+                 'v', -h+ry,
+                 'c', '0.0','0.0','0.0', -ry, rx, -ry,
+                 'z']
+            self._pathReader.addPath(d, node)        
 
 
-    def line(self, tag, node):
+    def line(self, node):
         # http://www.w3.org/TR/SVG11/shapes.html#LineElement
         # has transform and style attributes
-        x1 = self._parseUnit(tag.getAttribute('x1')) || 0
-        y1 = self._parseUnit(tag.getAttribute('y1')) || 0
-        x2 = self._parseUnit(tag.getAttribute('x2')) || 0
-        y2 = self._parseUnit(tag.getAttribute('y2')) || 0      
+        x1 = node.get('x1') or 0
+        y1 = node.get('y1') or 0
+        x2 = node.get('x2') or 0
+        y2 = node.get('y2') or 0      
         d = ['M', x1, y1, 'L', x2, y2]
-        self._svgPathReader.addPath(d, node)        
+        self._pathReader.addPath(d, node)        
 
 
-    def circle(self, tag, node):
+    def circle(self, node):
         # http://www.w3.org/TR/SVG11/shapes.html#CircleElement
         # has transform and style attributes      
-        r = self._parseUnit(tag.getAttribute('r'))
-        cx = self._parseUnit(tag.getAttribute('cx')) || 0
-        cy = self._parseUnit(tag.getAttribute('cy')) || 0
-        
-        if (r > 0.0) {
+        r = node.get('r')
+        cx = node.get('cx') or 0
+        cy = node.get('cy') or 0
+        if r > 0.0:
             d = ['M', cx-r, cy,                  
-                             'A', r, r, 0, 0, 0, cx, cy+r,
-                             'A', r, r, 0, 0, 0, cx+r, cy,
-                             'A', r, r, 0, 0, 0, cx, cy-r,
-                             'A', r, r, 0, 0, 0, cx-r, cy,
-                             'Z'];
-            self._svgPathReader.addPath(d, node);
-        }
-    },
+                 'A', r, r, 0, 0, 0, cx, cy+r,
+                 'A', r, r, 0, 0, 0, cx+r, cy,
+                 'A', r, r, 0, 0, 0, cx, cy-r,
+                 'A', r, r, 0, 0, 0, cx-r, cy,
+                 'Z']
+            self._pathReader.addPath(d, node)
 
 
-    def ellipse(self, tag, node):
+    def ellipse(self, node):
         # has transform and style attributes
-        rx = self._parseUnit(tag.getAttribute('rx'))
-        ry = self._parseUnit(tag.getAttribute('ry'))
-        cx = self._parseUnit(tag.getAttribute('cx')) || 0
-        cy = self._parseUnit(tag.getAttribute('cy')) || 0
-        
-        if (rx > 0.0 && ry > 0.0) {    
+        rx = node.get('rx')
+        ry = node.get('ry')
+        cx = node.get('cx') or 0
+        cy = node.get('cy') or 0        
+        if rx > 0.0 and ry > 0.0:
             d = ['M', cx-rx, cy,                  
-                             'A', rx, ry, 0, 0, 0, cx, cy+ry,
-                             'A', rx, ry, 0, 0, 0, cx+rx, cy,
-                             'A', rx, ry, 0, 0, 0, cx, cy-ry,
-                             'A', rx, ry, 0, 0, 0, cx-rx, cy,
-                             'Z'];          
-            self._svgPathReader.addPath(d, node);
-        }
-
+                 'A', rx, ry, 0, 0, 0, cx, cy+ry,
+                 'A', rx, ry, 0, 0, 0, cx+rx, cy,
+                 'A', rx, ry, 0, 0, 0, cx, cy-ry,
+                 'A', rx, ry, 0, 0, 0, cx-rx, cy,
+                 'Z']          
+            self._pathReader.addPath(d, node)
     
 
 
-    def image(self, tag, node):
+    def image(self, node):
         # not supported
         # has transform and style attributes
-        logging.warn("image tag is not supported")     
+        log.warn("'image' tag is not supported, ignored")     
 
 
-    def defs(self, tag, node):
+    def defs(self, node):
         # not supported
         # http://www.w3.org/TR/SVG11/struct.html#Head
         # has transform and style attributes      
-        logging.warn("defs tag is not supported")     
+        log.warn("'defs' tag is not supported, ignored")     
 
-    def style(self, tag, node):
+    def style(self, node):
         # not supported: embedded style sheets
         # http://www.w3.org/TR/SVG11/styling.html#StyleElement
         # instead presentation attributes and the 'style' attribute 
-        logging.warn("style tag is not supported, use presentation \
+        log.warn("'style' tag is not supported, use presentation \
                       attributes or the style attribute instead")     
 
 
 
 
-    def _getTag(self, node):
+    def _getTag(self, domNode):
         """Get tag name without possible namespace prefix."""
-        tag = node.tag
+        tag = domNode.tag
         return tag[tag.rfind('}')+1:]
 
 
