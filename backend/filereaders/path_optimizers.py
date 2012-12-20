@@ -38,7 +38,7 @@ def join_segments(paths, epsilon2):
     if join_count > 100:
         logging.info("joined many line segments: " + str(self.join_count))
 	
-	return nPaths
+    return nPaths
 
 
 

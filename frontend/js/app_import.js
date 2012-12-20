@@ -30,7 +30,7 @@ $(document).ready(function(){
     if (browser_supports_file_api) {
       if (input.files[0]) {
         var fr = new FileReader()
-        fr.onload = parseSvgDataFromFileAPI
+        fr.onload = sendToBackend
         fr.readAsText(input.files[0])
       } else {
         $().uxmessage('error', "No file was selected.");
@@ -44,24 +44,35 @@ $(document).ready(function(){
     $('#svg_upload_file_temp').val($('#svg_upload_file').val())
     $('#svg_upload_file').val('')
 
-  	e.preventDefault();		
+  	e.preventDefault();
   });
 
 
-  function parseSvgDataFromFileAPI(e) {
-    parseSvgData(e.target.result);
-  }
-
-  function parseSvgData(svgdata) {
+  function sendToBackend(e) {
+    var filedata = e.target.result;
+    var fullpath = $('#svg_upload_file_temp').val();
+    var filename = fullpath.split('\\').pop().split('/').pop();    
     $().uxmessage('notice', "parsing SVG ...");
-    geo_boundarys = SVGReader.parse(svgdata, {'optimize':path_optimize, 'dpi':forceSvgDpiTo})
-    $('#dpi_import_info').html('Using <b>' + SVGReader.dpi + 'dpi</b> for converting px units.');
-    forceSvgDpiTo = undefined;  // reset
-    //alert(geo_boundarys.toSource());
-    //alert(JSON.stringify(geo_boundarys));
-    //$().uxmessage('notice', JSON.stringify(geo_boundarys));
-    generateRawGcode();
-    $('#svg_import_btn').button('reset');
+    $.ajax({
+      type: "POST",
+      url: "/svg_reader",
+      data: {'filename':filename,'filedata':filedata, 'dpi':forceSvgDpiTo},
+      dataType: "json",
+      success: function (data) {
+        $().uxmessage('success', "SVG parsed."); 
+        $('#dpi_import_info').html('Using <b>' + data.dpi + 'dpi</b> for converting px units.');
+        // alert(JSON.stringify(data));
+        geo_boundarys = data.boundarys
+        generateRawGcode();
+      },
+      error: function (data) {
+        $().uxmessage('error', "backend error.");
+      },
+      complete: function (data) {
+        $('#svg_import_btn').button('reset');
+        forceSvgDpiTo = undefined;  // reset
+      }
+    })
   }
       
   function generateRawGcode() {

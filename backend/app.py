@@ -6,6 +6,7 @@ import wsgiref.simple_server
 from bottle import *
 from serial_manager import SerialManager
 from flash import flash_upload
+from filereaders import read_svg
 
 
 APPNAME = "lasaurapp"
@@ -358,6 +359,40 @@ def gcode_submit_handler():
 @route('/queue_pct_done')
 def queue_pct_done_handler():
     return SerialManager.get_queue_percentage_done()
+
+
+@route('/svg_reader', method='POST')
+def svg_upload():
+    """Parse SVG string."""
+    filename = request.forms.get('filename')
+    filedata = request.forms.get('filedata')
+    dpi_forced = None
+    try:
+        dpi_forced = float(request.forms.get('dpi'))
+    except:
+        pass
+
+    if filename and filedata:
+        print "You uploaded %s (%d bytes)." % (filename, len(filedata))
+        res = read_svg(filedata, [1220,610], 0.08, dpi_forced)
+        # print boundarys
+        jsondata = json.dumps(res)
+        # print "returning %d items as %d bytes." % (len(res['boundarys']), len(jsondata))
+        return jsondata
+    return "You missed a field."
+
+
+# @route('/svg_reader', method='POST')
+# def svg_upload():
+#     """Parse SVG string."""
+#     data = request.files.get('data')
+#     if data.file:
+#         raw = data.file.read() # This is dangerous for big files
+#         filename = data.filename
+#         print "You uploaded %s (%d bytes)." % (filename, len(raw))
+#         boundarys = read_svg(raw, [1220,610], 0.08)
+#         return json.dumps(boundarys)
+#     return "You missed a field."
 
 
 # @route('/svg_upload', method='POST')
