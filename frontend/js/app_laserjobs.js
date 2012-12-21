@@ -1,45 +1,4 @@
 
-function send_gcode_to_backend(gcode) {
-  // get gcode out
-  if (typeof gcode === "string" && gcode != '') {
-    // $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
-  	$.post("/gcode", { 'gcode_program':gcode }, function(data) {
-  		if (data != "") {
-  			$().uxmessage('success', "G-Code sent to serial.");	
-  			// show progress bar, register live updates
-  			if ($("#progressbar").children().first().width() == 0) {
-  				$("#progressbar").children().first().width('5%');
-  				$("#progressbar").show();
-  				var progress_not_yet_done_flag = true;
-  			  var progresstimer = setInterval(function() {
-  					$.get('/queue_pct_done', function(data2) {
-  						if (data2.length > 0) {
-  							var pct = parseInt(data2);
-                $("#progressbar").children().first().width(pct+'%');  							
-  						} else {
-  						  if (progress_not_yet_done_flag) {
-    						  $("#progressbar").children().first().width('100%');
-    						  $().uxmessage('notice', "Done.");
-    						  progress_not_yet_done_flag = false;
-    						} else {
-    							$('#progressbar').hide();
-    							$("#progressbar").children().first().width(0); 
-    							clearInterval(progresstimer);
-    						}
-  						}
-  					});
-  			  }, 2000);
-  			}
-  		} else {
-  			$().uxmessage('error', "Serial not connected.");
-  		}
-    });  
-  } else {
-    $().uxmessage('error', "No gcode.");
-  }
-}
-
-
 
 $(document).ready(function(){
 
@@ -73,7 +32,7 @@ $(document).ready(function(){
   $("#gcode_submit").click(function(e) {
   	// send gcode string to server via POST
   	var gcode = $('#gcode_program').val();
-    send_gcode_to_backend(gcode);
+    send_gcode("G90\n" + gcode, "G-Code sent to backend.", true);
   	return false;
   });
 
@@ -83,10 +42,10 @@ $(document).ready(function(){
     var gcodedata = $('#gcode_program').val();
     GcodeReader.parse(gcodedata, 1);
     var gcode_bbox = GcodeReader.getBboxGcode();
-    var header = "%\nG21\nG90\nG0F16000\n"
-    var footer = "G00X0Y0F16000\n%"
+    var header = "G90\nG0F16000\n"
+    var footer = "G00X0Y0F16000\n"
     // save_and_add_to_job_queue($('#gcode_name').val() + 'BBOX', header + gcode_bbox + footer);  // for debugging
-    send_gcode_to_backend(header + gcode_bbox + footer);
+    send_gcode(header + gcode_bbox + footer, "BBox G-Code sent to backend", true);
     return false;
   });
 

@@ -72,7 +72,7 @@ $(document).ready(function(){
         $('#svg_import_btn').button('reset');
         forceSvgDpiTo = undefined;  // reset
       }
-    })
+    });
   }
       
   function generateRawGcode() {

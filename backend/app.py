@@ -352,9 +352,9 @@ def gcode_submit_handler():
         print "Adding to queue %s lines" % len(lines)
         for line in lines:
             SerialManager.queue_gcode_line(line)
-        return "Queued for sending."
+        return "__ok__"
     else:
-        return ""
+        return "serial disconnected"
 
 @route('/queue_pct_done')
 def queue_pct_done_handler():

@@ -40,16 +40,56 @@
 })(jQuery); 
 
 
-function send_gcode(gcode, success_msg, error_msg) {
-	$.post("/gcode", {'gcode_program':gcode}, function(data) {
-		if (data != "") {
-			$().uxmessage('success', success_msg);
-		} else {
-			$().uxmessage('error', error_msg);
-		}
-	}).error(function() {
-      $().uxmessage('error', "Timeout. LasaurApp server down?");
-  }); 
+function send_gcode(gcode, success_msg, progress) {
+  if (typeof gcode === "string" && gcode != '') {
+    $.ajax({
+      type: "POST",
+      url: "/gcode",
+      data: {'gcode_program':gcode},
+      // dataType: "json",
+      success: function (data) {
+        if (data == "__ok__") {
+          $().uxmessage('success', success_msg);
+          if (progress = true) {
+            // show progress bar, register live updates
+            if ($("#progressbar").children().first().width() == 0) {
+              $("#progressbar").children().first().width('5%');
+              $("#progressbar").show();
+              var progress_not_yet_done_flag = true;
+              var progresstimer = setInterval(function() {
+                $.get('/queue_pct_done', function(data2) {
+                  if (data2.length > 0) {
+                    var pct = parseInt(data2);
+                    $("#progressbar").children().first().width(pct+'%');                
+                  } else {
+                    if (progress_not_yet_done_flag) {
+                      $("#progressbar").children().first().width('100%');
+                      $().uxmessage('notice', "Done.");
+                      progress_not_yet_done_flag = false;
+                    } else {
+                      $('#progressbar').hide();
+                      $("#progressbar").children().first().width(0); 
+                      clearInterval(progresstimer);
+                    }
+                  }
+                });
+              }, 2000);
+            }
+          }
+        } else {
+          $().uxmessage('error', "Backend error: " + data);
+        }
+      },
+      error: function (data) {
+        $().uxmessage('error', "Timeout. LasaurApp server down?");
+      },
+      complete: function (data) {
+        // future use
+      }
+    });
+  } else {
+    $().uxmessage('error', "No gcode.");
+  }
 }
 
 
@@ -345,11 +385,11 @@ $(document).ready(function(){
   $("#cancel_btn").click(function(e){
   	var gcode = '!\n'  // ! is enter stop state char
   	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
-  	send_gcode(gcode, "Stopping ...", "Serial not connected.");	
+  	send_gcode(gcode, "Stopping ...", false);	
 	  var delayedresume = setTimeout(function() {
     	var gcode = '~\nG0X0Y0F20000\n'  // ~ is resume char
     	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
-    	send_gcode(gcode, "Resetting ...", "Serial not connected.");
+    	send_gcode(gcode, "Resetting ...", false);
 	  }, 1000);
   	e.preventDefault();		
   });
@@ -358,11 +398,11 @@ $(document).ready(function(){
   $("#homing_cycle").click(function(e){
     var gcode = '!\n'  // ! is enter stop state char
     $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
-    send_gcode(gcode, "Resetting ...", "Serial not connected."); 
+    send_gcode(gcode, "Resetting ...", false); 
     var delayedresume = setTimeout(function() {
       var gcode = '~\nG30\n'  // ~ is resume char
       $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
-      send_gcode(gcode, "Homing cycle ...", "Serial not connected.");
+      send_gcode(gcode, "Homing cycle ...", false);
     }, 1000);
     e.preventDefault(); 
 
@@ -377,7 +417,7 @@ $(document).ready(function(){
     }
     gcode = 'G0X0Y0F16000\n'
     // $().uxmessage('notice', gcode);  
-  	send_gcode(gcode, "Going to origin ...", "Serial not connected.");
+  	send_gcode(gcode, "Going to origin ...", false);
   	e.preventDefault();		
   });  
   
