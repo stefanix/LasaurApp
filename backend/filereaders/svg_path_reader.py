@@ -117,13 +117,13 @@ class SVGPathReader:
             elif cmd == 'Z':  # closepath
                 # loop and finalize subpath
                 if subpath:
-                    subpath.append(subpath[0])  # close
+                    subpath.append([subpath[0][0],subpath[0][1]])  # close
                     node['paths'].append(subpath);
                     subpath = [];
             elif cmd == 'z':  # closepath
                 # loop and finalize subpath
                 if subpath:
-                    subpath.append(subpath[0])  # close
+                    subpath.append([subpath[0][0],subpath[0][1]])  # close
                     node['paths'].append(subpath)
                     subpath = []
             elif cmd == 'L':  # lineto absolute

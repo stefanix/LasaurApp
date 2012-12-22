@@ -79,7 +79,7 @@ $(document).ready(function(){
     if (geo_boundarys) {
       raw_gcode_by_color = {};
       for (var color in geo_boundarys) {
-        raw_gcode_by_color[color] = GcodeWriter.write(geo_boundarys[color], 1, 0.0, 0.0);
+        raw_gcode_by_color[color] = GcodeWriter.write(geo_boundarys[color], 1.0, 0.0, 0.0);
       }
       //// add canvas color properties
       $('#canvas_properties div.colorbtns').html('');  // reset colors

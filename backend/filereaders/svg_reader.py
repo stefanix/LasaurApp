@@ -68,6 +68,7 @@ class SVGReader:
 
         # the px unit DPIs, conversion to real-world dimensions
         self.dpi = None
+        self.px2mm = None
 
         # what the svg size (typically page dimensions) should be mapped to
         self._target_size = target_size
@@ -191,10 +192,12 @@ class SVGReader:
         if not self.dpi:
             log.warn("All smart px unit DPIs infering methods failed -> defaulting to 90dpi.")
             self.dpi = 90.0
+
+        # 6. Set the conversion factor
+        self.px2mm = 25.4/self.dpi
         
         # adjust tolerances to px units
-        mm2px = self.dpi/25.4
-        self.tolerance2_px = (mm2px*self.tolerance)*(mm2px*self.tolerance)
+        self.tolerance2_px = (self.tolerance/self.px2mm)*(self.tolerance/self.px2mm)
         
         # let the fun begin
         # recursively parse children
@@ -241,8 +244,8 @@ class SVGReader:
                     if path:  # skip if empty subpath
                         # 3a.) convert to world coordinates and then to mm units
                         for vert in path:
-                            vert = matrixApply(node['xformToWorld'], vert)
-                            vert = vertexScale(vert, 25.4/self.dpi)
+                            matrixApply(node['xformToWorld'], vert)
+                            vertexScale(vert, self.px2mm)
                         # 3b.) sort output by color
                         hexcolor = rgb_to_hex(node['stroke'])
                         if hexcolor in self.boundarys:
