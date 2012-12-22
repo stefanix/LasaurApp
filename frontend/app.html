@@ -59,13 +59,8 @@
 							<li class="active"><a href="#tab_jobs" id="tab_jobs_button" data-toggle="tab"><i class="icon-th-list" style="margin-right:2px"></i> Laser Jobs</a></li>
 							<li><a href="#tab_import" id="tab_import_button" data-toggle="tab"><i class="icon-folder-open" style="margin-right:2px"></i> SVG Import</a></li>
 							<li><a href="#tab_mover" id="tab_mover_button" data-toggle="tab"><i class="icon-move" style="margin-right:2px"></i> Direct Control</a></li>
+							<li><a href="#tab_logs" id="tab_logs_button" data-toggle="tab"><i class="icon-exclamation-sign" style="margin-right:2px"></i> Logs</a></li>							
 						</ul>
-						<div style="margin-top:240px">
-							<button id="log_toggle" class="btn-mini pull-right" style="margin-right:10px">show log</button>
-							<div id="log_content" style="clear:both; display:none; overflow:auto; height:400px;">
-								<!-- log -->
-							</div>
-						</div>												
 					</div>
 					<!--tabbar end-->
 					<div class="span10">	
@@ -255,6 +250,12 @@
 							    <strong>Note!</strong> Set an offset by shift-clicking in the work area.
 						    </div>								
 							</div> <!-- end of mover tab -->					
+
+							<div id="tab_logs" class="tab-pane active">
+								<div id="log_content" style="overflow:auto; display:none">
+									<!-- log -->
+								</div>
+							</div> <!-- end of log tab -->
 
 							<!--content end-->
 						</div>

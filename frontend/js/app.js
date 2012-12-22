@@ -250,17 +250,9 @@ $(document).ready(function(){
   
   $().uxmessage('notice', "app frontend started");
   
-  $('#log_toggle').toggle(function() {
-    $("#log_content").fadeIn('slow');
-  	$("#log_toggle").html("hide log");
-  	return false;
-  }, function() {
-    $("#log_content").fadeOut('slow');
-  	$("#log_toggle").html("show log");
-  	return false;
-  });
-  //$('#log_toggle').trigger('click');  // show log, for debugging
-
+  $('#tab_logs_button').click(function(){
+    $('#log_content').show()
+  })
 
   //////// serial connect button ////////
   var connect_btn_state = false;
