@@ -30,7 +30,7 @@ class SVGAttributeReader:
             'stroke-opacity': self.opacityAttrib,
             'width': self.dimensionAttrib,          # geometry
             'height': self.dimensionAttrib,
-            'd': self.stringAttrib,
+            'd': self.dAttrib,
             'points': self.pointsAttrib,
             'x': self.dimensionAttrib,
             'y': self.dimensionAttrib,
@@ -166,6 +166,19 @@ class SVGAttributeReader:
         # example: <rect x="200" y="100" width="600" height="300" 
         #          fill="red" stroke="blue" stroke-width="3"/>
     
+
+    def dAttrib(self, node, attr, value):
+        """Read the 'd' attribute, complex path data."""
+        # http://www.w3.org/TR/SVG11/paths.html
+        d = re.findall('([A-Za-z]|-?[0-9]+\.?[0-9]*(?:e-?[0-9]*)?)', value)  # letters or float
+        # convert num strings to actual nums
+        for i in range(len(d)):
+            try:
+                d[i] = float(d[i])
+            except ValueError:
+                pass  # ok too, probably a command letter
+        node[attr] = d
+
 
     def pointsAttrib(self, node, attr, value):
     	"""Read the 'points' attribute."""

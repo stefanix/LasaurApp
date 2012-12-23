@@ -127,12 +127,14 @@ class SVGReader:
         if not w or not h:
             # get size from viewBox
             # http://www.w3.org/TR/SVG11/coords.html#ViewBoxAttribute
-            vb = tag.attrib.get('viewBox')
+            vb = svgRootElement.attrib.get('viewBox')
             if vb:
-                floats = parseFloats(vb)
-                if len(floats) == 4:
-                    w = vb_parts[2]
-                    h = vb_parts[3]        
+                vb_parts = vb.split(',')
+                if len(vb_parts) != 4:
+                    vb_parts = vb.split(' ')
+                if len(vb_parts) == 4:
+                    w = vb_parts[2];
+                    h = vb_parts[3];     
 
         # 2. Try to get px unit DPIs from page size unit.
         # If page size has real-world units make px (and unit-less) the same.
@@ -244,6 +246,7 @@ class SVGReader:
                     if path:  # skip if empty subpath
                         # 3a.) convert to world coordinates and then to mm units
                         for vert in path:
+                            # print isinstance(vert[0],float) and isinstance(vert[1],float)
                             matrixApply(node['xformToWorld'], vert)
                             vertexScale(vert, self.px2mm)
                         # 3b.) sort output by color
