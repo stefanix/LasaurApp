@@ -4,9 +4,9 @@ import math
 import logging
 import xml.etree.ElementTree as ET
 
-from webcolors import hex_to_rgb, rgb_to_hex
-from utilities import matrixMult, matrixApply, vertexScale, parseFloats
-from svg_tag_reader import SVGTagReader
+from .webcolors import hex_to_rgb, rgb_to_hex
+from .utilities import matrixMult, matrixApply, vertexScale, parseFloats
+from .svg_tag_reader import SVGTagReader
 
 
 logging.basicConfig()

@@ -15,14 +15,14 @@ The format of paths are:
 
 
 def join_segments(paths, epsilon2):
-	"""
-	Join paths with congruent end/start points.
-	
-	This is Useful to optimize pseudo-polylines made from line segments.
-	"""
-	join_count = 0
-	nPaths = []
-	for path in paths:
+    """
+    Join paths with congruent end/start points.
+
+    This is Useful to optimize pseudo-polylines made from line segments.
+    """
+    join_count = 0
+    nPaths = []
+    for path in paths:
 		if nPaths:
 			lastpath = nPaths[-1:][0]
 			enpoint = lastpath[-1:][0]
@@ -36,15 +36,15 @@ def join_segments(paths, epsilon2):
 			nPaths.append(path)
     # report pseudo-polyline joining operations
     if join_count > 100:
-        logging.info("joined many line segments: " + str(self.join_count))
-	
+        logging.info("joined many line segments: " + str(join_count))
+
     return nPaths
 
 
 
 def simplify(path, tolerance2):
-	"""
-	Douglas-Peucker polyline simplification.
+    """
+    Douglas-Peucker polyline simplification.
 
     path ... [[x1,y1],[x2,y2],...] polyline
     tolerance2  ... approximation tolerance squared
@@ -78,7 +78,7 @@ def simplify(path, tolerance2):
         maxd2 = 0          # distance squared of farthest vertex
         S = [v[j], v[k]]   # segment from v[j] to v[k]
         u = diff(S[1], S[0])    # segment direction vector
-        cu = norm2(u,u)      # segment length squared
+        cu = norm2(u)      # segment length squared
         # test each vertex v[i] for max distance from S
         # compute using the Feb 2001 Algorithm's dist_Point_to_Segment()
         # Note: this works in any dimension (2D, 3D, ...)
@@ -87,7 +87,7 @@ def simplify(path, tolerance2):
         b = None
         cw = None
         dv2 = None         # dv2 = distance v[i] to S squared
-        for i in range(j+1, k):
+        for i in xrange(j+1, k):
             # compute distance squared
             w = diff(v[i], S[0])
             cw = dot(w,u)
@@ -115,34 +115,34 @@ def simplify(path, tolerance2):
         return
     
     n = len(path)
+    if n == 0:
+        return []
     sPath = []
     tPath = []                   # vertex buffer, points
-    mk = []                      # marker buffer, ints
 
     # STAGE 1.  Vertex Reduction within tolerance of prior vertex cluster
-    tPath[0] = path[0];          # start at the beginning
+    tPath.append(path[0])        # start at the beginning
     k = 1
     pv = 0
-    for i in range(1, n):
+    for i in xrange(1, n):
         if d2(path[i], path[pv]) < tolerance2:
             continue
-        tPath[k] = path[i]
+        tPath.append(path[i])
         k += 1
         pv = i
     if pv < n-1:
-        tPath[k] = path[n-1]      # finish at the end
+        tPath.append(path[n-1])  # finish at the end
         k += 1
 
     # STAGE 2.  Douglas-Peucker polyline simplification
-    mk[0] = mk[k-1] = 1;       # mark the first and last vertices
+    mk = [None for i in xrange(k)]    # marker buffer, ints
+    mk[0] = mk[k-1] = 1;              # mark the first and last vertices
     simplifyDP(tolerance2, tPath, 0, k-1, mk)
 
     # copy marked vertices to the output simplified polyline
-    m = 0
-    for i in range(k):
+    for i in xrange(k):
         if mk[i]:
-            sPath[m] = tPath[i]
-            m += 1
+            sPath.append(tPath[i])
     return sPath
 
 
@@ -150,14 +150,14 @@ def simplify(path, tolerance2):
 def simplify_all(paths, tolerance2):
     totalverts = 0
     optiverts = 0
-	for path in paths:
-        totalverts += len(path)
-        subpaths[u] = simplify(path, tolerance2)
-        optiverts += len(path)
+    for u in xrange(len(paths)):
+        totalverts += len(paths[u])
+        paths[u] = simplify(paths[u], tolerance2)
+    optiverts += len(paths[u])
     # report polyline optimizations    
     difflength = totalverts - optiverts
     diffpct = (100*difflength/totalverts)
-    if diffpct > 10):  # if diff more than 10%
+    if diffpct > 10:  # if diff more than 10%
         logging.info("polylines optimized by " + str(int(diffpct)) + '%')
 
 
@@ -165,13 +165,12 @@ def simplify_all(paths, tolerance2):
 def sort_by_seektime(paths, start=[0.0, 0.0]):
     # sort paths to optimize seek distances in between
     endpoint = start
-    for i in range(len(subpaths)):
-    for i in range(len(paths)):
+    for i in xrange(len(paths)):
         if i > 0:
             endpoint = paths[i-1][len(paths[i-1])-1]
         # search the rest of array for closest path start point
         d2_hash = {}  # distance2:index pairs
-        for j in range(i,len(paths)):
+        for j in xrange(i,len(paths)):
             startpoint = paths[j][0]
             d2_hash[ (endpoint[0]-startpoint[0])**2 + (endpoint[1]-startpoint[1])**2 ] = j
         d2min = 9999999999999999.9

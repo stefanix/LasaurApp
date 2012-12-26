@@ -92,7 +92,7 @@ $(document).ready(function(){
 				$('#pass_2_div div.colorbtns').append('<button class="select_color btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
 				$('#pass_3_div div.colorbtns').append('<button class="select_color btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
       }
-      $('#canvas_properties div.colorbtns').append('<div style="margin-top:10px">These color toggles affect the preview only.</div>');      
+      $('#canvas_properties div.colorbtns').append('<div style="margin-top:10px">These affect the preview only.</div>');      
       // register redraw event
 			$('button.preview_color').click(function(e){
 			  // toggling manually, had problem with automatic

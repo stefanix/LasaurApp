@@ -3,8 +3,8 @@ import re
 import math
 import logging
 
-from webcolors import rgb_to_hex, normalize_hex, css3_names_to_hex
-from utilities import matrixMult, parseFloats
+from .webcolors import rgb_to_hex, normalize_hex, css3_names_to_hex
+from .utilities import matrixMult, parseFloats
 
 log = logging.getLogger("svg_reader")
 

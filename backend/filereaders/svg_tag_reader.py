@@ -3,10 +3,10 @@ import re
 import math
 import logging
 
-from utilities import matrixMult, parseFloats
+from .utilities import matrixMult, parseFloats
 
-from svg_attribute_reader import SVGAttributeReader
-from svg_path_reader import SVGPathReader
+from .svg_attribute_reader import SVGAttributeReader
+from .svg_path_reader import SVGPathReader
 
 log = logging.getLogger("svg_reader")
 
