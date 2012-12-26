@@ -12,7 +12,7 @@ from svg_tag_reader import SVGTagReader
 logging.basicConfig()
 log = logging.getLogger("svg_reader")
 # log.setLevel(logging.DEBUG)
-log.setLevel(logging.WARN)
+# log.setLevel(logging.WARN)
 
 
 
@@ -110,7 +110,7 @@ class SVGReader:
 
         # parse xml
         svgRootElement = ET.fromstring(svgstring)
-        tagName = self._tagReader._getTag(svgRootElement)
+        tagName = self._tagReader._get_tag(svgRootElement)
 
         if tagName != 'svg':
             log.error("Invalid file, no 'svg' tag found.")
@@ -205,19 +205,24 @@ class SVGReader:
         # recursively parse children
         # output will be in self.boundarys    
         node = {
-            'fill': 'black',
-            'stroke': 'none',
-            'stroke': [0,0,0],
-            'xformToWorld': [1,0,0,1,0,0]
+            'xformToWorld': [1,0,0,1,0,0],
+            'display': 'visible',
+            'visibility': 'visible',
+            'fill': '#000000',
+            'stroke': '#000000',
+            'color': '#000000',
+            'fill-opacity': 1.0,
+            'stroke-opacity': 1.0,
+            'opacity': 1.0
         }
-        self.parseChildren(svgRootElement, node)
+        self.parse_children(svgRootElement, node)
         
         # paths by colors will be returned
         return self.boundarys
 
 
     
-    def parseChildren(self, domNode, parentNode):
+    def parse_children(self, domNode, parentNode):
         for child in domNode.getchildren():
             log.debug("considering tag: " + child.tag)
             if self._tagReader.has_handler(child):
@@ -227,19 +232,19 @@ class SVGReader:
                     'paths': [],
                     'xform': [1,0,0,1,0,0],
                     'xformToWorld': parentNode['xformToWorld'],
-                    'opacity': parentNode.get('opacity'),
                     'display': parentNode.get('display'),
                     'visibility': parentNode.get('visibility'),
                     'fill': parentNode.get('fill'),
                     'stroke': parentNode.get('stroke'),
                     'color': parentNode.get('color'),
-                    'fillOpacity': parentNode.get('fillOpacity'),
-                    'strokeOpacity': parentNode.get('strokeOpacity')
+                    'fill-opacity': parentNode.get('fill-opacity'),
+                    'stroke-opacity': parentNode.get('stroke-opacity'),
+                    'opacity': parentNode.get('opacity')
                 }
 
                 # 2. parse child 
                 # with current attributes and transformation
-                self._tagReader.readTag(child, node)
+                self._tagReader.read_tag(child, node)
                 
                 # 3.) compile boundarys + conversions
                 for path in node['paths']:
@@ -250,14 +255,14 @@ class SVGReader:
                             matrixApply(node['xformToWorld'], vert)
                             vertexScale(vert, self.px2mm)
                         # 3b.) sort output by color
-                        hexcolor = rgb_to_hex(node['stroke'])
+                        hexcolor = node['stroke']
                         if hexcolor in self.boundarys:
                             self.boundarys[hexcolor].append(path)
                         else:
                             self.boundarys[hexcolor] = [path]
             
                 # recursive call
-                self.parseChildren(child, node)
+                self.parse_children(child, node)
 
 
 

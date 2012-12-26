@@ -3,7 +3,7 @@ import re
 import math
 import logging
 
-from webcolors import hex_to_rgb, css3_names_to_hex
+from webcolors import rgb_to_hex, normalize_hex, css3_names_to_hex
 from utilities import matrixMult, parseFloats
 
 log = logging.getLogger("svg_reader")
@@ -46,7 +46,7 @@ class SVGAttributeReader:
         }
 
 
-    def readAttrib(self, node, attr, value):
+    def read_attrib(self, node, attr, value):
     	"""Read any attribute.
 
     	This function delegates according to the _handlers map.
@@ -59,7 +59,9 @@ class SVGAttributeReader:
 
     def stringAttrib(self, node, attr, value):
     	"""Read a string attribute."""
-        node[attr] = value
+        if value != 'inherit':
+            node[attr] = value
+
 
     def opacityAttrib(self, node, attr, value):
     	"""Read a opacity attribute."""
@@ -74,9 +76,11 @@ class SVGAttributeReader:
         node[attr] = self._parseUnit(value)
 
     def colorAttrib(self, node, attr, value):
+        # http://www.w3.org/TR/SVG11/color.html
+        # http://www.w3.org/TR/SVG11/painting.html#SpecifyingPaint
     	"""Read a color attribute."""
         col = self._parseColor(value)
-        if col:
+        if col != 'inherit':
 	        node[attr] = col
 
 
@@ -160,7 +164,7 @@ class SVGAttributeReader:
             k = kv[0].strip()
             v = kv[1].strip()
             if k != 'style':  # prevent infinite loop
-                self.readAttrib(node, k, v)
+                self.read_attrib(node, k, v)
         # Also see: Presentations Attributes 
         # http://www.w3.org/TR/SVG11/styling.html#UsingPresentationAttributes
         # example: <rect x="200" y="100" width="600" height="300" 
@@ -215,29 +219,41 @@ class SVGAttributeReader:
 
 
     def _parseColor(self, val):
+        """ Parse a color definition.
+
+        Returns a color in hex format, 'inherit', or 'none'.
+        'none' means that the geometry is not to be rendered.
+        See: http://www.w3.org/TR/SVG11/painting.html#SpecifyingPaint
+        """
     	# http://www.w3.org/TR/SVG11/color.html	
         # http://www.w3.org/TR/2008/REC-CSS2-20080411/syndata.html#color-units
         val = val.strip()
         if val[0] == '#':
-            return hex_to_rgb(val)
+            return normalize_hex(val)
         elif val.startswith('rgba'):
             floats = parseFloats(val[5:-1])
             if len(floats) == 4:
                 log.warn("opacity in rgba is ignored, \
                               use stroke-opacity/fill-opacity instead")
-                return floats
+                return rgb_to_hex(tuple(floats[:3]))
         elif val.startswith('rgb'):
             floats = parseFloats(val[4:-1])
             if len(floats) == 3:
-                return floats
+                return rgb_to_hex(tuple(floats))
+        elif val == 'none': 
+            # 'none' means the geometry is not to be filled or stroked
+            # http://www.w3.org/TR/SVG11/painting.html#SpecifyingPaint
+            return 'none'
         elif val.startswith('hsl'):
             log.warn("hsl/hsla color spaces are not supported")
         elif val.startswith('url'):
             log.warn("defs are not supported");
         elif val in css3_names_to_hex:  # named colors
-            return hex_to_rgb(css3_names_to_hex[val])
+            return css3_names_to_hex[val]
+        elif val in ['currentColor', 'inherit']:
+            return 'inherit'
         else:
 	        log.warn("invalid color, skipped: " + str(val))
-	        return None
+	        return 'inherit'
 
 

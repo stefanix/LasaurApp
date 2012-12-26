@@ -23,7 +23,7 @@ class SVGPathReader:
         self._tolerance2_global = self._tolerance2
 
 
-    def addPath(self, d, node):
+    def add_path(self, d, node):
         """Convert svg path data to normalized polylines.
 
         d is the path data as a list of elements.
