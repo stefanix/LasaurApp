@@ -372,9 +372,15 @@ def svg_upload():
     except:
         pass
 
+    optimize = True
+    try:
+        optimize = bool(int(request.forms.get('optimize')))
+    except:
+        pass
+
     if filename and filedata:
         print "You uploaded %s (%d bytes)." % (filename, len(filedata))
-        res = read_svg(filedata, [1220,610], 0.08, dpi_forced)
+        res = read_svg(filedata, [1220,610], 0.08, dpi_forced, optimize)
         # print boundarys
         jsondata = json.dumps(res)
         # print "returning %d items as %d bytes." % (len(res['boundarys']), len(jsondata))

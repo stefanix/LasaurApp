@@ -51,7 +51,7 @@ class SVGAttributeReader:
 
     	This function delegates according to the _handlers map.
     	"""
-        if attr in self._handlers:
+        if attr in self._handlers and value.strip() != '':
         	log.debug("reading attrib: " + attr + ":" + value)
         	self._handlers[attr](node, attr, value)
 

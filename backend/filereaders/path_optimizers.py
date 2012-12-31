@@ -13,6 +13,8 @@ The format of paths are:
 
 """
 
+log = logging.getLogger("svg_reader")
+
 
 def join_segments(paths, epsilon2):
     """
@@ -25,7 +27,7 @@ def join_segments(paths, epsilon2):
     for path in paths:
 		if nPaths:
 			lastpath = nPaths[-1:][0]
-			enpoint = lastpath[-1:][0]
+			endpoint = lastpath[-1:][0]
 			d2 = (endpoint[0]-path[0][0])**2 + (endpoint[1]-path[0][1])**2
 			if d2 < epsilon2:
 				lastpath.extend(path[1:])
@@ -36,7 +38,7 @@ def join_segments(paths, epsilon2):
 			nPaths.append(path)
     # report pseudo-polyline joining operations
     if join_count > 100:
-        logging.info("joined many line segments: " + str(join_count))
+        log.info("joined many line segments: " + str(join_count))
 
     return nPaths
 
@@ -158,7 +160,7 @@ def simplify_all(paths, tolerance2):
     difflength = totalverts - optiverts
     diffpct = (100*difflength/totalverts)
     if diffpct > 10:  # if diff more than 10%
-        logging.info("polylines optimized by " + str(int(diffpct)) + '%')
+        log.info("polylines optimized by " + str(int(diffpct)) + '%')
 
 
 

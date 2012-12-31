@@ -252,6 +252,7 @@ $(document).ready(function(){
   
   $('#tab_logs_button').click(function(){
     $('#log_content').show()
+    $('#tab_logs div.alert').show()
   })
 
   //////// serial connect button ////////

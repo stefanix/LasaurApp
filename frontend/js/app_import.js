@@ -3,7 +3,7 @@ $(document).ready(function(){
   var geo_boundarys = null;
   var raw_gcode = null;
   var raw_gcode_by_color = null;
-  var path_optimize = true;
+  var path_optimize = 1;
   var forceSvgDpiTo = undefined;
   
   // G-Code Canvas Preview
@@ -56,7 +56,7 @@ $(document).ready(function(){
     $.ajax({
       type: "POST",
       url: "/svg_reader",
-      data: {'filename':filename,'filedata':filedata, 'dpi':forceSvgDpiTo},
+      data: {'filename':filename,'filedata':filedata, 'dpi':forceSvgDpiTo, 'optimize':path_optimize},
       dataType: "json",
       success: function (data) {
         $().uxmessage('success', "SVG parsed."); 
@@ -168,29 +168,29 @@ $(document).ready(function(){
 
   // forwarding file open click
   $('#svg_import_btn').click(function(e){
-    path_optimize = true;
+    path_optimize = 1;
     $('#svg_upload_file').trigger('click');
   });  
   $('#svg_import_72_btn').click(function(e){
-    path_optimize = true;
+    path_optimize = 1;
     forceSvgDpiTo = 72;
     $('#svg_upload_file').trigger('click');
     return false;
   });
   $('#svg_import_90_btn').click(function(e){
-    path_optimize = true;
+    path_optimize = 1;
     forceSvgDpiTo = 90;
     $('#svg_upload_file').trigger('click');
     return false;
   });
   $('#svg_import_96_btn').click(function(e){
-    path_optimize = true;
+    path_optimize = 1;
     forceSvgDpiTo = 96;
     $('#svg_upload_file').trigger('click');
     return false;
   });    
   $('#svg_import_nop_btn').click(function(e){
-    path_optimize = false;
+    path_optimize = 0;
     $('#svg_upload_file').trigger('click');
     return false;
   });  
