@@ -97,6 +97,7 @@ $(document).ready(function(){
       // sensible default assignment to pass1 if only one color
       if (color_count == 1) {
         $('#pass_1_div div.colorbtns').children('button').addClass('active')
+        $().uxmessage('notice', "assigned to pass1");
       }
       $('#canvas_properties div.colorbtns').append('<div style="margin-top:10px">These affect the preview only.</div>');      
       // register redraw event
