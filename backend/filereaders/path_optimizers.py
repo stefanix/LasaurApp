@@ -1,17 +1,22 @@
-
-import math
-import logging
-
 """
 Optimizations of polylines (path) and sets of polylines (paths).
 
 The format of a path is:
 [[x1,y1],[x2,y2],...]
 
-The format of paths are:
+The format of paths is:
 [path1, path2, ...] 
 
+This module is typically used by calling the optimize_all function.
+It takes a boundarys object (paths by color dictionary) and does
+all the optimizations in-place.
 """
+
+__author__ = 'Stefan Hechenberger <stefan@nortd.com>'
+
+
+import math
+import logging
 
 log = logging.getLogger("svg_reader")
 

@@ -86,11 +86,17 @@ $(document).ready(function(){
       $('#pass_1_div div.colorbtns').html('');  // reset colors
       $('#pass_2_div div.colorbtns').html('');  // reset colors
       $('#pass_3_div div.colorbtns').html('');  // reset colors
+      var color_count = 0;
       for (var color in raw_gcode_by_color) {
-				$('#canvas_properties div.colorbtns').append('<button class="preview_color active-strong btn btn-small active" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></button>');          
-				$('#pass_1_div div.colorbtns').append('<button class="select_color btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
+				$('#canvas_properties div.colorbtns').append('<button class="preview_color active-strong btn btn-small active" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></button>');
+        $('#pass_1_div div.colorbtns').append('<button class="select_color btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');
 				$('#pass_2_div div.colorbtns').append('<button class="select_color btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
 				$('#pass_3_div div.colorbtns').append('<button class="select_color btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
+        color_count++;
+      }
+      // sensible default assignment to pass1 if only one color
+      if (color_count == 1) {
+        $('#pass_1_div div.colorbtns').children('button').addClass('active')
       }
       $('#canvas_properties div.colorbtns').append('<div style="margin-top:10px">These affect the preview only.</div>');      
       // register redraw event
