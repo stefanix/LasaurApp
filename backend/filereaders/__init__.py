@@ -8,22 +8,15 @@ __author__ = 'Stefan Hechenberger <stefan@nortd.com>'
 
 
 from .svg_reader import SVGReader
-from .path_optimizers import join_segments, simplify_all, sort_by_seektime
+from .path_optimizers import optimize_all
 
 
 def read_svg(svg_string, target_size, tolerance, forced_dpi=None, optimize=True):
     svgReader = SVGReader(tolerance, target_size)
     boundarys = svgReader.parse(svg_string, forced_dpi)
     dpi_used = svgReader.dpi
-
     if optimize:
-        tolerance2 = tolerance**2
-        epsilon2 = (0.1*tolerance)**2
-        for col in boundarys:
-            boundarys[col] = join_segments(boundarys[col], epsilon2)
-            simplify_all(boundarys[col], tolerance2)
-            sort_by_seektime(boundarys[col])
-
+        optimize_all(boundarys, tolerance)
     return {'boundarys':boundarys, 'dpi':dpi_used}
 
 

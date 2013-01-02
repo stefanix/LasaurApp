@@ -187,3 +187,12 @@ def sort_by_seektime(paths, start=[0.0, 0.0]):
             paths[i] = paths[d2minIndex]
             paths[d2minIndex] = tempItem
 
+
+
+def optimize_all(boundarys, tolerance):
+    tolerance2 = tolerance**2
+    epsilon2 = (0.1*tolerance)**2
+    for color in boundarys:
+        boundarys[color] = join_segments(boundarys[color], epsilon2)
+        simplify_all(boundarys[color], tolerance2)
+        sort_by_seektime(boundarys[color])
