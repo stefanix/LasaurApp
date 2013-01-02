@@ -21,7 +21,7 @@ def read_svg(svg_string, target_size, tolerance, forced_dpi=None, optimize=True)
         epsilon2 = (0.1*tolerance)**2
         for col in boundarys:
             boundarys[col] = join_segments(boundarys[col], epsilon2)
-            # boundarys[col] = simplify_all(boundarys[col], tolerance2)
+            simplify_all(boundarys[col], tolerance2)
             sort_by_seektime(boundarys[col])
 
     return {'boundarys':boundarys, 'dpi':dpi_used}

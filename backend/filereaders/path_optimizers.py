@@ -155,7 +155,7 @@ def simplify_all(paths, tolerance2):
     for u in xrange(len(paths)):
         totalverts += len(paths[u])
         paths[u] = simplify(paths[u], tolerance2)
-    optiverts += len(paths[u])
+        optiverts += len(paths[u])
     # report polyline optimizations    
     difflength = totalverts - optiverts
     diffpct = (100*difflength/totalverts)
