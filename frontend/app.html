@@ -211,13 +211,25 @@
 									<div class="row" style="margin-left:0px">
 										<div id="cutting_area" style="position:relative; width:610px; height:305px; border:1px dashed #aaaaaa;">
 											<div id="coordinates_info" style="margin:4px"></div>
-											<div id="offset_area" style="display:none; position:absolute; top:100px; left:100px; width:100px; height:100px; border-top:1px dashed #aaaaaa; border-left:1px dashed #aaaaaa">
+											<div id="offset_area" style="display:none; position:absolute; top:100px; left:100px; width:100px; height:100px; border-top:1px solid #aaaaaa; border-left:1px solid #aaaaaa">
 												<div id="offset_info" style="margin:4px"></div>
 											</div>
+											<div id="current_position-b" style="position:absolute; top:-10px; left:-10px; width:10px; height:10px; border-bottom:1px solid #aaaaaa; border-right:1px solid #aaaaaa">
+											</div>
+											<div id="current_position" style="position:absolute; top:0px; left:0px; width:10px; height:10px; border-top:1px solid #aaaaaa; border-left:1px solid #aaaaaa">
+											</div>
+											
 										</div>	
 									</div>
-									<div class="row" style="width:475px; margin-left:auto; margin-right:auto; margin-top:20px">
+									<div class="row" style="width:610px; margin-left:auto; margin-right:auto; margin-top:20px">
+										<div id="set00_btn" style="width:150px;" class="btn-group pull-left" data-toggle="buttons-radio">
+											<span id="set_here_00" class="btn ">Set(0,0)</span>
+											<input id="x_field" type="textfield"  value="0" style="width:26px;">
+											<input id="y_field" type="textfield"  value="0" style="width:26px;">
+										</div>
+																				
 										<div id="seek_feed_btns" class="btn-group pull-left" data-toggle="buttons-radio">
+											
 											<button id="seek_btn" class="btn active">Move</button>
 											<button id="feed_btn" class="btn">Cut</button>
 										</div>
@@ -237,6 +249,7 @@
 										</div>										
 									
 									</div>
+	
 									<div class="row well" style="width:140px; height:130px; margin-left:auto; margin-right:auto; margin-top:16px;background-color:#dddddd">
 											<div class="row" style="width:44px; margin-left:auto; margin-right:auto;">
 												<button id="jog_up_btn" class="btn btn-large"><i class="icon-arrow-up"></i></button>
@@ -253,7 +266,15 @@
 						    <div class="alert" style="width:400px">
 							    <a class="close" data-dismiss="alert">×</a>
 							    <strong>Note!</strong> Set an offset by shift-clicking in the work area.
-						    </div>								
+						    </div>	
+						    <div class="alert" style="width:400px">
+							    <a class="close" data-dismiss="alert">×</a>
+							    <strong>Note!</strong> Shift-click arrow for finer movement.
+						    </div>	
+						    <div class="alert" style="width:400px">
+							    <a class="close" data-dismiss="alert">×</a>
+							    <strong>Note!</strong> Use keyboard arrow keys for movement and return key to set home.
+						    </div>						
 							</div> <!-- end of mover tab -->					
 
 							<!--content end-->

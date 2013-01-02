@@ -52,6 +52,46 @@ function send_gcode(gcode, success_msg, error_msg) {
   }); 
 }
 
+function set00(x,y){
+	//set offset
+    $("#offset_area").show();
+    $("#offset_area").animate({
+      opacity: 1.0,
+      left: x,
+      top: y,
+      width: 609-x,
+      height: 304-y
+    }, 200 );
+    gcode_coordinate_offset = [x,y];
+    var gcode = 'G10 L2 P1 X'+ 2.0*x + ' Y' + 2.0*y + '\nG55\n';
+    send_gcode(gcode, "Offset set.", "Serial not connected.");
+		$(this).css('border', '1px dashed #aaaaaa');
+		$("#offset_area").css('border', '1px dashed #ff0000');
+
+}
+
+function show_position(x,y){
+	$("#current_position").show();
+    $("#current_position").animate({
+      opacity: 1.0,
+      left: x,
+      top: y,
+      width: 10,
+      height: 10
+    }, 200 );
+	$("#current_position").css('border', '1px 0 0 1px solid #aaaaaa');
+
+	$("#current_position-b").show();
+    $("#current_position-b").animate({
+      opacity: 1.0,
+      left: x-10,
+      top: y-10,
+      width: 10,
+      height: 10
+    }, 200 );
+	$("#current_position-b").css('border', '0 1px 1px 0 solid #aaaaaa');
+	
+}
 
 var queue_num_index = 1;
 function save_and_add_to_job_queue(name, gcode) {  
@@ -348,7 +388,7 @@ $(document).ready(function(){
   	send_gcode(gcode, "Stopping ...", "Serial not connected.");	
 	  var delayedresume = setTimeout(function() {
     	var gcode = '~\nG0X0Y0F20000\n'  // ~ is resume char
-    	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
+    	$().uxmessage('notice', gcode.replace(/\n/g, 'show_pos<br>'));
     	send_gcode(gcode, "Resetting ...", "Serial not connected.");
 	  }, 1000);
   	e.preventDefault();		
@@ -375,6 +415,24 @@ $(document).ready(function(){
     	// also reset offset
     	reset_offset();
     }
+	// show_position($("#cutting_area").offset.left,$("#cutting_area").offset.top);
+    if (gcode_coordinate_offset) {
+		var cutting= $("#cutting_area").offset();
+		var offset = $("#offset_area").offset();
+		show_position(offset.left-cutting.left,offset.top-cutting.top);
+		currentX=offset.left-cutting.left;
+		currentY=offset.top-cutting.top;
+		$('#x_field').val(currentX*2.0);
+		$('#y_field').val(currentY*2.0);
+	}else{
+		var cutting= $("#cutting_area").offset();
+		show_position(0,0);
+		currentX=0;
+		currentY=0;
+		$('#x_field').val(currentX*2.0);
+		$('#y_field').val(currentY*2.0);		
+	}
+	
     gcode = 'G0X0Y0F16000\n'
     // $().uxmessage('notice', gcode);  
   	send_gcode(gcode, "Going to origin ...", "Serial not connected.");
