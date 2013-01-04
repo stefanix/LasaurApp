@@ -1,10 +1,10 @@
 $(document).ready(function(){
   
-  var geo_boundarys = null;
   var raw_gcode = null;
   var raw_gcode_by_color = null;
   var path_optimize = 1;
   var forceSvgDpiTo = undefined;
+  var numOfPassWidgets = 3;
   
   // G-Code Canvas Preview
   var icanvas = new Canvas('#import_canvas');
@@ -62,8 +62,7 @@ $(document).ready(function(){
         $().uxmessage('success', "SVG parsed."); 
         $('#dpi_import_info').html('Using <b>' + data.dpi + 'dpi</b> for converting px units.');
         // alert(JSON.stringify(data));
-        geo_boundarys = data.boundarys
-        generateRawGcode();
+        handleParsedGeometry(data);
       },
       error: function (data) {
         $().uxmessage('error', "backend error.");
@@ -75,32 +74,71 @@ $(document).ready(function(){
     });
   }
       
-  function generateRawGcode() {
-    if (geo_boundarys) {
+  function handleParsedGeometry(data) {
+    // data is a dict with the following keys [boundarys, dpi, lasertags]
+    var boundarys = data.boundarys;
+    if (boundarys) {
       raw_gcode_by_color = {};
-      for (var color in geo_boundarys) {
-        raw_gcode_by_color[color] = GcodeWriter.write(geo_boundarys[color], 1.0, 0.0, 0.0);
+      for (var color in boundarys) {
+        raw_gcode_by_color[color] = GcodeWriter.write(boundarys[color], 1.0, 0.0, 0.0);
       }
-      //// add canvas color properties
+      // reset previous color toggles
       $('#canvas_properties div.colorbtns').html('');  // reset colors
       $('#pass_1_div div.colorbtns').html('');  // reset colors
       $('#pass_2_div div.colorbtns').html('');  // reset colors
       $('#pass_3_div div.colorbtns').html('');  // reset colors
-      var color_count = 0;
+      // add color toggles to preview and pass widgets
+      var color_order = {};  // need this to easily activate button from lasertags
+      var color_count = 0;   // need this to default single color geos to pass1
       for (var color in raw_gcode_by_color) {
 				$('#canvas_properties div.colorbtns').append('<button class="preview_color active-strong btn btn-small active" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></button>');
         $('#pass_1_div div.colorbtns').append('<button class="select_color btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');
 				$('#pass_2_div div.colorbtns').append('<button class="select_color btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
 				$('#pass_3_div div.colorbtns').append('<button class="select_color btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
+        color_order[color] = color_count;
         color_count++;
       }
-      // sensible default assignment to pass1 if only one color
-      if (color_count == 1) {
-        $('#pass_1_div div.colorbtns').children('button').addClass('active')
-        $().uxmessage('notice', "assigned to pass1");
+      // default selections for pass widgets, lasertags handling
+      if (data.lasertags) {
+        // [('1', 'intensity', '100'), ('1', 'feedrate', '2000'), ('1', 'color', '#ff0000'), ('1', 'color', '#0000ff')]
+        $().uxmessage('notice', "lasertags -> applying settings");
+        var tags = data.lasertags;
+        // alert(JSON.stringify(tags))
+        for (var i=0; i<tags.length; i++){
+          var triplet = tags[i];
+          if (triplet.length == 3) {
+            var pass = triplet[0];
+            var key = triplet[1];
+            var value = triplet[2];
+            if (typeof(pass) === 'number' && pass <= numOfPassWidgets) {
+              if (((key == 'intensity' || key == 'feedrate') && typeof(value) === 'number' ) || (key =='color' && value[0] == '#')) {
+                if (key == 'intensity') {  // apply pass settings
+                  $('#import_intensity_'+pass).val(value);
+                } else if (key == 'feedrate') {  // apply pass settings
+                  $('#import_feedrate_'+pass).val(value);
+                } else if (key == 'color' && value in color_order) {  // apply color assignment
+                  $('#pass_'+pass+'_div div.colorbtns button:eq('+color_order[value]+')').addClass('active active-strong')
+                }
+              } else {
+                $().uxmessage('error', "invalid lasertag (key,value)");
+              }
+            } else {
+              $().uxmessage('error', "invalid lasertag (pass number)");
+            }
+          } else {
+            $().uxmessage('error', "invalid lasertag (num of args)");
+          }
+        }
+      } else {
+        // no lasertags, if only one color assign to pass1
+        if (color_count == 1) {
+          $('#pass_1_div div.colorbtns').children('button').addClass('active')
+          $().uxmessage('notice', "assigned to pass1");
+        }
       }
+      // add some info text
       $('#canvas_properties div.colorbtns').append('<div style="margin-top:10px">These affect the preview only.</div>');      
-      // register redraw event
+      // color preview toggles events registration
 			$('button.preview_color').click(function(e){
 			  // toggling manually, had problem with automatic
 			  if($(this).hasClass('active')) {
@@ -112,6 +150,7 @@ $(document).ready(function(){
 			  }
         generatePreview();
       });
+      // color pass widget toggles events registration
 			$('button.select_color').click(function(e){
 			  // increase button state visually
 			  if($(this).hasClass('active')) {

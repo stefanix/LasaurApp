@@ -81,6 +81,13 @@ class SVGReader:
         self.tolerance2 = tolerance**2
         self.tolerance2_half = (0.5*tolerance)**2
         self.tolerance2_px = None
+
+        # lasersaur cut setting from SVG file
+        # list of triplets ... [(pass#, key, value), ...]
+        # pass# designates the pass this lasertag controls
+        # key is the kind of setting (one of: intensity, feedrate, color)
+        # value is the actual value to use
+        self.lasertags = []
         
         # # tags that should not be further traversed
         # self.ignore_tags = {'defs':None, 'pattern':None, 'clipPath':None}
@@ -220,13 +227,17 @@ class SVGReader:
         }
         self.parse_children(svgRootElement, node)
         
-        # paths by colors will be returned
-        return self.boundarys
+        # build result dictionary
+        parse_results = {'boundarys':self.boundarys, 'dpi':self.dpi}
+        if self.lasertags:
+            parse_results['lasertags'] = self.lasertags
+
+        return parse_results
 
 
     
     def parse_children(self, domNode, parentNode):
-        for child in domNode.getchildren():
+        for child in domNode:
             log.debug("considering tag: " + child.tag)
             if self._tagReader.has_handler(child):
                 # 1. setup a new node
@@ -249,7 +260,7 @@ class SVGReader:
                 # with current attributes and transformation
                 self._tagReader.read_tag(child, node)
                 
-                # 3.) compile boundarys + conversions
+                # 3. compile boundarys + conversions
                 for path in node['paths']:
                     if path:  # skip if empty subpath
                         # 3a.) convert to world coordinates and then to mm units
@@ -263,6 +274,10 @@ class SVGReader:
                             self.boundarys[hexcolor].append(path)
                         else:
                             self.boundarys[hexcolor] = [path]
+
+                # 4. any lasertags (cut settings)?
+                if node.has_key('lasertags'):
+                    self.lasertags.extend(node['lasertags'])
             
                 # recursive call
                 self.parse_children(child, node)

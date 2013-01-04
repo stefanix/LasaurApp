@@ -33,7 +33,8 @@ class SVGTagReader:
             'ellipse': self.ellipse,
             'image': self.image,
             'defs': self.defs,
-            'style': self.style
+            'style': self.style,
+            'text': True  # text is special, see read_tag func
         }
 
 
@@ -62,7 +63,10 @@ class SVGTagReader:
             # accumulate transformations
             node['xformToWorld'] = matrixMult(node['xformToWorld'], node['xform'])
             # read tag
-            self._handlers[tagName](node)
+            if (tagName != 'text'):
+                self._handlers[tagName](node)
+            else:
+                self.find_cut_settings_tags(tag, node)
 
 
     def has_handler(self, tag):
@@ -176,7 +180,6 @@ class SVGTagReader:
                      'A', rx, ry, 0, 0, 0, cx-rx, cy,
                      'Z']          
                 self._pathReader.add_path(d, node)
-    
 
 
     def image(self, node):
@@ -199,6 +202,32 @@ class SVGTagReader:
                       attributes or the style attribute instead")     
 
 
+
+    def find_cut_settings_tags(self, tag, node):    
+        # Parse special text used for setting lasersaur cut 
+        # parameters from within the SVG file.
+        # Any text in the SVG file within a 'text' tag (and one level deep)
+        # with the following format gets read.
+        # =pass1:intensity:100=
+        # =pass1:feedrate:2000=
+        # =pass1:color:#ff0000=
+        # =pass1:color:#0000ff=
+        text_accum = [tag.text or '']
+        # # search one level deep
+        for child in tag:
+            text_accum.append(child.text or '')
+        text_accum = ' '.join(text_accum)
+        matches = re.findall('=pass([0-9]+):(intensity|feedrate|color):([0-9]+|#([a-fA-F0-9]{3}|[a-fA-F0-9]{6}))=', text_accum, re.IGNORECASE)
+        # convert values to actual numbers
+        for i in xrange(len(matches)):
+            triplet = list(matches[i])[:3]  # use only first 3 groups
+            triplet[0] = float(triplet[0])
+            if (triplet[1] == 'intensity' or triplet[1] == 'feedrate') and triplet[2][0] != '#':
+                triplet[2] = float(triplet[2])
+            matches[i] = triplet
+        # store in the following format
+        # [(1, 'intensity', 100), (1, 'feedrate', 2000), (1, 'color', '#ff0000'), (1, 'color', #0000ff)]
+        node['lasertags'] = matches
 
 
     def _get_tag(self, domNode):

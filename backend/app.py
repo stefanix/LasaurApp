@@ -128,6 +128,10 @@ def static_js_handler(path):
 @route('/img/:path#.+#')
 def static_img_handler(path):
     return static_file(path, root=os.path.join(resources_dir(), 'frontend/img'))
+
+@route('/favicon.ico')
+def favicon_handler():
+    return static_file('favicon.ico', root=os.path.join(resources_dir(), 'frontend/img'))
     
 
 ### LIBRARY
