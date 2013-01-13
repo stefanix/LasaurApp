@@ -228,15 +228,25 @@ function load_into_gcode_widget(gcode, name) {
 
 function mapConstrainFeedrate(rate) {
   rate = parseInt(rate);
-  if (rate < .1) {rate = .1;}
-  else if (rate > 24000) {rate = 24000;}
+  if (rate < .1) {
+    rate = .1;
+    $().uxmessage('warning', "Feedrate constrained to 0.1");
+  } else if (rate > 24000) {
+    rate = 24000;
+    $().uxmessage('warning', "Feedrate constrained to 24000");
+  }
   return rate.toString();
 }
   
 function mapConstrainIntesity(intens) {
   intens = parseInt(intens);
-  if (intens < 0) {intens = 0;}
-  else if (intens > 100) {intens = 100;}
+  if (intens < 0) {
+    intens = 0;
+    $().uxmessage('warning', "Intensity constrained to 0");
+  } else if (intens > 100) {
+    intens = 100;
+    $().uxmessage('warning', "Intensity constrained to 100");
+  }
   //map to 255 for now until we change the backend
   return Math.round(intens * 2.55).toString();
 }

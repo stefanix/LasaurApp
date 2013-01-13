@@ -56,3 +56,66 @@ For other USB devices thee following may be useful too:
 - sudo kextunload -b com.apple.driver.AppleUSBCDCWCM
 - sudo kextunload -b com.apple.driver.AppleUSBCDCACMData
 - sudo kextunload -b com.apple.driver.AppleUSBCDCACMControl 
+
+
+BeagleBone/DriveBoard Notes
+-----------------------------
+The DriveBoard uses UART1 of the BeagleBone. Under Angstrom Linux this gets
+mapped to "/dev/ttyO1".
+
+### Python Code
+
+SERIAL_PORT = "/dev/ttyO1"
+# echo 0 > /sys/kernel/debug/omap_mux/uart1_txd
+fw = file("/sys/kernel/debug/omap_mux/uart1_txd", "w")
+fw.write("%X" % (0))
+fw.close()
+# echo 20 > /sys/kernel/debug/omap_mux/uart1_rxd
+fw = file("/sys/kernel/debug/omap_mux/uart1_rxd", "w")
+fw.write("%X" % ((1 << 5) | 0))
+fw.close()
+
+
+The BeagleBone also controls the reset pin of the Atmega328 chip. It's
+connected to GPIO2_7 which maps to pin 71 (2 * 32 + 7).
+
+### Python code
+
+# echo 71 > /sys/class/gpio/export
+fw = file("/sys/class/gpio/export", "w")
+fw.write("%d" % (71))
+fw.close()
+
+# set the gpio pin to output
+# echo out > /sys/class/gpio/gpio71/direction
+fw = file("/sys/class/gpio/gpio71/direction", "w")
+fw.write("out")
+fw.close()
+
+# set the gpio pin high
+# echo 1 > /sys/class/gpio/gpio71/value
+fw = file("/sys/class/gpio/gpio71/value", "w")
+fw.write("1")
+fw.flush()
+
+# set the pin low again
+# echo 0 > /sys/class/gpio/gpio71/value
+# Note: the flush() isn't necessary if you immediately close the file after writing
+fw.write("0")
+fw.close()
+
+
+The BeagleBone can also sense which stepper drivers are being used. For
+this read pin GPIO2_12 (2*32+12 = 76). Low means Geckos, high means SMC11s.
+
+### Python code
+
+# set the gpio pin to input
+fw = file("/sys/class/gpio/gpio76/direction", "w")
+fw.write("in")
+fw.close()
+
+# get the gpio pin
+fw = file("/sys/class/gpio/gpio76/value", "r")
+ret = fw.read()
+fw.close()

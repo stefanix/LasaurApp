@@ -57,7 +57,7 @@
 					<div class="span2 tabs-left">
 						<ul class="nav nav-tabs" style="width:100%">			
 							<li class="active"><a href="#tab_jobs" id="tab_jobs_button" data-toggle="tab"><i class="icon-th-list" style="margin-right:2px"></i> Laser Jobs</a></li>
-							<li><a href="#tab_import" id="tab_import_button" data-toggle="tab"><i class="icon-folder-open" style="margin-right:2px"></i> SVG Import</a></li>
+							<li><a href="#tab_import" id="tab_import_button" data-toggle="tab"><i class="icon-folder-open" style="margin-right:2px"></i> File Import</a></li>
 							<li><a href="#tab_mover" id="tab_mover_button" data-toggle="tab"><i class="icon-move" style="margin-right:2px"></i> Direct Control</a></li>
 							<li><a href="#tab_logs" id="tab_logs_button" data-toggle="tab"><i class="icon-exclamation-sign" style="margin-right:2px"></i> Logs</a></li>							
 						</ul>
@@ -123,7 +123,7 @@
 									    	<li><a id="svg_import_nop_btn" href="#">Import without Optimizing</a></li>
 									    </ul>
 								    </div>
-										<div id="dpi_import_info" class="pull-left" style="margin:10px"></div>
+										<div id="dpi_import_info" class="pull-left" style="margin:10px">Supported file formats are: <b>SVG</b></div>
 										
 										<div class="pull-left">
 											<form id="svg_upload_form" action="#" onsubmit="return false;">
@@ -140,61 +140,69 @@
 										</div>												
 									</div>
 									
-									<div class="row" style="margin-top:16px">
-										<div id="pass_1_div" class="well span2 pull-left" style="padding:8px; background-color:#dddddd">
-											<label>Pass 1</label>
-											<form class="form-inline" style="margin-bottom:8px">												
-												<div class="input-prepend">
-													<span class="add-on" style="margin-right:-5px;">F</span>
-													<input type="text" id="import_feedrate_1" value="600" title="feedrate 1-8000mm/min" style="width:32px" data-delay="500">
-												</div>
-												<div class="input-prepend">
-													<span class="add-on" style="margin-right:-5px;">%</span>
-													<input id="import_intensity_1" type="textfield" value="100" title="intensity 0-100%" style="width:26px;" data-delay="500">
-												</div>
-											</form>
-											<div class="colorbtns"></div>
+									<div class="well clearfix" style="width:594px; margin:0px; margin-top:10px; padding:8px; background-color:#dddddd">
+										<div class="pull-right" style="width:180px; color:#888888">
+											<p>Vector cuts: Use one or more passes with different cut parameters (feedrate, intensity). Assign path colors to passes as needed.</p>
+											<p>Need <a href="">more passes?</a></p>
 										</div>
-										<div id="pass_2_div" class="well span2 pull-left" style="margin-left:10px; padding:8px; background-color:#dddddd">
-											<label>Pass 2</label>
-											<form class="form-inline" style="margin-bottom:8px">												
-												<div class="input-prepend">
-													<span class="add-on" style="margin-right:-5px;">F</span>
-													<input type="text" id="import_feedrate_2" value="2000" title="feedrate 1-8000mm/min" style="width:32px" data-delay="500">
+										<div class="pull-left" style="width:400px">
+											<div id="pass_1_div" class="row well" style="margin:0px; padding:4px; background-color:#eeeeee">
+												<div class="form-inline" style="margin-bottom:0px">												
+													<label>Pass 1: </label>
+													<div class="input-prepend">
+														<span class="add-on" style="margin-right:-5px;">F</span>
+														<input type="text" id="import_feedrate_1" value="600" title="feedrate 1-8000mm/min" style="width:32px" data-delay="500">
+													</div>
+													<div class="input-prepend">
+														<span class="add-on" style="margin-right:-5px;">%</span>
+														<input id="import_intensity_1" type="textfield" value="100" title="intensity 0-100%" style="width:26px;" data-delay="500">
+													</div>
+													<span class="colorbtns"></span>
 												</div>
-												<div class="input-prepend">
-													<span class="add-on" style="margin-right:-5px;">%</span>
-													<input id="import_intensity_2" type="textfield" value="100" title="intensity 0-100%" class="span2" style="width:26px;" data-delay="500">
-												</div>													
-											</form>
-											<div class="colorbtns"></div>											
-										</div>											
-										<div id="pass_3_div" class="well span2 pull-left" style="margin-left:10px; padding:8px; background-color:#dddddd">
-											<label>Pass 3</label>
-											<form class="form-inline" style="margin-bottom:8px">												
-												<div class="input-prepend">
-													<span class="add-on" style="margin-right:-5px;">F</span>
-													<input type="text" id="import_feedrate_3" value="4000" title="feedrate 1-8000mm/min" style="width:32px" data-delay="500">
+											</div>
+											<div id="pass_2_div" class="row well" style="margin:0px; margin-top:6px; padding:4px; background-color:#eeeeee">
+												<div class="form-inline" style="margin-bottom:0px">												
+													<label>Pass 2: </label>
+													<div class="input-prepend">
+														<span class="add-on" style="margin-right:-5px;">F</span>
+														<input type="text" id="import_feedrate_2" value="600" title="feedrate 1-8000mm/min" style="width:32px" data-delay="500">
+													</div>
+													<div class="input-prepend">
+														<span class="add-on" style="margin-right:-5px;">%</span>
+														<input id="import_intensity_2" type="textfield" value="100" title="intensity 0-100%" style="width:26px;" data-delay="500">
+													</div>
+													<span class="colorbtns"></span>
 												</div>
-												<div class="input-prepend">
-													<span class="add-on" style="margin-right:-5px;">%</span>
-													<input id="import_intensity_3" type="textfield" value="100" title="intensity 0-100%" class="span2" style="width:26px;" data-delay="500">
+											</div>
+											<div id="pass_3_div" class="row well" style="margin:0px; margin-top:6px; padding:4px; background-color:#eeeeee">
+												<div class="form-inline" style="margin-bottom:0px">												
+													<label>Pass 3: </label>
+													<div class="input-prepend">
+														<span class="add-on" style="margin-right:-5px;">F</span>
+														<input type="text" id="import_feedrate_3" value="600" title="feedrate 1-8000mm/min" style="width:32px" data-delay="500">
+													</div>
+													<div class="input-prepend">
+														<span class="add-on" style="margin-right:-5px;">%</span>
+														<input id="import_intensity_3" type="textfield" value="100" title="intensity 0-100%" style="width:26px;" data-delay="500">
+													</div>
+													<span class="colorbtns"></span>
 												</div>
-											</form>
-											<div class="colorbtns"></div>																	
-										</div>																														
+											</div>
+										</div>
 									</div>
-									
-									<button id="import_to_queue" class="btn btn-large">
-										<i class="icon-th-list"></i> Add to Queue
-									</button>
+
+									<div style="clear:both">
+										<button id="import_to_queue" class="btn btn-large" style="margin-top:16px">
+											<i class="icon-th-list"></i> Add to Queue
+										</button>
+									</div>
 									
 								</div> <!--end of well-->
 								
-						    <div class="alert" style="width:400px">
-							    <a class="close" data-dismiss="alert">×</a>
-							    <strong>Note!</strong> Set page size in your SVG vector app to 1220x610mm.
-						    </div>					
+							    <div class="alert" style="width:400px">
+								    <a class="close" data-dismiss="alert">×</a>
+								    <strong>Note!</strong> Set page size in your SVG vector app to 1220x610mm.
+							    </div>					
 							</div> <!-- end of import tab -->							
 
 							<div id="tab_mover" class="tab-pane" style="margin-left:0px">

@@ -83,18 +83,18 @@ $(document).ready(function(){
         raw_gcode_by_color[color] = GcodeWriter.write(boundarys[color], 1.0, 0.0, 0.0);
       }
       // reset previous color toggles
-      $('#canvas_properties div.colorbtns').html('');  // reset colors
-      $('#pass_1_div div.colorbtns').html('');  // reset colors
-      $('#pass_2_div div.colorbtns').html('');  // reset colors
-      $('#pass_3_div div.colorbtns').html('');  // reset colors
+      $('#canvas_properties .colorbtns').html('');  // reset colors
+      $('#pass_1_div div .colorbtns').html('');  // reset colors
+      $('#pass_2_div div .colorbtns').html('');  // reset colors
+      $('#pass_3_div div .colorbtns').html('');  // reset colors
       // add color toggles to preview and pass widgets
       var color_order = {};  // need this to easily activate button from lasertags
       var color_count = 0;   // need this to default single color geos to pass1
       for (var color in raw_gcode_by_color) {
-				$('#canvas_properties div.colorbtns').append('<button class="preview_color active-strong btn btn-small active" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></button>');
-        $('#pass_1_div div.colorbtns').append('<button class="select_color btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');
-				$('#pass_2_div div.colorbtns').append('<button class="select_color btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
-				$('#pass_3_div div.colorbtns').append('<button class="select_color btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
+				$('#canvas_properties .colorbtns').append('<button class="preview_color active-strong btn btn-small active" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></button>');
+        $('#pass_1_div div .colorbtns').append('<button class="select_color btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');
+				$('#pass_2_div div .colorbtns').append('<button class="select_color btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
+				$('#pass_3_div div .colorbtns').append('<button class="select_color btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
         color_order[color] = color_count;
         color_count++;
       }
@@ -117,7 +117,7 @@ $(document).ready(function(){
                 } else if (key == 'feedrate') {  // apply pass settings
                   $('#import_feedrate_'+pass).val(value);
                 } else if (key == 'color' && value in color_order) {  // apply color assignment
-                  $('#pass_'+pass+'_div div.colorbtns button:eq('+color_order[value]+')').addClass('active active-strong')
+                  $('#pass_'+pass+'_div .colorbtns button:eq('+color_order[value]+')').addClass('active active-strong')
                 }
               } else {
                 $().uxmessage('error', "invalid lasertag (key,value)");
@@ -132,12 +132,12 @@ $(document).ready(function(){
       } else {
         // no lasertags, if only one color assign to pass1
         if (color_count == 1) {
-          $('#pass_1_div div.colorbtns').children('button').addClass('active')
+          $('#pass_1_div div .colorbtns').children('button').addClass('active')
           $().uxmessage('notice', "assigned to pass1");
         }
       }
       // add some info text
-      $('#canvas_properties div.colorbtns').append('<div style="margin-top:10px">These affect the preview only.</div>');      
+      $('#canvas_properties .colorbtns').append('<div style="margin-top:10px; color:#888888">These affect the preview only.</div>');      
       // color preview toggles events registration
 			$('button.preview_color').click(function(e){
 			  // toggling manually, had problem with automatic
@@ -169,7 +169,7 @@ $(document).ready(function(){
   function generatePreview() {
     if (raw_gcode_by_color) {        
       var exclude_colors =  {};
-      $('#canvas_properties div.colorbtns button').each(function(index) {
+      $('#canvas_properties .colorbtns button').each(function(index) {
         if (!($(this).hasClass('active'))) {
           // alert(JSON.stringify($(this).find('div i').text()));
           exclude_colors[$(this).find('div span').text()] = 1;
@@ -250,7 +250,7 @@ $(document).ready(function(){
   $('#import_intensity_3').tooltip();
   
   // setting up add to queue button
-  $("#import_to_queue").click(function(e) {            
+  $("#import_to_queue").click(function(e) {   
     // assemble multiple passes
     var gcodeparts = ["%\nG21\nG90\n"];
     var feedrate;
@@ -258,7 +258,7 @@ $(document).ready(function(){
     var colors = {};
     var any_assingments = false;
     //// pass 1
-    $('#pass_1_div div.colorbtns button').each(function(index) {
+    $('#pass_1_div div .colorbtns button').each(function(index) {
       if ($(this).hasClass('active')) {
         colors[$(this).find('div span').text()] = 1;
       }
@@ -276,7 +276,7 @@ $(document).ready(function(){
     }
     //// pass 2
     colors = {}
-    $('#pass_2_div div.colorbtns button').each(function(index) {
+    $('#pass_2_div div .colorbtns button').each(function(index) {
       if ($(this).hasClass('active')) {
         colors[$(this).find('div span').text()] = 1;
       }
@@ -294,7 +294,7 @@ $(document).ready(function(){
     }
     //// pass 3
     colors = {}
-    $('#pass_3_div div.colorbtns button').each(function(index) {
+    $('#pass_3_div div .colorbtns button').each(function(index) {
       if ($(this).hasClass('active')) {
         colors[$(this).find('div span').text()] = 1;
       }

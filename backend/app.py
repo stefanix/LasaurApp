@@ -5,12 +5,12 @@ import socket, webbrowser
 import wsgiref.simple_server
 from bottle import *
 from serial_manager import SerialManager
-from flash import flash_upload
+from flash import flash_upload, flash_upload_beaglebone
 from filereaders import read_svg
 
 
 APPNAME = "lasaurapp"
-VERSION = "12.08g"
+VERSION = "13.01"
 COMPANY_NAME = "com.nortd.labs"
 SERIAL_PORT = None
 BITSPERSECOND = 57600
@@ -65,22 +65,22 @@ def storage_dir():
 
 
 
-def run_with_callback(host):
+def run_with_callback(host, port):
     """ Start a wsgiref server instance with control over the main loop.
         This is a function that I derived from the bottle.py run()
     """
     handler = default_app()
-    server = wsgiref.simple_server.make_server(host, NETWORK_PORT, handler)
+    server = wsgiref.simple_server.make_server(host, port, handler)
     server.timeout = 0.01
     server.quiet = True
     print "-----------------------------------------------------------------------------"
     print "Bottle server starting up ..."
     print "Serial is set to %d bps" % BITSPERSECOND
     print "Point your browser to: "    
-    print "http://%s:%d/      (local)" % ('127.0.0.1', NETWORK_PORT)    
+    print "http://%s:%d/      (local)" % ('127.0.0.1', port)    
     if host == '':
         try:
-            print "http://%s:%d/   (public)" % (socket.gethostbyname(socket.gethostname()), NETWORK_PORT)
+            print "http://%s:%d/   (public)" % (socket.gethostbyname(socket.gethostname()), port)
         except socket.gaierror:
             # print "http://beaglebone.local:4444/      (public)"
             pass
@@ -88,7 +88,7 @@ def run_with_callback(host):
     print "-----------------------------------------------------------------------------"    
     print
     try:
-        webbrowser.open_new_tab('http://127.0.0.1:'+str(NETWORK_PORT))
+        webbrowser.open_new_tab('http://127.0.0.1:'+str(port))
         pass
     except webbrowser.Error:
         print "Cannot open Webbrowser, please do so manually."
@@ -471,21 +471,25 @@ def run_helper():
             print "Data root is: " + sys._MEIPASS             
         print "Persistent storage root is: " + storage_dir()
     if args.build_and_flash:
-        return_code = flash_upload(SERIAL_PORT, resources_dir())
+        if args.beaglebone:
+            return_code = flash_upload_beaglebone(SERIAL_PORT, resources_dir())
+        else:
+            return_code = flash_upload(SERIAL_PORT, resources_dir())
         if return_code == 0:
             print "SUCCESS: Arduino appears to be flashed."
         else:
             print "ERROR: Failed to flash Arduino."
     else:
         if args.host_on_all_interfaces:
-            run_with_callback('')
+            run_with_callback('', NETWORK_PORT)
         else:
-            run_with_callback('127.0.0.1')    
+            run_with_callback('127.0.0.1', NETWORK_PORT)    
             
 
 print "LasaurApp " + VERSION
 
 if args.beaglebone:
+    NETWORK_PORT = 80
     ### if running on beaglebone, setup (pin muxing) and use UART1
     # for details see: http://www.nathandumont.com/node/250
     SERIAL_PORT = "/dev/ttyO1"
@@ -497,6 +501,48 @@ if args.beaglebone:
     fw = file("/sys/kernel/debug/omap_mux/uart1_rxd", "w")
     fw.write("%X" % ((1 << 5) | 0))
     fw.close()
+
+    ### Set up atmega328 reset control
+    # The reset pin is connected to GPIO2_7 (2*32+7 = 71).
+    # Setting it to low triggers a reset.
+    # echo 71 > /sys/class/gpio/export
+    try:
+        fw = file("/sys/class/gpio/export", "w")
+        fw.write("%d" % (71))
+        fw.close()
+    except IOError:
+        # probably already exported
+        pass
+    # set the gpio pin to output
+    # echo out > /sys/class/gpio/gpio71/direction
+    fw = file("/sys/class/gpio/gpio71/direction", "w")
+    fw.write("out")
+    fw.close()
+    # set the gpio pin high
+    # echo 1 > /sys/class/gpio/gpio71/value
+    fw = file("/sys/class/gpio/gpio71/value", "w")
+    fw.write("1")
+    fw.flush()
+    fw.close()
+
+    ### read stepper driver configure pin GPIO2_12 (2*32+12 = 76).
+    # Low means Geckos, high means SMC11s
+    try:
+        fw = file("/sys/class/gpio/export", "w")
+        fw.write("%d" % (76))
+        fw.close()
+    except IOError:
+        # probably already exported
+        pass
+    # set the gpio pin to input
+    fw = file("/sys/class/gpio/gpio76/direction", "w")
+    fw.write("in")
+    fw.close()
+    # set the gpio pin high
+    fw = file("/sys/class/gpio/gpio76/value", "r")
+    ret = fw.read()
+    fw.close()
+    print "Stepper driver configure pin is: " + str(ret)
 
 if args.list_serial_devices:
     SerialManager.list_devices(BITSPERSECOND)
