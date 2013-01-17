@@ -61,7 +61,7 @@ class SVGPathReader:
         def _getNext(d, idx):
             i = idx[0]
             idx[0] += 1
-            if i < len(d):
+            if d and i < len(d):
                 f = d[i]
                 return f
             else:

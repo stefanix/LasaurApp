@@ -1,41 +1,20 @@
 
 TODO
 -----
-- F unit?
-- 1,2,3 keys for selecting tabs
-- simi bug
-- shape order optimization
-- automatic recognition for svg72/svg90
-- better contrast for selected colors
-- default colors R,G,B to Pass 1,2,3
-- connection button status
-- error reporting in ui
-- offset feature, G0F10000 causes wild pos after setting offset
-- cancel button fail on long lines
-- door open pause, still causes problems
-
-BUG
----
-- invisible super slow black lines
-
-YAG
-----
-- some files cause the origin to drift
-- homing does not reset stop mode
-
-
-- sperrholz pappel 8mm
-
-
-- bed size: 48x24" or 1220x610mm
-  also for direct control
-
-
-Laser Style by color
---------------------
-
-- Recognize all colors in svg and provide laser style panel for each
-- add a simple way of combining colors
+- more passes, integrate with lasertags
+- path stats, bbox, length, time estimation
+- show bbox of selected path, also show combined bbox
+- reloading ui kills job?
+- ready status, prevent queing jobs when machine is running
+- pause/continue
+- configurable canvas size
+- bbox checks
+- 
+- login/claim, single user restriction, keep login alive signal
+- dial in widget
+- doc link to reveal library location so people can add more files
+- open/save gcode files, show warning and link to supported features
+- shortcut keys, e.g 1,2,3 for tabs, arrors for direct control
 
 
 
@@ -80,17 +59,6 @@ Illustrator sets both the width/height and the viewport attributes of the svg ta
 
 3460.472 x 1736.945
 
-
-
-LasaurApp inkscape import workflow
-===================================
-
-- in "File/Document Properties" set "Custom size" to 1220x620mm
-  (Set "Default units" to whatever you like)
-- import or draw something
-- set all outlines you want to cut red (stroke color: 255,0,0)
-- save as "Plain SVG"
-- import in LasaurApp
 
 
 

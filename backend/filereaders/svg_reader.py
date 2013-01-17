@@ -4,7 +4,10 @@ __author__ = 'Stefan Hechenberger <stefan@nortd.com>'
 import re
 import math
 import logging
-import xml.etree.ElementTree as ET
+try:
+    import xml.etree.cElementTree as ET
+except ImportError:
+    import xml.etree.ElementTree as ET
 
 from .webcolors import hex_to_rgb, rgb_to_hex
 from .utilities import matrixMult, matrixApply, vertexScale, parseFloats
