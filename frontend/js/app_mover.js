@@ -17,13 +17,17 @@ $(document).ready(function(){
   var isDragging = false;
   
   function assemble_and_send_gcode(x,y) {
-    	var g0_or_g1 = 'G0'
+    	var g0_or_g1 = 'G0';
+      var air_assist_on = '';
+      var air_assist_off = '';
     	if($('#feed_btn').hasClass("active")){
     		g0_or_g1 = 'G1';
+        air_assist_on = 'M80\n';
+        air_assist_off = 'M81\n';
     	}
     	var feedrate = mapConstrainFeedrate($("#feedrate_field" ).val());
     	var intensity =  mapConstrainIntesity($( "#intensity_field" ).val());
-    	var gcode = 'G90\nS'+ intensity + '\n' + g0_or_g1 + ' X' + 2*x + 'Y' + 2*y + 'F' + feedrate + '\nS0\n';	
+    	var gcode = 'G90\n'+air_assist_on+'S'+ intensity + '\n' + g0_or_g1 + ' X' + 2*x + 'Y' + 2*y + 'F' + feedrate + '\nS0\n'+air_assist_off;	
       // $().uxmessage('notice', gcode);
     	send_gcode(gcode, "Motion request sent.", false);    
   }

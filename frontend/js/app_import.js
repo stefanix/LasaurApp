@@ -252,7 +252,7 @@ $(document).ready(function(){
   // setting up add to queue button
   $("#import_to_queue").click(function(e) {   
     // assemble multiple passes
-    var gcodeparts = ["%\nG21\nG90\n"];
+    var gcodeparts = ["G21\nG90\nM80\n"];
     var feedrate;
     var intensity;
     var colors = {};
@@ -311,7 +311,7 @@ $(document).ready(function(){
       }
     }
     if (any_assingments == true) {     
-      gcodeparts.push("S0\nG00X0Y0F16000\n%");
+      gcodeparts.push("M81\nS0\nG00X0Y0F16000\n");
       var gcodestring = gcodeparts.join('');
       var fullpath = $('#svg_upload_file_temp').val();
       var filename = fullpath.split('\\').pop().split('/').pop();

@@ -5,7 +5,7 @@ import socket, webbrowser
 import wsgiref.simple_server
 from bottle import *
 from serial_manager import SerialManager
-from flash import flash_upload, flash_upload_beaglebone
+from flash import flash_upload
 from filereaders import read_svg
 
 
@@ -15,6 +15,7 @@ COMPANY_NAME = "com.nortd.labs"
 SERIAL_PORT = None
 BITSPERSECOND = 57600
 NETWORK_PORT = 4444
+BEAGLEBONE = False
 CONFIG_FILE = "lasaurapp.conf"
 COOKIE_KEY = 'secret_key_jkn23489hsdf'
 
@@ -61,7 +62,6 @@ def storage_dir():
         os.makedirs(directory)
         
     return directory
-        
 
 
 
@@ -313,13 +313,13 @@ def flash_firmware_handler():
         comport_list = SerialManager.list_devices(BITSPERSECOND)
         for port in comport_list:
             print "Trying com port: " + port
-            return_code = flash_upload(port, resources_dir())
+            return_code = flash_upload(port, resources_dir(), BEAGLEBONE)
             if return_code == 0:
                 print "Success with com port: " + port
                 SERIAL_PORT = port
                 break
     else:
-        return_code = flash_upload(SERIAL_PORT, resources_dir())
+        return_code = flash_upload(SERIAL_PORT, resources_dir(), BEAGLEBONE)
     ret = []
     ret.append('Using com port: %s<br>' % (SERIAL_PORT))    
     if return_code == 0:
@@ -464,31 +464,10 @@ args = argparser.parse_args()
 
 
 
-def run_helper():
-    if args.debug:
-        debug(True)
-        if hasattr(sys, "_MEIPASS"):
-            print "Data root is: " + sys._MEIPASS             
-        print "Persistent storage root is: " + storage_dir()
-    if args.build_and_flash:
-        if args.beaglebone:
-            return_code = flash_upload_beaglebone(SERIAL_PORT, resources_dir())
-        else:
-            return_code = flash_upload(SERIAL_PORT, resources_dir())
-        if return_code == 0:
-            print "SUCCESS: Arduino appears to be flashed."
-        else:
-            print "ERROR: Failed to flash Arduino."
-    else:
-        if args.host_on_all_interfaces:
-            run_with_callback('', NETWORK_PORT)
-        else:
-            run_with_callback('127.0.0.1', NETWORK_PORT)    
-            
-
 print "LasaurApp " + VERSION
 
 if args.beaglebone:
+    BEAGLEBONE = True
     NETWORK_PORT = 80
     ### if running on beaglebone, setup (pin muxing) and use UART1
     # for details see: http://www.nathandumont.com/node/250
@@ -585,7 +564,22 @@ else:
         print "-----------------------------------------------------------------------------"      
     
     # run
-    run_helper()     
+    if args.debug:
+        debug(True)
+        if hasattr(sys, "_MEIPASS"):
+            print "Data root is: " + sys._MEIPASS             
+        print "Persistent storage root is: " + storage_dir()
+    if args.build_and_flash:
+        return_code = flash_upload(SERIAL_PORT, resources_dir(), BEAGLEBONE)
+        if return_code == 0:
+            print "SUCCESS: Arduino appears to be flashed."
+        else:
+            print "ERROR: Failed to flash Arduino."
+    else:
+        if args.host_on_all_interfaces:
+            run_with_callback('', NETWORK_PORT)
+        else:
+            run_with_callback('127.0.0.1', NETWORK_PORT)    
 
         
 
