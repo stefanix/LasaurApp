@@ -4,7 +4,9 @@ $(document).ready(function(){
   var raw_gcode_by_color = null;
   var path_optimize = 1;
   var forceSvgDpiTo = undefined;
-  var numOfPassWidgets = 3;
+  var minNumPassWidgets = 3;
+  var maxNumPassWidgets = 32;
+  var last_colors_used = []
   
   // G-Code Canvas Preview
   var icanvas = new Canvas('#import_canvas');
@@ -84,20 +86,23 @@ $(document).ready(function(){
       }
       // reset previous color toggles
       $('#canvas_properties .colorbtns').html('');  // reset colors
-      $('#pass_1_div div .colorbtns').html('');  // reset colors
-      $('#pass_2_div div .colorbtns').html('');  // reset colors
-      $('#pass_3_div div .colorbtns').html('');  // reset colors
+      $('#passes').html('');  // pass widgets
       // add color toggles to preview and pass widgets
       var color_order = {};  // need this to easily activate button from lasertags
       var color_count = 0;   // need this to default single color geos to pass1
-      for (var color in raw_gcode_by_color) {
-				$('#canvas_properties .colorbtns').append('<button class="preview_color active-strong btn btn-small active" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></button>');
-        $('#pass_1_div div .colorbtns').append('<button class="select_color btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');
-				$('#pass_2_div div .colorbtns').append('<button class="select_color btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
-				$('#pass_3_div div .colorbtns').append('<button class="select_color btn btn-small" data-toggle="button" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></div></button>');        
+      for (var color in raw_gcode_by_color) {     
         color_order[color] = color_count;
         color_count++;
       }
+
+      // create some pass widgets
+      addPasses(minNumPassWidgets, color_order);
+
+      // add preview color buttons
+      for (var color in color_order) {
+        $('#canvas_properties .colorbtns').append('<button class="preview_color active-strong active btn btn-small" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></button>');
+      }
+
       // default selections for pass widgets, lasertags handling
       if (data.lasertags) {
         // [('1', 'intensity', '100'), ('1', 'feedrate', '2000'), ('1', 'color', '#ff0000'), ('1', 'color', '#0000ff')]
@@ -110,14 +115,20 @@ $(document).ready(function(){
             var pass = triplet[0];
             var key = triplet[1];
             var value = triplet[2];
-            if (typeof(pass) === 'number' && pass <= numOfPassWidgets) {
+            if (typeof(pass) === 'number' && pass <= maxNumPassWidgets) {
               if (((key == 'intensity' || key == 'feedrate') && typeof(value) === 'number' ) || (key =='color' && value[0] == '#')) {
+                //make sure to have enough pass widgets
+                var passes_to_create = pass - getNumPasses()
+                if (passes_to_create >= 1) {
+                  addPasses(passes_to_create, color_order);
+                }
+                // keep on applying
                 if (key == 'intensity') {  // apply pass settings
-                  $('#import_intensity_'+pass).val(value);
+                  $('#passes > div:nth-child('+pass+') .intensity').val(value);
                 } else if (key == 'feedrate') {  // apply pass settings
-                  $('#import_feedrate_'+pass).val(value);
+                  $('#passes > div:nth-child('+pass+') .feedrate').val(value);
                 } else if (key == 'color' && value in color_order) {  // apply color assignment
-                  $('#pass_'+pass+'_div .colorbtns button:eq('+color_order[value]+')').addClass('active active-strong')
+                  $('#passes > div:nth-child('+pass+') .colorbtns button:eq('+color_order[value]+')').addClass('active active-strong')
                 }
               } else {
                 $().uxmessage('error', "invalid lasertag (key,value)");
@@ -132,7 +143,7 @@ $(document).ready(function(){
       } else {
         // no lasertags, if only one color assign to pass1
         if (color_count == 1) {
-          $('#pass_1_div div .colorbtns').children('button').addClass('active')
+          $('#passes > div:nth-child(1) .colorbtns').children('button').addClass('active')
           $().uxmessage('notice', "assigned to pass1");
         }
       }
@@ -140,7 +151,8 @@ $(document).ready(function(){
       $('#canvas_properties .colorbtns').append('<div style="margin-top:10px; color:#888888">These affect the preview only.</div>');      
       // color preview toggles events registration
 			$('button.preview_color').click(function(e){
-			  // toggling manually, had problem with automatic
+			  // toggling manually because automatic toggling 
+        // would happen after generatPreview()
 			  if($(this).hasClass('active')) {
 			    $(this).removeClass('active');
 			    $(this).removeClass('active-strong');
@@ -152,10 +164,13 @@ $(document).ready(function(){
       });
       // color pass widget toggles events registration
 			$('button.select_color').click(function(e){
-			  // increase button state visually
+			  // toggle manually to work the same as preview buttons
+        // also need active-strong anyways
 			  if($(this).hasClass('active')) {
+          $(this).removeClass('active');
 			    $(this).removeClass('active-strong');
 			  } else {
+          $(this).addClass('active');
 			    $(this).addClass('active-strong');	    
 			  }
       });
@@ -165,6 +180,38 @@ $(document).ready(function(){
       $().uxmessage('notice', "No data loaded to write G-code.");
     }   
   }
+
+  function getNumPasses() {
+    return $('#passes').children().length;
+  }
+
+  function addPasses(num, colors) {
+    last_colors_used = colors;
+    var pass_num_offset = getNumPasses() + 1;
+    var buttons = ''
+    for (var color in colors) {
+      buttons +='<button class="select_color btn btn-small" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></button>'
+    }
+    for (var i=0; i<num; i++) {
+      var html = '<div class="row well" style="margin:0px; padding:4px; background-color:#eeeeee">' + 
+                  '<div class="form-inline" style="margin-bottom:0px">' +
+                    '<label>Pass '+ (pass_num_offset+i) +': </label>' +
+                    '<div class="input-prepend">' +
+                      '<span class="add-on" style="margin-right:-5px;">F</span>' +
+                      '<input type="text" class="feedrate" value="600" title="feedrate 1-8000mm/min" style="width:32px" data-delay="500">' +
+                    '</div>' +
+                    '<div class="input-prepend">' +
+                      '<span class="add-on" style="margin-right:-5px;">%</span>' +
+                      '<input class="intensity" type="textfield" value="100" title="intensity 0-100%" style="width:26px;" data-delay="500">' +
+                    '</div>' +
+                    '<span class="colorbtns">'+buttons+'</span>' +
+                  '</div>' +
+                '</div>';
+      $('#passes').append(html);
+    }
+  }
+
+
   
   function generatePreview() {
     if (raw_gcode_by_color) {        
@@ -257,59 +304,27 @@ $(document).ready(function(){
     var intensity;
     var colors = {};
     var any_assingments = false;
-    //// pass 1
-    $('#pass_1_div div .colorbtns button').each(function(index) {
-      if ($(this).hasClass('active')) {
-        colors[$(this).find('div span').text()] = 1;
+
+    //// passes
+    $('#passes > div').each(function(index) {
+      $(this).find('.colorbtns button').each(function(index) {
+        if ($(this).hasClass('active')) {
+          colors[$(this).find('div span').text()] = 1;
+        }
+      });
+      if (Object.keys(colors).length > 0) { 
+        any_assingments = true;
+        feedrate = mapConstrainFeedrate($(this).find('.feedrate').val());
+        intensity = mapConstrainIntesity($(this).find('.intensity').val());
+        gcodeparts.push("S"+intensity+"\nG1 F"+feedrate+"\nG0 F10000\n");
+        for (var color in raw_gcode_by_color) {
+          if(color in colors) {
+            gcodeparts.push(raw_gcode_by_color[color]);
+          }
+        }
       }
     });
-    if (Object.keys(colors).length > 0) { 
-      any_assingments = true;
-      feedrate = mapConstrainFeedrate($("#import_feedrate_1").val());
-      intensity = mapConstrainIntesity($("#import_intensity_1").val());
-      gcodeparts.push("S"+intensity+"\nG1 F"+feedrate+"\nG0 F10000\n");
-      for (var color in raw_gcode_by_color) {
-        if(color in colors) {
-          gcodeparts.push(raw_gcode_by_color[color]);
-        }
-      }
-    }
-    //// pass 2
-    colors = {}
-    $('#pass_2_div div .colorbtns button').each(function(index) {
-      if ($(this).hasClass('active')) {
-        colors[$(this).find('div span').text()] = 1;
-      }
-    });    
-    if (Object.keys(colors).length > 0) { 
-      any_assingments = true;
-      feedrate = mapConstrainFeedrate($("#import_feedrate_2").val());
-      intensity = mapConstrainIntesity($("#import_intensity_2").val());
-      gcodeparts.push("S"+intensity+"\nG1 F"+feedrate+"\nG0 F10000\n");
-      for (var color in raw_gcode_by_color) {
-        if(color in colors) {
-          gcodeparts.push(raw_gcode_by_color[color]);
-        }
-      }
-    }
-    //// pass 3
-    colors = {}
-    $('#pass_3_div div .colorbtns button').each(function(index) {
-      if ($(this).hasClass('active')) {
-        colors[$(this).find('div span').text()] = 1;
-      }
-    });    
-    if (Object.keys(colors).length > 0) { 
-      any_assingments = true;
-      feedrate = mapConstrainFeedrate($("#import_feedrate_3").val());
-      intensity = mapConstrainIntesity($("#import_intensity_3").val());
-      gcodeparts.push("S"+intensity+"\nG1 F"+feedrate+"\nG0 F10000\n");
-      for (var color in raw_gcode_by_color) {
-        if(color in colors) {
-          gcodeparts.push(raw_gcode_by_color[color]);
-        }
-      }
-    }
+
     if (any_assingments == true) {     
       gcodeparts.push("M81\nS0\nG00X0Y0F16000\n");
       var gcodestring = gcodeparts.join('');
@@ -324,5 +339,16 @@ $(document).ready(function(){
     }
   	return false;
   });
+
+
+  $("#add_pass_btn").click(function(e) {
+    if (getNumPasses() < maxNumPassWidgets) {
+      addPasses(1, last_colors_used);
+    } else {
+      $().uxmessage('error', "Max number of passes reached.");
+    }
+    return false;
+  });  
+
 
 });  // ready
