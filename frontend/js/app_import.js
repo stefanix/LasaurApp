@@ -108,33 +108,36 @@ $(document).ready(function(){
 
       // default selections for pass widgets, lasertags handling
       if (data.lasertags) {
-        // [('1', 'intensity', '100'), ('1', 'feedrate', '2000'), ('1', 'color', '#ff0000'), ('1', 'color', '#0000ff')]
+        // [(12, 2550, '', 100, '%', ':#fff000', ':#ababab', ':#ccc999', '', '', ''), ...]
         $().uxmessage('notice', "lasertags -> applying settings");
         var tags = data.lasertags;
         // alert(JSON.stringify(tags))
-        for (var i=0; i<tags.length; i++){
-          var triplet = tags[i];
-          if (triplet.length == 3) {
-            var pass = triplet[0];
-            var key = triplet[1];
-            var value = triplet[2];
+        for (var i=0; i<tags.length; i++) {
+          var vals = tags[i];
+          if (vals.length == 11) {
+            var pass = vals[0];
+            var feedrate = vals[1];
+            var intensity = vals[3];
             if (typeof(pass) === 'number' && pass <= maxNumPassWidgets) {
-              if (((key == 'intensity' || key == 'feedrate') && typeof(value) === 'number' ) || (key =='color' && value[0] == '#')) {
-                //make sure to have enough pass widgets
-                var passes_to_create = pass - getNumPasses()
-                if (passes_to_create >= 1) {
-                  addPasses(passes_to_create, color_order);
+              //make sure to have enough pass widgets
+              var passes_to_create = pass - getNumPasses()
+              if (passes_to_create >= 1) {
+                addPasses(passes_to_create, color_order);
+              }
+              // feedrate
+              if (feedrate != '' && typeof(feedrate) === 'number') {
+                $('#passes > div:nth-child('+pass+') .feedrate').val(feedrate);
+              }
+              // intensity
+              if (intensity != '' && typeof(intensity) === 'number') {
+                $('#passes > div:nth-child('+pass+') .intensity').val(intensity);
+              }
+              // colors
+              for (var ii=5; ii<vals.length; ii++) {
+                var col = vals[ii];
+                if (col in color_order) {
+                  $('#passes > div:nth-child('+pass+') .colorbtns button:eq('+color_order[col]+')').addClass('active active-strong')
                 }
-                // keep on applying
-                if (key == 'intensity') {  // apply pass settings
-                  $('#passes > div:nth-child('+pass+') .intensity').val(value);
-                } else if (key == 'feedrate') {  // apply pass settings
-                  $('#passes > div:nth-child('+pass+') .feedrate').val(value);
-                } else if (key == 'color' && value in color_order) {  // apply color assignment
-                  $('#passes > div:nth-child('+pass+') .colorbtns button:eq('+color_order[value]+')').addClass('active active-strong')
-                }
-              } else {
-                $().uxmessage('error', "invalid lasertag (key,value)");
               }
             } else {
               $().uxmessage('error', "invalid lasertag (pass number)");
@@ -331,6 +334,7 @@ $(document).ready(function(){
           }
         }
       }
+      colors = {};
     });
 
     if (any_assingments == true) {     

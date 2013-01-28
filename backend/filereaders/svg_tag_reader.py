@@ -208,25 +208,37 @@ class SVGTagReader:
         # parameters from within the SVG file.
         # Any text in the SVG file within a 'text' tag (and one level deep)
         # with the following format gets read.
-        # =pass1:intensity:100=
-        # =pass1:feedrate:2000=
-        # =pass1:color:#ff0000=
-        # =pass1:color:#0000ff=
+        # =pass1:550mm/min:90%:#ff0000=
+        # =pass2:550:90:#00ff00:#ffff00:#000000=
+        # =pass3:1200mm/min:80%:#00000=
+        # =pass4:1200mm/min:80%=
+        # =pass5:4000mm/min:100%=
+        # =pass6:4000:100=
         text_accum = [tag.text or '']
         # # search one level deep
         for child in tag:
             text_accum.append(child.text or '')
         text_accum = ' '.join(text_accum)
         matches = re.findall('=pass([0-9]+):([0-9]*)(mm\/min)?:([0-9]*)(%)?(:#[a-fA-F0-9]{6})?(:#[a-fA-F0-9]{6})?(:#[a-fA-F0-9]{6})?(:#[a-fA-F0-9]{6})?(:#[a-fA-F0-9]{6})?(:#[a-fA-F0-9]{6})?=', text_accum)
+        # Something like: =pass12:2550:100%:#fff000:#ababab:#ccc999=
+        # Results in: [('12', '2550', '', '100', '%', ':#fff000', ':#ababab', ':#ccc999', '', '', '')]        
         # convert values to actual numbers
         for i in xrange(len(matches)):
-            triplet = list(matches[i])[:3]  # use only first 3 groups
-            triplet[0] = float(triplet[0])
-            if (triplet[1] == 'intensity' or triplet[1] == 'feedrate') and triplet[2][0] != '#':
-                triplet[2] = float(triplet[2])
-            matches[i] = triplet
+            vals = list(matches[i])
+            # pass
+            vals[0] = int(vals[0])
+            # feedrate
+            if vals[1]:
+                vals[1] = int(vals[1])
+            # intensity
+            if vals[3]:
+                vals[3] = int(vals[3])
+            # colors, strip leading column
+            for ii in range(5,11):
+                vals[ii] = vals[ii][1:]
+            matches[i] = vals
         # store in the following format
-        # [(1, 'intensity', 100), (1, 'feedrate', 2000), (1, 'color', '#ff0000'), (1, 'color', #0000ff)]
+        # [(12, 2550, '', 100, '%', '#fff000', '#ababab', '#ccc999', '', '', '')]
         node['lasertags'] = matches
 
 
