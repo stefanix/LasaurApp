@@ -101,10 +101,23 @@ $(document).ready(function(){
       // show info div
       $('#passes_info').show();
 
-      // add preview color buttons
+      // add preview color buttons, show info, register events
       for (var color in color_order) {
         $('#canvas_properties .colorbtns').append('<button class="preview_color active-strong active btn btn-small" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></button>');
       }
+      $('#canvas_properties .colorbtns').append('<div style="margin-top:10px; color:#888888">These affect the preview only.</div>');      
+      $('button.preview_color').click(function(e){
+        // toggling manually because automatic toggling 
+        // would happen after generatPreview()
+        if($(this).hasClass('active')) {
+          $(this).removeClass('active');
+          $(this).removeClass('active-strong');
+        } else {
+          $(this).addClass('active');         
+          $(this).addClass('active-strong');          
+        }
+        generatePreview();
+      });
 
       // default selections for pass widgets, lasertags handling
       if (data.lasertags) {
@@ -153,33 +166,6 @@ $(document).ready(function(){
           $().uxmessage('notice', "assigned to pass1");
         }
       }
-      // add some info text
-      $('#canvas_properties .colorbtns').append('<div style="margin-top:10px; color:#888888">These affect the preview only.</div>');      
-      // color preview toggles events registration
-			$('button.preview_color').click(function(e){
-			  // toggling manually because automatic toggling 
-        // would happen after generatPreview()
-			  if($(this).hasClass('active')) {
-			    $(this).removeClass('active');
-			    $(this).removeClass('active-strong');
-			  } else {
-			    $(this).addClass('active');			    
-			    $(this).addClass('active-strong');			    
-			  }
-        generatePreview();
-      });
-      // color pass widget toggles events registration
-			$('button.select_color').click(function(e){
-			  // toggle manually to work the same as preview buttons
-        // also need active-strong anyways
-			  if($(this).hasClass('active')) {
-          $(this).removeClass('active');
-			    $(this).removeClass('active-strong');
-			  } else {
-          $(this).addClass('active');
-			    $(this).addClass('active-strong');	    
-			  }
-      });
       // actually redraw right now 
       generatePreview();      
     } else {
@@ -218,7 +204,20 @@ $(document).ready(function(){
                     '<span class="colorbtns" style="margin-left:6px">'+buttons+'</span>' +
                   '</div>' +
                 '</div>';
-      $('#passes').append(html);
+      // $('#passes').append(html);
+      var pass_elem = $(html).appendTo('#passes');
+      // color pass widget toggles events registration
+      pass_elem.find('.colorbtns button.select_color').click(function(e){
+        // toggle manually to work the same as preview buttons
+        // also need active-strong anyways
+        if($(this).hasClass('active')) {
+          $(this).removeClass('active');
+          $(this).removeClass('active-strong');
+        } else {
+          $(this).addClass('active');
+          $(this).addClass('active-strong');      
+        }
+      });
     }
   }
 
