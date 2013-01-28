@@ -98,6 +98,9 @@ $(document).ready(function(){
       // create some pass widgets
       addPasses(minNumPassWidgets, color_order);
 
+      // show info div
+      $('#passes_info').show();
+
       // add preview color buttons
       for (var color in color_order) {
         $('#canvas_properties .colorbtns').append('<button class="preview_color active-strong active btn btn-small" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></button>');
