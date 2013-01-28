@@ -217,7 +217,7 @@ class SVGTagReader:
         for child in tag:
             text_accum.append(child.text or '')
         text_accum = ' '.join(text_accum)
-        matches = re.findall('=pass([0-9]+):(intensity|feedrate|color):([0-9]+|#([a-fA-F0-9]{3}|[a-fA-F0-9]{6}))=', text_accum, re.IGNORECASE)
+        matches = re.findall('=pass([0-9]+):([0-9]*)(mm\/min)?:([0-9]*)(%)?(:#[a-fA-F0-9]{6})?(:#[a-fA-F0-9]{6})?(:#[a-fA-F0-9]{6})?(:#[a-fA-F0-9]{6})?(:#[a-fA-F0-9]{6})?(:#[a-fA-F0-9]{6})?=', text_accum)
         # convert values to actual numbers
         for i in xrange(len(matches)):
             triplet = list(matches[i])[:3]  # use only first 3 groups
