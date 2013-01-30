@@ -18,6 +18,8 @@ NETWORK_PORT = 4444
 BEAGLEBONE = False
 CONFIG_FILE = "lasaurapp.conf"
 COOKIE_KEY = 'secret_key_jkn23489hsdf'
+FIRMWARE = "LasaurGrbl.hex"
+
 
 if os.name == 'nt': #sys.platform == 'win32': 
     GUESS_PREFIX = "Arduino"   
@@ -292,7 +294,8 @@ def get_status():
 
 
 @route('/flash_firmware')
-def flash_firmware_handler():
+@route('/flash_firmware/:firmware_file')
+def flash_firmware_handler(firmware_file=FIRMWARE):
     global SERIAL_PORT, GUESS_PREFIX
     return_code = 1
     if SerialManager.is_connected():
@@ -313,15 +316,16 @@ def flash_firmware_handler():
         comport_list = SerialManager.list_devices(BITSPERSECOND)
         for port in comport_list:
             print "Trying com port: " + port
-            return_code = flash_upload(port, resources_dir(), BEAGLEBONE)
+            return_code = flash_upload(port, resources_dir(), firmware_file, BEAGLEBONE)
             if return_code == 0:
                 print "Success with com port: " + port
                 SERIAL_PORT = port
                 break
     else:
-        return_code = flash_upload(SERIAL_PORT, resources_dir(), BEAGLEBONE)
+        return_code = flash_upload(SERIAL_PORT, resources_dir(), firmware_file, BEAGLEBONE)
     ret = []
     ret.append('Using com port: %s<br>' % (SERIAL_PORT))    
+    ret.append('Using firmware: %s<br>' % (firmware_file))    
     if return_code == 0:
         print "SUCCESS: Arduino appears to be flashed."
         ret.append('<h2>Successfully Flashed!</h2><br>')
@@ -330,7 +334,7 @@ def flash_firmware_handler():
     else:
         SERIAL_PORT = None
         print "ERROR: Failed to flash Arduino."
-        ret.append('<h2>Flashing Failed!</h2> Check Log window for possible errors. ')
+        ret.append('<h2>Flashing Failed!</h2> Check terminal window for possible errors. ')
         ret. append('Most likely LasaurApp could not find the right serial port.<br><a href="/">return</a><br><br>')
         if os.name != 'posix':
             ret. append('If you know the COM ports the Arduino is connected to you can specifically select it here:')
@@ -570,7 +574,7 @@ else:
             print "Data root is: " + sys._MEIPASS             
         print "Persistent storage root is: " + storage_dir()
     if args.build_and_flash:
-        return_code = flash_upload(SERIAL_PORT, resources_dir(), BEAGLEBONE)
+        return_code = flash_upload(SERIAL_PORT, resources_dir(), FIRMWARE, BEAGLEBONE)
         if return_code == 0:
             print "SUCCESS: Arduino appears to be flashed."
         else:

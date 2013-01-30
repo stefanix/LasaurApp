@@ -6,13 +6,18 @@
 import os, sys, time, subprocess
 
 
-def flash_upload(serial_port, resources_dir, beaglebone=False):
+def flash_upload(serial_port, resources_dir, firmware_file, beaglebone=False):
+    firmware_file = firmware_file.replace("/", "").replace("\\", "")  # make sure no evil injection
+    FIRMWARE = os.path.join(resources_dir, "firmware", firmware_file)
+    if not os.path.exists(FIRMWARE):
+        print "ERROR: invalid firmware path"
+        return
+
     if not beaglebone:
         DEVICE = "atmega328p"
         CLOCK = "16000000"
         PROGRAMMER = "arduino"
         BITRATE = "115200"
-        FIRMWARE = os.path.join(resources_dir, "firmware/LasaurGrbl.hex")
      
         if sys.platform == "darwin":  # OSX
             AVRDUDEAPP    = os.path.join(resources_dir, "firmware/tools_osx/avrdude")
@@ -51,7 +56,6 @@ def flash_upload(serial_port, resources_dir, beaglebone=False):
         PROGRAMMER = "arduino"    # use this for bootloader
         SERIAL_OPTION = '-P %(port)s' % {'port':SERIAL_PORT}
         BITRATE = "115200"
-        FIRMWARE = os.path.join(resources_dir, "firmware/LasaurGrbl.hex")
 
         ### Trigger the atmega328's reset pin to invoke bootloader
         # The reset pin is connected to GPIO2_7 (2*32+7 = 71).
