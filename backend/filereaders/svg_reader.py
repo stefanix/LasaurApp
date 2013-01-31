@@ -68,7 +68,7 @@ class SVGReader:
         self._tagReader = SVGTagReader(tolerance)
 
         # parsed path data, paths by color
-        # {'#ff0000': [[path0, path1, ..], [path0, ..], ..]}
+        # {'#ff0000': [[[x,y], [x,y], ...], [], ..], '#0000ff':[]}
         # Each path is a list of vertices which is a list of two floats.        
         self.boundarys = {}
 

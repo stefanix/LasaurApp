@@ -6,7 +6,7 @@ import wsgiref.simple_server
 from bottle import *
 from serial_manager import SerialManager
 from flash import flash_upload
-from filereaders import read_svg
+from filereaders import read_svg, read_dxf
 
 
 APPNAME = "lasaurapp"
@@ -395,7 +395,10 @@ def svg_upload():
 
     if filename and filedata:
         print "You uploaded %s (%d bytes)." % (filename, len(filedata))
-        res = read_svg(filedata, [1220,610], 0.08, dpi_forced, optimize)
+        if filename[-4:] in ['.dxf', '.DXF']: 
+            res = read_dxf(filedata, 0.08, optimize)
+        else:
+            res = read_svg(filedata, [1220,610], 0.08, dpi_forced, optimize)
         # print boundarys
         jsondata = json.dumps(res)
         # print "returning %d items as %d bytes." % (len(res['boundarys']), len(jsondata))

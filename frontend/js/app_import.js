@@ -61,8 +61,16 @@ $(document).ready(function(){
       data: {'filename':filename,'filedata':filedata, 'dpi':forceSvgDpiTo, 'optimize':path_optimize},
       dataType: "json",
       success: function (data) {
-        $().uxmessage('success', "SVG parsed."); 
-        $('#dpi_import_info').html('Using <b>' + data.dpi + 'dpi</b> for converting px units.');
+        var ext = filename.slice(-4);
+        if (ext in {'.svg':null, '.SVG':null}) {
+          $().uxmessage('success', "SVG parsed."); 
+          $('#dpi_import_info').html('Using <b>' + data.dpi + 'dpi</b> for converting px units.');
+        } else if (ext in {'.dxf':null, '.DXF':null}) {
+          $().uxmessage('success', "DXF parsed."); 
+          $('#dpi_import_info').html('Assuming mm units in DXF file.');
+        } else {
+          $().uxmessage('warning', "File extension not supported. Import DXF or SVG files."); 
+        }
         // alert(JSON.stringify(data));
         handleParsedGeometry(data);
       },
