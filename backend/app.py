@@ -75,6 +75,7 @@ def run_with_callback(host, port):
     server = wsgiref.simple_server.make_server(host, port, handler)
     server.timeout = 0.01
     server.quiet = True
+    print "Persistent storage root is: " + storage_dir()
     print "-----------------------------------------------------------------------------"
     print "Bottle server starting up ..."
     print "Serial is set to %d bps" % BITSPERSECOND
@@ -89,6 +90,12 @@ def run_with_callback(host, port):
     print "Use Ctrl-C to quit."
     print "-----------------------------------------------------------------------------"    
     print
+    # auto-connect on startup
+    global SERIAL_PORT
+    if not SERIAL_PORT:
+        SERIAL_PORT = SerialManager.match_device(GUESS_PREFIX, BITSPERSECOND)
+    SerialManager.connect(SERIAL_PORT, BITSPERSECOND)
+    # open web-browser
     try:
         webbrowser.open_new_tab('http://127.0.0.1:'+str(port))
         pass
@@ -572,7 +579,6 @@ else:
         debug(True)
         if hasattr(sys, "_MEIPASS"):
             print "Data root is: " + sys._MEIPASS             
-        print "Persistent storage root is: " + storage_dir()
     if args.build_and_flash:
         return_code = flash_upload(SERIAL_PORT, resources_dir(), FIRMWARE, BEAGLEBONE)
         if return_code == 0:

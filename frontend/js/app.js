@@ -289,8 +289,7 @@ $(document).ready(function(){
   }
     
   // get hardware status
-  var firmware_version_reported = false
-  var connectiontimer = setInterval(function() {
+  function poll_hardware_status() {
     $.getJSON('/status', function(data) {
       // serial connected
       if (data.serial_connected) {
@@ -331,7 +330,15 @@ $(document).ready(function(){
       // lost connection to server
       connect_btn_set_state(false); 
     });
+  }
+  // call once, to get immediate status
+    poll_hardware_status();
+  // register with timed callback
+  var firmware_version_reported = false
+  var connectiontimer = setInterval(function() {
+    poll_hardware_status();
   }, 4000);
+
   connect_btn_width = $("#connect_btn").innerWidth();
   $("#connect_btn").width(connect_btn_width);
   $("#connect_btn").click(function(e){	

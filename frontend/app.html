@@ -80,7 +80,7 @@
 								<form id="gcode_widget" class="well pull-left">
 									<label>Name</label>
 									<input type="text" id="gcode_name" style="width:296px" placeholder="Name program…">
-									<label>G-code</label>
+									<label>G-code <span id="previe_stats" style="color:#888888; margin-left:10px"></span></label>
 									<textarea id="gcode_program" style="width:296px; font-size:0.8em; height:100px"></textarea>
 									<label>Preview</label>
 									<div><canvas id="preview_canvas" width="305px" height="153px" style="border:1px dashed #aaaaaa"></canvas></div>
@@ -220,6 +220,10 @@
 												<button id="jog_down_btn" class="btn btn-large"><i class="icon-arrow-down"></i></button>
 											</div>																						
 									</div>
+									<div class="row" style="width:210px; margin-left:auto; margin-right:auto; margin-top:20px">
+										<button id="air_on_btn" class="btn">Air Assist On</button>
+										<button id="air_off_btn" class="btn">Air Assist Off</button>
+									</div>									
 								</div>
 						    <div class="alert" style="width:400px">
 							    <a class="close" data-dismiss="alert">×</a>

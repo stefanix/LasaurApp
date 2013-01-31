@@ -223,5 +223,15 @@ $(document).ready(function(){
     var gcode = 'G91\nG0Y10F6000\nG90\n';
     send_gcode(gcode, "Moving Down ...", false)	
   });
+
+  //// air assist buttons
+  $("#air_on_btn").click(function(e) {
+    var gcode = 'M80\n';
+    send_gcode(gcode, "Air assist on ...", false) 
+  });  
+  $("#air_off_btn").click(function(e) {
+    var gcode = 'M81\n';
+    send_gcode(gcode, "Air assist off ...", false) 
+  });  
       
 });  // ready

@@ -66,6 +66,12 @@ $(document).ready(function(){
     canvas.background('#ffffff'); 
   	GcodeReader.parse(gcodedata, 0.25);
   	GcodeReader.draw(canvas, '#000000');
+    var stats = GcodeReader.getStats();
+    var length = stats.cuttingPathLength; 
+    var duration = stats.estimatedTime;
+    $('#previe_stats').html("~" + duration.toFixed(1) + "min");
+    // $().uxmessage('notice', "Total cutting path is: " + (length/1000.0).toFixed(2) + 
+    //               "m. Estimated Time: " + duration.toFixed(1) + "min");
   });
 
 });  // ready

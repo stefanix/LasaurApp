@@ -37,6 +37,10 @@ GcodeReader = {
   		if (pos != -1) {
   			ret.J = parseFloat(str.slice(pos+1));
   		}
+      pos = str.indexOf('F');
+      if (pos != -1) {
+        ret.F = parseFloat(str.slice(pos+1));
+      }
   		return ret;
   	};
 	
@@ -50,7 +54,8 @@ GcodeReader = {
   	var currentX = 0.0;
   	var currentY = 0.0;
   	var currentI = 0.0;
-  	var currentJ = 0.0;
+    var currentJ = 0.0;
+  	var currentF = 0.0;
   	for (var i=0; i<lines.length; i++) {
   		var line = lines[i];
   		line.replace(' ', '');  // throw out any spaces
@@ -62,8 +67,9 @@ GcodeReader = {
   				if ('X' in args) { currentX = args.X*scale; }
   				if ('Y' in args) { currentY = args.Y*scale; }
   				if ('I' in args) { currentI = args.I*scale; }
-  				if ('J' in args) { currentJ = args.J*scale; }
-  				this.moves.push( {'type':gnum, 'X':currentX, 'Y':currentY, 'I':currentI, 'J':currentJ } );
+          if ('J' in args) { currentJ = args.J*scale; }
+  				if ('F' in args) { currentF = args.F; } else { currentF = null; }
+  				this.moves.push( {'type':gnum, 'X':currentX, 'Y':currentY, 'I':currentI, 'J':currentJ, 'F':currentF } );
   				//// bbox
   				if (gnum == 0 && ('X' in args || 'Y' in args)) {
   				  lastG0 = [currentX, currentY];
@@ -78,6 +84,49 @@ GcodeReader = {
   			}
   		}
   	}
+  },
+
+
+  getStats : function() {
+    // Only adds up G1 lines, no arcs, which we should not need.
+    var cuttingPathLength = 0.0  // in mm
+    var estimatedTime = 0.0      // in min
+    var lastX = 0.0;
+    var lastY = 0.0;
+    var length = 0.0;
+    var currentF_seek = 0.0;
+    var currentF_feed = 0.0;
+    var accelCompFactor = 1.0;
+    for (var i=0; i<this.moves.length; i++) {
+      var move = this.moves[i];
+      if (move.type == 0) {
+        if (move.F) {
+          // make sure we only get feed rate, no seek rate
+          currentF_seek = move.F;
+        }
+        lastX = move.X;
+        lastY = move.Y;
+      } else if (move.type == 1) {
+        if (move.F) {
+          // make sure we only get feed rate, no seek rate
+          currentF_feed = move.F;
+        }
+        length = Math.sqrt(Math.pow(move.X-lastX,2) + Math.pow(move.Y-lastY,2));
+        cuttingPathLength += length;
+        if (currentF_feed > 0.0 && length > 0.0) {
+          // very rough estimation
+          accelCompFactor = 1.0;
+          if (length < 5) {accelCompFactor = 1+currentF_feed/200.0;}
+          if (length < 10) {accelCompFactor = 1+currentF_feed/600.0;}
+          if (length < 50) {accelCompFactor = 1+currentF_feed/800.0;}
+          if (length < 100) {accelCompFactor = 1+currentF_feed/1000.0;}
+          estimatedTime += (length/currentF_feed)*accelCompFactor;
+        }
+        lastX = move.X;
+        lastY = move.Y;
+      }
+    }
+    return {'cuttingPathLength':cuttingPathLength, 'estimatedTime':estimatedTime};
   },
 
   	
