@@ -6,7 +6,7 @@ $(document).ready(function(){
   var forceSvgDpiTo = undefined;
   var minNumPassWidgets = 3;
   var maxNumPassWidgets = 32;
-  var last_colors_used = []
+  var last_colors_used = [];
   
   // G-Code Canvas Preview
   var icanvas = new Canvas('#import_canvas');
@@ -53,19 +53,24 @@ $(document).ready(function(){
   function sendToBackend(e) {
     var filedata = e.target.result;
     var fullpath = $('#svg_upload_file_temp').val();
-    var filename = fullpath.split('\\').pop().split('/').pop();    
-    $().uxmessage('notice', "parsing SVG ...");
+    var filename = fullpath.split('\\').pop().split('/').pop();
+    var ext = filename.slice(-4);
+    if (ext == '.svg' || ext == '.SVG') {
+      $().uxmessage('notice', "parsing SVG ...");
+    } else if (ext == '.dxf' || ext == '.DXF') {
+      $().uxmessage('notice', "parsing DXF ...");
+      $().uxmessage('warning', "DXF import is limited to R14, lines, arcs, polylines, and mm units");
+    }
     $.ajax({
       type: "POST",
       url: "/svg_reader",
       data: {'filename':filename,'filedata':filedata, 'dpi':forceSvgDpiTo, 'optimize':path_optimize},
       dataType: "json",
       success: function (data) {
-        var ext = filename.slice(-4);
-        if (ext in {'.svg':null, '.SVG':null}) {
+        if (ext == '.svg' || ext == '.SVG') {
           $().uxmessage('success', "SVG parsed."); 
           $('#dpi_import_info').html('Using <b>' + data.dpi + 'dpi</b> for converting px units.');
-        } else if (ext in {'.dxf':null, '.DXF':null}) {
+        } else if (ext == '.dxf' || ext == '.DXF') {
           $().uxmessage('success', "DXF parsed."); 
           $('#dpi_import_info').html('Assuming mm units in DXF file.');
         } else {
