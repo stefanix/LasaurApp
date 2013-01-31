@@ -1,20 +1,10 @@
-#!/usr/bin/python
-
-################################################################
-# Program: dxf2svg
-# Version: 1.0  7/16/2012
-#
-#   Converts SolidWorks DXF files to SVG files for Lasersaur.
-#
-#   Note: splines in the DXF must be converted to polylines; this is
-#   an option in the Save As dialog box in SolidWorks.
-#
-# Author:
-#   David S. Touretzky
-#   Computer Science Department
-#   Carnegie Mellon University
-#
+# Adapted from dxf2svg.py by David S. Touretzky
+# Computer Science Department, Carnegie Mellon University
 # Released under the GNU GPL3 license.
+
+
+__author__ = 'David S. Touretzky, Stefan Hechenberger <stefan@nortd.com>'
+
 
 import math
 import sys
