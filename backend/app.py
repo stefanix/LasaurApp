@@ -2,7 +2,7 @@
 import sys, os, time
 import glob, json, argparse, copy
 import socket, webbrowser
-import wsgiref.simple_server
+from wsgiref.simple_server import WSGIRequestHandler, make_server
 from bottle import *
 from serial_manager import SerialManager
 from flash import flash_upload
@@ -15,7 +15,7 @@ COMPANY_NAME = "com.nortd.labs"
 SERIAL_PORT = None
 BITSPERSECOND = 57600
 NETWORK_PORT = 4444
-BEAGLEBONE = False
+HARDWARE = 'x86'  # also: 'beaglebone', 'raspberrypi'
 CONFIG_FILE = "lasaurapp.conf"
 COOKIE_KEY = 'secret_key_jkn23489hsdf'
 FIRMWARE = "LasaurGrbl.hex"
@@ -66,13 +66,26 @@ def storage_dir():
     return directory
 
 
+class HackedWSGIRequestHandler(WSGIRequestHandler):
+    """ This is a heck to solve super slow request handling
+    on the BeagleBone and RaspberryPi. The problem is WSGIRequestHandler
+    which does a reverse lookup on every request calling gethostbyaddr.
+    For some reason this is super slow when connected to the LAN.
+    (adding the the IP and name of the requester in the /etc/hosts file
+    solves the problem but obviously is not practical)
+    """
+    def address_string(self):
+        """Instead of calling getfqdn -> gethostbyaddr we ignore."""
+        # return "(a requester)"
+        return str(self.client_address[0])
+
 
 def run_with_callback(host, port):
     """ Start a wsgiref server instance with control over the main loop.
         This is a function that I derived from the bottle.py run()
     """
     handler = default_app()
-    server = wsgiref.simple_server.make_server(host, port, handler)
+    server = make_server(host, port, handler, handler_class=HackedWSGIRequestHandler)
     server.timeout = 0.01
     server.quiet = True
     print "Persistent storage root is: " + storage_dir()
@@ -80,13 +93,13 @@ def run_with_callback(host, port):
     print "Bottle server starting up ..."
     print "Serial is set to %d bps" % BITSPERSECOND
     print "Point your browser to: "    
-    print "http://%s:%d/      (local)" % ('127.0.0.1', port)    
-    if host == '':
-        try:
-            print "http://%s:%d/   (public)" % (socket.gethostbyname(socket.gethostname()), port)
-        except socket.gaierror:
-            # print "http://beaglebone.local:4444/      (public)"
-            pass
+    print "http://%s:%d/      (local)" % ('127.0.0.1', port)  
+    # if host == '':
+    #     try:
+    #         print "http://%s:%d/   (public)" % (socket.gethostbyname(socket.gethostname()), port)
+    #     except socket.gaierror:
+    #         # print "http://beaglebone.local:4444/      (public)"
+    #         pass
     print "Use Ctrl-C to quit."
     print "-----------------------------------------------------------------------------"    
     print
@@ -323,13 +336,13 @@ def flash_firmware_handler(firmware_file=FIRMWARE):
         comport_list = SerialManager.list_devices(BITSPERSECOND)
         for port in comport_list:
             print "Trying com port: " + port
-            return_code = flash_upload(port, resources_dir(), firmware_file, BEAGLEBONE)
+            return_code = flash_upload(port, resources_dir(), firmware_file, HARDWARE)
             if return_code == 0:
                 print "Success with com port: " + port
                 SERIAL_PORT = port
                 break
     else:
-        return_code = flash_upload(SERIAL_PORT, resources_dir(), firmware_file, BEAGLEBONE)
+        return_code = flash_upload(SERIAL_PORT, resources_dir(), firmware_file, HARDWARE)
     ret = []
     ret.append('Using com port: %s<br>' % (SERIAL_PORT))    
     ret.append('Using firmware: %s<br>' % (firmware_file))    
@@ -472,6 +485,8 @@ argparser.add_argument('-d', '--debug', dest='debug', action='store_true',
                     default=False, help='print more verbose for debugging')
 argparser.add_argument('--beaglebone', dest='beaglebone', action='store_true',
                     default=False, help='use this for running on beaglebone')
+argparser.add_argument('--raspberrypi', dest='raspberrypi', action='store_true',
+                    default=False, help='use this for running on Raspberry Pi')
 argparser.add_argument('-m', '--match', dest='match',
                     default=GUESS_PREFIX, help='match serial device with this string')                                        
 args = argparser.parse_args()
@@ -481,7 +496,7 @@ args = argparser.parse_args()
 print "LasaurApp " + VERSION
 
 if args.beaglebone:
-    BEAGLEBONE = True
+    HARDWARE = 'beaglebone'
     NETWORK_PORT = 80
     ### if running on beaglebone, setup (pin muxing) and use UART1
     # for details see: http://www.nathandumont.com/node/250
@@ -537,6 +552,32 @@ if args.beaglebone:
     fw.close()
     print "Stepper driver configure pin is: " + str(ret)
 
+elif args.raspberrypi:
+    HARDWARE = 'raspberrypi'
+    NETWORK_PORT = 80
+    SERIAL_PORT = "/dev/ttyAMA0"
+    import RPi.GPIO as GPIO
+    # GPIO.setwarnings(False) # surpress warnings
+    GPIO.setmode(GPIO.BCM)  # use chip pin number
+    pinSense = 7
+    pinReset = 2
+    pinExt1 = 3
+    pinExt2 = 4
+    pinExt3 = 17
+    pinTX = 14
+    pinRX = 15
+    # read sens pin
+    GPIO.setup(pinSense, GPIO.IN)
+    isSMC11 = GPIO.input(pinSense)
+    # atmega reset pin
+    GPIO.setup(pinReset, GPIO.OUT)
+    GPIO.output(pinReset, GPIO.HIGH)
+    # no need to setup the serial pins
+    # although /boot/cmdline.txt and /etc/inittab needs
+    # to be edited to deactivate the serial terminal login
+    # (basically anything related to ttyAMA0)
+
+
 if args.list_serial_devices:
     SerialManager.list_devices(BITSPERSECOND)
 else:
@@ -583,7 +624,7 @@ else:
         if hasattr(sys, "_MEIPASS"):
             print "Data root is: " + sys._MEIPASS             
     if args.build_and_flash:
-        return_code = flash_upload(SERIAL_PORT, resources_dir(), FIRMWARE, BEAGLEBONE)
+        return_code = flash_upload(SERIAL_PORT, resources_dir(), FIRMWARE, HARDWARE)
         if return_code == 0:
             print "SUCCESS: Arduino appears to be flashed."
         else:
