@@ -313,6 +313,24 @@ def get_status():
     return json.dumps(status)
 
 
+@route('/pause/:flag')
+def set_pause(flag):
+    if flag == '1':
+        if SerialManager.set_pause(True):
+            print "pausing ..."
+            return '1'
+        else:
+            print "warn: nothing to pause"
+            return ''
+    elif flag == '0':
+        print "resuming ..."
+        if SerialManager.set_pause(False):
+            return '1'
+        else:
+            return ''
+
+
+
 @route('/flash_firmware')
 @route('/flash_firmware/:firmware_file')
 def flash_firmware_handler(firmware_file=FIRMWARE):

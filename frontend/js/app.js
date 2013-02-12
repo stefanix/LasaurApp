@@ -1,4 +1,5 @@
 
+var hardware_ready_state = false;
 
 (function($){
 	$.fn.uxmessage = function(kind, text) {
@@ -41,54 +42,58 @@
 
 
 function send_gcode(gcode, success_msg, progress) {
-  if (typeof gcode === "string" && gcode != '') {
-    $.ajax({
-      type: "POST",
-      url: "/gcode",
-      data: {'gcode_program':gcode},
-      // dataType: "json",
-      success: function (data) {
-        if (data == "__ok__") {
-          $().uxmessage('success', success_msg);
-          if (progress = true) {
-            // show progress bar, register live updates
-            if ($("#progressbar").children().first().width() == 0) {
-              $("#progressbar").children().first().width('5%');
-              $("#progressbar").show();
-              var progress_not_yet_done_flag = true;
-              var progresstimer = setInterval(function() {
-                $.get('/queue_pct_done', function(data2) {
-                  if (data2.length > 0) {
-                    var pct = parseInt(data2);
-                    $("#progressbar").children().first().width(pct+'%');                
-                  } else {
-                    if (progress_not_yet_done_flag) {
-                      $("#progressbar").children().first().width('100%');
-                      $().uxmessage('notice', "Done.");
-                      progress_not_yet_done_flag = false;
+  if (hardware_ready_state || gcode[0] == '!' || gcode[0] == '~') {
+    if (typeof gcode === "string" && gcode != '') {
+      $.ajax({
+        type: "POST",
+        url: "/gcode",
+        data: {'gcode_program':gcode},
+        // dataType: "json",
+        success: function (data) {
+          if (data == "__ok__") {
+            $().uxmessage('success', success_msg);
+            if (progress = true) {
+              // show progress bar, register live updates
+              if ($("#progressbar").children().first().width() == 0) {
+                $("#progressbar").children().first().width('5%');
+                $("#progressbar").show();
+                var progress_not_yet_done_flag = true;
+                var progresstimer = setInterval(function() {
+                  $.get('/queue_pct_done', function(data2) {
+                    if (data2.length > 0) {
+                      var pct = parseInt(data2);
+                      $("#progressbar").children().first().width(pct+'%');                
                     } else {
-                      $('#progressbar').hide();
-                      $("#progressbar").children().first().width(0); 
-                      clearInterval(progresstimer);
+                      if (progress_not_yet_done_flag) {
+                        $("#progressbar").children().first().width('100%');
+                        $().uxmessage('notice', "Done.");
+                        progress_not_yet_done_flag = false;
+                      } else {
+                        $('#progressbar').hide();
+                        $("#progressbar").children().first().width(0); 
+                        clearInterval(progresstimer);
+                      }
                     }
-                  }
-                });
-              }, 2000);
+                  });
+                }, 2000);
+              }
             }
+          } else {
+            $().uxmessage('error', "Backend error: " + data);
           }
-        } else {
-          $().uxmessage('error', "Backend error: " + data);
+        },
+        error: function (data) {
+          $().uxmessage('error', "Timeout. LasaurApp server down?");
+        },
+        complete: function (data) {
+          // future use
         }
-      },
-      error: function (data) {
-        $().uxmessage('error', "Timeout. LasaurApp server down?");
-      },
-      complete: function (data) {
-        // future use
-      }
-    });
+      });
+    } else {
+      $().uxmessage('error', "No gcode.");
+    }
   } else {
-    $().uxmessage('error', "No gcode.");
+    $().uxmessage('warning', "Not ready, request ignored.");
   }
 }
 
@@ -265,9 +270,11 @@ $(document).ready(function(){
     $('#tab_logs div.alert').show()
   })
 
-  //////// serial connect button ////////
+  //////// serial connect and pause button ////////
   var connect_btn_state = false;
   var connect_btn_in_hover = false;
+  var pause_btn_state = false;
+
   function connect_btn_set_state(is_connected) {
     if (is_connected) {
       connect_btn_state = true
@@ -291,12 +298,32 @@ $(document).ready(function(){
   // get hardware status
   function poll_hardware_status() {
     $.getJSON('/status', function(data) {
+      // pause status
+      if (data.paused) {
+        pause_btn_state = true;
+        $("#pause_btn").addClass("btn-primary");
+        $("#pause_btn").html('<i class="icon-play"></i>');
+      } else {
+        pause_btn_state = false;
+        $("#pause_btn").removeClass("btn-warning");
+        $("#pause_btn").removeClass("btn-primary");
+        $("#pause_btn").html('<i class="icon-pause"></i>');
+      }
       // serial connected
       if (data.serial_connected) {
         connect_btn_set_state(true);
       } else {
         connect_btn_set_state(false);
       }
+
+      // ready state
+      if (data.ready) {
+        hardware_ready_state = true;
+        $("#connect_btn").html("Ready");
+      } else {
+        hardware_ready_state = false;
+      }
+
       // door, chiller, power, limit, buffer
       if (data.serial_connected) {
         if (data.door_open) {
@@ -388,7 +415,35 @@ $(document).ready(function(){
       $(this).width(connect_btn_width);      
     }
   );
-  //\\\\\\ serial connect button \\\\\\\\
+
+  $("#pause_btn").click(function(e){  
+    if (pause_btn_state == true) {  // unpause
+      $.get('/pause/0', function(data) {
+        if (data != "") {
+          pause_btn_state = false;
+          $("#pause_btn").removeClass('btn-primary');
+          $("#pause_btn").removeClass('btn-warning');
+          $("#pause_btn").html('<i class="icon-pause"></i>');
+        }
+      });
+    } else {  // pause
+      $("#pause_btn").addClass('btn-warning');
+      $.get('/pause/1', function(data) {
+        if (data != "") {
+          pause_btn_state = true;
+          $("#pause_btn").removeClass("btn-warning");
+          $("#pause_btn").addClass('btn-primary');
+          $("#pause_btn").html('<i class="icon-play"></i>');
+          $().uxmessage('notice', "Pausing (after finishing hardware buffer)");
+        } else {
+          // failed to pause, nothing processing?
+          $("#pause_btn").removeClass("btn-warning");
+        }   
+      });
+    } 
+    e.preventDefault();   
+  }); 
+  //\\\\\\ serial connect and pause button \\\\\\\\
   
   
 

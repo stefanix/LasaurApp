@@ -42,6 +42,8 @@ class SerialManagerClass:
 
     def reset_status(self):
         self.status = {
+            'ready': True,  # turns True by querying status
+            'paused': False,  # this is also a control flag
             'buffer_overflow': False,
             'transmission_error': False,
             'bad_number_format_error': False,
@@ -135,6 +137,7 @@ class SerialManagerClass:
                 self.device = None
             except:
                 self.device = None
+            self.status['ready'] = False
             return True
         else:
             return False
@@ -160,12 +163,21 @@ class SerialManagerClass:
 
 
     def queue_gcode_line(self, gcode):
-        if gcode:
+        if gcode and self.is_connected():
             gcode = gcode.strip()
     
             if gcode[0] == '%':
                 return
+            elif gcode[0] == '!':
+                self.cancel_queue()
+                self.reset_status()
+                self.tx_buffer = '!\n'
+                self.job_size = 2
+                self.job_active = True
             else:
+                if gcode != '?':  # not ready unless just a ?-query
+                    self.status['ready'] = False
+                    
                 if self.fec_redundancy > 0:  # using error correction
                     # prepend marker and checksum
                     checksum = 0
@@ -181,17 +193,16 @@ class SerialManagerClass:
                         gcode_redundant += '^' + chr(checksum) + gcode + '\n'
                     gcode = gcode_redundant + '*' + chr(checksum) + gcode
 
-                if gcode.find('!') > -1:
-                  # cancel current job
-                  self.tx_buffer = gcode + '\n'
-                  self.job_size = len(gcode) + 1
-                  self.reset_status()  
-                else:                    
-                    self.tx_buffer += gcode + '\n'
-                    self.job_size += len(gcode) + 1
-                    
+                self.tx_buffer += gcode + '\n'
+                self.job_size += len(gcode) + 1
                 self.job_active = True
 
+
+
+    def cancel_queue(self):
+        self.tx_buffer = ''
+        self.job_size = 0
+        self.job_active = False
                   
 
     def is_queue_empty(self):
@@ -204,10 +215,21 @@ class SerialManagerClass:
         return str(100-100*len(self.tx_buffer)/self.job_size)
 
 
+    def set_pause(self, flag):
+        if flag and not self.is_queue_empty():  # pause
+            print "tx_buffer: " + self.tx_buffer
+            self.status['paused'] = True
+            return True
+        elif not flag:  # unpause
+            self.status['paused'] = False
+            return True
+        else:
+            return False
+
     
     def send_queue_as_ready(self):
         """Continuously call this to keep processing queue."""    
-        if self.device:
+        if self.device and not self.status['paused']:
             try:
                 ### receiving
                 chars = self.device.read(self.RX_CHUNK_SIZE)
@@ -266,12 +288,17 @@ class SerialManagerClass:
                         # print "(LasaurGrbl may take some extra time to finalize)"
                         self.job_size = 0
                         self.job_active = False
+                        # ready whenever a job is done, including a status request via '?'
+                        self.status['ready'] = True
             except OSError:
                 # Serial port appears closed => reset
                 self.close()
             except ValueError:
                 # Serial port appears closed => reset
-                self.close()            
+                self.close()     
+        else:
+            # serial disconnected    
+            self.status['ready'] = False  
 
 
 
@@ -284,9 +311,16 @@ class SerialManagerClass:
             sys.stdout.write("\nFEC Correction!\n")
             sys.stdout.flush()                                              
         else:
-            # sys.stdout.write(line + "\n")
-            sys.stdout.write(".")
-            sys.stdout.flush()
+            if '!' in line:
+                # in stop mode
+                self.cancel_queue()
+                # not ready whenever in stop mode
+                self.status['ready'] = False
+                sys.stdout.write(line + "\n")
+                sys.stdout.flush()
+            else:
+                sys.stdout.write(".")
+                sys.stdout.flush()
 
             if 'N' in line:
                 self.status['bad_number_format_error'] = True
