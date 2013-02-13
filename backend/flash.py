@@ -101,7 +101,7 @@ def flash_upload(serial_port, resources_dir, firmware_file, hardware='x86'):
                 pinReset = 2
                 GPIO.setup(pinReset, GPIO.OUT)
                 GPIO.output(pinReset, GPIO.LOW)
-                time.sleep(0.5)
+                time.sleep(0.8)
                 GPIO.output(pinReset, GPIO.HIGH)
                 time.sleep(0.1)
             thread.start_new_thread(trigger_reset, ())

@@ -19,6 +19,7 @@ HARDWARE = 'x86'  # also: 'beaglebone', 'raspberrypi'
 CONFIG_FILE = "lasaurapp.conf"
 COOKIE_KEY = 'secret_key_jkn23489hsdf'
 FIRMWARE = "LasaurGrbl.hex"
+TOLERANCE = 0.08
 
 
 if os.name == 'nt': #sys.platform == 'win32': 
@@ -370,7 +371,6 @@ def flash_firmware_handler(firmware_file=FIRMWARE):
         ret.append('<a href="/">return</a>')
         return ''.join(ret)
     else:
-        SERIAL_PORT = None
         print "ERROR: Failed to flash Arduino."
         ret.append('<h2>Flashing Failed!</h2> Check terminal window for possible errors. ')
         ret. append('Most likely LasaurApp could not find the right serial port.<br><a href="/">return</a><br><br>')
@@ -427,9 +427,9 @@ def svg_upload():
     if filename and filedata:
         print "You uploaded %s (%d bytes)." % (filename, len(filedata))
         if filename[-4:] in ['.dxf', '.DXF']: 
-            res = read_dxf(filedata, 0.08, optimize)
+            res = read_dxf(filedata, TOLERANCE, optimize)
         else:
-            res = read_svg(filedata, [1220,610], 0.08, dpi_forced, optimize)
+            res = read_svg(filedata, [1220,610], TOLERANCE, dpi_forced, optimize)
         # print boundarys
         jsondata = json.dumps(res)
         # print "returning %d items as %d bytes." % (len(res['boundarys']), len(jsondata))
