@@ -812,21 +812,16 @@ SVGReader = {
           }
           break;
         case 'Z':  // closepath
+        case 'z':
           // loop and finalize subpath
           if ( subpath.length > 0) {
             subpath.push(subpath[0]);  // close
             node.path.push(subpath);
+            x = subpath[subpath.length-1][0];
+            y = subpath[subpath.length-1][1];
             subpath = [];
-          }      
+          }
           break;
-        case 'z':  // closepath
-          // loop and finalize subpath
-          if ( subpath.length > 0) {
-            subpath.push(subpath[0]);  // close
-            node.path.push(subpath);
-            subpath = [];
-          }  
-          break          
         case 'L':  // lineto absolute
           while (nextIsNum()) {
             x = getNext();
