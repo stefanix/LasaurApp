@@ -29,7 +29,11 @@
 				<a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
 					<span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
 				</a>
-				<button id="connect_btn" class="btn btn-warning pull-right" type="submit">Disconnected</button>
+				<div class="btn-group pull-right">
+					<button id="connect_btn" class="btn btn-warning" type="submit">Disconnected</button>
+					<button id="door_status_btn" class="btn disabled btn-warning" type="submit">Door</button>
+					<button id="chiller_status_btn" class="btn disabled btn-warning" type="submit">Chiller</button>
+				</div>
 				<div class="btn-group pull-right">
 					<button id="go_to_origin" class="btn" type="submit" title="move to origin">(0,0)</i></button>
 					<button id="homing_cycle" class="btn" type="submit" title="run homing cycle, find table origin"><i class="icon-home"></i></button>

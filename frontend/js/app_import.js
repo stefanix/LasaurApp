@@ -61,6 +61,9 @@ $(document).ready(function(){
       $().uxmessage('notice', "parsing DXF ...");
       $().uxmessage('warning', "DXF import is limited to R14, lines, arcs, lwpolylines, and mm units");
     }
+    if (filedata.length > 102400) {
+      $().uxmessage('notice', "Importing large files may take a few minutes.");
+    }
     $.ajax({
       type: "POST",
       url: "/svg_reader",

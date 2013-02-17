@@ -266,6 +266,14 @@ class SerialManagerClass:
                         self.nRequested -= actuallySent
                         if self.nRequested <= 0:
                             self.last_request_ready = 0  # make sure to request ready
+                    elif self.tx_buffer[0] in ['!', '~']:  # send control chars no matter what
+                        try:
+                            actuallySent = self.device.write(self.tx_buffer[:1])
+                        except serial.SerialTimeoutException:
+                            actuallySent = self.nRequested
+                            sys.stdout.write("\nsend_queue_as_ready: writeTimeoutError\n")
+                            sys.stdout.flush()
+                        self.tx_buffer = self.tx_buffer[actuallySent:]
                     else:
                         if (time.time()-self.last_request_ready) > 2.0:
                             # ask to send a ready byte

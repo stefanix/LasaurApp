@@ -327,10 +327,20 @@ $(document).ready(function(){
       // door, chiller, power, limit, buffer
       if (data.serial_connected) {
         if (data.door_open) {
-          $().uxmessage('warning', "Door is open!"); 
+          $('#door_status_btn').removeClass('btn-success')
+          $('#door_status_btn').addClass('btn-warning') 
+          // $().uxmessage('warning', "Door is open!");
+        } else {
+          $('#door_status_btn').removeClass('btn-warning')
+          $('#door_status_btn').addClass('btn-success')         
         }
         if (data.chiller_off) {
-          $().uxmessage('warning', "Chiller is off!"); 
+          $('#chiller_status_btn').removeClass('btn-success')
+          $('#chiller_status_btn').addClass('btn-warning')           
+          // $().uxmessage('warning', "Chiller is off!"); 
+        } else {
+          $('#chiller_status_btn').removeClass('btn-warning')
+          $('#chiller_status_btn').addClass('btn-success')
         }
         if (data.power_off) {
           $().uxmessage('error', "Power is off!"); 
