@@ -117,4 +117,31 @@ def flash_upload(serial_port, resources_dir, firmware_file, hardware='x86'):
         return subprocess.call(command, shell=True)
 
 
-
+def reset_atmega(hardware=''):
+    if hardware == 'beaglebone':
+        try:
+            fw = file("/sys/class/gpio/export", "w")
+            fw.write("%d" % (71))
+            fw.close()
+        except IOError:
+            pass
+        fw = file("/sys/class/gpio/gpio71/direction", "w")
+        fw.write("out")
+        fw.close()
+        fw = file("/sys/class/gpio/gpio71/value", "w")
+        fw.write("0")
+        fw.flush()
+        time.sleep(0.2)
+        fw.write("1")
+        fw.flush()
+        fw.close()
+    elif hardware == 'raspberrypi':
+        import RPi.GPIO as GPIO
+        GPIO.setmode(GPIO.BCM)  # use chip pin number
+        pinReset = 2
+        GPIO.setup(pinReset, GPIO.OUT)
+        GPIO.output(pinReset, GPIO.LOW)
+        time.sleep(0.2)
+        GPIO.output(pinReset, GPIO.HIGH)
+    else:
+        print "ERROR: forced reset only possible on beaglebone and raspberrypi"

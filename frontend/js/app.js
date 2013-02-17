@@ -321,6 +321,7 @@ $(document).ready(function(){
         hardware_ready_state = true;
         $("#connect_btn").html("Ready");
       } else {
+        $("#connect_btn").html("Busy");
         hardware_ready_state = false;
       }
 
@@ -426,6 +427,7 @@ $(document).ready(function(){
     }
   );
 
+  $("#pause_btn").tooltip({placement:'bottom', delay: {show:500, hide:100}});
   $("#pause_btn").click(function(e){  
     if (pause_btn_state == true) {  // unpause
       $.get('/pause/0', function(data) {
@@ -456,7 +458,7 @@ $(document).ready(function(){
   //\\\\\\ serial connect and pause button \\\\\\\\
   
   
-
+  $("#cancel_btn").tooltip({placement:'bottom', delay: {show:500, hide:100}});
   $("#cancel_btn").click(function(e){
   	var gcode = '!\n'  // ! is enter stop state char
   	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
@@ -495,5 +497,16 @@ $(document).ready(function(){
   	send_gcode(gcode, "Going to origin ...", false);
   	e.preventDefault();		
   });  
+
+  $("#reset_atmega").click(function(e){
+    $.get('/reset_atmega', function(data) {
+      if (data != "") {
+        $().uxmessage('success', "Atmega restarted!");
+      } else {
+        $().uxmessage('error', "Atmega restart failed!");
+      }   
+    });
+    e.preventDefault();   
+  });
   
 });  // ready

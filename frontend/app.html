@@ -37,9 +37,9 @@
 				<div class="btn-group pull-right">
 					<button id="go_to_origin" class="btn" type="submit" title="move to origin">(0,0)</i></button>
 					<button id="homing_cycle" class="btn" type="submit" title="run homing cycle, find table origin"><i class="icon-home"></i></button>
-					<button id="cancel_btn" class="btn" type="submit">Stop</button>
+					<button id="cancel_btn" class="btn" type="submit" title="stop and purge job"><i class="icon-stop"></i></button>
 				</div>		
-				<button id="pause_btn" class="btn pull-right" type="submit"><i class="icon-pause"></i></button>
+				<button id="pause_btn" class="btn pull-right" type="submit" title="pause/continue"><i class="icon-pause"></i></button>
 				<a class="brand" href="#" style="color:#666666"><img src="/img/lasersaur-dino-brand.png" style="margin-right:6px">LasaurApp</a>
 				<div class="nav-collapse">
 					<ul class="nav">
@@ -59,6 +59,7 @@
 								<li><a href="flash_firmware">Flash Firmware (DriveBoard v13.01)</a>
 								<li><a href="flash_firmware/LasaurGrbl-ls.hex">Flash Firmware (LasaurShield v13.01-ls, testing)</a>
 								<li><a href="flash_firmware/LasaurGrbl-v12.08f.hex">Flash Firmware (LasaurShield v12.08f, stable)</a>
+								<li><a id="reset_atmega" href="reset_atmega">Reset Atmega (restarts firmware)</a>
 							</ul>
 						</li>
 
