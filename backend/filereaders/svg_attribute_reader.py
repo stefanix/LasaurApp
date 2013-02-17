@@ -163,10 +163,11 @@ class SVGAttributeReader:
         segs = value.split(";")
         for seg in segs:
             kv = seg.split(":")
-            k = kv[0].strip()
-            v = kv[1].strip()
-            if k != 'style':  # prevent infinite loop
-                self.read_attrib(node, k, v)
+            if len(kv) == 2:
+                k = kv[0].strip()
+                v = kv[1].strip()
+                if k != 'style':  # prevent infinite loop
+                    self.read_attrib(node, k, v)
         # Also see: Presentations Attributes 
         # http://www.w3.org/TR/SVG11/styling.html#UsingPresentationAttributes
         # example: <rect x="200" y="100" width="600" height="300" 

@@ -452,7 +452,7 @@ $(document).ready(function(){
   	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
   	send_gcode(gcode, "Stopping ...", false);	
 	  var delayedresume = setTimeout(function() {
-    	var gcode = '~\nG0X0Y0F20000\n'  // ~ is resume char
+    	var gcode = '~\nG90\nM81\nG0X0Y0F20000\n'  // ~ is resume char
     	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
     	send_gcode(gcode, "Resetting ...", false);
 	  }, 1000);
@@ -480,7 +480,7 @@ $(document).ready(function(){
     	// also reset offset
     	reset_offset();
     }
-    gcode = 'G0X0Y0F16000\n'
+    gcode = 'G90\nG0X0Y0F16000\n'
     // $().uxmessage('notice', gcode);  
   	send_gcode(gcode, "Going to origin ...", false);
   	e.preventDefault();		

@@ -96,7 +96,9 @@ GcodeReader = {
     var length = 0.0;
     var currentF_seek = 0.0;
     var currentF_feed = 0.0;
+    // var acc = 1800000; //mm/min^2, same as defined in LasaurGrbl config.h
     var accelCompFactor = 1.0;
+
     for (var i=0; i<this.moves.length; i++) {
       var move = this.moves[i];
       if (move.type == 0) {
@@ -115,17 +117,27 @@ GcodeReader = {
         cuttingPathLength += length;
         if (currentF_feed > 0.0 && length > 0.0) {
           // very rough estimation
-          accelCompFactor = 1.0;
-          if (length < 5) {accelCompFactor = 1+currentF_feed/200.0;}
-          if (length < 10) {accelCompFactor = 1+currentF_feed/600.0;}
-          if (length < 50) {accelCompFactor = 1+currentF_feed/800.0;}
-          if (length < 100) {accelCompFactor = 1+currentF_feed/1000.0;}
-          estimatedTime += (length/currentF_feed)*accelCompFactor;
+          // var dist_for_accel_decel = 2*(currentF_feed*currentF_feed/(2*acc));
+          // var ratio = length/dist_for_accel_decel
+          // var feedrateComp = Math.max(0.1, Math.min(1.0, 0.25*ratio));          
+          // estimatedTime += length/(currentF_feed*feedrateComp);]
+
+          // accelCompFactor = 1.0;
+          // if (length < 1) {accelCompFactor = 1+currentF_feed/600.0;}
+          // else if (length < 5) {accelCompFactor = 1+currentF_feed/1000.0;}
+          // else if (length < 10) {accelCompFactor = 1+currentF_feed/2000.0;}
+          // else if (length < 50) {accelCompFactor = 1+currentF_feed/3000.0;}
+          // else if (length < 100) {accelCompFactor = 1+currentF_feed/6000.0;}
+          // accelCompFactor = 1+currentF_feed/(length*60)
+          // estimatedTime += (length/currentF_feed)*accelCompFactor*2.0;
+          // alert(length/currentF_feed + "->" + estimatedTime);
+          estimatedTime += (length/currentF_feed);
         }
         lastX = move.X;
         lastY = move.Y;
       }
     }
+    estimatedTime *= 5.0;
     return {'cuttingPathLength':cuttingPathLength, 'estimatedTime':estimatedTime};
   },
 
