@@ -2,22 +2,25 @@
 LasaurApp
 =========
 
-LasaurApp is the official app to control [Lasersaur](http://lasersaur.com) laser cutters. At the moment it has the following features:
+LasaurApp is the official [Lasersaur](http://lasersaur.com) app. It has all the functionality to operate this kind of laser cutter:
 
-- send G-code to the lasersaur
-- convert SVG files to G-code (and optimize)
+- load vector files and send them to the Lasersaur
+- file support for SVG, G-code (subset), DXF (subset)
 - GUI widget to move the laser head
+- pausing/continuing a job
+- firmware flashing
 - handy G-code programs for the optics calibration process
 
-This app is written mostly in cross-platform, cross-browser Javascript. The idea is to use only a lightweight backend for relaying to and from the USB port. Eventually this backend can either move to the controller on the Lasersaur or to a small dedicated computer. 
+This app is written mostly in cross-platform, cross-browser Javascript and Python. This allows for very flexible setup. The backend can either run directly on the Lasersaur (Driveboard) or on the client computer. The frontend runs in a web browser either on the same client computer or on a tablet computer.
 
-This is done this way because we imagine laser cutters being shared in shops. We see people  controlling laser cutters from their laptops and not wanting to go through annoying setup processes. Besides this, html-based GUIs are just awesome :)
+When running on the Driveboard people can start using the 'saur' directly from their laptop without having to setup any software or drivers. This is done this way because we imagine laser cutters being shared in shops. We see people controlling laser cutters from their laptops and not wanting to go through annoying setup processes. Besides this, html-based GUIs are just awesome :)
 
 **DISCLAIMER:** Please be aware that operating a self-built laser cutter can be dangerous and requires full awareness of the risks involved. NORTD Labs does not warrant for any contents of the manual and does not assume any risks whatsoever with regard to the contents of this manual or the machine assembled by you. NORTD Labs further does not warrant for and does not assume any risks whatsoever with regard to any parts of the machine contained in this manual which are provided by third parties. You need to have the necessary experience in handling high-voltage electrical devices and class 4 laser beams to build the machine described in this manual. Otherwise you should seek professional advice for building the machine. 
 
 
 How to Use this App
 -------------------
+
 
 * make sure you have Python 2.7
 * run *python backend/app.py*
@@ -57,65 +60,3 @@ For other USB devices thee following may be useful too:
 - sudo kextunload -b com.apple.driver.AppleUSBCDCACMData
 - sudo kextunload -b com.apple.driver.AppleUSBCDCACMControl 
 
-
-BeagleBone/DriveBoard Notes
------------------------------
-The DriveBoard uses UART1 of the BeagleBone. Under Angstrom Linux this gets
-mapped to "/dev/ttyO1".
-
-### Python Code
-
-SERIAL_PORT = "/dev/ttyO1"
-# echo 0 > /sys/kernel/debug/omap_mux/uart1_txd
-fw = file("/sys/kernel/debug/omap_mux/uart1_txd", "w")
-fw.write("%X" % (0))
-fw.close()
-# echo 20 > /sys/kernel/debug/omap_mux/uart1_rxd
-fw = file("/sys/kernel/debug/omap_mux/uart1_rxd", "w")
-fw.write("%X" % ((1 << 5) | 0))
-fw.close()
-
-
-The BeagleBone also controls the reset pin of the Atmega328 chip. It's
-connected to GPIO2_7 which maps to pin 71 (2 * 32 + 7).
-
-### Python code
-
-# echo 71 > /sys/class/gpio/export
-fw = file("/sys/class/gpio/export", "w")
-fw.write("%d" % (71))
-fw.close()
-
-# set the gpio pin to output
-# echo out > /sys/class/gpio/gpio71/direction
-fw = file("/sys/class/gpio/gpio71/direction", "w")
-fw.write("out")
-fw.close()
-
-# set the gpio pin high
-# echo 1 > /sys/class/gpio/gpio71/value
-fw = file("/sys/class/gpio/gpio71/value", "w")
-fw.write("1")
-fw.flush()
-
-# set the pin low again
-# echo 0 > /sys/class/gpio/gpio71/value
-# Note: the flush() isn't necessary if you immediately close the file after writing
-fw.write("0")
-fw.close()
-
-
-The BeagleBone can also sense which stepper drivers are being used. For
-this read pin GPIO2_12 (2*32+12 = 76). Low means Geckos, high means SMC11s.
-
-### Python code
-
-# set the gpio pin to input
-fw = file("/sys/class/gpio/gpio76/direction", "w")
-fw.write("in")
-fw.close()
-
-# get the gpio pin
-fw = file("/sys/class/gpio/gpio76/value", "r")
-ret = fw.read()
-fw.close()
