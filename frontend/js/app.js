@@ -321,7 +321,9 @@ $(document).ready(function(){
         hardware_ready_state = true;
         $("#connect_btn").html("Ready");
       } else {
-        $("#connect_btn").html("Busy");
+        if (data.serial_connected) {
+          $("#connect_btn").html("Busy");
+        }
         hardware_ready_state = false;
       }
 

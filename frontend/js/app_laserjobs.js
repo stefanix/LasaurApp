@@ -11,6 +11,9 @@ $(document).ready(function(){
     
   // populate library from library directory
   $.getJSON("/library/list", function(data) {
+    if (typeof(data.sort) == 'function') {
+      data.sort();
+    }
     $.each(data, function(index, name) {
       $('#gcode_library').prepend('<li><a href="#">'+ name +'</a></li>');
     });
