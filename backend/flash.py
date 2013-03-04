@@ -32,9 +32,11 @@ def flash_upload(serial_port, resources_dir, firmware_file, hardware='x86'):
             AVRDUDECONFIG = os.path.join(resources_dir, "/etc/avrdude.conf")
 
         # call avrdude, returns 0 on success
-        return subprocess.call('%(dude)s -c %(programmer)s -b %(bps)s -P %(port)s -p %(device)s -C %(dudeconf)s -Uflash:w:%(firmware)s:i' 
-            % {'dude':AVRDUDEAPP, 'programmer':PROGRAMMER, 'bps':BITRATE, 'port':serial_port, 'device':DEVICE, 'dudeconf':AVRDUDECONFIG, 'firmware':FIRMWARE},
-            shell=True)
+        command = ('"%(dude)s" -c %(programmer)s -b %(bps)s -P %(port)s -p %(device)s -C "%(dudeconf)s" -Uflash:w:"%(firmware)s":i' 
+            % {'dude':AVRDUDEAPP, 'programmer':PROGRAMMER, 'bps':BITRATE, 'port':serial_port, 'device':DEVICE, 'dudeconf':AVRDUDECONFIG, 'firmware':FIRMWARE})
+
+        print command
+        return subprocess.call(command, shell=True)
 
         # PROGRAMMER = "avrisp"  # old way, required pressing the reset button            
         # os.system('%(dude)s -c %(programmer)s -b %(bps)s -P %(port)s -p %(device)s -C %(dudeconf)s -B 10 -F -U flash:w:%(firmware)s:i' 
@@ -60,7 +62,7 @@ def flash_upload(serial_port, resources_dir, firmware_file, hardware='x86'):
         SERIAL_OPTION = '-P %(port)s' % {'port':SERIAL_PORT}
         BITRATE = "115200"
 
-        command = ('%(dude)s -c %(programmer)s -b %(bps)s %(serial_option)s -p %(device)s -C %(dudeconf)s -Uflash:w:%(product)s:i' %
+        command = ('"%(dude)s" -c %(programmer)s -b %(bps)s %(serial_option)s -p %(device)s -C "%(dudeconf)s" -Uflash:w:"%(product)s":i' %
                   {'dude':AVRDUDEAPP, 'programmer':PROGRAMMER, 'bps':BITRATE, 'serial_option':SERIAL_OPTION, 'device':DEVICE, 'dudeconf':AVRDUDECONFIG, 'product':FIRMWARE})
 
         ### Trigger the atmega328's reset pin to invoke bootloader
