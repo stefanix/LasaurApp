@@ -90,7 +90,7 @@ class SVGAttributeReader:
     def transformAttrib(self, node, attr, value):
         # http://www.w3.org/TR/SVG11/coords.html#EstablishingANewUserSpace
         xforms = []
-        matches = re.findall('(([a-z]+\s*)\(([^)]*)\))', value, re.IGNORECASE)
+        matches = re.findall('(([a-z]+)\s*\(([^)]*)\))', value, re.IGNORECASE)
         # this parses  something like "translate(50,50), rotate(56)"" to
         # [('translate(50,50)', 'translate', '50,50'), ('rotate(56)', 'rotate', '56')]
         for match in matches:
@@ -129,6 +129,8 @@ class SVGAttributeReader:
             elif xformKind == 'matrix':
                 if len(params) == 6:
                     xforms.append(params)
+                else:
+                    log.warn('matrix skipped; invalid num of params')
             # skewX        
             elif xformKind == 'skewX':
                 if len(params) == 1:

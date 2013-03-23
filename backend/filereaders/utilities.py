@@ -24,8 +24,9 @@ def matrixMult(mA, mB):
 
 
 def matrixApply(mat, vec):
-    vec[0] = mat[0]*vec[0] + mat[2]*vec[1] + mat[4]
+    vec0 = mat[0]*vec[0] + mat[2]*vec[1] + mat[4]
     vec[1] = mat[1]*vec[0] + mat[3]*vec[1] + mat[5]
+    vec[0] = vec0
 
 
 def vertexScale(v, f):
