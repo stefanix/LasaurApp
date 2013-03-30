@@ -175,6 +175,7 @@ $(document).ready(function(){
   
   //// motion parameters
   $( "#intensity_field" ).val('0');
+  $( "#feedrate_field" ).val(app_settings.max_seek_speed);
   
   $("#seek_btn").click(function(e) {
     $( "#intensity_field" ).hide();
@@ -192,7 +193,7 @@ $(document).ready(function(){
     $( "#feedrate_field" ).val("2000");
   });  
   $("#feedrate_btn_fast").click(function(e) {
-    $( "#feedrate_field" ).val("16000");
+    $( "#feedrate_field" ).val(app_settings.max_seek_speed);
   });  
   $("#feedrate_field").focus(function(e) {
     $("#feedrate_btn_slow").removeClass('active');
@@ -200,7 +201,7 @@ $(document).ready(function(){
     $("#feedrate_btn_fast").removeClass('active');
   });
   
-  if ($("#feedrate_field" ).val() != 16000) {
+  if ($("#feedrate_field" ).val() != app_settings.max_seek_speed) {
     $("#feedrate_btn_slow").removeClass('active');
     $("#feedrate_btn_medium").removeClass('active');
     $("#feedrate_btn_fast").removeClass('active');    

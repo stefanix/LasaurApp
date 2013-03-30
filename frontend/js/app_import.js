@@ -342,7 +342,7 @@ $(document).ready(function(){
         any_assingments = true;
         feedrate = mapConstrainFeedrate($(this).find('.feedrate').val());
         intensity = mapConstrainIntesity($(this).find('.intensity').val());
-        gcodeparts.push("S"+intensity+"\nG1 F"+feedrate+"\nG0 F10000\n");
+        gcodeparts.push("S"+intensity+"\nG1 F"+feedrate+"\nG0 F"+app_settings.max_seek_speed+"\n");
         for (var color in raw_gcode_by_color) {
           if(color in colors) {
             gcodeparts.push(raw_gcode_by_color[color]);
@@ -353,7 +353,7 @@ $(document).ready(function(){
     });
 
     if (any_assingments == true) {     
-      gcodeparts.push("M81\nS0\nG00X0Y0F16000\n");
+      gcodeparts.push("M81\nS0\nG00X0Y0F"+app_settings.max_seek_speed+"\n");
       var gcodestring = gcodeparts.join('');
       var fullpath = $('#svg_upload_file_temp').val();
       var filename = fullpath.split('\\').pop().split('/').pop();

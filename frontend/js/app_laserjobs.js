@@ -45,8 +45,8 @@ $(document).ready(function(){
     var gcodedata = $('#gcode_program').val();
     GcodeReader.parse(gcodedata, 1);
     var gcode_bbox = GcodeReader.getBboxGcode();
-    var header = "G90\nG0F16000\n"
-    var footer = "G00X0Y0F16000\n"
+    var header = "G90\nG0F"+app_settings.max_seek_speed+"\n"
+    var footer = "G00X0Y0F"+app_settings.max_seek_speed+"\n"
     // save_and_add_to_job_queue($('#gcode_name').val() + 'BBOX', header + gcode_bbox + footer);  // for debugging
     send_gcode(header + gcode_bbox + footer, "BBox G-Code sent to backend", true);
     return false;
