@@ -22,6 +22,7 @@ $(document).ready(function(){
       $.get("/library/get/" + name, function(gdata) {
         load_into_gcode_widget(gdata, name);
       });
+      return false;
   	});  	
   });
   // .success(function() { alert("second success"); })

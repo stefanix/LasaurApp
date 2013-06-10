@@ -1,4 +1,13 @@
 
+
+BBB
+---
+- pin P8:46 connected to avr reset would prevent the BBB from booting
+- solution: disconnect pin and use P8:44
+- to make this backward compatiple switch both pins in software
+- also the uart1 mux settings error on the BBB
+
+
 TODO
 -----
 - more passes, integrate with lasertags

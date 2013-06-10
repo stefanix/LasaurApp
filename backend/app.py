@@ -525,14 +525,16 @@ if args.beaglebone:
     ### if running on beaglebone, setup (pin muxing) and use UART1
     # for details see: http://www.nathandumont.com/node/250
     SERIAL_PORT = "/dev/ttyO1"
-    # echo 0 > /sys/kernel/debug/omap_mux/uart1_txd
-    fw = file("/sys/kernel/debug/omap_mux/uart1_txd", "w")
-    fw.write("%X" % (0))
-    fw.close()
-    # echo 20 > /sys/kernel/debug/omap_mux/uart1_rxd
-    fw = file("/sys/kernel/debug/omap_mux/uart1_rxd", "w")
-    fw.write("%X" % ((1 << 5) | 0))
-    fw.close()
+    if os.path.exists("/sys/kernel/debug/omap_mux/uart1_txd")
+        # we are not on the beaglebone black, setup uart1
+        echo 0 > /sys/kernel/debug/omap_mux/uart1_txd
+        fw = file("/sys/kernel/debug/omap_mux/uart1_txd", "w")
+        fw.write("%X" % (0))
+        fw.close()
+        echo 20 > /sys/kernel/debug/omap_mux/uart1_rxd
+        fw = file("/sys/kernel/debug/omap_mux/uart1_rxd", "w")
+        fw.write("%X" % ((1 << 5) | 0))
+        fw.close()
 
     ### Set up atmega328 reset control
     # The reset pin is connected to GPIO2_7 (2*32+7 = 71).
@@ -553,6 +555,29 @@ if args.beaglebone:
     # set the gpio pin high
     # echo 1 > /sys/class/gpio/gpio71/value
     fw = file("/sys/class/gpio/gpio71/value", "w")
+    fw.write("1")
+    fw.flush()
+    fw.close()
+
+    ### Set up atmega328 reset control - BeagleBone Black
+    # The reset pin is connected to GPIO2_9 (2*32+9 = 73).
+    # Setting it to low triggers a reset.
+    # echo 73 > /sys/class/gpio/export
+    try:
+        fw = file("/sys/class/gpio/export", "w")
+        fw.write("%d" % (73))
+        fw.close()
+    except IOError:
+        # probably already exported
+        pass
+    # set the gpio pin to output
+    # echo out > /sys/class/gpio/gpio73/direction
+    fw = file("/sys/class/gpio/gpio73/direction", "w")
+    fw.write("out")
+    fw.close()
+    # set the gpio pin high
+    # echo 1 > /sys/class/gpio/gpio73/value
+    fw = file("/sys/class/gpio/gpio73/value", "w")
     fw.write("1")
     fw.flush()
     fw.close()
