@@ -527,11 +527,11 @@ if args.beaglebone:
     SERIAL_PORT = "/dev/ttyO1"
     if os.path.exists("/sys/kernel/debug/omap_mux/uart1_txd"):
         # we are not on the beaglebone black, setup uart1
-        echo 0 > /sys/kernel/debug/omap_mux/uart1_txd
+        # echo 0 > /sys/kernel/debug/omap_mux/uart1_txd
         fw = file("/sys/kernel/debug/omap_mux/uart1_txd", "w")
         fw.write("%X" % (0))
         fw.close()
-        echo 20 > /sys/kernel/debug/omap_mux/uart1_rxd
+        # echo 20 > /sys/kernel/debug/omap_mux/uart1_rxd
         fw = file("/sys/kernel/debug/omap_mux/uart1_rxd", "w")
         fw.write("%X" % ((1 << 5) | 0))
         fw.close()
