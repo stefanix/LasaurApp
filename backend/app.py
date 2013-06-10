@@ -525,7 +525,7 @@ if args.beaglebone:
     ### if running on beaglebone, setup (pin muxing) and use UART1
     # for details see: http://www.nathandumont.com/node/250
     SERIAL_PORT = "/dev/ttyO1"
-    if os.path.exists("/sys/kernel/debug/omap_mux/uart1_txd")
+    if os.path.exists("/sys/kernel/debug/omap_mux/uart1_txd"):
         # we are not on the beaglebone black, setup uart1
         echo 0 > /sys/kernel/debug/omap_mux/uart1_txd
         fw = file("/sys/kernel/debug/omap_mux/uart1_txd", "w")
