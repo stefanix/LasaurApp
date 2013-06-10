@@ -10,7 +10,7 @@ from filereaders import read_svg, read_dxf
 
 
 APPNAME = "lasaurapp"
-VERSION = "13.02"
+VERSION = "13.06"
 COMPANY_NAME = "com.nortd.labs"
 SERIAL_PORT = None
 BITSPERSECOND = 57600
