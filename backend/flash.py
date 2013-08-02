@@ -24,8 +24,8 @@ def flash_upload(serial_port, resources_dir, firmware_file, hardware='x86'):
             AVRDUDECONFIG = os.path.join(resources_dir, "firmware/tools_osx/avrdude.conf")
         
         elif sys.platform == "win32": # Windows
-            AVRDUDEAPP    = os.path.join(resources_dir, "firmware/tools_win/avrdude")
-            AVRDUDECONFIG = os.path.join(resources_dir, "firmware/tools_win/avrdude.conf")
+            AVRDUDEAPP    = os.path.join(resources_dir, "firmware", "tools_win", "avrdude")
+            AVRDUDECONFIG = os.path.join(resources_dir, "firmware", "tools_win", "avrdude.conf")
         
         elif sys.platform == "linux" or sys.platform == "linux2":  #Linux
             AVRDUDEAPP    = os.path.join(resources_dir, "/usr/bin/avrdude")

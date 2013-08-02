@@ -6,6 +6,7 @@ from wsgiref.simple_server import WSGIRequestHandler, make_server
 from bottle import *
 from serial_manager import SerialManager
 from flash import flash_upload, reset_atmega
+from build import build_firmware
 from filereaders import read_svg, read_dxf
 
 
@@ -72,7 +73,7 @@ class HackedWSGIRequestHandler(WSGIRequestHandler):
     on the BeagleBone and RaspberryPi. The problem is WSGIRequestHandler
     which does a reverse lookup on every request calling gethostbyaddr.
     For some reason this is super slow when connected to the LAN.
-    (adding the the IP and name of the requester in the /etc/hosts file
+    (adding the IP and name of the requester in the /etc/hosts file
     solves the problem but obviously is not practical)
     """
     def address_string(self):
@@ -373,13 +374,33 @@ def flash_firmware_handler(firmware_file=FIRMWARE):
     else:
         print "ERROR: Failed to flash Arduino."
         ret.append('<h2>Flashing Failed!</h2> Check terminal window for possible errors. ')
-        ret. append('Most likely LasaurApp could not find the right serial port.<br><a href="/">return</a><br><br>')
+        ret.append('Most likely LasaurApp could not find the right serial port.')
+        ret.append('<br><a href="/flash_firmware/'+firmware_file+'">try again</a> or <a href="/">return</a><br><br>')
         if os.name != 'posix':
             ret. append('If you know the COM ports the Arduino is connected to you can specifically select it here:')
             for i in range(1,13):
                 ret. append('<br><a href="/flash_firmware?port=COM%s">COM%s</a>' % (i, i))
         return ''.join(ret)
-    
+
+
+@route('/build_firmware')
+def build_firmware_handler():
+    ret = []
+    buildname = "LasaurGrbl_from_src"
+    firmware_dir = os.path.join(resources_dir(), 'firmware')
+    source_dir = os.path.join(resources_dir(), 'firmware', 'src')
+    return_code = build_firmware(source_dir, firmware_dir, buildname)
+    if return_code != 0:
+        print ret
+        ret.append('<h2>FAIL: build error!</h2>')
+        ret.append('Syntax error maybe? Try builing in the terminal.')
+        ret.append('<br><a href="/">return</a><br><br>')
+    else:
+        print "SUCCESS: firmware built."
+        ret.append('<h2>SUCCESS: new firmware built!</h2>')
+        ret.append('<br><a href="/flash_firmware/'+buildname+'.hex">Flash Now!</a><br><br>')
+    return ''.join(ret)
+
 
 @route('/reset_atmega')
 def reset_atmega_handler():
@@ -501,8 +522,10 @@ argparser.add_argument('port', metavar='serial_port', nargs='?', default=False,
 argparser.add_argument('-v', '--version', action='version', version='%(prog)s ' + VERSION)
 argparser.add_argument('-p', '--public', dest='host_on_all_interfaces', action='store_true',
                     default=False, help='bind to all network devices (default: bind to 127.0.0.1)')
-argparser.add_argument('-f', '--flash', dest='build_and_flash', action='store_true',
+argparser.add_argument('-f', '--flash', dest='flash', action='store_true',
                     default=False, help='flash Arduino with LasaurGrbl firmware')
+argparser.add_argument('-b', '--build', dest='build_flash', action='store_true',
+                    default=False, help='build and flash from firmware/src')
 argparser.add_argument('-l', '--list', dest='list_serial_devices', action='store_true',
                     default=False, help='list all serial devices currently connected')
 argparser.add_argument('-d', '--debug', dest='debug', action='store_true',
@@ -672,12 +695,28 @@ else:
         debug(True)
         if hasattr(sys, "_MEIPASS"):
             print "Data root is: " + sys._MEIPASS             
-    if args.build_and_flash:
+    if args.flash:
         return_code = flash_upload(SERIAL_PORT, resources_dir(), FIRMWARE, HARDWARE)
         if return_code == 0:
             print "SUCCESS: Arduino appears to be flashed."
         else:
             print "ERROR: Failed to flash Arduino."
+    elif args.build_flash:
+        # build
+        buildname = "LasaurGrbl_from_src"
+        firmware_dir = os.path.join(resources_dir(), 'firmware')
+        source_dir = os.path.join(resources_dir(), 'firmware', 'src')
+        return_code = build_firmware(source_dir, firmware_dir, buildname)
+        if return_code != 0:
+            print ret
+        else:
+            print "SUCCESS: firmware built."
+            # flash
+            return_code = flash_upload(SERIAL_PORT, resources_dir(), FIRMWARE, HARDWARE)
+            if return_code == 0:
+                print "SUCCESS: Arduino appears to be flashed."
+            else:
+                print "ERROR: Failed to flash Arduino."
     else:
         if args.host_on_all_interfaces:
             run_with_callback('', NETWORK_PORT)
