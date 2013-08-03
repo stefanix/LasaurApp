@@ -47,6 +47,9 @@ class SVGAttributeReader:
             'cy': self.dimensionAttrib
         }
 
+        self.re_findall_transforms = re.compile('(([a-z]+)\s*\(([^)]*)\))', re.IGNORECASE).findall
+        self.re_findall_pathelems = re.compile('([A-Za-z]|-?[0-9]+\.?[0-9]*(?:e-?[0-9]*)?)').findall
+
 
     def read_attrib(self, node, attr, value):
     	"""Read any attribute.
@@ -90,7 +93,7 @@ class SVGAttributeReader:
     def transformAttrib(self, node, attr, value):
         # http://www.w3.org/TR/SVG11/coords.html#EstablishingANewUserSpace
         xforms = []
-        matches = re.findall('(([a-z]+)\s*\(([^)]*)\))', value, re.IGNORECASE)
+        matches = self.re_findall_transforms(value)
         # this parses  something like "translate(50,50), rotate(56)"" to
         # [('translate(50,50)', 'translate', '50,50'), ('rotate(56)', 'rotate', '56')]
         for match in matches:
@@ -179,7 +182,7 @@ class SVGAttributeReader:
     def dAttrib(self, node, attr, value):
         """Read the 'd' attribute, complex path data."""
         # http://www.w3.org/TR/SVG11/paths.html
-        d = re.findall('([A-Za-z]|-?[0-9]+\.?[0-9]*(?:e-?[0-9]*)?)', value)  # letters or float
+        d = self.re_findall_pathelems(value)
         # convert num strings to actual nums
         for i in range(len(d)):
             try:

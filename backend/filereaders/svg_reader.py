@@ -4,10 +4,6 @@ __author__ = 'Stefan Hechenberger <stefan@nortd.com>'
 import re
 import math
 import logging
-try:
-    import xml.etree.cElementTree as ET
-except ImportError:
-    import xml.etree.ElementTree as ET
 
 from .webcolors import hex_to_rgb, rgb_to_hex
 from .utilities import matrixMult, matrixApply, vertexScale, parseFloats
@@ -17,9 +13,15 @@ from .svg_tag_reader import SVGTagReader
 logging.basicConfig()
 log = logging.getLogger("svg_reader")
 # log.setLevel(logging.DEBUG)
-log.setLevel(logging.INFO)
-# log.setLevel(logging.WARN)
+# log.setLevel(logging.INFO)
+log.setLevel(logging.WARN)
 
+
+try:
+    import xml.etree.cElementTree as ET
+except ImportError:
+    print log.warn("Using non-C (slow) XML parser.")
+    import xml.etree.ElementTree as ET
 
 
 # SVG parser for the Lasersaur.
