@@ -19,10 +19,10 @@ class SVGPathReader:
     from svg_path_reader import svgPathReader
     """
 
-    def __init__(self, tolerance):
+    def __init__(self, svgreader):
+        self.svgreader = svgreader
         # tolerance2 is in pixel units
-        self._tolerance2 = tolerance**2
-        self._tolerance2_global = self._tolerance2
+        self._tolerance2 = self.svgreader.tolerance2
 
 
     def add_path(self, d, node):
@@ -43,7 +43,7 @@ class SVGPathReader:
                 return sy
 
         # adjust tolerance for possible transforms
-        self._tolerance2 = self._tolerance2_global
+        self._tolerance2 = self.svgreader.tolerance2
         totalMaxScale = _matrixExtractScale(node['xformToWorld'])
         if totalMaxScale != 0 and totalMaxScale != 1.0:
             self._tolerance2 /= (totalMaxScale)**2

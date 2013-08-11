@@ -32,7 +32,8 @@ class SerialManagerClass:
 
         self.LASAURGRBL_FIRST_STRING = "LasaurGrbl"
 
-        self.fec_redundancy = 2  # use forward error correction
+        # self.fec_redundancy = 2  # use forward error correction
+        self.fec_redundancy = 1  # use error detection
 
         self.ready_char = '\x12'
         self.request_ready_char = '\x14'

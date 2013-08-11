@@ -14,7 +14,9 @@ log = logging.getLogger("svg_reader")
 
 class SVGAttributeReader:
 
-    def __init__(self):
+    def __init__(self, svgreader):
+        self.svgreader = svgreader
+
         self.DEG_TO_RAD = math.pi/180
         self.RAD_TO_DEG = 180/math.pi
 
@@ -49,6 +51,7 @@ class SVGAttributeReader:
 
         self.re_findall_transforms = re.compile('(([a-z]+)\s*\(([^)]*)\))', re.IGNORECASE).findall
         self.re_findall_pathelems = re.compile('([A-Za-z]|-?[0-9]+\.?[0-9]*(?:e-?[0-9]*)?)').findall
+        self.re_findall_unitparts = re.compile('(-?[0-9]*\.?[0-9]*(?:e-?[0-9]+)?)(cm|mm|pt|pc|in|%|em|ex)?').findall
 
 
     def read_attrib(self, node, attr, value):
@@ -57,7 +60,7 @@ class SVGAttributeReader:
     	This function delegates according to the _handlers map.
     	"""
         if attr in self._handlers and value.strip() != '':
-        	log.debug("reading attrib: " + attr + ":" + value)
+        	# log.debug("reading attrib: " + attr + ":" + value)
         	self._handlers[attr](node, attr, value)
 
 
@@ -205,25 +208,31 @@ class SVGAttributeReader:
 
     def _parseUnit(self, val):
         if val is not None:
-        	val = val.strip().lower()
-        	floats = parseFloats(val)
-        	if len(floats) == 1:
-	            num = floats[0]
-	            if val.endswith('cm'):
-	            	num *= this.dpi/2.54
-	            elif val.endswith('mm'):
-                	num *= this.dpi/25.4
-                elif val.endswith('pt'):
-                    num *= this.dpi/72.0
-                elif val.endswith('pc'):
-                    num *= 12*this.dpi/72
-                elif val.endswith('in'):
-                    num *= this.dpi
-                elif val.endswith('%') or val.endswith('em') or val.endswith('ex'):
-                	log.error("%, em, ex dimension units not supported, use px or mm instead")
-                return num     		
-		log.error("invalid dimension")
-		return None
+            vals = self.re_findall_unitparts(val)
+            # [('123', 'em'), ('-10', 'cm')]
+            if vals:
+                num = float(vals[0][0])
+                unit = vals[0][1]
+                if unit == '':
+                    return num
+                
+                if unit == 'cm':
+                    num *= self.svgreader.dpi/2.54
+                elif unit == 'mm':
+                    num *= self.svgreader.dpi/25.4
+                elif unit == 'pt':
+                    num *= self.svgreader.dpi/72.0
+                elif unit == 'pc':
+                    num *= 12*self.svgreader.dpi/72
+                elif unit == 'in':
+                    num *= self.svgreader.dpi
+                elif unit == '%' or unit == 'em' or unit == 'ex':
+                    log.error("%, em, ex dimension units not supported, use px or mm instead")
+
+                return num
+            log.error("invalid dimension")
+        return None
+
 
 
     def _parseColor(self, val):
@@ -233,9 +242,11 @@ class SVGAttributeReader:
         'none' means that the geometry is not to be rendered.
         See: http://www.w3.org/TR/SVG11/painting.html#SpecifyingPaint
         """
-    	# http://www.w3.org/TR/SVG11/color.html	
+        # http://www.w3.org/TR/SVG11/color.html 
         # http://www.w3.org/TR/2008/REC-CSS2-20080411/syndata.html#color-units
-        val = val.strip()
+        if val[0] == " ":
+            val = val.strip()
+            
         if val[0] == '#':
             return normalize_hex(val)
         elif val.startswith('rgba'):
@@ -261,7 +272,9 @@ class SVGAttributeReader:
         elif val in ['currentColor', 'inherit']:
             return 'inherit'
         else:
-	        log.warn("invalid color, skipped: " + str(val))
-	        return 'inherit'
+            log.warn("invalid color, skipped: " + str(val))
+            return 'inherit'
+
+
 
 

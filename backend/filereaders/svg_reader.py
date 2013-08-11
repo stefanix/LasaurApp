@@ -66,9 +66,6 @@ class SVGReader:
     """
 
     def __init__(self, tolerance, target_size):
-        # init helper object for tag reading
-        self._tagReader = SVGTagReader(tolerance)
-
         # parsed path data, paths by color
         # {'#ff0000': [[[x,y], [x,y], ...], [], ..], '#0000ff':[]}
         # Each path is a list of vertices which is a list of two floats.        
@@ -87,6 +84,9 @@ class SVGReader:
         self.tolerance2_half = (0.5*tolerance)**2
         self.tolerance2_px = None
 
+        # init helper object for tag reading
+        self._tagReader = SVGTagReader(self)
+        
         # lasersaur cut setting from SVG file
         # list of triplets ... [(pass#, key, value), ...]
         # pass# designates the pass this lasertag controls
@@ -243,7 +243,7 @@ class SVGReader:
     
     def parse_children(self, domNode, parentNode):
         for child in domNode:
-            log.debug("considering tag: " + child.tag)
+            # log.debug("considering tag: " + child.tag)
             if self._tagReader.has_handler(child):
                 # 1. setup a new node
                 # and inherit from parent

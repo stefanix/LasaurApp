@@ -15,12 +15,12 @@ log = logging.getLogger("svg_reader")
 
 class SVGTagReader:
     
-    def __init__(self, tolerance):
+    def __init__(self, svgreader):
 
         # init helper for attribute reading
-        self._attribReader = SVGAttributeReader()
+        self._attribReader = SVGAttributeReader(svgreader)
         # init helper for path handling
-        self._pathReader = SVGPathReader(tolerance)
+        self._pathReader = SVGPathReader(svgreader)
 
         self._handlers = {
             'g': self.g,
@@ -57,10 +57,10 @@ class SVGTagReader:
         """
         tagName = self._get_tag(tag)
         if tagName in self._handlers:
-            log.debug("reading tag: " + tagName)
+            # log.debug("reading tag: " + tagName)
             # parse own attributes and overwrite in node
             for attr,value in tag.attrib.items():
-                log.debug("considering attrib: " + attr)
+                # log.debug("considering attrib: " + attr)
                 self._attribReader.read_attrib(node, attr, value)
             # accumulate transformations
             node['xformToWorld'] = matrixMult(node['xformToWorld'], node['xform'])
