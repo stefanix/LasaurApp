@@ -24,12 +24,12 @@ args = argparser.parse_args()
 
 
 thislocation = os.path.dirname(os.path.realpath(__file__))
-svgpath = os.path.join(thislocation, '..', 'other', 'test_svgs')
+svgpath = os.path.join(thislocation, 'test_svgs')
 
 def main():
     svgstring = open(os.path.join(svgpath, "full-bed.svg")).read()
     # svgstring = open(os.path.join(svgpath, "rocket_full.svg")).read()
-    # svgstring = open(os.path.join(svgpath, "Steven and Chris Picture Frame - with ERROR.svg")).read()
+    # svgstring = open(os.path.join(svgpath, "rosetta.svg")).read()
     boundarys = read_svg(svgstring, [1220,610], 0.08)
 
 
