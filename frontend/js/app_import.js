@@ -319,7 +319,7 @@ $(document).ready(function(){
       var filename = fullpath.split('\\').pop().split('/').pop();
 
       save_and_add_to_job_queue(filename, DataHandler.getJson());
-      load_into_gcode_widget(filename, DataHandler.getJson());
+      load_into_job_widget(filename, DataHandler.getJson());
       $('#tab_jobs_button').trigger('click');
     } else {
       $().uxmessage('warning', "nothing to cut -> please assign colors to passes");

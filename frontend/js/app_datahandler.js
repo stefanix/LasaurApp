@@ -53,7 +53,7 @@ DataHandler = {
     // S, F, P
     // M0, M2, M3, M4, M5, M6
     // M80, M81, M82, M83, M84, M85
-
+    
   },
 
   setByJson : function(strdata) {
@@ -61,7 +61,8 @@ DataHandler = {
     // {'passes':{'colors':['#000000',..], 'feedrate':450, 'intensity':100},
     //  'paths_by_color':{'#000000':[[[x,y],[x,y], ..],[], ..], '#ffffff':[..]}
     // }
-    var data = JSON.parse(json);
+    this.clear();
+    var data = JSON.parse(strdata);
     this.passes = data['passes'];
     this.paths_by_color = data['paths_by_color'];
   },

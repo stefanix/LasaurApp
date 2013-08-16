@@ -2,6 +2,9 @@
 
 $(document).ready(function(){
 
+  // empty job_name on reload
+  $("#job_name").val("");  
+
   // populate queue from queue directory
   $.getJSON("/queue/list", function(data) {
     $.each(data, function(index, name) {
@@ -15,15 +18,15 @@ $(document).ready(function(){
       data.sort();
     }
     $.each(data, function(index, name) {
-      $('#gcode_library').prepend('<li><a href="#">'+ name +'</a></li>');
+      $('#job_library').prepend('<li><a href="#">'+ name +'</a></li>');
     });
-  	$('#gcode_library li a').click(function(){
-  	  var name = $(this).text();
-      $.get("/library/get/" + name, function(gdata) {
-        load_into_gcode_widget(name, gdata);
+    $('#job_library li a').click(function(){
+      var name = $(this).text();
+      $.get("/library/get/" + name, function(jobdata) {
+        load_into_job_widget(name, jobdata);
       });
       return false;
-  	});  	
+    });   
   });
   // .success(function() { alert("second success"); })
   // .error(function() { alert("error"); })
@@ -34,23 +37,23 @@ $(document).ready(function(){
 
   $("#progressbar").hide();  
   $("#gcode_submit").click(function(e) {
-  	// send gcode string to server via POST
-  	var gcode = $('#gcode_program').val();
-    send_gcode("G90\n" + gcode, "G-Code sent to backend.", true);
-  	return false;
+    // send gcode string to server via POST
+    DataHandler.setByJson($('#job_data').val());
+    send_gcode(DataHandler.getGcode(), "G-Code sent to backend.", true);
+    return false;
   });
 
 
   $('#gcode_bbox_submit').tooltip();
   $("#gcode_bbox_submit").click(function(e) {
-    // var gcodedata = $('#gcode_program').val();
+    DataHandler.setByJson($('#job_data').val());
     send_gcode(DataHandler.getBboxGcode(), "BBox G-Code sent to backend", true);
     return false;
   });
 
   $('#gcode_save_to_queue').tooltip();
   $("#gcode_save_to_queue").click(function(e) {
-    save_and_add_to_job_queue($.trim($('#gcode_name').val()), $('#gcode_program').val());
+    save_and_add_to_job_queue($.trim($('#job_name').val()), $('#job_data').val());
     return false;
   });
 
@@ -59,9 +62,9 @@ $(document).ready(function(){
   //
   var canvas = new Canvas('#preview_canvas');
 
-  $('#gcode_program').blur(function() {
-    var gcodedata = $('#gcode_program').val();
-  	DataHandler.draw(canvas, 0.25);
+  $('#job_data').blur(function() {
+    DataHandler.setByJson($('#job_data').val());
+    DataHandler.draw(canvas, 0.5);
     // var stats = GcodeReader.getStats();
     // var length = stats.cuttingPathLength; 
     // var duration = stats.estimatedTime;

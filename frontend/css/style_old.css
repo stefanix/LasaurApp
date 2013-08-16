@@ -256,19 +256,6 @@ pre.prettyprint {
 }
 
 
-
-.gcode_programs {
-  display:none;
-}
-.gcode_programs a {
-  display:block;
-}
-.gcode_programs div {
-  display:none;
-}
-
-
-
 div.log_item {
   padding:5px;
   margin: 5px;

@@ -210,15 +210,15 @@ def library_list_handler():
 @route('/queue/save', method='POST')
 def queue_save_handler():
     ret = '0'
-    if 'gcode_name' in request.forms and 'gcode_program' in request.forms:
-        name = request.forms.get('gcode_name')
-        gcode_program = request.forms.get('gcode_program')
+    if 'job_name' in request.forms and 'job_data' in request.forms:
+        name = request.forms.get('job_name')
+        job_data = request.forms.get('job_data')
         filename = os.path.abspath(os.path.join(storage_dir(), name.strip('/\\')))
         if os.path.exists(filename) or os.path.exists(filename+'.starred'):
             return "file_exists"
         try:
             fp = open(filename, 'w')
-            fp.write(gcode_program)
+            fp.write(job_data)
             print "file saved: " + filename
             ret = '1'
         finally:
@@ -419,9 +419,9 @@ def reset_atmega_handler():
 
 @route('/gcode', method='POST')
 def gcode_submit_handler():
-    gcode_program = request.forms.get('gcode_program')
-    if gcode_program and SerialManager.is_connected():
-        lines = gcode_program.split('\n')
+    job_data = request.forms.get('job_data')
+    if job_data and SerialManager.is_connected():
+        lines = job_data.split('\n')
         print "Adding to queue %s lines" % len(lines)
         for line in lines:
             SerialManager.queue_gcode_line(line)

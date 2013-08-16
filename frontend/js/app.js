@@ -47,7 +47,7 @@ function send_gcode(gcode, success_msg, progress) {
       $.ajax({
         type: "POST",
         url: "/gcode",
-        data: {'gcode_program':gcode},
+        data: {'job_data':gcode},
         // dataType: "json",
         success: function (data) {
           if (data == "__ok__") {
@@ -105,7 +105,7 @@ function save_and_add_to_job_queue(name, gcode) {
     name = date.toDateString() +' - '+ queue_num_index
   }
   //// store gcode - on success add to queue
-	$.post("/queue/save", { 'gcode_name':name, 'gcode_program':gcode }, function(data) {
+	$.post("/queue/save", { 'job_name':name, 'job_data':gcode }, function(data) {
 		if (data == "1") {
 		  queue_num_index += 1;
       add_to_job_queue(name);
@@ -148,7 +148,7 @@ function add_to_job_queue(name) {
       if (name.slice(-8) == '.starred') {
         name = name.slice(0,-8);
       }      
-      load_into_gcode_widget(name, gdata);
+      load_into_job_widget(name, gdata);
     }).error(function() {
       $().uxmessage('error', "File not found: " + name);
     });
@@ -206,28 +206,28 @@ function remove_queue_item(li_item) {
   });  
 }
 
-function add_to_library_queue(gcode, name) {
+function add_to_library_queue(jobdata, name) {
   if ((typeof(name) == 'undefined') || ($.trim(name) == '')) {
     var date = new Date();
     name = date.toDateString() +' - '+ queue_num_index
   }
-	$('#gcode_library').prepend('<li><a href="#"><span>'+ name +'</span><i class="icon-star pull-right"></i><div style="display:none">'+ gcode +'</div></a></li>')
+	$('#job_library').prepend('<li><a href="#"><span>'+ name +'</span><i class="icon-star pull-right"></i><div style="display:none">'+ jobdata +'</div></a></li>')
 	
-	$('#gcode_library li a').click(function(){
-	  load_into_gcode_widget($(this).text(), $(this).next().text())
+	$('#job_library li a').click(function(){
+	  load_into_job_widget($(this).text(), $(this).next().text())
 	});
 
-	$('#gcode_library li a i').click(function(){
+	$('#job_library li a i').click(function(){
 	  $().uxmessage('success', "star ...");
 	});
 }
 
 
-function load_into_gcode_widget(name, gcode) {
-	$('#gcode_name').val(name);
-	$('#gcode_program').val(gcode);
+function load_into_job_widget(name, jobdata) {
+	$('#job_name').val(name);
+	$('#job_data').val(jobdata);
 	// make sure preview refreshes
-	$('#gcode_program').trigger('blur');
+	$('#job_data').trigger('blur');
 }
 
 
