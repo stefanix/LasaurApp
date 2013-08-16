@@ -11,8 +11,6 @@ $(document).ready(function(){
   icanvas.width = 610;  // HACK: for some reason the canvas can't figure this out itself
   icanvas.height = 305; // HACK: for some reason the canvas can't figure this out itself
   icanvas.background('#ffffff'); 
-  GcodeReader.setCanvas(icanvas);
-  init_pan_zoom('#import_canvas');
 
   
   // file upload form
@@ -96,8 +94,7 @@ $(document).ready(function(){
     // data is a dict with the following keys [boundarys, dpi, lasertags]
     var boundarys = data.boundarys;
     if (boundarys) {
-      var scale = 0.5;
-      GcodeReader.setPathsByColor(boundarys, scale);
+      DataHandler.setByPaths(boundarys);
 
       // reset previous color toggles
       $('#canvas_properties .colorbtns').html('');  // reset colors
@@ -239,16 +236,24 @@ $(document).ready(function(){
 
   
   function generatePreview() {
-    if (!GcodeReader.isEmpty()) {        
-      var exclude_colors =  {};
+    if (!DataHandler.isEmpty()) {
+      var colors = DataHandler.getAllColors();        
       $('#canvas_properties .colorbtns button').each(function(index) {
         if (!($(this).hasClass('active'))) {
-          // alert(JSON.stringify($(this).find('div i').text()));
-          exclude_colors[$(this).find('div span').text()] = 1;
+          var color = $(this).find('div span').text();
+          var idx = colors.indexOf(color);
+          if (idx != -1) {
+            // remove color
+            var head = colors.slice(0,idx);
+            var tail = colors.slice(idx+1);
+            head.push.apply(head, tail);
+            colors = head;
+          }
         }
       });
-      GcodeReader.setExcludeColors(exclude_colors);
-      GcodeReader.draw();
+      DataHandler.clearPasses();
+      DataHandler.addPass({'colors':colors});
+      DataHandler.draw(icanvas, 0.5);
     } else {
       $().uxmessage('notice', "No data loaded to generate preview.");
     }       
@@ -294,38 +299,28 @@ $(document).ready(function(){
   // setting up add to queue button
   $("#import_to_queue").click(function(e) {   
     // assemble multiple passes
-    var gcodeparts = ["G21\nG90\nM80\n"];
-    var feedrate;
-    var intensity;
-    var colors = {};
-    var any_assingments = false;
-
-    //// passes
+    DataHandler.clearPasses();
     $('#passes > div').each(function(index) {
+      var colors = [];
       $(this).find('.colorbtns button').each(function(index) {
         if ($(this).hasClass('active')) {
-          colors[$(this).find('div span').text()] = 1;
+          colors.push($(this).find('div span').text());
         }
       });
-      if (Object.keys(colors).length > 0) { 
-        any_assingments = true;
-        feedrate = mapConstrainFeedrate($(this).find('.feedrate').val());
-        intensity = mapConstrainIntesity($(this).find('.intensity').val());
-        gcodeparts.push("S"+intensity+"\nG1 F"+feedrate+"\nG0 F"+app_settings.max_seek_speed+"\n");
-        gcodeparts.push(GcodeReader.write(colors));
+      if (colors.length > 0) { 
+        var feedrate = $(this).find('.feedrate').val();
+        var intensity = $(this).find('.intensity').val();
+        DataHandler.addPass({'colors':colors, 'feedrate':feedrate, 'intensity':intensity});
       }
-      colors = {};
     });
 
-    if (any_assingments == true) {     
-      gcodeparts.push("M81\nS0\nG00X0Y0F"+app_settings.max_seek_speed+"\n");
-      var gcodestring = gcodeparts.join('');
+    if (DataHandler.hasPasses()) {     
       var fullpath = $('#svg_upload_file_temp').val();
       var filename = fullpath.split('\\').pop().split('/').pop();
-      save_and_add_to_job_queue(filename, gcodestring);
-      load_into_gcode_widget(gcodestring, filename);
+
+      save_and_add_to_job_queue(filename, DataHandler.getJson());
+      load_into_gcode_widget(filename, DataHandler.getJson());
       $('#tab_jobs_button').trigger('click');
-      // $().uxmessage('notice', "file added to laser job queue");
     } else {
       $().uxmessage('warning', "nothing to cut -> please assign colors to passes");
     }

@@ -148,7 +148,7 @@ function add_to_job_queue(name) {
       if (name.slice(-8) == '.starred') {
         name = name.slice(0,-8);
       }      
-      load_into_gcode_widget(gdata, name);
+      load_into_gcode_widget(name, gdata);
     }).error(function() {
       $().uxmessage('error', "File not found: " + name);
     });
@@ -214,7 +214,7 @@ function add_to_library_queue(gcode, name) {
 	$('#gcode_library').prepend('<li><a href="#"><span>'+ name +'</span><i class="icon-star pull-right"></i><div style="display:none">'+ gcode +'</div></a></li>')
 	
 	$('#gcode_library li a').click(function(){
-	  load_into_gcode_widget($(this).next().text(), $(this).text())
+	  load_into_gcode_widget($(this).text(), $(this).next().text())
 	});
 
 	$('#gcode_library li a i').click(function(){
@@ -223,37 +223,11 @@ function add_to_library_queue(gcode, name) {
 }
 
 
-function load_into_gcode_widget(gcode, name) {
+function load_into_gcode_widget(name, gcode) {
 	$('#gcode_name').val(name);
 	$('#gcode_program').val(gcode);
 	// make sure preview refreshes
 	$('#gcode_program').trigger('blur');
-}
-
-
-function mapConstrainFeedrate(rate) {
-  rate = parseInt(rate);
-  if (rate < .1) {
-    rate = .1;
-    $().uxmessage('warning', "Feedrate constrained to 0.1");
-  } else if (rate > 24000) {
-    rate = 24000;
-    $().uxmessage('warning', "Feedrate constrained to 24000");
-  }
-  return rate.toString();
-}
-  
-function mapConstrainIntesity(intens) {
-  intens = parseInt(intens);
-  if (intens < 0) {
-    intens = 0;
-    $().uxmessage('warning', "Intensity constrained to 0");
-  } else if (intens > 100) {
-    intens = 100;
-    $().uxmessage('warning', "Intensity constrained to 100");
-  }
-  //map to 255 for now until we change the backend
-  return Math.round(intens * 2.55).toString();
 }
 
 

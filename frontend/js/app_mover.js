@@ -25,8 +25,8 @@ $(document).ready(function(){
         air_assist_on = 'M80\n';
         air_assist_off = 'M81\n';
     	}
-    	var feedrate = mapConstrainFeedrate($("#feedrate_field" ).val());
-    	var intensity =  mapConstrainIntesity($( "#intensity_field" ).val());
+    	var feedrate = DataHandler.mapConstrainFeedrate($("#feedrate_field" ).val());
+    	var intensity =  DataHandler.mapConstrainIntesity($( "#intensity_field" ).val());
     	var gcode = 'G90\n'+air_assist_on+'S'+ intensity + '\n' + g0_or_g1 + ' X' + 2*x + 'Y' + 2*y + 'F' + feedrate + '\nS0\n'+air_assist_off;	
       // $().uxmessage('notice', gcode);
     	send_gcode(gcode, "Motion request sent.", false);    
@@ -38,8 +38,8 @@ $(document).ready(function(){
   	if($('#feed_btn').hasClass("active")){
   		move_or_cut = 'cut';
   	}
-  	var feedrate = mapConstrainFeedrate($( "#feedrate_field" ).val());
-  	var intensity =  mapConstrainIntesity($( "#intensity_field" ).val());
+  	var feedrate = DataHandler.mapConstrainFeedrate($( "#feedrate_field" ).val());
+  	var intensity =  DataHandler.mapConstrainIntesity($( "#intensity_field" ).val());
   	var coords_text;
   	if (move_or_cut == 'cut') {
   	  coords_text = move_or_cut + ' to (' + 2*x + ', '+ 2*y + ') at ' + feedrate + 'mm/min and ' + Math.round(intensity/2.55) + '% intensity';

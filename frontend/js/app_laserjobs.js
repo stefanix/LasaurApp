@@ -20,7 +20,7 @@ $(document).ready(function(){
   	$('#gcode_library li a').click(function(){
   	  var name = $(this).text();
       $.get("/library/get/" + name, function(gdata) {
-        load_into_gcode_widget(gdata, name);
+        load_into_gcode_widget(name, gdata);
       });
       return false;
   	});  	
@@ -43,13 +43,8 @@ $(document).ready(function(){
 
   $('#gcode_bbox_submit').tooltip();
   $("#gcode_bbox_submit").click(function(e) {
-    var gcodedata = $('#gcode_program').val();
-    GcodeReader.parse(gcodedata, 1);
-    var gcode_bbox = GcodeReader.getBboxGcode();
-    var header = "G90\nG0F"+app_settings.max_seek_speed+"\n"
-    var footer = "G00X0Y0F"+app_settings.max_seek_speed+"\n"
-    // save_and_add_to_job_queue($('#gcode_name').val() + 'BBOX', header + gcode_bbox + footer);  // for debugging
-    send_gcode(header + gcode_bbox + footer, "BBox G-Code sent to backend", true);
+    // var gcodedata = $('#gcode_program').val();
+    send_gcode(DataHandler.getBboxGcode(), "BBox G-Code sent to backend", true);
     return false;
   });
 
@@ -63,17 +58,14 @@ $(document).ready(function(){
   // G-Code Canvas Preview
   //
   var canvas = new Canvas('#preview_canvas');
-  canvas.background('#ffffff');
 
   $('#gcode_program').blur(function() {
     var gcodedata = $('#gcode_program').val();
-    canvas.background('#ffffff'); 
-  	GcodeReader.parse(gcodedata, 0.25);
-  	GcodeReader.draw();
-    var stats = GcodeReader.getStats();
-    var length = stats.cuttingPathLength; 
-    var duration = stats.estimatedTime;
-    $('#previe_stats').html("~" + duration.toFixed(1) + "min");
+  	DataHandler.draw(canvas, 0.25);
+    // var stats = GcodeReader.getStats();
+    // var length = stats.cuttingPathLength; 
+    // var duration = stats.estimatedTime;
+    // $('#previe_stats').html("~" + duration.toFixed(1) + "min");
     // $().uxmessage('notice', "Total cutting path is: " + (length/1000.0).toFixed(2) + 
     //               "m. Estimated Time: " + duration.toFixed(1) + "min");
   });
