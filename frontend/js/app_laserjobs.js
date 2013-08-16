@@ -69,7 +69,7 @@ $(document).ready(function(){
     var gcodedata = $('#gcode_program').val();
     canvas.background('#ffffff'); 
   	GcodeReader.parse(gcodedata, 0.25);
-  	GcodeReader.draw(canvas, '#000000');
+  	GcodeReader.draw();
     var stats = GcodeReader.getStats();
     var length = stats.cuttingPathLength; 
     var duration = stats.estimatedTime;

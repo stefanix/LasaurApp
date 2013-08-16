@@ -1,7 +1,5 @@
 $(document).ready(function(){
   
-  var raw_gcode = null;
-  var raw_gcode_by_color = null;
   var path_optimize = 1;
   var forceSvgDpiTo = undefined;
   var minNumPassWidgets = 3;
@@ -13,7 +11,9 @@ $(document).ready(function(){
   icanvas.width = 610;  // HACK: for some reason the canvas can't figure this out itself
   icanvas.height = 305; // HACK: for some reason the canvas can't figure this out itself
   icanvas.background('#ffffff'); 
-  
+  GcodeReader.setCanvas(icanvas);
+  init_pan_zoom('#import_canvas');
+
   
   // file upload form
   $('#svg_upload_file').change(function(e){
@@ -96,17 +96,16 @@ $(document).ready(function(){
     // data is a dict with the following keys [boundarys, dpi, lasertags]
     var boundarys = data.boundarys;
     if (boundarys) {
-      raw_gcode_by_color = {};
-      for (var color in boundarys) {
-        raw_gcode_by_color[color] = GcodeWriter.write(boundarys[color], 1.0, 0.0, 0.0);
-      }
+      var scale = 0.5;
+      GcodeReader.setPathsByColor(boundarys, scale);
+
       // reset previous color toggles
       $('#canvas_properties .colorbtns').html('');  // reset colors
       $('#passes').html('');  // pass widgets
       // add color toggles to preview and pass widgets
       var color_order = {};  // need this to easily activate button from lasertags
       var color_count = 0;   // need this to default single color geos to pass1
-      for (var color in raw_gcode_by_color) {     
+      for (var color in boundarys) {    
         color_order[color] = color_count;
         color_count++;
       }
@@ -240,7 +239,7 @@ $(document).ready(function(){
 
   
   function generatePreview() {
-    if (raw_gcode_by_color) {        
+    if (!GcodeReader.isEmpty()) {        
       var exclude_colors =  {};
       $('#canvas_properties .colorbtns button').each(function(index) {
         if (!($(this).hasClass('active'))) {
@@ -248,42 +247,12 @@ $(document).ready(function(){
           exclude_colors[$(this).find('div span').text()] = 1;
         }
       });
-      
-      icanvas.background('#ffffff');
-      // var bbox_list = [];
-      var scale = 0.5;
-      for (var color in raw_gcode_by_color) {
-        if (!(color in exclude_colors)) {
-          GcodeReader.parse(raw_gcode_by_color[color], scale);
-          GcodeReader.draw(icanvas, color);
-          // bbox_list.push([GcodeReader.bbox[0],GcodeReader.bbox[1],GcodeReader.bbox[2],GcodeReader.bbox[3]]);
-        }
-      }
-      // // combine all bounding boxes and report on log
-      // var overall_bbox = [0,0,0,0];
-      // for (var bbidx in bbox_list) {
-      //   var bbox = bbox_list[bbidx];
-      //   overall_bbox = bboxExpand(overall_bbox, bbox[0], bbox[1])
-      //   overall_bbox = bboxExpand(overall_bbox, bbox[2], bbox[3])
-      // }
-      // var bbox_width = (overall_bbox[2] - overall_bbox[0]) / scale;
-      // var bbox_height = (overall_bbox[3] - overall_bbox[1]) / scale;
-      // $().uxmessage('notice', "The calculated bounding box is " 
-      //   + bbox_width.toFixed(1) + 'x' + bbox_height.toFixed(1) + 'mm'
-      //   + ' (' + (bbox_width/25.4).toFixed(1) + 'x' + (bbox_height/25.4).toFixed(1) + 'in).');      
+      GcodeReader.setExcludeColors(exclude_colors);
+      GcodeReader.draw();
     } else {
       $().uxmessage('notice', "No data loaded to generate preview.");
     }       
   }
-
-  // function bboxExpand(bbox, x,y) {
-  //   var bbox_new = [bbox[0],bbox[1],bbox[2],bbox[3]];
-  //   if (x < bbox[0]) {bbox_new[0] = x;}
-  //   else if (x > bbox[2]) {bbox_new[2] = x;}
-  //   if (y < bbox[1]) {bbox_new[1] = y;}
-  //   else if (y > bbox[3]) {bbox_new[3] = y;}
-  //   return bbox_new;
-  // }
 
   // forwarding file open click
   $('#svg_import_btn').click(function(e){
@@ -343,11 +312,7 @@ $(document).ready(function(){
         feedrate = mapConstrainFeedrate($(this).find('.feedrate').val());
         intensity = mapConstrainIntesity($(this).find('.intensity').val());
         gcodeparts.push("S"+intensity+"\nG1 F"+feedrate+"\nG0 F"+app_settings.max_seek_speed+"\n");
-        for (var color in raw_gcode_by_color) {
-          if(color in colors) {
-            gcodeparts.push(raw_gcode_by_color[color]);
-          }
-        }
+        gcodeparts.push(GcodeReader.write(colors));
       }
       colors = {};
     });
