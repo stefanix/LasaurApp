@@ -57,8 +57,6 @@
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">Admin<b class="caret"></b></a>
                             <ul class="dropdown-menu">
                                 <li><a href="flash_firmware">Flash Firmware (latest)</a></li>
-                                <li><a href="flash_firmware/LasaurGrbl-ls.hex">Flash LasaurShield Firmware (latest, testing)</a></li>
-                                <li><a href="flash_firmware/LasaurGrbl-v12.08f.hex">Flash Firmware (LasaurShield v12.08f, stable)</a></li>
                                 <li><a href="build_firmware">Build and Flash from Source</a></li>
                                 <li><a id="reset_atmega" href="reset_atmega">Reset Atmega (restarts firmware)</a></li>
                             </ul>
@@ -107,12 +105,12 @@
                                     </div>
                                     <div style="padding-top:20px">
                                         <div class="btn-group pull-left">
-                                            <button id="gcode_submit" class="btn btn-large">Send to Lasersaur</button>
-                                            <button id="gcode_bbox_submit" class="btn btn-large" title="send bounding box to lasersaur" data-delay="500">
+                                            <button id="job_submit" class="btn btn-large">Send to Lasersaur</button>
+                                            <button id="job_bbox_submit" class="btn btn-large" title="send bounding box to lasersaur" data-delay="500">
                                                 <span class="icon-resize-full"></span>
                                             </button>
                                         </div>
-                                        <button id="gcode_save_to_queue" class="btn btn-large pull-right" title="save to queue" data-delay="500">
+                                        <button id="job_save_to_queue" class="btn btn-large pull-right" title="save to queue" data-delay="500">
                                                 <span class="icon-plus-sign"></span>
                                         </button>
                                     </div>

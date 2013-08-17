@@ -91,7 +91,6 @@ DataHandler = {
   getGcode : function() {
     // write machinable gcode, organize by passes
     // header
-    alert(JSON.stringify(this.passes))
     var glist = [];
     glist.push("G90\nM80\n");
     glist.push("G0F"+app_settings.max_seek_speed+"\n");
@@ -125,6 +124,7 @@ DataHandler = {
     }
     // footer
     glist.push("M81\nS0\nG0X0Y0F"+app_settings.max_seek_speed+"\n");
+    // alert(JSON.stringify(glist.join('')))
     return glist.join('');
   },
 
@@ -218,14 +218,15 @@ DataHandler = {
         var pass = vals[0];
         var feedrate = vals[1];
         var intensity = vals[3];
-        if (typeof(pass) === 'number') {
+        if (typeof(pass) === 'number' && pass > 0) {
           //make sure to have enough pass widgets
           var passes_to_create = pass - this.passes.length
           if (passes_to_create >= 1) {
-            for (var i=0; i<passes_to_create; i++) {
+            for (var k=0; k<passes_to_create; k++) {
               this.passes.push({'colors':[], 'feedrate':1200, 'intensity':10})
             }
           }
+          pass = pass-1;  // convert to zero-indexed
           // feedrate
           if (feedrate != '' && typeof(feedrate) === 'number') {
             this.passes[pass]['feedrate'] = feedrate;

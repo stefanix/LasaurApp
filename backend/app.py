@@ -418,7 +418,7 @@ def reset_atmega_handler():
 #         return ""
 
 @route('/gcode', method='POST')
-def gcode_submit_handler():
+def job_submit_handler():
     job_data = request.forms.get('job_data')
     if job_data and SerialManager.is_connected():
         lines = job_data.split('\n')
