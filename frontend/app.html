@@ -137,7 +137,7 @@
                             </div>
                             
                             <div id="tab_import" class="tab-pane">                                                  
-                                <div class="well" style="width:610px">
+                                <div class="well clearfix" style="width:610px">
 
                                     <div class="row" style="margin-left:0px">                                       
                                     <div class="btn-group pull-left">
@@ -153,29 +153,29 @@
                                             <li><a id="svg_import_nop_btn" href="#">Import without Optimizing</a></li>
                                         </ul>
                                     </div>
-                                        <div id="dpi_import_info" class="pull-left" style="margin:10px">Supported file formats are: <b>SVG</b>, <b>DXF</b> (<a href="http://labs.nortd.com/lasersaur/manual/dxf_import">subset</a>)</div>
+                                        <div id="dpi_import_info" class="pull-left" style="margin:10px"></div>
                                         
                                         <div class="pull-left">
                                             <form id="svg_upload_form" action="#" onsubmit="return false;">
                                                 <input type="file" id="svg_upload_file" name="data" style="visibility:hidden; position:fixed">
-                                                <input type="text" id="svg_upload_file_temp" style="display:none">          
                                             </form>
                                         </div>
                                     </div>
-                                    
-                                    <div class="row" style="margin-left:0px; margin-top:16px; padding-top:0">                               
-                                        <canvas id="import_canvas" width="610px" height="305px" style="border:1px dashed #aaaaaa"></canvas>                                       
-                                        <div id="canvas_properties">
-                                            <div class="colorbtns"></div>
-                                        </div>                                              
-                                    </div>
-
-                                    <div style="clear:both">
+                                    <canvas id="import_canvas" width="610px" height="305px" style="border:1px dashed #aaaaaa; margin-top:16px"></canvas>                                       
+                                    <div id="canvas_properties">
+                                        <div class="colorbtns"></div>
+                                    </div>                                              
+                                    <div class="pull-left">
                                         <button id="import_to_queue" class="btn btn-large" style="margin-top:16px">
                                             <i class="icon-th-list"></i> Add to Queue
                                         </button>
                                     </div>
-                                    
+                                    <div class="pull-left" style="margin-top:27px; margin-left:20px">
+                                        under name
+                                    </div>
+                                    <div class="pull-left" style="margin-top:22px; margin-left:10px">                            
+                                        <input type="text" id="import_name" style="width:240px" placeholder="Name...">
+                                    </div>
                                 </div> <!--end of well-->
                                 
                                 <div class="alert" style="width:400px">

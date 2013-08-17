@@ -183,6 +183,7 @@ $(document).ready(function(){
 
   // canvas preview generation
   var canvas = new Canvas('#preview_canvas');
+  canvas.background('#ffffff');
   $('#job_data').blur(function() {
     DataHandler.setByJson($('#job_data').val());
     DataHandler.draw(canvas, 0.5);

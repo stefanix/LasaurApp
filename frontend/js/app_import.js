@@ -9,6 +9,7 @@ $(document).ready(function(){
   icanvas.height = 305; // HACK: for some reason the canvas can't figure this out itself
   icanvas.background('#ffffff'); 
 
+  resetTap();
   
   // file upload form
   $('#svg_upload_file').change(function(e){
@@ -38,8 +39,8 @@ $(document).ready(function(){
     
     // reset file input form field so change event also triggers if
     // same file is chosen again (but with different dpi)
-    $('#svg_upload_file_temp').val($('#svg_upload_file').val())
-    $('#svg_upload_file').val('')
+    $('#import_name').val($('#svg_upload_file').val().split('\\').pop().split('/').pop());
+    $('#svg_upload_file').val('');
 
   	e.preventDefault();
   });
@@ -47,8 +48,7 @@ $(document).ready(function(){
 
   function sendToBackend(e) {
     var filedata = e.target.result;
-    var fullpath = $('#svg_upload_file_temp').val();
-    var filename = fullpath.split('\\').pop().split('/').pop();
+    var filename = $('#import_name').val()
     var ext = filename.slice(-4);
     if (ext == '.svg' || ext == '.SVG') {
       $().uxmessage('notice', "parsing SVG ...");
@@ -92,8 +92,7 @@ $(document).ready(function(){
     var boundarys = data.boundarys;
     if (boundarys) {
       DataHandler.setByPaths(boundarys);
-      // reset previous color toggles
-      $('#canvas_properties .colorbtns').html('');  // reset colors
+      resetTap();
 
       // add preview color buttons, show info, register events
       for (var color in DataHandler.getColorOrder()) {
@@ -178,12 +177,13 @@ $(document).ready(function(){
   // setting up add to queue button
   $("#import_to_queue").click(function(e) {
     if (!(DataHandler.isEmpty())) {     
-      var fullpath = $('#svg_upload_file_temp').val();
-      var filename = fullpath.split('\\').pop().split('/').pop();
       var jobdata = DataHandler.getJson(getDeselectedColors());
+      var filename = $('#import_name').val();
       save_and_add_to_job_queue(filename, jobdata);
       load_into_job_widget(filename, jobdata);
       $('#tab_jobs_button').trigger('click');
+      resetTap();
+      $('#import_name').val('');
     } else {
       $().uxmessage('warning', "no data");
     }
@@ -191,6 +191,11 @@ $(document).ready(function(){
   });
 
 
+  function resetTap() {
+    $('#canvas_properties .colorbtns').html('');  // reset colors
+    icanvas.background('#ffffff');
+    $('#dpi_import_info').html('Supported file formats are: <b>SVG</b>, <b>DXF</b> (<a href="http://labs.nortd.com/lasersaur/manual/dxf_import">subset</a>)');
+  }
 
 
 });  // ready
