@@ -53,7 +53,7 @@ DataHandler = {
     // S, F, P
     // M0, M2, M3, M4, M5, M6
     // M80, M81, M82, M83, M84, M85
-    
+
   },
 
   setByJson : function(strdata) {
@@ -71,43 +71,20 @@ DataHandler = {
 
   // writers //////////////////////////////////
 
-  addPass : function(mapping) {
-    // this describes in what order colors are written
-    // and also what intensity and feedrate is used
-    // mapping: {'colors':colors, 'F':feedrate, 'S':intensity}
-    this.passes.push(mapping);
-  },
-
-  hasPasses : function() {
-    if (this.passes.length > 0) {return true}
-    else {return false}
-  },
-
-  clearPasses : function() {
-    this.passes = [];
-  },
-
-  getPassesColors : function() {
-    var all_colors = {};
-    for (var i=0; i<this.passes.length; i++) {
-      var mapping = this.passes[i];
-      var colors = mapping['colors'];
-      for (var c=0; c<colors.length; c++) {
-        var color = colors[c];
-        all_colors[color] = true;
+  getJson : function(exclude_colors) {
+    // write internal format
+    // exclude_colors is optional
+    var paths_by_color = this.paths_by_color;
+    if (!(exclude_colors === undefined)) {
+      paths_by_color = {};
+      for (var color in this.paths_by_color) {
+        if (!(color in exclude_colors)) {
+          paths_by_color[color] = this.paths_by_color[color];
+        }
       }
     }
-    return all_colors;
-  },
-
-  getAllColors : function() {
-    return Object.keys(this.paths_by_color);
-  },
-
-  getJson : function() {
-    // write internal format
     var data = {'passes': this.passes,
-                'paths_by_color': this.paths_by_color}
+                'paths_by_color': paths_by_color}
     return JSON.stringify(data);
   },
 
@@ -120,10 +97,10 @@ DataHandler = {
     glist.push("G0F"+app_settings.max_seek_speed+"\n");
     // passes
     for (var i=0; i<this.passes.length; i++) {
-      var mapping = this.passes[i];
-      var colors = mapping['colors'];
-      var feedrate = this.mapConstrainFeedrate(mapping['feedrate']);
-      var intensity = this.mapConstrainIntesity(mapping['intensity']);
+      var pass = this.passes[i];
+      var colors = pass['colors'];
+      var feedrate = this.mapConstrainFeedrate(pass['feedrate']);
+      var intensity = this.mapConstrainIntesity(pass['intensity']);
       glist.push("G1F"+feedrate+"\nS"+intensity+"\n");
       for (var c=0; c<colors.length; c++) {
         var color = colors[c];
@@ -187,30 +164,33 @@ DataHandler = {
   // rendering //////////////////////////////////
 
 
-  draw : function (canvas, scale) { 
+  draw : function (canvas, scale, exclude_colors) { 
     // draw any path used in passes
+    // exclude_colors is optional
     canvas.background('#ffffff');
     canvas.noFill();
     var x_prev = 0;
     var y_prev = 0;
-    for (var color in this.getPassesColors()) {
-      var paths = this.paths_by_color[color];
-      for (var k=0; k<paths.length; k++) {
-        var path = paths[k];
-        if (path.length > 0) {
-          var x = path[0][0]*scale;
-          var y = path[0][1]*scale;
-          canvas.stroke('#aaaaaa');
-          canvas.line(x_prev, y_prev, x, y);
-          x_prev = x;
-          y_prev = y;
-          canvas.stroke(color);
-          for (vertex=1; vertex<path.length; vertex++) {
-            var x = path[vertex][0]*scale;
-            var y = path[vertex][1]*scale;
+    for (var color in this.paths_by_color) {
+      if (exclude_colors === undefined || !(color in exclude_colors)) {
+        var paths = this.paths_by_color[color];
+        for (var k=0; k<paths.length; k++) {
+          var path = paths[k];
+          if (path.length > 0) {
+            var x = path[0][0]*scale;
+            var y = path[0][1]*scale;
+            canvas.stroke('#aaaaaa');
             canvas.line(x_prev, y_prev, x, y);
             x_prev = x;
             y_prev = y;
+            canvas.stroke(color);
+            for (vertex=1; vertex<path.length; vertex++) {
+              var x = path[vertex][0]*scale;
+              var y = path[vertex][1]*scale;
+              canvas.line(x_prev, y_prev, x, y);
+              x_prev = x;
+              y_prev = y;
+            }
           }
         }
       }
@@ -218,6 +198,99 @@ DataHandler = {
   },
 
 
+  // passes and colors //////////////////////////
+
+  addPass : function(mapping) {
+    // this describes in what order colors are written
+    // and also what intensity and feedrate is used
+    // mapping: {'colors':colors, 'feedrate':feedrate, 'intensity':intensity}
+    this.passes.push(mapping);
+  },
+
+  setPassesFromLasertags : function(lasertags) {
+    // lasertags come in this format
+    // (pass_num, feedrate, units, intensity, units, color1, color2, ..., color6)
+    // [(12, 2550, '', 100, '%', ':#fff000', ':#ababab', ':#ccc999', '', '', ''), ...]
+    this.passes = [];
+    for (var i=0; i<lasertags.length; i++) {
+      var vals = lasertags[i];
+      if (vals.length == 11) {
+        var pass = vals[0];
+        var feedrate = vals[1];
+        var intensity = vals[3];
+        if (typeof(pass) === 'number') {
+          //make sure to have enough pass widgets
+          var passes_to_create = pass - this.passes.length
+          if (passes_to_create >= 1) {
+            for (var i=0; i<passes_to_create; i++) {
+              this.passes.push({'colors':[], 'feedrate':1200, 'intensity':10})
+            }
+          }
+          // feedrate
+          if (feedrate != '' && typeof(feedrate) === 'number') {
+            this.passes[pass]['feedrate'] = feedrate;
+          }
+          // intensity
+          if (intensity != '' && typeof(intensity) === 'number') {
+            this.passes[pass]['intensity'] = intensity;
+          }
+          // colors
+          for (var ii=5; ii<vals.length; ii++) {
+            var col = vals[ii];
+            this.passes[pass]['colors'].push(col);
+          }
+        } else {
+          $().uxmessage('error', "invalid lasertag (pass number)");
+        }
+      } else {
+        $().uxmessage('error', "invalid lasertag (num of args)");
+      }
+    }
+  },
+
+  getPasses : function() {
+    return this.passes;
+  },
+
+  hasPasses : function() {
+    if (this.passes.length > 0) {return true}
+    else {return false}
+  },
+
+  clearPasses : function() {
+    this.passes = [];
+  },
+
+  getPassesColors : function() {
+    var all_colors = {};
+    for (var i=0; i<this.passes.length; i++) {
+      var mapping = this.passes[i];
+      var colors = mapping['colors'];
+      for (var c=0; c<colors.length; c++) {
+        var color = colors[c];
+        all_colors[color] = true;
+      }
+    }
+    return all_colors;
+  },
+
+  getAllColors : function() {
+    // return list of colors
+    return Object.keys(this.paths_by_color);
+  },
+
+  getColorOrder : function() {
+      var color_order = {};
+      var color_count = 0;
+      for (var color in this.paths_by_color) {    
+        color_order[color] = color_count;
+        color_count++;
+      }
+      return color_order
+  },
+
+
+  // auxilliary /////////////////////////////////
 
   mapConstrainFeedrate : function(rate) {
     rate = parseInt(rate);

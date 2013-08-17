@@ -2,9 +2,6 @@ $(document).ready(function(){
   
   var path_optimize = 1;
   var forceSvgDpiTo = undefined;
-  var minNumPassWidgets = 3;
-  var maxNumPassWidgets = 32;
-  var last_colors_used = [];
   
   // G-Code Canvas Preview
   var icanvas = new Canvas('#import_canvas');
@@ -95,29 +92,13 @@ $(document).ready(function(){
     var boundarys = data.boundarys;
     if (boundarys) {
       DataHandler.setByPaths(boundarys);
-
       // reset previous color toggles
       $('#canvas_properties .colorbtns').html('');  // reset colors
-      $('#passes').html('');  // pass widgets
-      // add color toggles to preview and pass widgets
-      var color_order = {};  // need this to easily activate button from lasertags
-      var color_count = 0;   // need this to default single color geos to pass1
-      for (var color in boundarys) {    
-        color_order[color] = color_count;
-        color_count++;
-      }
-
-      // create some pass widgets
-      addPasses(minNumPassWidgets, color_order);
-
-      // show info div
-      $('#passes_info').show();
 
       // add preview color buttons, show info, register events
-      for (var color in color_order) {
+      for (var color in DataHandler.getColorOrder()) {
         $('#canvas_properties .colorbtns').append('<button class="preview_color active-strong active btn btn-small" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></button>');
       }
-      $('#canvas_properties .colorbtns').append('<div style="margin-top:10px; color:#888888">These affect the preview only.</div>');      
       $('button.preview_color').click(function(e){
         // toggling manually because automatic toggling 
         // would happen after generatPreview()
@@ -133,50 +114,8 @@ $(document).ready(function(){
 
       // default selections for pass widgets, lasertags handling
       if (data.lasertags) {
-        // [(12, 2550, '', 100, '%', ':#fff000', ':#ababab', ':#ccc999', '', '', ''), ...]
-        $().uxmessage('notice', "lasertags -> applying settings");
-        var tags = data.lasertags;
-        // alert(JSON.stringify(tags))
-        for (var i=0; i<tags.length; i++) {
-          var vals = tags[i];
-          if (vals.length == 11) {
-            var pass = vals[0];
-            var feedrate = vals[1];
-            var intensity = vals[3];
-            if (typeof(pass) === 'number' && pass <= maxNumPassWidgets) {
-              //make sure to have enough pass widgets
-              var passes_to_create = pass - getNumPasses()
-              if (passes_to_create >= 1) {
-                addPasses(passes_to_create, color_order);
-              }
-              // feedrate
-              if (feedrate != '' && typeof(feedrate) === 'number') {
-                $('#passes > div:nth-child('+pass+') .feedrate').val(feedrate);
-              }
-              // intensity
-              if (intensity != '' && typeof(intensity) === 'number') {
-                $('#passes > div:nth-child('+pass+') .intensity').val(intensity);
-              }
-              // colors
-              for (var ii=5; ii<vals.length; ii++) {
-                var col = vals[ii];
-                if (col in color_order) {
-                  $('#passes > div:nth-child('+pass+') .colorbtns button:eq('+color_order[col]+')').addClass('active active-strong')
-                }
-              }
-            } else {
-              $().uxmessage('error', "invalid lasertag (pass number)");
-            }
-          } else {
-            $().uxmessage('error', "invalid lasertag (num of args)");
-          }
-        }
-      } else {
-        // no lasertags, if only one color assign to pass1
-        if (color_count == 1) {
-          $('#passes > div:nth-child(1) .colorbtns').children('button').addClass('active')
-          $().uxmessage('notice', "assigned to pass1");
-        }
+        $().uxmessage('notice', "lasertags -> applying defaults");
+        DataHandler.setPassesFromLasertags(data.lasertags);
       }
       // actually redraw right now 
       generatePreview();      
@@ -185,79 +124,26 @@ $(document).ready(function(){
     }   
   }
 
-  function getNumPasses() {
-    return $('#passes').children().length;
-  }
 
-  function addPasses(num, colors) {
-    last_colors_used = colors;
-    var pass_num_offset = getNumPasses() + 1;
-    var buttons = ''
-    for (var color in colors) {
-      buttons +='<button class="select_color btn btn-small" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></button>'
-    }
-    for (var i=0; i<num; i++) {
-      var passnum = pass_num_offset+i;
-      var margintop = '';
-      if (passnum != 1) {
-        margintop = 'margin-top:6px;'
-      }
-      var html = '<div class="row well" style="margin:0px; '+margintop+' padding:4px; background-color:#eeeeee">' + 
-                  '<div class="form-inline" style="margin-bottom:0px">' +
-                    '<label>Pass '+ passnum +': </label>' +
-                    '<div class="input-prepend" style="margin-left:6px">' +
-                      '<span class="add-on" style="margin-right:-5px;">F</span>' +
-                      '<input type="text" class="feedrate" value="2000" title="feedrate 1-8000mm/min" style="width:32px" data-delay="500">' +
-                    '</div>' +
-                    '<div class="input-prepend" style="margin-left:6px">' +
-                      '<span class="add-on" style="margin-right:-5px;">%</span>' +
-                      '<input class="intensity" type="textfield" value="100" title="intensity 0-100%" style="width:26px;" data-delay="500">' +
-                    '</div>' +
-                    '<span class="colorbtns" style="margin-left:6px">'+buttons+'</span>' +
-                  '</div>' +
-                '</div>';
-      // $('#passes').append(html);
-      var pass_elem = $(html).appendTo('#passes');
-      // color pass widget toggles events registration
-      pass_elem.find('.colorbtns button.select_color').click(function(e){
-        // toggle manually to work the same as preview buttons
-        // also need active-strong anyways
-        if($(this).hasClass('active')) {
-          $(this).removeClass('active');
-          $(this).removeClass('active-strong');
-        } else {
-          $(this).addClass('active');
-          $(this).addClass('active-strong');      
-        }
-      });
-    }
-  }
-
-
-  
   function generatePreview() {
     if (!DataHandler.isEmpty()) {
-      var colors = DataHandler.getAllColors();        
-      $('#canvas_properties .colorbtns button').each(function(index) {
-        if (!($(this).hasClass('active'))) {
-          var color = $(this).find('div span').text();
-          var idx = colors.indexOf(color);
-          if (idx != -1) {
-            // remove color
-            var head = colors.slice(0,idx);
-            var tail = colors.slice(idx+1);
-            head.push.apply(head, tail);
-            colors = head;
-          }
-        }
-      });
-      DataHandler.clearPasses();
-      DataHandler.addPass({'colors':colors});
-      DataHandler.draw(icanvas, 0.5);
+      DataHandler.draw(icanvas, 0.5, getDeselectedColors());
     } else {
       $().uxmessage('notice', "No data loaded to generate preview.");
     }       
   }
+
+
+  function getDeselectedColors() {
+    var exclude_colors = {}       
+    $('#canvas_properties .colorbtns button').each(function(index) {
+      if (!($(this).hasClass('active'))) {
+        exclude_colors[$(this).find('div span').text()] = true;
+      }
+    });
+    return exclude_colors;
+  }
+
 
   // forwarding file open click
   $('#svg_import_btn').click(function(e){
@@ -288,54 +174,23 @@ $(document).ready(function(){
     return false;
   });  
 
-    
-  $('#import_feedrate_1').tooltip();
-  $('#import_intensity_1').tooltip();
-  $('#import_feedrate_2').tooltip();
-  $('#import_intensity_2').tooltip();
-  $('#import_feedrate_3').tooltip();
-  $('#import_intensity_3').tooltip();
   
   // setting up add to queue button
-  $("#import_to_queue").click(function(e) {   
-    // assemble multiple passes
-    DataHandler.clearPasses();
-    $('#passes > div').each(function(index) {
-      var colors = [];
-      $(this).find('.colorbtns button').each(function(index) {
-        if ($(this).hasClass('active')) {
-          colors.push($(this).find('div span').text());
-        }
-      });
-      if (colors.length > 0) { 
-        var feedrate = $(this).find('.feedrate').val();
-        var intensity = $(this).find('.intensity').val();
-        DataHandler.addPass({'colors':colors, 'feedrate':feedrate, 'intensity':intensity});
-      }
-    });
-
-    if (DataHandler.hasPasses()) {     
+  $("#import_to_queue").click(function(e) {
+    if (!(DataHandler.isEmpty())) {     
       var fullpath = $('#svg_upload_file_temp').val();
       var filename = fullpath.split('\\').pop().split('/').pop();
-
-      save_and_add_to_job_queue(filename, DataHandler.getJson());
-      load_into_job_widget(filename, DataHandler.getJson());
+      var jobdata = DataHandler.getJson(getDeselectedColors());
+      save_and_add_to_job_queue(filename, jobdata);
+      load_into_job_widget(filename, jobdata);
       $('#tab_jobs_button').trigger('click');
     } else {
-      $().uxmessage('warning', "nothing to cut -> please assign colors to passes");
+      $().uxmessage('warning', "no data");
     }
   	return false;
   });
 
 
-  $("#add_pass_btn").click(function(e) {
-    if (getNumPasses() < maxNumPassWidgets) {
-      addPasses(1, last_colors_used);
-    } else {
-      $().uxmessage('error', "Max number of passes reached.");
-    }
-    return false;
-  });  
 
 
 });  // ready

@@ -91,10 +91,20 @@
                             <!--content start-->
                             
                             <div id="tab_jobs" class="tab-pane active">
-                                <div class="well" style="width:610px;">
+                                <div class="well clearfix" style="width:610px;">
                                     <input type="text" id="job_name" style="width:296px" placeholder="Load or import a job.">
                                     <textarea id="job_data" style="display:none"></textarea>
                                     <div><canvas id="preview_canvas" width="610px" height="305px" style="border:1px dashed #aaaaaa"></canvas></div>
+                                    <!-- passes -->
+                                    <div class="well clearfix" style="width:594px; margin:0px; margin-top:10px; padding:8px; background-color:#dddddd">
+                                        <div id="passes_info" class="pull-right" style="width:180px; color:#888888; display:none">
+                                            <p>Vector cuts: Use one or more passes with different cut parameters (feedrate, intensity). Assign path colors to passes as needed.</p>
+                                            <p>Need <a id="add_pass_btn" href="">more passes?</a></p>
+                                        </div>
+                                        <div id="passes" class="pull-left" style="width:400px">
+                                            <!-- passes go here -->                                     
+                                        </div>
+                                    </div>
                                     <div style="padding-top:20px">
                                         <div class="btn-group pull-left">
                                             <button id="gcode_submit" class="btn btn-large">Send to Lasersaur</button>
@@ -109,7 +119,6 @@
                                     <div id="progressbar" class="progress progress-striped" style="margin-top:70px; clear:both">
                                         <div class="bar" style="width:0%;"></div>
                                     </div>
-                                    <div style="clear:both"></div>
                                 </div>
                                 <h3>Recent Jobs</h3>
                                 <div style="width:650px"> 
@@ -128,7 +137,7 @@
                             </div>
                             
                             <div id="tab_import" class="tab-pane">                                                  
-                                <div class="well">
+                                <div class="well" style="width:610px">
 
                                     <div class="row" style="margin-left:0px">                                       
                                     <div class="btn-group pull-left">
@@ -155,20 +164,10 @@
                                     </div>
                                     
                                     <div class="row" style="margin-left:0px; margin-top:16px; padding-top:0">                               
-                                        <canvas id="import_canvas" width="610px" height="305px" class="pull-left" style="border:1px dashed #aaaaaa"></canvas>                                       
-                                        <div id="canvas_properties" class="pull-left" style="width:113px; margin-left:14px">
+                                        <canvas id="import_canvas" width="610px" height="305px" style="border:1px dashed #aaaaaa"></canvas>                                       
+                                        <div id="canvas_properties">
                                             <div class="colorbtns"></div>
                                         </div>                                              
-                                    </div>
-                                    
-                                    <div class="well clearfix" style="width:594px; margin:0px; margin-top:10px; padding:8px; background-color:#dddddd">
-                                        <div id="passes_info" class="pull-right" style="width:180px; color:#888888; display:none">
-                                            <p>Vector cuts: Use one or more passes with different cut parameters (feedrate, intensity). Assign path colors to passes as needed.</p>
-                                            <p>Need <a id="add_pass_btn" href="">more passes?</a></p>
-                                        </div>
-                                        <div id="passes" class="pull-left" style="width:400px">
-                                            <!-- passes go here -->                                     
-                                        </div>
                                     </div>
 
                                     <div style="clear:both">

@@ -99,20 +99,20 @@ function send_gcode(gcode, success_msg, progress) {
 
 
 var queue_num_index = 1;
-function save_and_add_to_job_queue(name, gcode) {  
+function save_and_add_to_job_queue(name, jobdata) { 
   if ((typeof(name) == 'undefined') || ($.trim(name) == '')) {
     var date = new Date();
     name = date.toDateString() +' - '+ queue_num_index
   }
-  //// store gcode - on success add to queue
-	$.post("/queue/save", { 'job_name':name, 'job_data':gcode }, function(data) {
+  //// store jobdata - on success add to queue
+	$.post("/queue/save", { 'job_name':name, 'job_data':jobdata }, function(data) {
 		if (data == "1") {
 		  queue_num_index += 1;
       add_to_job_queue(name);
     } else if (data == "file_exists") {
       // try again with numeral appendix
       $().uxmessage('notice', "File already exists. Appending numeral.");
-      save_and_add_to_job_queue(name+' - '+ queue_num_index, gcode);
+      save_and_add_to_job_queue(name+' - '+ queue_num_index, jobdata);
 		} else {
 			$().uxmessage('error', "Failed to store G-code.");
 		}
@@ -224,6 +224,11 @@ function add_to_library_queue(jobdata, name) {
 
 
 function load_into_job_widget(name, jobdata) {
+  // create some empty pass widgets
+  $('#passes').html('');
+  addPasses(minNumPassWidgets);
+  $('#passes_info').show();
+
 	$('#job_name').val(name);
 	$('#job_data').val(jobdata);
 	// make sure preview refreshes
