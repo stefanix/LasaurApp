@@ -7,7 +7,7 @@ from bottle import *
 from serial_manager import SerialManager
 from flash import flash_upload, reset_atmega
 from build import build_firmware
-from filereaders import read_svg, read_dxf
+from filereaders import read_svg, read_dxf, read_ngc
 
 
 APPNAME = "lasaurapp"
@@ -457,11 +457,17 @@ def queue_pct_done_handler():
     return SerialManager.get_queue_percentage_done()
 
 
-@route('/svg_reader', method='POST')
-def svg_upload():
+@route('/file_reader', method='POST')
+def file_reader():
     """Parse SVG string."""
     filename = request.forms.get('filename')
     filedata = request.forms.get('filedata')
+    dimensions = request.forms.get('dimensions')
+    try:
+        dimensions = json.loads(dimensions)
+    except TypeError:
+        pass
+
     dpi_forced = None
     try:
         dpi_forced = float(request.forms.get('dpi'))
@@ -478,38 +484,18 @@ def svg_upload():
         print "You uploaded %s (%d bytes)." % (filename, len(filedata))
         if filename[-4:] in ['.dxf', '.DXF']: 
             res = read_dxf(filedata, TOLERANCE, optimize)
+        elif filename[-4:] in ['.svg', '.SVG']: 
+            res = read_svg(filedata, dimensions, TOLERANCE, dpi_forced, optimize)
+        elif filename[-4:] in ['.ngc', '.NGC']:
+            res = read_ngc(filedata, TOLERANCE, optimize)
         else:
-            res = read_svg(filedata, [1220,610], TOLERANCE, dpi_forced, optimize)
+            print "error: unsupported file format"
+
         # print boundarys
         jsondata = json.dumps(res)
         # print "returning %d items as %d bytes." % (len(res['boundarys']), len(jsondata))
         return jsondata
     return "You missed a field."
-
-
-# @route('/svg_reader', method='POST')
-# def svg_upload():
-#     """Parse SVG string."""
-#     data = request.files.get('data')
-#     if data.file:
-#         raw = data.file.read() # This is dangerous for big files
-#         filename = data.filename
-#         print "You uploaded %s (%d bytes)." % (filename, len(raw))
-#         boundarys = read_svg(raw, [1220,610], 0.08)
-#         return json.dumps(boundarys)
-#     return "You missed a field."
-
-
-# @route('/svg_upload', method='POST')
-# # file echo - used as a fall back for browser not supporting the file API
-# def svg_upload():
-#     data = request.files.get('data')
-#     if data.file:
-#         raw = data.file.read() # This is dangerous for big files
-#         filename = data.filename
-#         print "You uploaded %s (%d bytes)." % (filename, len(raw))
-#         return raw
-#     return "You missed a field."
 
 
 

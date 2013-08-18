@@ -10,12 +10,17 @@ BBB
 
 TODO (raster branch)
 ---------------------
+- gcode import support, laa
+- export gcode and json
+- about, make it a dropdown with link
+  - show versions for LasaurApp and firmware
+- job selected path visiual clues, bbox
 - stats
-- clear queue button
-- gcode import support
 - configurable width/height, bbox checks
 - zoom/pan svg canvas
-- job selected path visiual clues, bbox
+- bigger stop button
+- pause
+  - break up long lines so pause feature is more snappy
 - testing
   - pause feature
   - busy when jogging

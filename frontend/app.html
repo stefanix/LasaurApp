@@ -90,12 +90,12 @@
                             
                             <div id="tab_jobs" class="tab-pane active">
                                 <div style="width:650px;">
-                                    <div class="well clearfix">
+                                    <div class="well clearfix" style="margin-bottom:40px">
                                         <input type="text" id="job_name" style="width:296px" placeholder="Load or import a job.">
                                         <textarea id="job_data" style="display:none"></textarea>
                                         <div><canvas id="preview_canvas" width="610px" height="305px" style="border:1px dashed #aaaaaa"></canvas></div>
                                         <!-- passes -->
-                                        <div class="well clearfix" style="width:594px; margin:0px; margin-top:10px; padding:8px; background-color:#dddddd">
+                                        <div id="passes_container" class="well clearfix" style="width:594px; margin:0px; margin-top:10px; padding:8px; background-color:#dddddd; display:none">
                                             <div id="passes_info" class="pull-right" style="width:180px; color:#888888; display:none">
                                                 <p>Vector cuts: Use one or more passes with different cut parameters (feedrate, intensity). Assign path colors to passes as needed.</p>
                                                 <p>Need <a id="add_pass_btn" href="">more passes?</a></p>
@@ -119,16 +119,17 @@
                                             <div class="bar" style="width:0%;"></div>
                                         </div>
                                     </div>
-                                    <button id="clear_queue" class="btn btn-mini pull-right" title="delete recent (unstarred) jobs" data-delay="500" style="margin-right:20px">
+                                    <button id="clear_queue" class="btn btn-mini pull-right" title="delete non-starred jobs" data-delay="500">
                                         clear
                                     </button>
                                     <h3>Recent Jobs</h3>
                                     <div> 
-                                        <ul id="job_queue" class="nav nav-tabs nav-stacked"></ul>
-                                            
-                                        <div class="btn-group">
+                                        <ul id="job_queue" class="nav nav-tabs nav-stacked">
+                                            <!-- job queue -->
+                                        </ul>
+                                        <div class="btn-group dropup">
                                             <a class="btn btn-large dropdown-toggle" data-toggle="dropdown" href="#">
-                                                Load from Library
+                                                Library Jobs
                                                 <span class="caret"></span>
                                             </a>
                                             <ul id="job_library" class="dropdown-menu"></ul>
@@ -183,7 +184,7 @@
                                 
                                 <div class="alert" style="width:400px">
                                     <a class="close" data-dismiss="alert">×</a>
-                                    <strong>Note!</strong> Set page size in your SVG vector app to 1220x610mm.
+                                    <strong>Note!</strong> Set page size in your SVG vector app to <b id="bed_size_note"></b>.
                                 </div>      
                                 <div class="alert" style="width:400px">
                                     <a class="close" data-dismiss="alert">×</a>

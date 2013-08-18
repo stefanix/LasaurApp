@@ -222,6 +222,7 @@ function addPasses(num) {
       }
     });
   }
+  $('#passes_container').show();
 }
 
 

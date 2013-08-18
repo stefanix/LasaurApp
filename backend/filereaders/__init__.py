@@ -8,6 +8,7 @@ __author__ = 'Stefan Hechenberger <stefan@nortd.com>'
 
 from .svg_reader import SVGReader
 from .dxf_reader import DXFReader
+from .ngc_reader import NGCReader
 from .path_optimizers import optimize_all
 
 
@@ -31,3 +32,12 @@ def read_dxf(dxf_string, tolerance, optimize=True):
     # 		for vertex in path:
     # 			vertex[1] = 610-vertex[1]
     return parse_results
+
+
+def read_ngc(ngc_string, tolerance, optimize=True):
+    ngcReader = NGCReader(tolerance)
+    parse_results = ngcReader.parse(ngc_string)
+    if optimize:
+        optimize_all(parse_results['boundarys'], tolerance)
+    return parse_results
+

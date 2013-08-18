@@ -13,11 +13,12 @@ $(document).ready(function(){
   
   // G-Code Canvas Preview
   var icanvas = new Canvas('#import_canvas');
-  icanvas.width = 610;  // HACK: for some reason the canvas can't figure this out itself
-  icanvas.height = 305; // HACK: for some reason the canvas can't figure this out itself
   icanvas.background('#ffffff'); 
 
   resetTap();
+
+  $('#bed_size_note').html(app_settings.work_area_dimensions[0]+'x'+
+                           app_settings.work_area_dimensions[1]+'mm');
   
   // file upload form
   $('#svg_upload_file').change(function(e){
@@ -63,14 +64,20 @@ $(document).ready(function(){
     } else if (ext == '.dxf' || ext == '.DXF') {
       $().uxmessage('notice', "parsing DXF ...");
       $().uxmessage('warning', "DXF import is limited to R14, lines, arcs, lwpolylines, and mm units");
+    } else if (ext == '.ngc' || ext == '.NGC') {
+      $().uxmessage('notice', "parsing G-Code ...");
     }
     if (filedata.length > 102400) {
       $().uxmessage('notice', "Importing large files may take a few minutes.");
     }
     $.ajax({
       type: "POST",
-      url: "/svg_reader",
-      data: {'filename':filename,'filedata':filedata, 'dpi':forceSvgDpiTo, 'optimize':path_optimize},
+      url: "/file_reader",
+      data: {'filename':filename,
+             'filedata':filedata, 
+             'dpi':forceSvgDpiTo, 
+             'optimize':path_optimize,
+             'dimensions':app_settings.work_area_dimensions},
       dataType: "json",
       success: function (data) {
         if (ext == '.svg' || ext == '.SVG') {
@@ -79,8 +86,10 @@ $(document).ready(function(){
         } else if (ext == '.dxf' || ext == '.DXF') {
           $().uxmessage('success', "DXF parsed."); 
           $('#dpi_import_info').html('Assuming mm units in DXF file.');
+        } else if (ext == '.ngc' || ext == '.NGC') {
+          $().uxmessage('success', "G-Code parsed."); 
         } else {
-          $().uxmessage('warning', "File extension not supported. Import DXF or SVG files."); 
+          $().uxmessage('warning', "File extension not supported. Import SVG, DXF, or G-Code files."); 
         }
         // alert(JSON.stringify(data));
         handleParsedGeometry(data);

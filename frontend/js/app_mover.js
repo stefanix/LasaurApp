@@ -5,8 +5,8 @@ function reset_offset() {
   $("#offset_area").hide();
   $('#offset_area').css({'opacity':0.0, left:0, top:0});
   gcode_coordinate_offset = undefined;
-	$("#cutting_area").css('border', '1px dashed #ff0000');
-	$("#offset_area").css('border', '1px dashed #aaaaaa');
+  $("#cutting_area").css('border', '1px dashed #ff0000');
+  $("#offset_area").css('border', '1px dashed #aaaaaa');
   send_gcode('G54\n', "Offset reset.", false);
   $('#coordinates_info').text('');
 }
@@ -23,38 +23,65 @@ $(document).ready(function(){
   var isDragging = false;
   
   function assemble_and_send_gcode(x,y) {
-    	var g0_or_g1 = 'G0';
-      var air_assist_on = '';
-      var air_assist_off = '';
-    	if($('#feed_btn').hasClass("active")){
-    		g0_or_g1 = 'G1';
-        air_assist_on = 'M80\n';
-        air_assist_off = 'M81\n';
-    	}
-    	var feedrate = DataHandler.mapConstrainFeedrate($("#feedrate_field" ).val());
-    	var intensity =  DataHandler.mapConstrainIntesity($( "#intensity_field" ).val());
-    	var gcode = 'G90\n'+air_assist_on+'S'+ intensity + '\n' + g0_or_g1 + ' X' + 2*x + 'Y' + 2*y + 'F' + feedrate + '\nS0\n'+air_assist_off;	
-      // $().uxmessage('notice', gcode);
-    	send_gcode(gcode, "Motion request sent.", false);    
+    var x_phy = x*app_settings.to_physical_dimensions;
+    var y_phy = y*app_settings.to_physical_dimensions;
+    var g0_or_g1 = 'G0';
+    var air_assist_on = '';
+    var air_assist_off = '';
+    if($('#feed_btn').hasClass("active")){
+      g0_or_g1 = 'G1';
+      air_assist_on = 'M80\n';
+      air_assist_off = 'M81\n';
+    }
+    var feedrate = DataHandler.mapConstrainFeedrate($("#feedrate_field" ).val());
+    var intensity =  DataHandler.mapConstrainIntesity($( "#intensity_field" ).val());
+    var gcode = 'G90\n'+air_assist_on+'S'+ intensity + '\n' + g0_or_g1 +
+                ' X' + x_phy.toFixed(app_settings.num_digits) + 
+                'Y' + y_phy.toFixed(app_settings.num_digits) +
+                'F' + feedrate + '\nS0\n'+air_assist_off; 
+    // $().uxmessage('notice', gcode);
+    send_gcode(gcode, "Motion request sent.", false);    
   }
   
   function assemble_info_text(x,y) {
+    var x_phy = x*app_settings.to_physical_dimensions;
+    var y_phy = y*app_settings.to_physical_dimensions;
     var coords_text;
-  	var move_or_cut = 'move';
-  	if($('#feed_btn').hasClass("active")){
-  		move_or_cut = 'cut';
-  	}
-  	var feedrate = DataHandler.mapConstrainFeedrate($( "#feedrate_field" ).val());
-  	var intensity =  DataHandler.mapConstrainIntesity($( "#intensity_field" ).val());
-  	var coords_text;
-  	if (move_or_cut == 'cut') {
-  	  coords_text = move_or_cut + ' to (' + 2*x + ', '+ 2*y + ') at ' + feedrate + 'mm/min and ' + Math.round(intensity/2.55) + '% intensity';
-  	} else {
-  	  coords_text = move_or_cut + ' to (' + 2*x + ', '+ 2*y + ') at ' + feedrate + 'mm/min'
-  	}
-  	return coords_text;
+    var move_or_cut = 'move';
+    if($('#feed_btn').hasClass("active")){
+      move_or_cut = 'cut';
+    }
+    var feedrate = DataHandler.mapConstrainFeedrate($( "#feedrate_field" ).val());
+    var intensity =  DataHandler.mapConstrainIntesity($( "#intensity_field" ).val());
+    var coords_text;
+    if (move_or_cut == 'cut') {
+      coords_text = move_or_cut + ' to (' + 
+                    x_phy.toFixed(0) + ', '+ 
+                    y_phy.toFixed(0) + ') at ' + 
+                    feedrate + 'mm/min and ' + Math.round(intensity/2.55) + '% intensity';
+    } else {
+      coords_text = move_or_cut + ' to (' + x_phy.toFixed(0) + ', '+ 
+                    y_phy.toFixed(0) + ') at ' + feedrate + 'mm/min'
+    }
+    return coords_text;
+  }
+
+  function assemble_offset_text(x,y) {
+    var x_phy = x*app_settings.to_physical_dimensions;
+    var y_phy = y*app_settings.to_physical_dimensions;
+    return 'set offset to (' + x_phy.toFixed(0) + ', '+ y_phy.toFixed(0) + ')'
+  }
+
+  function assemble_and_set_offset(x,y) {
+    var x_phy = x*app_settings.to_physical_dimensions;
+    var y_phy = y*app_settings.to_physical_dimensions;
+    var gcode = 'G10 L2 P1 X'+ x_phy.toFixed(app_settings.num_digits) + 
+                ' Y' + y_phy.toFixed(app_settings.num_digits) + '\nG55\n';
+    send_gcode(gcode, "Offset set.", false);
   }
   
+
+
   
   $("#cutting_area").mousedown(function() {
     isDragging = true;
@@ -64,9 +91,9 @@ $(document).ready(function(){
   
 
   $("#cutting_area").click(function(e) {
-  	var offset = $(this).offset();
-  	var x = (e.pageX - offset.left);
-  	var y = (e.pageY - offset.top);
+    var offset = $(this).offset();
+    var x = (e.pageX - offset.left);
+    var y = (e.pageY - offset.top);
 
     if(e.shiftKey) {
       //// set offset
@@ -79,11 +106,10 @@ $(document).ready(function(){
         height: 304-y
       }, 200 );
       gcode_coordinate_offset = [x,y];
-      var gcode = 'G10 L2 P1 X'+ 2*x + ' Y' + 2*y + '\nG55\n';
-      send_gcode(gcode, "Offset set.", false);
-  		$(this).css('border', '1px dashed #aaaaaa');
-  		$("#offset_area").css('border', '1px dashed #ff0000');
-    } else if (!gcode_coordinate_offset) {	
+      assemble_and_set_offset();
+      $(this).css('border', '1px dashed #aaaaaa');
+      $("#offset_area").css('border', '1px dashed #ff0000');
+    } else if (!gcode_coordinate_offset) {  
       assemble_and_send_gcode(x,y);
     } else {
       var pos = $("#offset_area").position()
@@ -99,29 +125,29 @@ $(document).ready(function(){
   $("#cutting_area").hover(
     function () {
       if (!gcode_coordinate_offset) {
-    		$(this).css('border', '1px dashed #ff0000');
-    	}
-    	$(this).css('cursor', 'crosshair');
+        $(this).css('border', '1px dashed #ff0000');
+      }
+      $(this).css('cursor', 'crosshair');
     },
     function () {
-  		$(this).css('border', '1px dashed #aaaaaa');
-  		$(this).css('cursor', 'pointer');	
-  		$('#coordinates_info').text('');		
+      $(this).css('border', '1px dashed #aaaaaa');
+      $(this).css('cursor', 'pointer'); 
+      $('#coordinates_info').text('');    
     }
   );
   
   $("#cutting_area").mousemove(function (e) {
-  	var offset = $(this).offset();
-  	var x = (e.pageX - offset.left);
-  	var y = (e.pageY - offset.top);
-  	if (!gcode_coordinate_offset) {
-  	  if(!e.shiftKey) {
+    var offset = $(this).offset();
+    var x = (e.pageX - offset.left);
+    var y = (e.pageY - offset.top);
+    if (!gcode_coordinate_offset) {
+      if(!e.shiftKey) {
         coords_text = assemble_info_text(x,y);
         if (e.altKey &&isDragging) {
             assemble_and_send_gcode(x,y);
         }
       } else {
-        coords_text = 'set offset to (' + 2*x + ', '+ 2*y + ')';
+        coords_text = assemble_offset_text(x,y);
       }
     } else {
       if(e.shiftKey) {
@@ -141,9 +167,9 @@ $(document).ready(function(){
   
   $("#offset_area").click(function(e) { 
     if(!e.shiftKey) {
-    	var offset = $(this).offset();
-    	var x = (e.pageX - offset.left);
-    	var y = (e.pageY - offset.top);     
+      var offset = $(this).offset();
+      var x = (e.pageX - offset.left);
+      var y = (e.pageY - offset.top);     
       assemble_and_send_gcode(x,y);
       return false
     }
@@ -153,31 +179,21 @@ $(document).ready(function(){
     function () {
     },
     function () {
-  		$('#offset_info').text('');		
+      $('#offset_info').text('');   
     }
   );
   
   $("#offset_area").mousemove(function (e) {
     if(!e.shiftKey) {
-    	var offset = $(this).offset();
-    	var x = (e.pageX - offset.left);
-    	var y = (e.pageY - offset.top);
+      var offset = $(this).offset();
+      var x = (e.pageX - offset.left);
+      var y = (e.pageY - offset.top);
       $('#offset_info').text(assemble_info_text(x,y));
     } else {
       $('#offset_info').text('');
     }
   });
   
-  // function moveto (x, y) {
-  //  $('#y_cart').animate({  
-  //    top: y - 8.5 - 6
-  //  });   
-  //  
-  //  $('#x_cart').animate({  
-  //    left: x - 6,  
-  //    top: y - 6 
-  //  });
-  // };
   
   //// motion parameters
   $( "#intensity_field" ).val('0');
@@ -216,19 +232,19 @@ $(document).ready(function(){
   //// jog buttons
   $("#jog_up_btn").click(function(e) {
     var gcode = 'G91\nG0Y-10F6000\nG90\n';
-    send_gcode(gcode, "Moving Up ...", false)	
+    send_gcode(gcode, "Moving Up ...", false) 
   });   
   $("#jog_left_btn").click(function(e) {
     var gcode = 'G91\nG0X-10F6000\nG90\n';
-    send_gcode(gcode, "Moving Left ...", false)	
+    send_gcode(gcode, "Moving Left ...", false) 
   });   
   $("#jog_right_btn").click(function(e) {
     var gcode = 'G91\nG0X10F6000\nG90\n';
-    send_gcode(gcode, "Moving Right ...", false)	
+    send_gcode(gcode, "Moving Right ...", false)  
   });
   $("#jog_down_btn").click(function(e) {
     var gcode = 'G91\nG0Y10F6000\nG90\n';
-    send_gcode(gcode, "Moving Down ...", false)	
+    send_gcode(gcode, "Moving Down ...", false) 
   });
 
   //// air assist buttons

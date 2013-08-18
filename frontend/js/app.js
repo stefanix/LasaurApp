@@ -113,6 +113,22 @@ $(document).ready(function(){
     $('#tab_logs div.alert').show()
   })
 
+
+  // init work area size ////////////////////////
+
+  function adjust_work_area() {
+    var w = app_settings.preview_dimensions[0];
+    var h = app_settings.preview_dimensions[1];
+    $('#preview_canvas').height(h);
+    $('#preview_canvas').width(w);
+    $('#import_canvas').height(h);
+    $('#import_canvas').width(w);
+    $('#cutting_area').height(h);
+
+  }
+  adjust_work_area();
+
+
   //////// serial connect and pause button ////////
   var connect_btn_state = false;
   var connect_btn_in_hover = false;

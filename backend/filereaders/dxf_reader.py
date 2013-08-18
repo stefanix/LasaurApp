@@ -7,8 +7,6 @@ __author__ = 'David S. Touretzky, Stefan Hechenberger <stefan@nortd.com>'
 
 
 import math
-import sys
-import os.path
 import StringIO
 
 
