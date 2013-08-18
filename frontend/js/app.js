@@ -119,10 +119,10 @@ $(document).ready(function(){
   function adjust_work_area() {
     var w = app_settings.preview_dimensions[0];
     var h = app_settings.preview_dimensions[1];
-    $('#preview_canvas').height(h);
-    $('#preview_canvas').width(w);
-    $('#import_canvas').height(h);
-    $('#import_canvas').width(w);
+
+    // add canvases dynamically to prevent distortion
+    $('#import_canvas_container').html('<canvas id="import_canvas" width="'+w+'" height="'+h+'" style="border:1px dashed #aaaaaa;"></canvas>');
+    $('#preview_canvas_container').html('<canvas id="preview_canvas" width="'+w+'" height="'+h+'" style="border:1px dashed #aaaaaa;"></canvas>');
     $('#cutting_area').height(h);
 
   }

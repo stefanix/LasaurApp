@@ -466,7 +466,9 @@ def file_reader():
     try:
         dimensions = json.loads(dimensions)
     except TypeError:
-        pass
+        dimensions = None
+    # print "dims", dimensions[0], ":", dimensions[1]
+
 
     dpi_forced = None
     try:

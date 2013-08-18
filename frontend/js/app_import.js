@@ -15,7 +15,11 @@ $(document).ready(function(){
   var icanvas = new Canvas('#import_canvas');
   icanvas.background('#ffffff'); 
 
-  resetTap();
+  //reset tap
+  $('#canvas_properties .colorbtns').html('');  // reset colors
+  icanvas.background('#ffffff');
+  $('#dpi_import_info').html('Supported file formats are: <b>SVG</b>, <b>DXF</b> (<a href="http://labs.nortd.com/lasersaur/manual/dxf_import">subset</a>)');
+
 
   $('#bed_size_note').html(app_settings.work_area_dimensions[0]+'x'+
                            app_settings.work_area_dimensions[1]+'mm');
@@ -77,7 +81,7 @@ $(document).ready(function(){
              'filedata':filedata, 
              'dpi':forceSvgDpiTo, 
              'optimize':path_optimize,
-             'dimensions':app_settings.work_area_dimensions},
+             'dimensions':JSON.stringify(app_settings.work_area_dimensions)},
       dataType: "json",
       success: function (data) {
         if (ext == '.svg' || ext == '.SVG') {
@@ -109,7 +113,9 @@ $(document).ready(function(){
     var boundarys = data.boundarys;
     if (boundarys) {
       DataHandler.setByPaths(boundarys);
-      resetTap();
+      // some init
+      $('#canvas_properties .colorbtns').html('');  // reset colors
+      icanvas.background('#ffffff');
 
       // add preview color buttons, show info, register events
       for (var color in DataHandler.getColorOrder()) {
@@ -199,7 +205,11 @@ $(document).ready(function(){
       save_and_add_to_job_queue(filename, jobdata);
       load_into_job_widget(filename, jobdata);
       $('#tab_jobs_button').trigger('click');
-      resetTap();
+
+      // reset tap
+      $('#canvas_properties .colorbtns').html('');  // reset colors
+      icanvas.background('#ffffff');
+      $('#dpi_import_info').html('Supported file formats are: <b>SVG</b>, <b>DXF</b> (<a href="http://labs.nortd.com/lasersaur/manual/dxf_import">subset</a>)');
       $('#import_name').val('');
     } else {
       $().uxmessage('warning', "no data");
@@ -207,12 +217,6 @@ $(document).ready(function(){
   	return false;
   });
 
-
-  function resetTap() {
-    $('#canvas_properties .colorbtns').html('');  // reset colors
-    icanvas.background('#ffffff');
-    $('#dpi_import_info').html('Supported file formats are: <b>SVG</b>, <b>DXF</b> (<a href="http://labs.nortd.com/lasersaur/manual/dxf_import">subset</a>)');
-  }
 
 
 });  // ready
