@@ -229,7 +229,7 @@ def queue_save_handler():
 
 @route('/queue/rm/:name')
 def queue_rm_handler(name):
-    # delete gcode item, on success return '1'
+    # delete queue item, on success return '1'
     ret = '0'
     filename = os.path.abspath(os.path.join(storage_dir(), name.strip('/\\')))
     if filename.startswith(storage_dir()):
@@ -240,7 +240,30 @@ def queue_rm_handler(name):
                 ret = '1'
             finally:
                 pass
-    return ret   
+    return ret 
+
+@route('/queue/clear')
+def queue_clear_handler():
+    # delete all queue items, on success return '1'
+    ret = '0'
+    files = []
+    cwd_temp = os.getcwd()
+    try:
+        os.chdir(storage_dir())
+        files = filter(os.path.isfile, glob.glob("*"))
+        files.sort(key=lambda x: os.path.getmtime(x))
+    finally:
+        os.chdir(cwd_temp)
+    for filename in files:
+        if not filename.endswith('.starred'):
+            filename = os.path.join(storage_dir(), filename)
+            try:
+                os.remove(filename);
+                print "file deleted: " + filename
+                ret = '1'
+            finally:
+                pass
+    return ret
     
 @route('/queue/star/:name')
 def queue_star_handler(name):

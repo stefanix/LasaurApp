@@ -24,6 +24,35 @@ function load_into_job_widget(name, jobdata) {
 
 /// QUEUE/LIBRARY ///////////////////////////////
 
+function populate_job_queue() {
+  $.getJSON("/queue/list", function(data) {
+    $.each(data, function(index, name) {
+      add_to_job_queue(name);
+    });
+  });
+}
+
+function populate_job_library() {
+  $.getJSON("/library/list", function(data) {
+    if (typeof(data.sort) == 'function') {
+      data.sort();
+    }
+    $.each(data, function(index, name) {
+      $('#job_library').prepend('<li><a href="#">'+ name +'</a></li>');
+    });
+    $('#job_library li a').click(function(){
+      var name = $(this).text();
+      $.get("/library/get/" + name, function(jobdata) {
+        load_into_job_widget(name, jobdata);
+      });
+      return false;
+    });   
+  });
+  // .success(function() { alert("second success"); })
+  // .error(function() { alert("error"); })
+  // .complete(function() { alert("complete"); });
+}
+
 var queue_num_index = 1;
 function save_and_add_to_job_queue(name, jobdata) { 
   if ((typeof(name) == 'undefined') || ($.trim(name) == '')) {
@@ -48,7 +77,7 @@ function save_and_add_to_job_queue(name, jobdata) {
 function add_to_job_queue(name) {
   //// delete excessive queue items
   var num_non_starred = 0;
-  $.each($('#gcode_queue li'), function(index, li_item) {
+  $.each($('#job_queue li'), function(index, li_item) {
     if ($(li_item).find('a span.icon-star-empty').length > 0) {
       num_non_starred++;
       if (num_non_starred > app_settings.max_num_queue_items-1) {
@@ -62,10 +91,10 @@ function add_to_job_queue(name) {
     name = name.slice(0,-8);
     star_class = 'icon-star';
   }
-  $('#gcode_queue').prepend('<li><a href="#"><span>'+ name +'</span><span class="starwidget '+ star_class +' pull-right" title=" star to keep in queue"></span></a></li>')
+  $('#job_queue').prepend('<li><a href="#"><span>'+ name +'</span><span class="starwidget '+ star_class +' pull-right" title=" star to keep in queue"></span></a></li>')
   $('span.starwidget').tooltip({delay:{ show: 1500, hide: 100}})  
   //// action for loading gcode
-  $('#gcode_queue li:first a').click(function(){
+  $('#job_queue li:first a').click(function(){
     var name = $(this).children('span:first').text();
     if ($(this).find('span.icon-star').length > 0) {
       name = name + '.starred'
@@ -81,7 +110,7 @@ function add_to_job_queue(name) {
     return false;   
   });   
   //// action for star
-  $('#gcode_queue li:first a span.starwidget').click(function() {
+  $('#job_queue li:first a span.starwidget').click(function() {
     if ($(this).hasClass('icon-star')) {
       //// unstar
       $(this).removeClass('icon-star');
@@ -274,32 +303,8 @@ $(document).ready(function(){
   // empty job_name on reload
   $("#job_name").val("");  
 
-  // populate queue from queue directory
-  $.getJSON("/queue/list", function(data) {
-    $.each(data, function(index, name) {
-      add_to_job_queue(name);
-    });
-  });
-    
-  // populate library from library directory
-  $.getJSON("/library/list", function(data) {
-    if (typeof(data.sort) == 'function') {
-      data.sort();
-    }
-    $.each(data, function(index, name) {
-      $('#job_library').prepend('<li><a href="#">'+ name +'</a></li>');
-    });
-    $('#job_library li a').click(function(){
-      var name = $(this).text();
-      $.get("/library/get/" + name, function(jobdata) {
-        load_into_job_widget(name, jobdata);
-      });
-      return false;
-    });   
-  });
-  // .success(function() { alert("second success"); })
-  // .error(function() { alert("error"); })
-  // .complete(function() { alert("complete"); });
+  populate_job_queue();
+  populate_job_library();
  
 
   /// button event //////////////////////////////
@@ -336,6 +341,19 @@ $(document).ready(function(){
     return false;
   });
 
+  $("#clear_queue").click(function(e) {
+    $.get("/queue/clear", function(data) {
+      if (data == "1") {
+        $('#job_queue').html('');
+        populate_job_queue();
+      } else {
+        $().uxmessage('error', "failed to clear queue");
+      }  
+    }).error(function() {
+      $().uxmessage('error', "clear queue failed"); 
+    });  
+    return false;
+  });  
 
   // canvas preview generation
   var canvas = new Canvas('#preview_canvas');
@@ -370,7 +388,7 @@ $(document).ready(function(){
       $().uxmessage('error', "Max number of passes reached.");
     }
     return false;
-  });  
+  });
 
 
 });  // ready

@@ -8,17 +8,21 @@ BBB
 - also the uart1 mux settings error on the BBB
 
 
+TODO (raster branch)
+---------------------
+- stats
+- clear queue button
+- gcode import support
+- configurable width/height, bbox checks
+- zoom/pan svg canvas
+- job selected path visiual clues, bbox
+- testing
+  - pause feature
+  - busy when jogging
+  - 
+
 TODO
 -----
-- more passes, integrate with lasertags
-- path stats, bbox, length, time estimation
-- show bbox of selected path, also show combined bbox
-- reloading ui kills job?
-- ready status, prevent queing jobs when machine is running
-- pause/continue
-- configurable canvas size
-- bbox checks
-- 
 - login/claim, single user restriction, keep login alive signal
 - dial in widget
 - doc link to reveal library location so people can add more files
