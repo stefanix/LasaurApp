@@ -9,7 +9,6 @@ DataHandler = {
 
   paths_by_color : {},
   passes : [],
-  canvas : undefined,
 
 
   clear : function() {
@@ -167,8 +166,8 @@ DataHandler = {
   draw : function (canvas, scale, exclude_colors) { 
     // draw any path used in passes
     // exclude_colors is optional
-    canvas.background('#ffffff');
-    canvas.noFill();
+    canvas.reset();
+    // canvas.noFill();
     var x_prev = 0;
     var y_prev = 0;
     for (var color in this.paths_by_color) {
@@ -179,15 +178,17 @@ DataHandler = {
           if (path.length > 0) {
             var x = path[0][0]*scale;
             var y = path[0][1]*scale;
-            canvas.stroke('#aaaaaa');
-            canvas.line(x_prev, y_prev, x, y);
+            // canvas.stroke('#aaaaaa');
+            // canvas.line(x_prev, y_prev, x, y);
+            canvas.path("M"+x_prev+","+y_prev+"L"+x+","+y);
             x_prev = x;
             y_prev = y;
-            canvas.stroke(color);
+            // canvas.stroke(color);
             for (vertex=1; vertex<path.length; vertex++) {
               var x = path[vertex][0]*scale;
               var y = path[vertex][1]*scale;
-              canvas.line(x_prev, y_prev, x, y);
+              // canvas.line(x_prev, y_prev, x, y);
+              canvas.path("M"+x_prev+","+y_prev+"L"+x+","+y);
               x_prev = x;
               y_prev = y;
             }

@@ -10,11 +10,11 @@ BBB
 
 TODO (raster branch)
 ---------------------
-- gcode import support, laa
+- gcode import support, and laa
 - export gcode and json
 - about, make it a dropdown with link
   - show versions for LasaurApp and firmware
-- job selected path visiual clues, bbox
+- job selected path visual clues, bbox
 - stats
 - configurable width/height, bbox checks
 - zoom/pan svg canvas

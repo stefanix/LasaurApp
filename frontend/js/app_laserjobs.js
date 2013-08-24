@@ -357,8 +357,9 @@ $(document).ready(function(){
   });  
 
   // canvas preview generation
-  var canvas = new Canvas('#preview_canvas');
-  canvas.background('#ffffff');
+  var canvas = SVGCanvas("preview_canvas_container", 
+                         app_settings.preview_dimensions[0], 
+                         app_settings.preview_dimensions[1]);
   $('#job_data').blur(function() {
     DataHandler.setByJson($('#job_data').val());
     DataHandler.draw(canvas, 0.5);

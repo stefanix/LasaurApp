@@ -1,0 +1,6 @@
+
+#mapContainer { background: #f0000; border: 1px solid #ccc; height: 500px; position: relative; width: 500px; overflow: hidden; }
+#mapContainer #map { height: 500px; width: 500px; }
+#mapContainer #mapControls { position: absolute; left: 15px; top: 15px; width: 29px; }
+#mapContainer #mapControls #up { background: url(iconUp.png) no-repeat center top; display: block; height: 26px; width: 29px; }
+#mapContainer #mapControls #down { background: url(iconDown.png) no-repeat center top; display: block; height: 27px; width: 29px; }

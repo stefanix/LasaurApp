@@ -12,12 +12,12 @@ $(document).ready(function(){
   var forceSvgDpiTo = undefined;
   
   // G-Code Canvas Preview
-  var icanvas = new Canvas('#import_canvas');
-  icanvas.background('#ffffff'); 
+  var canvas = SVGCanvas("import_canvas_container", 
+                         app_settings.preview_dimensions[0], 
+                         app_settings.preview_dimensions[1]);
 
   //reset tap
   $('#canvas_properties .colorbtns').html('');  // reset colors
-  icanvas.background('#ffffff');
   $('#dpi_import_info').html('Supported file formats are: <b>SVG</b>, <b>DXF</b> (<a href="http://labs.nortd.com/lasersaur/manual/dxf_import">subset</a>)');
 
 
@@ -115,7 +115,7 @@ $(document).ready(function(){
       DataHandler.setByPaths(boundarys);
       // some init
       $('#canvas_properties .colorbtns').html('');  // reset colors
-      icanvas.background('#ffffff');
+      canvas.reset();
 
       // add preview color buttons, show info, register events
       for (var color in DataHandler.getColorOrder()) {
@@ -149,7 +149,7 @@ $(document).ready(function(){
 
   function generatePreview() {
     if (!DataHandler.isEmpty()) {
-      DataHandler.draw(icanvas, 0.5, getDeselectedColors());
+      DataHandler.draw(canvas, 0.5, getDeselectedColors());
     } else {
       $().uxmessage('notice', "No data loaded to generate preview.");
     }       
@@ -208,7 +208,7 @@ $(document).ready(function(){
 
       // reset tap
       $('#canvas_properties .colorbtns').html('');  // reset colors
-      icanvas.background('#ffffff');
+      canvas.reset();
       $('#dpi_import_info').html('Supported file formats are: <b>SVG</b>, <b>DXF</b> (<a href="http://labs.nortd.com/lasersaur/manual/dxf_import">subset</a>)');
       $('#import_name').val('');
     } else {

@@ -1,6 +1,6 @@
 
 var app_settings = {
-  work_area_dimensions: [400,210],
+  work_area_dimensions: [1200,410],
   max_seek_speed: 8000,
   num_digits: 2, 
   max_num_queue_items: 24,

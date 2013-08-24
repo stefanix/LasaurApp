@@ -1,5 +1,33 @@
 
 
+
+function SVGCanvas(container_id, w, h) {
+  var canvas = Raphael(container_id, w, h);
+
+  canvas.reset = function() {
+    canvas.clear();
+    var rect = canvas.rect(0, 0, w, h);
+    rect.attr("fill", "#ffffff")
+    rect.attr("stroke-dasharray", "--");
+  }
+
+  canvas.reset();
+
+  var circle = canvas.circle(50, 40, 10);
+  var circle = canvas.circle(500, 40, 10);
+  var circle = canvas.circle(500, 200, 10);
+  // canvas.attr("fill", "#f00");
+  
+  var panZoom = canvas.panzoom({ initialZoom: 0, initialPosition: { x: 0, y: 0} });
+  panZoom.enable();
+  canvas.safari();
+
+  return canvas
+}
+
+
+
+
 // create new canvas like this:
 // var canvas = new Canvas('#canvas_id');
 
