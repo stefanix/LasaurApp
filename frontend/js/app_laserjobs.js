@@ -307,10 +307,21 @@ $(document).ready(function(){
   populate_job_queue();
   populate_job_library();
  
-
   var w = app_settings.canvas_dimensions[0];
   var h = app_settings.canvas_dimensions[1];
   $('#preview_canvas_container').html('<canvas id="preview_canvas" width="'+w+'px" height="'+h+'px" style="border:1px dashed #aaaaaa;"></canvas>');
+  $('#preview_canvas').click(function(e){
+    open_bigcanvas(16);
+    return false;
+  });
+  $("#preview_canvas").hover(
+    function () {
+      $(this).css('cursor', 'url');
+    },
+    function () {
+      $(this).css('cursor', 'pointer'); 
+    }
+  );
 
 
   /// button event //////////////////////////////

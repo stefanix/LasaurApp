@@ -99,18 +99,30 @@ function send_gcode(gcode, success_msg, progress) {
 
 
 
-function open_bigcanvas(scale) {
-  var w = 4 * app_settings.canvas_dimensions[0];
-  var h = 4 * app_settings.canvas_dimensions[1];
+function open_bigcanvas(scale, deselectedColors) {
+  var w = scale * app_settings.canvas_dimensions[0];
+  var h = scale * app_settings.canvas_dimensions[1];
   $('#container').before('<canvas id="big_canvas" width="'+w+'px" height="'+h+'px" style="border:1px dashed #aaaaaa;"></canvas>');
+  var mid = $('body').innerWidth()/2.0-30;
+  $('body').prepend('<button id="close_bigcanvas_btn" class="btn btn-primary" type="submit" style="position:fixed;top:80px;left:'+mid+'px">close</button>');
+  $('#close_bigcanvas_btn').click(function(e){
+    close_bigcanvas();
+    return false;
+  });
   $('#container').hide();
   var bigcanvas = new Canvas('#big_canvas');
-  DataHandler.draw(bigcanvas, 4*app_settings.to_canvas_scale, getDeselectedColors());
+  // DataHandler.draw(bigcanvas, 4*app_settings.to_canvas_scale, getDeselectedColors());
+  if (deselectedColors === undefined) {
+    DataHandler.draw(bigcanvas, scale*app_settings.to_canvas_scale);
+  } else {
+    DataHandler.draw(bigcanvas, scale*app_settings.to_canvas_scale, deselectedColors);
+  }
 }
 
 
 function close_bigcanvas() {
   $('#big_canvas').remove();
+  $('#close_bigcanvas_btn').remove();
   delete bigcanvas;
   $('#container').show();
 }

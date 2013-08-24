@@ -15,10 +15,23 @@ $(document).ready(function(){
   var w = app_settings.canvas_dimensions[0];
   var h = app_settings.canvas_dimensions[1];
   $('#import_canvas_container').html('<canvas id="import_canvas" width="'+w+'px" height="'+h+'px" style="border:1px dashed #aaaaaa;"></canvas>');
+  $('#import_canvas').click(function(e){
+    open_bigcanvas(4, getDeselectedColors());
+    return false;
+  });
+  $("#import_canvas").hover(
+    function () {
+      $(this).css('cursor', 'url');
+    },
+    function () {
+      $(this).css('cursor', 'pointer'); 
+    }
+  );
   var canvas = new Canvas('#import_canvas');
   canvas.width = w;
   canvas.height = h;
   canvas.background('#ffffff'); 
+
 
   //reset tap
   $('#canvas_properties .colorbtns').html('');  // reset colors
