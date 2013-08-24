@@ -20,11 +20,13 @@ function reset_offset() {
 
 $(document).ready(function(){
 
+  $('#cutting_area').height(app_settings.canvas_dimensions[1]);
+
   var isDragging = false;
   
   function assemble_and_send_gcode(x,y) {
-    var x_phy = x*app_settings.to_physical_dimensions;
-    var y_phy = y*app_settings.to_physical_dimensions;
+    var x_phy = x*app_settings.to_physical_scale;
+    var y_phy = y*app_settings.to_physical_scale;
     var g0_or_g1 = 'G0';
     var air_assist_on = '';
     var air_assist_off = '';
@@ -44,8 +46,8 @@ $(document).ready(function(){
   }
   
   function assemble_info_text(x,y) {
-    var x_phy = x*app_settings.to_physical_dimensions;
-    var y_phy = y*app_settings.to_physical_dimensions;
+    var x_phy = x*app_settings.to_physical_scale;
+    var y_phy = y*app_settings.to_physical_scale;
     var coords_text;
     var move_or_cut = 'move';
     if($('#feed_btn').hasClass("active")){
@@ -67,14 +69,14 @@ $(document).ready(function(){
   }
 
   function assemble_offset_text(x,y) {
-    var x_phy = x*app_settings.to_physical_dimensions;
-    var y_phy = y*app_settings.to_physical_dimensions;
+    var x_phy = x*app_settings.to_physical_scale;
+    var y_phy = y*app_settings.to_physical_scale;
     return 'set offset to (' + x_phy.toFixed(0) + ', '+ y_phy.toFixed(0) + ')'
   }
 
   function assemble_and_set_offset(x,y) {
-    var x_phy = x*app_settings.to_physical_dimensions;
-    var y_phy = y*app_settings.to_physical_dimensions;
+    var x_phy = x*app_settings.to_physical_scale;
+    var y_phy = y*app_settings.to_physical_scale;
     var gcode = 'G10 L2 P1 X'+ x_phy.toFixed(app_settings.num_digits) + 
                 ' Y' + y_phy.toFixed(app_settings.num_digits) + '\nG55\n';
     send_gcode(gcode, "Offset set.", false);

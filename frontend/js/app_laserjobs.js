@@ -308,6 +308,11 @@ $(document).ready(function(){
   populate_job_library();
  
 
+  var w = app_settings.canvas_dimensions[0];
+  var h = app_settings.canvas_dimensions[1];
+  $('#preview_canvas_container').html('<canvas id="preview_canvas" width="'+w+'px" height="'+h+'px" style="border:1px dashed #aaaaaa;"></canvas>');
+
+
   /// button event //////////////////////////////
 
   $("#progressbar").hide();  
@@ -357,12 +362,11 @@ $(document).ready(function(){
   });  
 
   // canvas preview generation
-  var canvas = SVGCanvas("preview_canvas_container", 
-                         app_settings.preview_dimensions[0], 
-                         app_settings.preview_dimensions[1]);
+  var canvas = new Canvas('#preview_canvas');
+  canvas.background('#ffffff');
   $('#job_data').blur(function() {
     DataHandler.setByJson($('#job_data').val());
-    DataHandler.draw(canvas, 0.5);
+    DataHandler.draw(canvas, app_settings.to_canvas_scale);
     // var stats = GcodeReader.getStats();
     // var length = stats.cuttingPathLength; 
     // var duration = stats.estimatedTime;

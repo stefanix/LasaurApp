@@ -99,6 +99,23 @@ function send_gcode(gcode, success_msg, progress) {
 
 
 
+function open_bigcanvas(scale) {
+  var w = 4 * app_settings.canvas_dimensions[0];
+  var h = 4 * app_settings.canvas_dimensions[1];
+  $('#container').before('<canvas id="big_canvas" width="'+w+'px" height="'+h+'px" style="border:1px dashed #aaaaaa;"></canvas>');
+  $('#container').hide();
+  var bigcanvas = new Canvas('#big_canvas');
+  DataHandler.draw(bigcanvas, 4*app_settings.to_canvas_scale, getDeselectedColors());
+}
+
+
+function close_bigcanvas() {
+  $('#big_canvas').remove();
+  delete bigcanvas;
+  $('#container').show();
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -112,41 +129,6 @@ $(document).ready(function(){
     $('#log_content').show()
     $('#tab_logs div.alert').show()
   })
-
-
-  // init work area size ////////////////////////
-
-  function adjust_work_area() {
-    var w = app_settings.preview_dimensions[0];
-    var h = app_settings.preview_dimensions[1];
-
-    // add canvases dynamically to prevent distortion
-    // var paper_import = Raphael("import_canvas_container", w, h);
-    // var rect = paper_import.rect(0, 0, w, h);
-    // rect.attr("fill", "#ffffff")
-    // rect.attr("stroke-dasharray", "--");
-    // var circle = paper_import.circle(50, 40, 10);
-    // var circle = paper_import.circle(500, 40, 10);
-    // var circle = paper_import.circle(500, 200, 10);
-    // circle.attr("fill", "#f00");
-    // var panZoom = paper_import.panzoom({ initialZoom: 0, initialPosition: { x: 0, y: 0} });
-    // panZoom.enable();
-    // paper_import.safari();
-
-    // var paper_preview = Raphael("preview_canvas_container", w, h);
-    // var rect2 = paper_preview.rect(0, 0, w, h);
-    // rect2.attr("fill", "#ffffff")
-    // rect2.attr("stroke-dasharray", "--");
-    // var circle = paper_preview.circle(50, 40, 20);
-    // circle.attr("fill", "#ff00ff");
-
-
-    // $('#import_canvas_container').html('<canvas id="import_canvas" width="'+w+'" height="'+h+'" style="border:1px dashed #aaaaaa;"></canvas>');
-    // $('#preview_canvas_container').html('<canvas id="preview_canvas" width="'+w+'" height="'+h+'" style="border:1px dashed #aaaaaa;"></canvas>');
-    $('#cutting_area').height(h);
-
-  }
-  adjust_work_area();
 
 
   //////// serial connect and pause button ////////

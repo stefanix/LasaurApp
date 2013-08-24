@@ -12,12 +12,17 @@ $(document).ready(function(){
   var forceSvgDpiTo = undefined;
   
   // G-Code Canvas Preview
-  var canvas = SVGCanvas("import_canvas_container", 
-                         app_settings.preview_dimensions[0], 
-                         app_settings.preview_dimensions[1]);
+  var w = app_settings.canvas_dimensions[0];
+  var h = app_settings.canvas_dimensions[1];
+  $('#import_canvas_container').html('<canvas id="import_canvas" width="'+w+'px" height="'+h+'px" style="border:1px dashed #aaaaaa;"></canvas>');
+  var canvas = new Canvas('#import_canvas');
+  canvas.width = w;
+  canvas.height = h;
+  canvas.background('#ffffff'); 
 
   //reset tap
   $('#canvas_properties .colorbtns').html('');  // reset colors
+  canvas.background('#ffffff');
   $('#dpi_import_info').html('Supported file formats are: <b>SVG</b>, <b>DXF</b> (<a href="http://labs.nortd.com/lasersaur/manual/dxf_import">subset</a>)');
 
 
@@ -115,7 +120,7 @@ $(document).ready(function(){
       DataHandler.setByPaths(boundarys);
       // some init
       $('#canvas_properties .colorbtns').html('');  // reset colors
-      canvas.reset();
+      canvas.background('#ffffff');
 
       // add preview color buttons, show info, register events
       for (var color in DataHandler.getColorOrder()) {
@@ -149,7 +154,7 @@ $(document).ready(function(){
 
   function generatePreview() {
     if (!DataHandler.isEmpty()) {
-      DataHandler.draw(canvas, 0.5, getDeselectedColors());
+      DataHandler.draw(canvas, app_settings.to_canvas_scale, getDeselectedColors());
     } else {
       $().uxmessage('notice', "No data loaded to generate preview.");
     }       
@@ -208,7 +213,7 @@ $(document).ready(function(){
 
       // reset tap
       $('#canvas_properties .colorbtns').html('');  // reset colors
-      canvas.reset();
+      canvas.background('#ffffff');
       $('#dpi_import_info').html('Supported file formats are: <b>SVG</b>, <b>DXF</b> (<a href="http://labs.nortd.com/lasersaur/manual/dxf_import">subset</a>)');
       $('#import_name').val('');
     } else {
