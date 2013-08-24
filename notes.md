@@ -17,7 +17,6 @@ TODO (raster branch)
 - job selected path visual clues, bbox
 - stats
 - configurable width/height, bbox checks
-- zoom/pan svg canvas
 - bigger stop button
 - pause
   - break up long lines so pause feature is more snappy

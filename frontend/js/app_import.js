@@ -11,7 +11,7 @@ $(document).ready(function(){
   var path_optimize = 1;
   var forceSvgDpiTo = undefined;
   
-  // G-Code Canvas Preview
+  /// big canvas init
   var w = app_settings.canvas_dimensions[0];
   var h = app_settings.canvas_dimensions[1];
   $('#import_canvas_container').html('<canvas id="import_canvas" width="'+w+'px" height="'+h+'px" style="border:1px dashed #aaaaaa;"></canvas>');
