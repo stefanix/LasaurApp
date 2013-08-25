@@ -1,5 +1,8 @@
 
 var hardware_ready_state = false;
+var firmware_version_reported = false;
+var lasaurapp_version_reported = false;
+
 
 (function($){
 	$.fn.uxmessage = function(kind, text) {
@@ -135,7 +138,7 @@ function close_bigcanvas() {
 
 $(document).ready(function(){
   
-  $().uxmessage('notice', "app frontend started");
+  $().uxmessage('notice', "Frontend started.");
   
   $('#tab_logs_button').click(function(){
     $('#log_content').show()
@@ -235,9 +238,15 @@ $(document).ready(function(){
           $().uxmessage('notice', "If this happens a lot tell the author of this software.");
         }    
         if (data.firmware_version && !firmware_version_reported) {
-          $().uxmessage('notice', "LasaurGrbl " + data.firmware_version);
-          firmware_version_reported = true
+          $().uxmessage('notice', "Firmware v" + data.firmware_version);
+          $('#firmware_version').html(data.firmware_version);
+          firmware_version_reported = true;
         }
+      }
+      if (data.lasaurapp_version && !lasaurapp_version_reported) {
+        $().uxmessage('notice', "LasaurApp v" + data.lasaurapp_version);
+        $('#lasaurapp_version').html(data.lasaurapp_version);
+        lasaurapp_version_reported = true;
       }
     }).error(function() {
       // lost connection to server
@@ -247,7 +256,6 @@ $(document).ready(function(){
   // call once, to get immediate status
     poll_hardware_status();
   // register with timed callback
-  var firmware_version_reported = false
   var connectiontimer = setInterval(function() {
     poll_hardware_status();
   }, 4000);
@@ -377,6 +385,7 @@ $(document).ready(function(){
     $.get('/reset_atmega', function(data) {
       if (data != "") {
         $().uxmessage('success', "Atmega restarted!");
+        firmware_version_reported = false;
       } else {
         $().uxmessage('error', "Atmega restart failed!");
       }   

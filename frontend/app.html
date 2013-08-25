@@ -43,7 +43,7 @@
                 <a class="brand" href="#" style="color:#666666"><img src="/img/lasersaur-dino-brand.png" style="margin-right:6px">LasaurApp</a>
                 <div class="nav-collapse">
                     <ul class="nav">
-                        <li><a href="http://labs.nortd.com/lasersaur/">About</a></li> 
+                        <li><a href="#about_modal" data-toggle="modal">About</a></li> 
                         <li class="divider-vertical"></li>
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">Manual<b class="caret"></b></a>
@@ -65,6 +65,27 @@
                     </ul>
                 </div>
             </div>
+        </div>
+    </div>
+
+
+    <!-- Modal -->
+    <div id="about_modal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="about_label" aria-hidden="true">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+            <h3 id="about_label">About LasaurApp</h3>
+        </div>
+        <div class="modal-body">
+            <p><img src="/img/lasersaur-black_w530.jpg"></p>
+            <div style="width:60px;margin-left:auto;margin-right:auto;margin-top:20px;margin-bottom:20px"><img src="/img/lasersaur-dino.png" style="width:60px"></div>
+            <p>LasaurApp is the offical control app for the Lasersaur laser cutter and part of the <a href="http://labs.nortd.com/lasersaur/">Lasersaur project</a>. This software is made available under the <a href="https://gnu.org/licenses/gpl.html">GPLv3 (version 3 or later)</a> software license. Copyright (c) 2013 <a href="http://labs.nortd.com/">Nortd Labs</a></p>
+            <ul>
+            <li>LasaurApp version <span id="lasaurapp_version"></span></li>
+            <li>Firmware version <span id="firmware_version">&lt;not connected&gt;</span></li>
+            </ul>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" data-dismiss="modal" aria-hidden="true">Close</button>
         </div>
     </div>
     

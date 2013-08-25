@@ -10,7 +10,7 @@ BBB
 
 TODO (raster branch)
 ---------------------
-- gcode import support, and laa
+- gcode import support, and lsa
 - export gcode and json
 - about, make it a dropdown with link
   - show versions for LasaurApp and firmware

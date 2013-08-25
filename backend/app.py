@@ -128,9 +128,6 @@ def run_with_callback(host, port):
 
         
 
-@route('/hello')
-def hello_handler():
-    return "Hello World!!"
 
 @route('/longtest')
 def longtest_handler():
@@ -335,6 +332,7 @@ def serial_handler(connect):
 def get_status():
     status = copy.deepcopy(SerialManager.get_hardware_status())
     status['serial_connected'] = SerialManager.is_connected()
+    status['lasaurapp_version'] = VERSION
     return json.dumps(status)
 
 
@@ -430,15 +428,6 @@ def reset_atmega_handler():
     reset_atmega(HARDWARE)
     return '1'
 
-
-# @route('/gcode/:gcode_line')
-# def gcode_handler(gcode_line):
-#     if SerialManager.is_connected():    
-#         print gcode_line
-#         SerialManager.queue_gcode_line(gcode_line)
-#         return "Queued for sending."
-#     else:
-#         return ""
 
 @route('/gcode', method='POST')
 def job_submit_handler():
