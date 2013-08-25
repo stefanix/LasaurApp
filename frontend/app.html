@@ -40,7 +40,7 @@
                     <button id="cancel_btn" class="btn" type="submit" title="stop and purge job"><i class="icon-stop"></i></button>
                 </div>      
                 <button id="pause_btn" class="btn pull-right" type="submit" title="pause/continue"><i class="icon-pause"></i></button>
-                <a class="brand" href="#" style="color:#666666"><img src="/img/lasersaur-dino-brand.png" style="margin-right:6px">LasaurApp</a>
+                <a class="brand" href="/" style="color:#666666"><img src="/img/lasersaur-dino-brand.png" style="margin-right:6px">LasaurApp</a>
                 <div class="nav-collapse">
                     <ul class="nav">
                         <li><a href="#about_modal" data-toggle="modal">About</a></li> 
@@ -127,14 +127,24 @@
                                         </div>
                                         <div style="padding-top:20px">
                                             <div class="btn-group pull-left">
-                                                <button id="job_submit" class="btn btn-large">Send to Lasersaur</button>
-                                                <button id="job_bbox_submit" class="btn btn-large" title="send bounding box to lasersaur" data-delay="500">
+                                                <button id="job_submit" class="btn btn-large btn-primary">Send to Lasersaur</button>
+                                                <button id="job_bbox_submit" class="btn btn-large btn-primary" title="send bounding box to lasersaur" data-delay="500">
                                                     <span class="icon-resize-full"></span>
                                                 </button>
                                             </div>
-                                            <button id="job_save_to_queue" class="btn btn-large pull-right" title="save to queue" data-delay="500">
-                                                    <span class="icon-plus-sign"></span>
-                                            </button>
+                                            <div class="btn-group pull-right">
+                                                <a class="btn btn-large dropdown-toggle" data-toggle="dropdown" href="#">
+                                                    <span class="icon-share-alt"></span>
+                                                    <span class="caret"></span>
+                                                </a>
+                                                <ul class="dropdown-menu">
+                                                    <li><a id="export_json_btn" href="#">Export Job as JSON</a></li>
+                                                    <li><a id="export_gcode_btn" href="#">Export Job as G-Code</a></li>
+                                                </ul>
+                                            </div>
+                                            <button id="job_save_to_queue" class="btn btn-large pull-right" title="add to queue" data-delay="500">
+                                                    <span class="icon-th-list"></span>
+                                            </button>                                            
                                         </div>
                                         <div id="progressbar" class="progress progress-striped" style="margin-top:70px; clear:both">
                                             <div class="bar" style="width:0%;"></div>

@@ -105,13 +105,23 @@ function send_gcode(gcode, success_msg, progress) {
 function open_bigcanvas(scale, deselectedColors) {
   var w = scale * app_settings.canvas_dimensions[0];
   var h = scale * app_settings.canvas_dimensions[1];
-  $('#container').before('<canvas id="big_canvas" width="'+w+'px" height="'+h+'px" style="border:1px dashed #aaaaaa;"></canvas>');
+  $('#container').before('<a id="close_big_canvas" href="#"><canvas id="big_canvas" width="'+w+'px" height="'+h+'px" style="border:1px dashed #aaaaaa;"></canvas></a>');
   var mid = $('body').innerWidth()/2.0-30;
-  $('body').prepend('<button id="close_bigcanvas_btn" class="btn btn-primary" type="submit" style="position:fixed;top:80px;left:'+mid+'px">close</button>');
-  $('#close_bigcanvas_btn').click(function(e){
+  $('#close_big_canvas').click(function(e){
     close_bigcanvas();
     return false;
   });
+  $("html").on('keypress.closecanvas', function (e) {
+    if ((e.which && e.which == 13) || (e.keyCode && e.keyCode == 13) ||
+        (e.which && e.which == 27) || (e.keyCode && e.keyCode == 27)) {
+      // on enter or escape
+      close_bigcanvas();
+      return false;
+    } else {
+      return true;
+    }
+  });
+  // $('#big_canvas').focus();
   $('#container').hide();
   var bigcanvas = new Canvas('#big_canvas');
   // DataHandler.draw(bigcanvas, 4*app_settings.to_canvas_scale, getDeselectedColors());
@@ -125,9 +135,28 @@ function open_bigcanvas(scale, deselectedColors) {
 
 function close_bigcanvas() {
   $('#big_canvas').remove();
-  $('#close_bigcanvas_btn').remove();
+  $('#close_big_canvas').remove();
+  $('html').off('keypress.closecanvas');
   delete bigcanvas;
   $('#container').show();
+}
+
+
+function generate_download(filename, filedata) {
+  $.ajax({
+    type: "POST",
+    url: "/stash_download",
+    data: {'filedata': filedata},
+    success: function (data) {
+      window.open("/download/" + data + "/" + filename, '_blank');
+    },
+    error: function (data) {
+      $().uxmessage('error', "Timeout. LasaurApp server down?");
+    },
+    complete: function (data) {
+      // future use
+    }
+  });
 }
 
 

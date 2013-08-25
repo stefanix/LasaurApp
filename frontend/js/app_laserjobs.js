@@ -325,7 +325,7 @@ $(document).ready(function(){
   );
 
 
-  /// button event //////////////////////////////
+  /// button events /////////////////////////////
 
   $("#progressbar").hide();  
   $("#job_submit").click(function(e) {
@@ -373,7 +373,33 @@ $(document).ready(function(){
     return false;
   });  
 
-  // canvas preview generation
+
+  $("#export_json_btn").click(function(e) {
+    var filedata = $('#job_data').val();
+    var filename = $('#job_name').val();
+    if (filename.slice(-4) != '.lsa') {
+      filename = filename + '.lsa';
+    }
+    generate_download(filename, filedata);
+    return false;
+  });
+
+
+  $("#export_gcode_btn").click(function(e) {
+    DataHandler.setByJson($('#job_data').val());
+    readPassesWidget();
+    var filedata = DataHandler.getGcode()
+    var filename = $('#job_name').val();
+    if (filename.slice(-4) != '.gnc') {
+      filename = filename + '.gnc';
+    }
+    generate_download(filename, filedata);
+    return false;
+  });
+
+
+  /// canvas ////////////////////////////////////
+
   var canvas = new Canvas('#preview_canvas');
   canvas.background('#ffffff');
   $('#job_data').blur(function() {

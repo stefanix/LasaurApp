@@ -1,6 +1,7 @@
 
 import sys, os, time
 import glob, json, argparse, copy
+import tempfile
 import socket, webbrowser
 from wsgiref.simple_server import WSGIRequestHandler, make_server
 from bottle import *
@@ -189,6 +190,7 @@ def decode_filename(name):
 def static_queue_handler(name): 
     return static_file(name, root=storage_dir(), mimetype='text/plain')
 
+
 @route('/queue/list')
 def library_list_handler():
     # base64.urlsafe_b64encode()
@@ -282,7 +284,8 @@ def queue_unstar_handler(name):
             ret = '1'
     return ret 
 
-    
+
+
 
 @route('/')
 @route('/index.html')
@@ -290,9 +293,25 @@ def queue_unstar_handler(name):
 def default_handler():
     return static_file('app.html', root=os.path.join(resources_dir(), 'frontend') )
 
-@route('/canvas')
-def canvas_handler():
-    return static_file('testCanvas.html', root=os.path.join(resources_dir(), 'frontend'))    
+
+@route('/stash_download', method='POST')
+def stash_download():
+    """Create a download file event from string."""
+    filedata = request.forms.get('filedata')
+    fp = tempfile.NamedTemporaryFile(mode='w', delete=False)
+    filename = fp.name
+    with fp:
+        fp.write(filedata)
+        fp.close()
+    print filedata
+    print "file stashed: " + os.path.basename(filename)
+    return os.path.basename(filename)
+
+@route('/download/:filename/:dlname')
+def download(filename, dlname):
+    print "requesting: " + filename
+    return static_file(filename, root=tempfile.gettempdir(), download=dlname)
+  
 
 @route('/serial/:connect')
 def serial_handler(connect):

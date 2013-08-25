@@ -11,9 +11,6 @@ BBB
 TODO (raster branch)
 ---------------------
 - gcode import support, and lsa
-- export gcode and json
-- about, make it a dropdown with link
-  - show versions for LasaurApp and firmware
 - job selected path visual clues, bbox
 - stats
 - configurable width/height, bbox checks
@@ -23,7 +20,8 @@ TODO (raster branch)
 - testing
   - pause feature
   - busy when jogging
-  - 
+  - mover widget allows too much movement
+  - fix fluid design, update bootstrap
 
 TODO
 -----
