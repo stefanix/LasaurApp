@@ -277,17 +277,17 @@ $(document).ready(function(){
         $('#lasaurapp_version').html(data.lasaurapp_version);
         lasaurapp_version_reported = true;
       }
+      // schedule next hardware poll
+      setTimeout(function() {poll_hardware_status()}, 4000);
     }).error(function() {
       // lost connection to server
-      connect_btn_set_state(false); 
+      connect_btn_set_state(false);
+      // schedule next hardware poll
+      setTimeout(function() {poll_hardware_status()}, 8000);
     });
   }
-  // call once, to get immediate status
-    poll_hardware_status();
-  // register with timed callback
-  var connectiontimer = setInterval(function() {
-    poll_hardware_status();
-  }, 4000);
+  // kick off hardware polling
+  poll_hardware_status();
 
   connect_btn_width = $("#connect_btn").innerWidth();
   $("#connect_btn").width(connect_btn_width);
