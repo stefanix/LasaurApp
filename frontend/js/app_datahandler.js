@@ -9,12 +9,13 @@ DataHandler = {
 
   paths_by_color : {},
   passes : [],
-  canvas : undefined,
+  stats_by_color : {},
 
 
   clear : function() {
     this.paths_by_color = {};
-    passes = [];
+    this.passes = [];
+    this.stats_by_color = {};
   },
 
   isEmpty : function() {
@@ -43,7 +44,8 @@ DataHandler = {
         }
       }
     }
-
+    // also calculate stats
+    this.calculateBasicStats();
   },
 
   setByGcode : function(gcode) {
@@ -53,7 +55,7 @@ DataHandler = {
     // S, F, P
     // M0, M2, M3, M4, M5, M6
     // M80, M81, M82, M83, M84, M85
-
+    // this.calculateBasicStats();
   },
 
   setByJson : function(strdata) {
@@ -65,6 +67,11 @@ DataHandler = {
     var data = JSON.parse(strdata);
     this.passes = data['passes'];
     this.paths_by_color = data['paths_by_color'];
+    if ('stats_by_color' in data) {
+      this.stats_by_color = data['stats_by_color'];
+    } else {
+      this.calculateBasicStats();
+    }
   },
 
 
@@ -129,24 +136,10 @@ DataHandler = {
   },
 
   getBboxGcode : function() {
-    // calculate bbox
-    var bbox = [Infinity, Infinity, 0.0, 0.0];  // [minx, miny, maxx, maxy]
-    for (var color in this.getPassesColors()) {
-      var paths = this.paths_by_color[color];
-      for (var k=0; k<paths.length; k++) {
-        var path = paths[k];
-        for (vertex=0; vertex<path.length; vertex++) {
-          var x = path[vertex][0];
-          var y = path[vertex][1];
-          // expand bbox
-          if (x < bbox[0]) {bbox[0] = x;}
-          else if (x > bbox[2]) {bbox[2] = x;}
-          if (y < bbox[1]) {bbox[1] = y;}
-          else if (y > bbox[3]) {bbox[3] = y;}
-        }
-      }
+    if (!('_all_' in this.stats_by_color)) {
+      this.calculateBasicStats();
     }
-
+    var bbox = this.stats_by_color['_all_']['bbox'];
     var glist = [];
     glist.push("G90\n");
     glist.push("G0F"+app_settings.max_seek_speed+"\n");
@@ -197,6 +190,44 @@ DataHandler = {
     }
   },
 
+  draw_bboxes : function (canvas, scale) { 
+    // draw with bboxes by color
+    // only include colors that are in passe
+    var stat;
+    var xmin;
+    var ymin;
+    var xmax;
+    var ymax;
+    var bbox_combined = [Infinity, Infinity, 0, 0];
+    // for all job colors
+    for (var color in this.getPassesColors()) {
+      // draw color bboxes
+      stat = this.stats_by_color[color];
+      xmin = stat['bbox'][0]*scale;
+      ymin = stat['bbox'][1]*scale;
+      xmax = stat['bbox'][2]*scale;
+      ymax = stat['bbox'][3]*scale;
+      canvas.stroke('#dddddd');
+      canvas.line(xmin,ymin,xmin,ymax);
+      canvas.line(xmin,ymax,xmax,ymax);
+      canvas.line(xmax,ymax,xmax,ymin);
+      canvas.line(xmax,ymin,xmin,ymin);
+      this.bboxExpand(bbox_combined, xmin, ymin);
+      this.bboxExpand(bbox_combined, xmax, ymax);
+    }
+    // draw global bbox
+    xmin = bbox_combined[0];
+    ymin = bbox_combined[1];
+    xmax = bbox_combined[2];
+    ymax = bbox_combined[3];
+    canvas.stroke('#dddddd');
+    canvas.line(xmin,ymin,xmin,ymax);
+    canvas.line(xmin,ymax,xmax,ymax);
+    canvas.line(xmax,ymax,xmax,ymin);
+    canvas.line(xmax,ymin,xmin,ymin);
+  },
+
+
 
   // passes and colors //////////////////////////
 
@@ -238,7 +269,9 @@ DataHandler = {
           // colors
           for (var ii=5; ii<vals.length; ii++) {
             var col = vals[ii];
-            this.passes[pass]['colors'].push(col);
+            if (col.slice(0,1) == '#') {
+              this.passes[pass]['colors'].push(col);
+            }
           }
         } else {
           $().uxmessage('error', "invalid lasertag (pass number)");
@@ -291,6 +324,69 @@ DataHandler = {
   },
 
 
+  // stats //////////////////////////////////////
+
+  calculateBasicStats : function() {
+    // calculate bounding boxes and path lengths
+    // for each color and also for '_all_'
+    // bbox and length only account for feed lines
+    // saves results in this.stats_by_color like so:
+    // {'_all_':{'bbox':[xmin,ymin,xmax,ymax], 'length':numeral}, '#ffffff':{}, ..}
+
+    var x_prev = 0;
+    var y_prev = 0;
+    var path_length_all = 0;
+    var bbox_all = [Infinity, Infinity, 0, 0];
+    var stats_by_color = {};
+
+    for (var color in this.paths_by_color) {
+      var path_lenths_color = 0;
+      var bbox_color = [Infinity, Infinity, 0, 0];
+      var paths = this.paths_by_color[color];
+      for (var k=0; k<paths.length; k++) {
+        var path = paths[k];
+        if (path.length > 1) {
+          var x = path[0][0];
+          var y = path[0][1];
+          this.bboxExpand(bbox_color, x, y);
+          x_prev = x;
+          y_prev = y;
+          for (vertex=1; vertex<path.length; vertex++) {
+            var x = path[vertex][0];
+            var y = path[vertex][1];
+            path_lenths_color += 
+              Math.sqrt((x-x_prev)*(x-x_prev)+(y-y_prev)*(y-y_prev));
+            this.bboxExpand(bbox_color, x, y);
+            x_prev = x;
+            y_prev = y;
+          }
+        }
+      }
+      stats_by_color[color] = {
+        'bbox':bbox_color,
+        'length':path_lenths_color
+      }
+      // add to total also
+      path_length_all += path_lenths_color;
+      this.bboxExpand(bbox_all, bbox_color[0], bbox_color[0]);
+      this.bboxExpand(bbox_all, bbox_color[1], bbox_color[1]);
+    }
+    stats_by_color['_all_'] = {
+      'bbox':bbox_all,
+      'length':path_length_all
+    }
+    this.stats_by_color = stats_by_color;
+  },
+
+
+  bboxExpand : function(bbox, x, y) {
+    if (x < bbox[0]) {bbox[0] = x;}
+    else if (x > bbox[2]) {bbox[2] = x;}
+    if (y < bbox[1]) {bbox[1] = y;}
+    else if (y > bbox[3]) {bbox[3] = y;}
+  },
+
+
   // path optimizations /////////////////////////
 
   segmentizeLongLines : function() {
@@ -308,7 +404,7 @@ DataHandler = {
       var paths = this.paths_by_color[color];
       for (var k=0; k<paths.length; k++) {
         var path = paths[k];
-        if (path.length > 0) {
+        if (path.length > 1) {
           var new_path = [];
           var copy_from = 0;
           var x = path[0][0];

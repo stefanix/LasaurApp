@@ -14,12 +14,9 @@ TODO (raster branch)
 - job selected path visual clues, bbox
 - stats
 - configurable width/height, bbox checks
-- pause
-  - break up long lines so pause feature is more snappy
+- pause, not responsive
 - importing progress bar
-- testing
-  - pause feature
-  - fix fluid design, update bootstrap
+
 
 TODO
 -----

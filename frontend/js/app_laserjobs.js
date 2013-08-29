@@ -2,6 +2,7 @@
 
 var minNumPassWidgets = 3;
 var maxNumPassWidgets = 32;
+var preview_canvas_obj = null;
 
 
 
@@ -16,11 +17,28 @@ function load_into_job_widget(name, jobdata) {
   $('#job_name').val(name);
   $('#job_data').val(jobdata);
   // make sure preview refreshes
-  $('#job_data').trigger('blur');
+  refresh_preview(false, false);
   // scroll to top
   $('html, body').animate({scrollTop:0}, 400);
 }
 
+
+function refresh_preview(reload_data, read_passes_widget) {
+  if (reload_data === true) {
+    DataHandler.setByJson($('#job_data').val());
+  }
+  if (read_passes_widget === true) {
+    readPassesWidget();
+  }
+  DataHandler.draw(preview_canvas_obj, app_settings.to_canvas_scale);
+  DataHandler.draw_bboxes(preview_canvas_obj, app_settings.to_canvas_scale);
+  // var stats = GcodeReader.getStats();
+  // var length = stats.cuttingPathLength; 
+  // var duration = stats.estimatedTime;
+  // $('#previe_stats').html("~" + duration.toFixed(1) + "min");
+  // $().uxmessage('notice', "Total cutting path is: " + (length/1000.0).toFixed(2) + 
+  //               "m. Estimated Time: " + duration.toFixed(1) + "min");
+}
 
 /// QUEUE/LIBRARY ///////////////////////////////
 
@@ -220,6 +238,7 @@ function addPasses(num) {
         $(this).addClass('active');
         $(this).addClass('active-strong');      
       }
+      refresh_preview(true, true);
     });
   }
   $('#passes_container').show();
@@ -286,6 +305,7 @@ function writePassesWidget() {
     if (DataHandler.getAllColors().length == 1) {
       $('#passes > div:nth-child(1) .colorbtns').children('button').addClass('active')
       $().uxmessage('notice', "assigned to pass1");
+      readPassesWidget();
     }
   }
 }
@@ -311,6 +331,8 @@ $(document).ready(function(){
   var w = app_settings.canvas_dimensions[0];
   var h = app_settings.canvas_dimensions[1];
   $('#preview_canvas_container').html('<canvas id="preview_canvas" width="'+w+'px" height="'+h+'px" style="border:1px dashed #aaaaaa;"></canvas>');
+  preview_canvas_obj = new Canvas('#preview_canvas');
+  preview_canvas_obj.background('#ffffff');
   $('#preview_canvas').click(function(e){
     open_bigcanvas(4);
     return false;
@@ -395,22 +417,6 @@ $(document).ready(function(){
     }
     generate_download(filename, filedata);
     return false;
-  });
-
-
-  /// canvas ////////////////////////////////////
-
-  var canvas = new Canvas('#preview_canvas');
-  canvas.background('#ffffff');
-  $('#job_data').blur(function() {
-    DataHandler.setByJson($('#job_data').val());
-    DataHandler.draw(canvas, app_settings.to_canvas_scale);
-    // var stats = GcodeReader.getStats();
-    // var length = stats.cuttingPathLength; 
-    // var duration = stats.estimatedTime;
-    // $('#previe_stats').html("~" + duration.toFixed(1) + "min");
-    // $().uxmessage('notice', "Total cutting path is: " + (length/1000.0).toFixed(2) + 
-    //               "m. Estimated Time: " + duration.toFixed(1) + "min");
   });
 
 
