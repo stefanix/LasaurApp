@@ -27,6 +27,21 @@ $(document).ready(function(){
   function assemble_and_send_gcode(x,y) {
     var x_phy = x*app_settings.to_physical_scale;
     var y_phy = y*app_settings.to_physical_scale;
+    /// contrain
+    if (x_phy < 0) {
+      x_phy = 0;
+      $().uxmessage('warning', "x target constrained to work area");
+    } else if (x_phy > app_settings.work_area_dimensions[0]) {
+      x_phy = app_settings.work_area_dimensions[0];
+      $().uxmessage('warning', "x target constrained to work area");
+    }
+    if (y_phy < 0) {
+      y_phy = 0;
+      $().uxmessage('warning', "y target constrained to work area");
+    } else if (y_phy > app_settings.work_area_dimensions[1]) {
+      y_phy = app_settings.work_area_dimensions[1];
+      $().uxmessage('warning', "y target constrained to work area");
+    }
     var g0_or_g1 = 'G0';
     var air_assist_on = '';
     var air_assist_off = '';

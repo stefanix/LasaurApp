@@ -131,6 +131,9 @@ $(document).ready(function(){
     var boundarys = data.boundarys;
     if (boundarys) {
       DataHandler.setByPaths(boundarys);
+      if (path_optimize) {
+        DataHandler.segmentizeLongLines();
+      }
       // some init
       $('#canvas_properties .colorbtns').html('');  // reset colors
       canvas.background('#ffffff');

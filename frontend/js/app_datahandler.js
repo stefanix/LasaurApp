@@ -291,6 +291,65 @@ DataHandler = {
   },
 
 
+  // path optimizations /////////////////////////
+
+  segmentizeLongLines : function() {
+    var x_prev = 0;
+    var y_prev = 0;
+    var d2 = 0;
+    var length_limit = app_settings.max_segment_length;
+    var length_limit2 = length_limit*length_limit;
+
+    var lerp = function(x0, y0, x1, y1, t) {
+      return [x0*(1-t)+x1*t, y0*(1-t)+y1*t];
+    }
+
+    for (var color in this.paths_by_color) {
+      var paths = this.paths_by_color[color];
+      for (var k=0; k<paths.length; k++) {
+        var path = paths[k];
+        if (path.length > 0) {
+          var new_path = [];
+          var copy_from = 0;
+          var x = path[0][0];
+          var y = path[0][1];
+          // ignore seek lines for now
+          x_prev = x;
+          y_prev = y;
+          for (vertex=1; vertex<path.length; vertex++) {
+            var x = path[vertex][0];
+            var y = path[vertex][1];
+            d2 = (x-x_prev)*(x-x_prev) + (y-y_prev)*(y-y_prev);
+            // check length for each feed line
+            if (d2 > length_limit2) {
+              // copy previous verts
+              for (var n=copy_from; n<vertex; n++) {
+                new_path.push(path[n]);
+              }
+              // add lerp verts
+              var t_step = 1/(Math.sqrt(d2)/length_limit);
+              for(var t=t_step; t<0.99; t+=t_step) {
+                new_path.push(lerp(x_prev, y_prev, x, y, t));
+              }
+              copy_from = vertex;
+            }
+            x_prev = x;
+            y_prev = y;
+          }
+          if (new_path.length > 0) {
+            // add any rest verts from path
+            for (var p=copy_from; p<path.length; p++) {
+              new_path.push(path[p]);
+            }
+            copy_from = 0;
+            paths[k] = new_path;
+          }
+        }
+      }
+    }
+  },
+
+
   // auxilliary /////////////////////////////////
 
   mapConstrainFeedrate : function(rate) {

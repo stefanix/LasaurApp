@@ -14,15 +14,11 @@ TODO (raster branch)
 - job selected path visual clues, bbox
 - stats
 - configurable width/height, bbox checks
-- bigger stop button
 - pause
   - break up long lines so pause feature is more snappy
 - importing progress bar
 - testing
-  - offset is punk
   - pause feature
-  - busy when jogging
-  - mover widget allows too much movement
   - fix fluid design, update bootstrap
 
 TODO
