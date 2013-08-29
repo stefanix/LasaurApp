@@ -2,51 +2,60 @@
 var hardware_ready_state = false;
 var firmware_version_reported = false;
 var lasaurapp_version_reported = false;
+var progress_not_yet_done_flag = false;
 
 
 (function($){
-	$.fn.uxmessage = function(kind, text) {
-	  if (text.length > 80) {
-	    text = text.slice(0,100) + '\n...'
-	  }
-	  
-  	if (kind == 'notice') {
-  		$('#log_content').prepend('<div class="log_item log_notice well" style="display:none">' + text + '</div>');
-  		$('#log_content').children('div').first().show('blind');
-  		if ($("#log_content").is(':hidden')) {
-    		$().toastmessage('showNoticeToast', text);
-    	}
-  	} else if (kind == 'success') {
-  		$('#log_content').prepend('<div class="log_item log_success well" style="display:none">' + text + '</div>');
-  		$('#log_content').children('div').first().show('blind');
-  		if ($("#log_content").is(':hidden')) {
-    		$().toastmessage('showSuccessToast', text);		
+  $.fn.uxmessage = function(kind, text, max_length) {
+    if (max_length == null) {
+      max_length = 100;
+    }
+
+    if (text.length > max_length) {
+      text = text.slice(0,max_length) + '\n...'
+    }
+
+    text = text.replace(/\n/g,'<br>')
+    
+    if (kind == 'notice') {
+      $('#log_content').prepend('<div class="log_item log_notice well" style="display:none">' + text + '</div>');
+      $('#log_content').children('div').first().show('blind');
+      if ($("#log_content").is(':hidden')) {
+        $().toastmessage('showNoticeToast', text);
       }
-  	} else if (kind == 'warning') {
-  		$('#log_content').prepend('<div class="log_item log_warning well" style="display:none">' + text + '</div>');
-  		$('#log_content').children('div').first().show('blind');
-  		if ($("#log_content").is(':hidden')) {
-    		$().toastmessage('showWarningToast', text);		
-    	}
-  	} else if (kind == 'error') {
-  		$('#log_content').prepend('<div class="log_item log_error well" style="display:none">' + text + '</div>');
-  		$('#log_content').children('div').first().show('blind');
-  		if ($("#log_content").is(':hidden')) {
-    		$().toastmessage('showErrorToast', text);		
-    	}
-  	}
+    } else if (kind == 'success') {
+      $('#log_content').prepend('<div class="log_item log_success well" style="display:none">' + text + '</div>');
+      $('#log_content').children('div').first().show('blind');
+      if ($("#log_content").is(':hidden')) {
+        $().toastmessage('showSuccessToast', text);   
+      }
+    } else if (kind == 'warning') {
+      $('#log_content').prepend('<div class="log_item log_warning well" style="display:none">' + text + '</div>');
+      $('#log_content').children('div').first().show('blind');
+      if ($("#log_content").is(':hidden')) {
+        $().toastmessage('showWarningToast', text);   
+      }
+    } else if (kind == 'error') {
+      $('#log_content').prepend('<div class="log_item log_error well" style="display:none">' + text + '</div>');
+      $('#log_content').children('div').first().show('blind');
+      if ($("#log_content").is(':hidden')) {
+        $().toastmessage('showErrorToast', text);   
+      }
+    }
 
-  	while ($('#log_content').children('div').length > 200) {
-  	  $('#log_content').children('div').last().remove();
-  	}
+    while ($('#log_content').children('div').length > 200) {
+      $('#log_content').children('div').last().remove();
+    }
 
-	};
+  };
 })(jQuery); 
 
 
 function send_gcode(gcode, success_msg, progress) {
-  if (hardware_ready_state || gcode[0] == '!' || gcode[0] == '~') {
+  // if (hardware_ready_state || gcode[0] == '!' || gcode[0] == '~') {
+  if (true) {
     if (typeof gcode === "string" && gcode != '') {
+      $().uxmessage('notice', gcode, Infinity);
       $.ajax({
         type: "POST",
         url: "/gcode",
@@ -60,25 +69,8 @@ function send_gcode(gcode, success_msg, progress) {
               if ($("#progressbar").children().first().width() == 0) {
                 $("#progressbar").children().first().width('5%');
                 $("#progressbar").show();
-                var progress_not_yet_done_flag = true;
-                var progresstimer = setInterval(function() {
-                  $.get('/queue_pct_done', function(data2) {
-                    if (data2.length > 0) {
-                      var pct = parseInt(data2);
-                      $("#progressbar").children().first().width(pct+'%');                
-                    } else {
-                      if (progress_not_yet_done_flag) {
-                        $("#progressbar").children().first().width('100%');
-                        $().uxmessage('notice', "Done.");
-                        progress_not_yet_done_flag = false;
-                      } else {
-                        $('#progressbar').hide();
-                        $("#progressbar").children().first().width(0); 
-                        clearInterval(progresstimer);
-                      }
-                    }
-                  });
-                }, 2000);
+                progress_not_yet_done_flag = true;
+                setTimeout(update_progress, 2000);
               }
             }
           } else {
@@ -100,6 +92,26 @@ function send_gcode(gcode, success_msg, progress) {
   }
 }
 
+
+function update_progress() {
+  $.get('/queue_pct_done', function(data) {
+    if (data.length > 0) {
+      var pct = parseInt(data);
+      $("#progressbar").children().first().width(pct+'%');
+      setTimeout(update_progress, 2000);         
+    } else {
+      if (progress_not_yet_done_flag) {
+        $("#progressbar").children().first().width('100%');
+        $().uxmessage('notice', "Done.");
+        progress_not_yet_done_flag = false;
+        setTimeout(update_progress, 2000);
+      } else {
+        $('#progressbar').hide();
+        $("#progressbar").children().first().width(0); 
+      }
+    }
+  });
+}
 
 
 function open_bigcanvas(scale, deselectedColors) {
@@ -190,13 +202,13 @@ $(document).ready(function(){
       $("#connect_btn").removeClass("btn-warning");
       $("#connect_btn").addClass("btn-success");      
     } else {
-  		connect_btn_state = false
+      connect_btn_state = false
       if (!connect_btn_in_hover) {
         $("#connect_btn").html("Disconnected");
-      }		
+      }   
       $("#connect_btn").removeClass("btn-danger");
-  	  $("#connect_btn").removeClass("btn-success");
-  	  $("#connect_btn").addClass("btn-warning");     
+      $("#connect_btn").removeClass("btn-success");
+      $("#connect_btn").addClass("btn-warning");     
     }
   }
     
@@ -291,33 +303,33 @@ $(document).ready(function(){
 
   connect_btn_width = $("#connect_btn").innerWidth();
   $("#connect_btn").width(connect_btn_width);
-  $("#connect_btn").click(function(e){	
-  	if (connect_btn_state == true) {
-  		$.get('/serial/0', function(data) {
-  			if (data != "") {
-  				connect_btn_set_state(false);   
-  			} else {
-  			  // was already disconnected
-  			  connect_btn_set_state(false);
-  			}
-  			$("#connect_btn").html("Disconnected");
-  		});
-  	}	else {
-  	  $("#connect_btn").html('Connecting...');
-  		$.get('/serial/1', function(data) {
-  			if (data != "") {
-  			  connect_btn_set_state(true);
-  			  $("#connect_btn").html("Connected");		  
-  			} else {
-  			  // failed to connect
-  			  connect_btn_set_state(false);
-		  	  $("#connect_btn").removeClass("btn-warning");
-      	  $("#connect_btn").addClass("btn-danger");  
-  			}		
-  		});
-  	}	
-  	e.preventDefault();		
-  });	
+  $("#connect_btn").click(function(e){  
+    if (connect_btn_state == true) {
+      $.get('/serial/0', function(data) {
+        if (data != "") {
+          connect_btn_set_state(false);   
+        } else {
+          // was already disconnected
+          connect_btn_set_state(false);
+        }
+        $("#connect_btn").html("Disconnected");
+      });
+    } else {
+      $("#connect_btn").html('Connecting...');
+      $.get('/serial/1', function(data) {
+        if (data != "") {
+          connect_btn_set_state(true);
+          $("#connect_btn").html("Connected");      
+        } else {
+          // failed to connect
+          connect_btn_set_state(false);
+          $("#connect_btn").removeClass("btn-warning");
+          $("#connect_btn").addClass("btn-danger");  
+        }   
+      });
+    } 
+    e.preventDefault();   
+  }); 
   $("#connect_btn").hover(
     function () {
       connect_btn_in_hover = true;
@@ -372,15 +384,15 @@ $(document).ready(function(){
   
   $("#cancel_btn").tooltip({placement:'bottom', delay: {show:500, hide:100}});
   $("#cancel_btn").click(function(e){
-  	var gcode = '!\n'  // ! is enter stop state char
-  	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
-  	send_gcode(gcode, "Stopping ...", false);	
-	  var delayedresume = setTimeout(function() {
-    	var gcode = '~\nG90\nM81\nG0X0Y0F'+app_settings.max_seek_speed+'\n'  // ~ is resume char
-    	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
-    	send_gcode(gcode, "Resetting ...", false);
-	  }, 1000);
-  	e.preventDefault();		
+    var gcode = '!\n'  // ! is enter stop state char
+    $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
+    send_gcode(gcode, "Stopping ...", false); 
+    var delayedresume = setTimeout(function() {
+      var gcode = '~\nG90\nM81\nG0X0Y0F'+app_settings.max_seek_speed+'\n'  // ~ is resume char
+      $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
+      send_gcode(gcode, "Resetting ...", false);
+    }, 1000);
+    e.preventDefault();   
   });
   
   $("#homing_cycle").tooltip({placement:'bottom', delay: {show:500, hide:100}});
@@ -401,13 +413,13 @@ $(document).ready(function(){
   $("#go_to_origin").click(function(e){
     var gcode;
     if(e.shiftKey) {
-    	// also reset offset
-    	reset_offset();
+      // also reset offset
+      reset_offset();
     }
     gcode = 'G90\nG0X0Y0F'+app_settings.max_seek_speed+'\n'
     // $().uxmessage('notice', gcode);  
-  	send_gcode(gcode, "Going to origin ...", false);
-  	e.preventDefault();		
+    send_gcode(gcode, "Going to origin ...", false);
+    e.preventDefault();   
   });  
 
   $("#reset_atmega").click(function(e){

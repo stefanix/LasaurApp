@@ -73,7 +73,7 @@ $(document).ready(function(){
     $('#import_name').val($('#svg_upload_file').val().split('\\').pop().split('/').pop());
     $('#svg_upload_file').val('');
 
-  	e.preventDefault();
+    e.preventDefault();
   });
 
 
@@ -232,7 +232,7 @@ $(document).ready(function(){
     } else {
       $().uxmessage('warning', "no data");
     }
-  	return false;
+    return false;
   });
 
 

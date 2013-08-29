@@ -108,7 +108,7 @@ $(document).ready(function(){
         height: 304-y
       }, 200 );
       gcode_coordinate_offset = [x,y];
-      assemble_and_set_offset();
+      assemble_and_set_offset(x,y);
       $(this).css('border', '1px dashed #aaaaaa');
       $("#offset_area").css('border', '1px dashed #ff0000');
     } else if (!gcode_coordinate_offset) {  
