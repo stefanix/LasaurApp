@@ -113,6 +113,9 @@
                                 <div style="width:650px;">
                                     <div class="well clearfix" style="margin-bottom:40px">
                                         <input type="text" id="job_name" style="width:296px" placeholder="Load or import a job.">
+                                        <button id="file_import_quick_btn" class="btn pull-right" title="file import" data-delay="500">
+                                            <span class="icon-folder-open"></span>
+                                        </button>
                                         <textarea id="job_data" style="display:none"></textarea>
                                         <div id="preview_canvas_container"></div>
                                         <!-- passes -->
@@ -132,6 +135,7 @@
                                                     <span class="icon-resize-full icon-white"></span>
                                                 </button>
                                             </div>
+                                            <div id="stats_after_name" class="pull-left" style="margin-left:20px;padding-top:10px;color:#888888"></div>
                                             <div class="btn-group pull-right">
                                                 <a class="btn btn-large dropdown-toggle" data-toggle="dropdown" href="#">
                                                     <span class="icon-share-alt"></span>
@@ -176,7 +180,7 @@
 
                                     <div class="row" style="margin-left:0px">                                       
                                     <div class="btn-group pull-left">
-                                            <button id="svg_import_btn" class="btn btn-large" data-loading-text="loading..." autocomplete="off">
+                                            <button id="file_import_btn" class="btn btn-large" data-loading-text="loading..." autocomplete="off">
                                                 <i class="icon-folder-open"></i> Import
                                             </button>
                                         <button class="btn btn-large dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>

@@ -44,7 +44,7 @@ $(document).ready(function(){
   
   // file upload form
   $('#svg_upload_file').change(function(e){
-    $('#svg_import_btn').button('loading');
+    $('#file_import_btn').button('loading');
     $('#svg_loading_hint').show();
     var input = $('#svg_upload_file').get(0)
     var browser_supports_file_api = true;
@@ -120,7 +120,7 @@ $(document).ready(function(){
         $().uxmessage('error', "backend error.");
       },
       complete: function (data) {
-        $('#svg_import_btn').button('reset');
+        $('#file_import_btn').button('reset');
         forceSvgDpiTo = undefined;  // reset
       }
     });
@@ -142,6 +142,7 @@ $(document).ready(function(){
       for (var color in DataHandler.getColorOrder()) {
         $('#canvas_properties .colorbtns').append('<button class="preview_color active-strong active btn btn-small" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></button>');
       }
+      $('#canvas_properties .colorbtns').append(' <span id="num_selected_colors">0</span> colors selected for import.');
       $('button.preview_color').click(function(e){
         // toggling manually because automatic toggling 
         // would happen after generatPreview()
@@ -178,18 +179,22 @@ $(document).ready(function(){
 
 
   function getDeselectedColors() {
-    var exclude_colors = {}       
+    var num_selected = 0;
+    var exclude_colors = {};
     $('#canvas_properties .colorbtns button').each(function(index) {
       if (!($(this).hasClass('active'))) {
         exclude_colors[$(this).find('div span').text()] = true;
+      } else {
+        num_selected += 1;
       }
     });
+    $('#num_selected_colors').html(''+num_selected);
     return exclude_colors;
   }
 
 
   // forwarding file open click
-  $('#svg_import_btn').click(function(e){
+  $('#file_import_btn').click(function(e){
     path_optimize = 1;
     $('#svg_upload_file').trigger('click');
   });  

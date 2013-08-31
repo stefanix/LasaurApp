@@ -386,6 +386,16 @@ DataHandler = {
     else if (y > bbox[3]) {bbox[3] = y;}
   },
 
+  getTotalPathLength : function() {
+    var total_length = 0;
+    for (var color in this.getPassesColors()) {
+      // draw color bboxes
+      stat = this.stats_by_color[color];
+      total_length += stat['length'];
+    }
+    return total_length;
+  },
+
 
   // path optimizations /////////////////////////
 

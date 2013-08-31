@@ -11,9 +11,7 @@ BBB
 TODO (raster branch)
 ---------------------
 - gcode import support, and lsa
-- job selected path visual clues, bbox
-- stats
-- configurable width/height, bbox checks
+- bbox checks
 - pause, not responsive
 - importing progress bar
 

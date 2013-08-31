@@ -38,6 +38,12 @@ function refresh_preview(reload_data, read_passes_widget) {
   // $('#previe_stats').html("~" + duration.toFixed(1) + "min");
   // $().uxmessage('notice', "Total cutting path is: " + (length/1000.0).toFixed(2) + 
   //               "m. Estimated Time: " + duration.toFixed(1) + "min");
+  var total_length = DataHandler.getTotalPathLength();
+  if (total_length > 0) {
+    $('#stats_after_name').html('path length: '+(total_length/1000).toFixed(1)+'m');
+  } else {
+    $('#stats_after_name').html('');
+  }
 }
 
 /// QUEUE/LIBRARY ///////////////////////////////
@@ -419,6 +425,12 @@ $(document).ready(function(){
     return false;
   });
 
+
+  $("#file_import_quick_btn").click(function(e) {
+    $('#tab_import_button').trigger('click');
+    $('#file_import_btn').trigger('click');
+    return false;
+  });
 
 
   /// passes ////////////////////////////////////
