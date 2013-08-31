@@ -217,16 +217,21 @@ function addPasses(num) {
     if (passnum != 1) {
       margintop = 'margin-top:6px;'
     }
-    var html = '<div class="row well" style="margin:0px; '+margintop+' padding:4px; background-color:#eeeeee">' + 
+    var html = '<div class="row well" style="margin:0px; '+margintop+
+                  ' padding:4px; background-color:#eeeeee">' + 
                 '<div class="form-inline" style="margin-bottom:0px">' +
                   '<label>Pass '+ passnum +': </label>' +
                   '<div class="input-prepend" style="margin-left:6px">' +
                     '<span class="add-on" style="margin-right:-5px;">F</span>' +
-                    '<input type="text" class="feedrate" value="2000" title="feedrate 1-8000mm/min" style="width:32px" data-delay="500">' +
+                    '<input type="text" class="feedrate" value="'+app_settings.default_feedrate+
+                      '" title="feedrate 1-'+app_settings.max_seek_speed+
+                      'mm/min" style="width:32px" data-delay="500">' +
                   '</div>' +
                   '<div class="input-prepend" style="margin-left:6px">' +
                     '<span class="add-on" style="margin-right:-5px;">%</span>' +
-                    '<input class="intensity" type="textfield" value="100" title="intensity 0-100%" style="width:26px;" data-delay="500">' +
+                    '<input class="intensity" type="textfield" value="'+
+                      app_settings.default_intensity+
+                      '" title="intensity 0-100%" style="width:26px;" data-delay="500">' +
                   '</div>' +
                   '<span class="colorbtns" style="margin-left:6px">'+buttons+'</span>' +
                 '</div>' +

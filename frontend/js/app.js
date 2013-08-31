@@ -181,6 +181,8 @@ $(document).ready(function(){
   
   $().uxmessage('notice', "Frontend started.");
   
+  $('#feedrate_field').val(app_settings.max_seek_speed);
+
   $('#tab_logs_button').click(function(){
     $('#log_content').show()
     $('#tab_logs div.alert').show()
@@ -278,7 +280,7 @@ $(document).ready(function(){
           $().uxmessage('error', "Transmission Error!");
           $().uxmessage('notice', "If this happens a lot tell the author of this software.");
         }
-        if (data.x) {
+        if (data.x && data.y) {
           // only update if not manually entering at the same time
           if (!$('#x_location_field').is(":focus") &&
               !$('#y_location_field').is(":focus") &&
@@ -286,18 +288,23 @@ $(document).ready(function(){
               !$('#origin_set_btn').is(":focus"))
           {
             $('#x_location_field').html(data.x);
-          }
-        }    
-        if (data.y) {
-          // only update if not manually entering at the same time
-          if (!$('#x_location_field').is(":focus") &&
-              !$('#y_location_field').is(":focus") &&
-              !$('#location_set_btn').is(":focus") &&
-              !$('#origin_set_btn').is(":focus"))
-          {
+            $('#x_location_field').animate({
+              opacity: 0.25
+            }, 100, function() {
+              $('#x_location_field').animate({
+                opacity: 1.0
+              }, 600, function() {});
+            });
             $('#y_location_field').html(data.y);
+            $('#y_location_field').animate({
+              opacity: 0.25
+            }, 100, function() {
+              $('#y_location_field').animate({
+                opacity: 1.0
+              }, 600, function() {});
+            });
           }
-        }    
+        }
         if (data.firmware_version && !firmware_version_reported) {
           $().uxmessage('notice', "Firmware v" + data.firmware_version);
           $('#firmware_version').html(data.firmware_version);
