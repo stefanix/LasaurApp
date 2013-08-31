@@ -38,7 +38,7 @@ function refresh_preview(reload_data, read_passes_widget) {
   // $('#previe_stats').html("~" + duration.toFixed(1) + "min");
   // $().uxmessage('notice', "Total cutting path is: " + (length/1000.0).toFixed(2) + 
   //               "m. Estimated Time: " + duration.toFixed(1) + "min");
-  var total_length = DataHandler.getTotalPathLength();
+  var total_length = DataHandler.getJobPathLength();
   if (total_length > 0) {
     $('#stats_after_name').html('length: '+(total_length/1000).toFixed(1)+'m');
   } else {
@@ -365,7 +365,16 @@ $(document).ready(function(){
     // send gcode string to server via POST
     DataHandler.setByJson($('#job_data').val());
     if (readPassesWidget()) {
-      send_gcode(DataHandler.getGcode(), "G-Code sent to backend.", true);
+      var job_bbox = DataHandler.getJobBbox();
+      if (job_bbox[0] >= 0 &&
+          job_bbox[1] >= 0 &&
+          job_bbox[2] <= app_settings.work_area_dimensions[0] &&
+          job_bbox[3] <= app_settings.work_area_dimensions[1])
+      {
+        send_gcode(DataHandler.getGcode(), "G-Code sent to backend.", true);
+      } else {
+        $().uxmessage('warning', "rejecting, outside work area");
+      }
     } else {
       $().uxmessage('warning', "nothing to cut -> please assign colors to passes");
     }
@@ -377,7 +386,16 @@ $(document).ready(function(){
   $("#job_bbox_submit").click(function(e) {
     DataHandler.setByJson($('#job_data').val());
     if (readPassesWidget()) {
-      send_gcode(DataHandler.getBboxGcode(), "BBox G-Code sent to backend", true);
+      var job_bbox = DataHandler.getJobBbox();
+      if (job_bbox[0] >= 0 &&
+          job_bbox[1] >= 0 &&
+          job_bbox[2] <= app_settings.work_area_dimensions[0] &&
+          job_bbox[3] <= app_settings.work_area_dimensions[1])
+      {
+        send_gcode(DataHandler.getBboxGcode(), "BBox G-Code sent to backend", true);
+      } else {
+        $().uxmessage('warning', "rejecting, outside work area");
+      }
     } else {
       $().uxmessage('warning', "nothing to cut -> please assign colors to passes");
     }

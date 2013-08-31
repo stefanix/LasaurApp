@@ -368,8 +368,8 @@ DataHandler = {
       }
       // add to total also
       path_length_all += path_lenths_color;
-      this.bboxExpand(bbox_all, bbox_color[0], bbox_color[0]);
-      this.bboxExpand(bbox_all, bbox_color[1], bbox_color[1]);
+      this.bboxExpand(bbox_all, bbox_color[0], bbox_color[1]);
+      this.bboxExpand(bbox_all, bbox_color[2], bbox_color[3]);
     }
     stats_by_color['_all_'] = {
       'bbox':bbox_all,
@@ -386,14 +386,23 @@ DataHandler = {
     else if (y > bbox[3]) {bbox[3] = y;}
   },
 
-  getTotalPathLength : function() {
+  getJobPathLength : function() {
     var total_length = 0;
     for (var color in this.getPassesColors()) {
-      // draw color bboxes
       stat = this.stats_by_color[color];
       total_length += stat['length'];
     }
     return total_length;
+  },
+
+  getJobBbox : function() {
+    var total_bbox = [Infinity, Infinity, 0, 0];
+    for (var color in this.getPassesColors()) {
+      stat = this.stats_by_color[color];
+      this.bboxExpand(total_bbox, stat['bbox'][0], stat['bbox'][1]);
+      this.bboxExpand(total_bbox, stat['bbox'][2], stat['bbox'][3]);
+    }
+    return total_bbox;
   },
 
 

@@ -11,7 +11,6 @@ BBB
 TODO (raster branch)
 ---------------------
 - gcode import support, and lsa
-- bbox checks
 - pause, not responsive
 - importing progress bar
 
