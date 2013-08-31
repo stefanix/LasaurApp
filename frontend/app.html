@@ -11,6 +11,7 @@
 <script src="/js/jquery-1.7.2.min.js"></script>
 <script src="/js/bootstrap.min.js"></script>
 <script src="/js/jquery.toastmessage.js"></script>
+<script src="/js/jquery.hotkeys.js"></script>
 <script src="/js/settings.js"></script>
 <script src="/js/app_svgreader.js"></script>
 <script src="/js/app_datahandler.js"></script>
@@ -146,7 +147,7 @@
                                                     <li><a id="export_gcode_btn" href="#">Export Job as G-Code</a></li>
                                                 </ul>
                                             </div>
-                                            <button id="job_save_to_queue" class="btn btn-large pull-right" title="add to queue" data-delay="500">
+                                            <button id="job_save_to_queue" class="btn btn-large pull-right" title="add to queue" data-delay="500" style="margin-right:10px">
                                                     <span class="icon-th-list"></span>
                                             </button>                                            
                                         </div>
@@ -258,7 +259,8 @@
                                         </div>                                      
                                     
                                     </div>
-                                    <div class="row well" style="width:140px; height:130px; margin-left:auto; margin-right:auto; margin-top:16px;background-color:#dddddd">
+                                    <div class="row clearfix" style="width:380px; margin-left:auto; margin-right:auto; margin-top:16px">
+                                        <div class="well pull-left" style="width:140px; height:130px; background-color:#dddddd">
                                             <div class="row" style="width:44px; margin-left:auto; margin-right:auto;">
                                                 <button id="jog_up_btn" class="btn btn-large"><i class="icon-arrow-up"></i></button>
                                             </div>
@@ -268,17 +270,36 @@
                                             </div>
                                             <div class="row" style="width:44px; margin-left:auto; margin-right:auto; margin-top:8px">
                                                 <button id="jog_down_btn" class="btn btn-large"><i class="icon-arrow-down"></i></button>
-                                            </div>                                                                                      
+                                            </div> 
+                                        </div>
+                                        <div class="well pull-right" style="width:144px; height:130px; background-color:#dddddd">
+                                            <div class="btn-group" style="margin-top:26px; margin-bottom:14px">
+                                                <button id="location_set_btn" class="btn"><span id="loc_move_cut_word">Move</span>To</button>
+                                                <button id="origin_set_btn" class="btn">OffsetTo</button>
+                                            </div>                                        
+                                            <div class="input-prepend pull-left">
+                                                <span class="add-on" style="margin-right:-5px;">x</span>
+                                                <input id="x_location_field" type="textfield" value="0" style="width:32px;">
+                                            </div> 
+                                            <div class="input-prepend pull-left" style="margin-left:4px;">
+                                                <span class="add-on" style="margin-right:-5px;">y</span>
+                                                <input id="y_location_field" type="textfield" value="0" style="width:32px;">
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="row" style="width:210px; margin-left:auto; margin-right:auto; margin-top:20px">
+                                    <div class="row" style="width:210px; margin-left:auto; margin-right:auto;">
                                         <button id="air_on_btn" class="btn">Air Assist On</button>
                                         <button id="air_off_btn" class="btn">Air Assist Off</button>
                                     </div>                                  
                                 </div>
-                            <div class="alert" style="width:400px">
-                                <a class="close" data-dismiss="alert">×</a>
-                                <strong>Note!</strong> Set an offset by shift-clicking in the work area.
-                            </div>                              
+                                <div class="alert" style="width:400px">
+                                    <a class="close" data-dismiss="alert">×</a>
+                                    <strong>Note!</strong> Set an offset by shift-clicking in the work area.
+                                </div>   
+                                <div class="alert" style="width:400px">
+                                    <a class="close" data-dismiss="alert">×</a>
+                                    <strong>Note!</strong> User arrow keys to jog. De/increase step with alt and shift.
+                                </div>                                                              
                             </div> <!-- end of mover tab -->                    
 
                             <div id="tab_logs" class="tab-pane active">

@@ -277,6 +277,26 @@ $(document).ready(function(){
         if (data.transmission_error) {
           $().uxmessage('error', "Transmission Error!");
           $().uxmessage('notice', "If this happens a lot tell the author of this software.");
+        }
+        if (data.x) {
+          // only update if not manually entering at the same time
+          if (!$('#x_location_field').is(":focus") &&
+              !$('#y_location_field').is(":focus") &&
+              !$('#location_set_btn').is(":focus") &&
+              !$('#origin_set_btn').is(":focus"))
+          {
+            $('#x_location_field').html(data.x);
+          }
+        }    
+        if (data.y) {
+          // only update if not manually entering at the same time
+          if (!$('#x_location_field').is(":focus") &&
+              !$('#y_location_field').is(":focus") &&
+              !$('#location_set_btn').is(":focus") &&
+              !$('#origin_set_btn').is(":focus"))
+          {
+            $('#y_location_field').html(data.y);
+          }
         }    
         if (data.firmware_version && !firmware_version_reported) {
           $().uxmessage('notice', "Firmware v" + data.firmware_version);

@@ -40,7 +40,7 @@ function refresh_preview(reload_data, read_passes_widget) {
   //               "m. Estimated Time: " + duration.toFixed(1) + "min");
   var total_length = DataHandler.getTotalPathLength();
   if (total_length > 0) {
-    $('#stats_after_name').html('path length: '+(total_length/1000).toFixed(1)+'m');
+    $('#stats_after_name').html('length: '+(total_length/1000).toFixed(1)+'m');
   } else {
     $('#stats_after_name').html('');
   }
