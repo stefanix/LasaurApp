@@ -121,8 +121,8 @@ $(document).ready(function(){
         height: 304-y
       }, 200 );
       gcode_coordinate_offset = [x,y];
-      var x_phy = x*app_settings.to_physical_scale;
-      var y_phy = y*app_settings.to_physical_scale;
+      var x_phy = x*app_settings.to_physical_scale + app_settings.table_offset[0];
+      var y_phy = y*app_settings.to_physical_scale + app_settings.table_offset[1];
       var gcode = 'G10 L2 P1 X'+ x_phy.toFixed(app_settings.num_digits) + 
                   ' Y' + y_phy.toFixed(app_settings.num_digits) + '\nG55\n';
       send_gcode(gcode, "Offset set.", false);
