@@ -465,6 +465,19 @@ $(document).ready(function(){
 
 
   /// tab shortcut keys /////////////////////////
+  $(document).on('keypress', null, 'p', function(e){
+    $('#pause_btn').trigger('click');
+    return false;
+  });
+
+  $(document).on('keypress', null, '0', function(e){
+    $('#go_to_origin').trigger('click');
+    return false;
+  });
+
+
+  /// tab shortcut keys /////////////////////////
+
   $(document).on('keypress', null, 'j', function(e){
     $('#tab_jobs_button').trigger('click');
     return false;

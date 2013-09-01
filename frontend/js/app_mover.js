@@ -347,7 +347,7 @@ $(document).ready(function(){
   });
   $(document).on('keydown', null, 'alt+up', function(e){
     if ($('#tab_mover').is(":visible")) {
-      var gcode = 'G91\nG0Y-20F6000\nG90\n';
+      var gcode = 'G91\nG0Y-2F6000\nG90\n';
       send_gcode(gcode, "Moving Up ...", false);
       return false;
     }
