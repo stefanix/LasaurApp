@@ -55,7 +55,7 @@ function send_gcode(gcode, success_msg, progress) {
   // if (hardware_ready_state || gcode[0] == '!' || gcode[0] == '~') {
   if (true) {
     if (typeof gcode === "string" && gcode != '') {
-      $().uxmessage('notice', gcode, Infinity);
+      // $().uxmessage('notice', gcode, Infinity);
       $.ajax({
         type: "POST",
         url: "/gcode",
@@ -287,7 +287,7 @@ $(document).ready(function(){
               !$('#location_set_btn').is(":focus") &&
               !$('#origin_set_btn').is(":focus"))
           {
-            $('#x_location_field').html(data.x);
+            $('#x_location_field').val(data.x);
             $('#x_location_field').animate({
               opacity: 0.25
             }, 100, function() {
@@ -295,7 +295,7 @@ $(document).ready(function(){
                 opacity: 1.0
               }, 600, function() {});
             });
-            $('#y_location_field').html(data.y);
+            $('#y_location_field').val(data.y);
             $('#y_location_field').animate({
               opacity: 0.25
             }, 100, function() {
