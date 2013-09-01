@@ -420,7 +420,7 @@ $(document).ready(function(){
     send_gcode(gcode, "Stopping ...", false); 
     var delayedresume = setTimeout(function() {
       var gcode = '~\nG90\nM81\nG0X0Y0F'+app_settings.max_seek_speed+'\n'  // ~ is resume char
-      $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
+      // $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
       send_gcode(gcode, "Resetting ...", false);
     }, 1000);
     e.preventDefault();   
@@ -433,7 +433,7 @@ $(document).ready(function(){
     send_gcode(gcode, "Resetting ...", false); 
     var delayedresume = setTimeout(function() {
       var gcode = '~\nG30\n'  // ~ is resume char
-      $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
+      // $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
       send_gcode(gcode, "Homing cycle ...", false);
     }, 1000);
     e.preventDefault(); 
@@ -492,6 +492,8 @@ $(document).ready(function(){
 
   $('#really_cancel_btn').click(function(e){
     $('#cancel_btn').trigger('click');
+    $('#cancel_modal').modal('hide');
+    cancel_modal_active = false;
   });
 
 
