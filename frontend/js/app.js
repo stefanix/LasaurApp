@@ -475,6 +475,24 @@ $(document).ready(function(){
     return false;
   });
 
+  var cancel_modal_active = false;
+  $(document).on('keyup', null, 'esc', function(e){
+    if (cancel_modal_active === true) {
+      $('#cancel_modal').modal('hide');
+      cancel_modal_active = false;
+    } else {
+      $('#cancel_modal').modal('show');
+      $('#really_cancel_btn').focus();
+      cancel_modal_active = true;
+    }
+    return false;
+  });
+
+  $('#really_cancel_btn').click(function(e){
+    $('#cancel_btn').trigger('click');
+  });
+
+
 
   /// tab shortcut keys /////////////////////////
 
