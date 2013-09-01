@@ -7,6 +7,7 @@ var app_settings = {
   num_digits: 2, 
   max_num_queue_items: 24,
   max_segment_length: 5.0,
+  table_offset: [5,5],  // has to match firmware
 }
 
 
