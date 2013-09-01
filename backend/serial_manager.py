@@ -377,17 +377,19 @@ class SerialManagerClass:
                 self.status['chiller_off'] = False
 
             print line
-            
+
             if 'X' in line:
                 self.status['x'] = line[line.find('X')+1:line.find('Y')]
+                print "yesss x", self.status['x']
             else:
                 print "noo X"
                 self.status['x'] = False
 
             if 'Y' in line:
-                print "noo Y"
                 self.status['y'] = line[line.find('Y')+1:line.find('V')]
+                print "yesss y ", str(self.status['y'])
             else:
+                print "noo Y"
                 self.status['y'] = False
 
             if 'V' in line:
