@@ -298,18 +298,21 @@ $(document).ready(function(){
     if ($('#tab_mover').is(":visible")) {
       var gcode = 'G91\nG0X10F6000\nG90\n';
       send_gcode(gcode, "Moving Right ...", false);
+      return false;
     }
   });
   $(document).on('keydown', null, 'alt+right', function(e){
     if ($('#tab_mover').is(":visible")) {
       var gcode = 'G91\nG0X2F6000\nG90\n';
       send_gcode(gcode, "Moving Right ...", false);
+      return false;
     }
   });
   $(document).on('keydown', null, 'shift+right', function(e){
     if ($('#tab_mover').is(":visible")) {
       var gcode = 'G91\nG0X50F6000\nG90\n';
       send_gcode(gcode, "Moving Right ...", false);
+      return false;
     }
   });
 
@@ -317,18 +320,21 @@ $(document).ready(function(){
     if ($('#tab_mover').is(":visible")) {
       var gcode = 'G91\nG0X-10F6000\nG90\n';
       send_gcode(gcode, "Moving Left ...", false);
+      return false;
     }
   });
   $(document).on('keydown', null, 'alt+left', function(e){
     if ($('#tab_mover').is(":visible")) {
       var gcode = 'G91\nG0X-2F6000\nG90\n';
       send_gcode(gcode, "Moving Left ...", false);
+      return false;
     }
   });
   $(document).on('keydown', null, 'shift+left', function(e){
     if ($('#tab_mover').is(":visible")) {
       var gcode = 'G91\nG0X-50F6000\nG90\n';
       send_gcode(gcode, "Moving Left ...", false);
+      return false;
     }
   });
 
@@ -336,18 +342,21 @@ $(document).ready(function(){
     if ($('#tab_mover').is(":visible")) {
       var gcode = 'G91\nG0Y-10F6000\nG90\n';
       send_gcode(gcode, "Moving Up ...", false);
+      return false;
     }
   });
   $(document).on('keydown', null, 'alt+up', function(e){
     if ($('#tab_mover').is(":visible")) {
       var gcode = 'G91\nG0Y-20F6000\nG90\n';
       send_gcode(gcode, "Moving Up ...", false);
+      return false;
     }
   });
   $(document).on('keydown', null, 'shift+up', function(e){
     if ($('#tab_mover').is(":visible")) {
       var gcode = 'G91\nG0Y-50F6000\nG90\n';
       send_gcode(gcode, "Moving Up ...", false);
+      return false;
     }
   });
 
@@ -355,18 +364,21 @@ $(document).ready(function(){
     if ($('#tab_mover').is(":visible")) {
       var gcode = 'G91\nG0Y10F6000\nG90\n';
       send_gcode(gcode, "Moving Down ...", false);
+      return false;
     }
   });
   $(document).on('keydown', null, 'alt+down', function(e){
     if ($('#tab_mover').is(":visible")) {
       var gcode = 'G91\nG0Y2F6000\nG90\n';
       send_gcode(gcode, "Moving Down ...", false);
+      return false;
     }
   });
   $(document).on('keydown', null, 'shift+down', function(e){
     if ($('#tab_mover').is(":visible")) {
       var gcode = 'G91\nG0Y50F6000\nG90\n';
       send_gcode(gcode, "Moving Down ...", false);
+      return false;
     }
   });
       

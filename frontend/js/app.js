@@ -460,5 +460,27 @@ $(document).ready(function(){
     });
     e.preventDefault();   
   });
+
+
+  /// tab shortcut keys /////////////////////////
+  $(document).on('keypress', null, 'j', function(e){
+    $('#tab_jobs_button').trigger('click');
+    return false;
+  });
+
+  $(document).on('keypress', null, 'i', function(e){
+    $('#tab_import_button').trigger('click');
+    return false;
+  });
+
+  $(document).on('keypress', null, 'm', function(e){
+    $('#tab_mover_button').trigger('click');
+    return false;
+  });
+
+  $(document).on('keypress', null, 'l', function(e){
+    $('#tab_logs_button').trigger('click');
+    return false;
+  });
   
 });  // ready
