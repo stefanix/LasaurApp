@@ -357,19 +357,19 @@ def get_status():
 
 @route('/pause/:flag')
 def set_pause(flag):
+    # returns pause status
     if flag == '1':
         if SerialManager.set_pause(True):
             print "pausing ..."
             return '1'
         else:
-            print "warn: nothing to pause"
-            return ''
+            return '0'
     elif flag == '0':
         print "resuming ..."
         if SerialManager.set_pause(False):
             return '1'
         else:
-            return ''
+            return '0'
 
 
 

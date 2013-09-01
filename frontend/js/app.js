@@ -382,25 +382,27 @@ $(document).ready(function(){
   $("#pause_btn").click(function(e){  
     if (pause_btn_state == true) {  // unpause
       $.get('/pause/0', function(data) {
-        if (data != "") {
+        if (data == '0') {
           pause_btn_state = false;
           $("#pause_btn").removeClass('btn-primary');
           $("#pause_btn").removeClass('btn-warning');
           $("#pause_btn").html('<i class="icon-pause"></i>');
+          $().uxmessage('notice', "Continuing...");
         }
       });
     } else {  // pause
       $("#pause_btn").addClass('btn-warning');
       $.get('/pause/1', function(data) {
-        if (data != "") {
+        if (data == "1") {
           pause_btn_state = true;
           $("#pause_btn").removeClass("btn-warning");
           $("#pause_btn").addClass('btn-primary');
           $("#pause_btn").html('<i class="icon-play"></i>');
-          $().uxmessage('notice', "Pausing (after finishing hardware buffer)");
-        } else {
-          // failed to pause, nothing processing?
+          $().uxmessage('notice', "Pausing in a bit...");
+        } else if (data == '0') {
           $("#pause_btn").removeClass("btn-warning");
+          $("#pause_btn").removeClass("btn-primary");
+          $().uxmessage('notice', "Not pausing...");
         }   
       });
     } 

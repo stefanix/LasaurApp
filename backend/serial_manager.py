@@ -219,15 +219,16 @@ class SerialManagerClass:
 
 
     def set_pause(self, flag):
-        if flag and not self.is_queue_empty():  # pause
-            print "tx_buffer: " + self.tx_buffer
-            self.status['paused'] = True
-            return True
-        elif not flag:  # unpause
-            self.status['paused'] = False
-            return True
-        else:
+        # returns pause status
+        if self.is_queue_empty():
             return False
+        else:
+            if flag:  # pause
+                self.status['paused'] = True
+                return True
+            else:     # unpause
+                self.status['paused'] = False
+                return False
 
     
     def send_queue_as_ready(self):
