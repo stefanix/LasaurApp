@@ -380,17 +380,13 @@ class SerialManagerClass:
 
             if 'X' in line:
                 self.status['x'] = line[line.find('X')+1:line.find('Y')]
-                print "yesss x", self.status['x']
-            else:
-                print "noo X"
-                self.status['x'] = False
+            # else:
+            #     self.status['x'] = False
 
             if 'Y' in line:
                 self.status['y'] = line[line.find('Y')+1:line.find('V')]
-                print "yesss y ", str(self.status['y'])
-            else:
-                print "noo Y"
-                self.status['y'] = False
+            # else:
+            #     self.status['y'] = False
 
             if 'V' in line:
                 self.status['firmware_version'] = line[line.find('V')+1:]                     
