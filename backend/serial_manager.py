@@ -376,6 +376,8 @@ class SerialManagerClass:
             else:
                 self.status['chiller_off'] = False
 
+            print line
+            
             if 'X' in line:
                 self.status['x'] = line[line.find('X')+1:line.find('Y')]
             else:
