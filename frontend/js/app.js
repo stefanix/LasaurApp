@@ -287,19 +287,19 @@ $(document).ready(function(){
               !$('#location_set_btn').is(":focus") &&
               !$('#origin_set_btn').is(":focus"))
           {
-            var x = parseFloat(data.x) - app_settings.table_offset[0];
+            var x = parseFloat(data.x).toFixed(2) - app_settings.table_offset[0];
             $('#x_location_field').val(x.toFixed(2));
             $('#x_location_field').animate({
-              opacity: 0.25
+              opacity: 0.5
             }, 100, function() {
               $('#x_location_field').animate({
                 opacity: 1.0
               }, 600, function() {});
             });
-            var y = parseFloat(data.y) - app_settings.table_offset[1];
+            var y = parseFloat(data.y).toFixed(2) - app_settings.table_offset[1];
             $('#y_location_field').val(y.toFixed(2));
             $('#y_location_field').animate({
-              opacity: 0.25
+              opacity: 0.5
             }, 100, function() {
               $('#y_location_field').animate({
                 opacity: 1.0
