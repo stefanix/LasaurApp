@@ -350,6 +350,7 @@ def serial_handler(connect):
 @route('/status')
 def get_status():
     status = copy.deepcopy(SerialManager.get_hardware_status())
+    print status['x'],' <<<<'
     status['serial_connected'] = SerialManager.is_connected()
     status['lasaurapp_version'] = VERSION
     return json.dumps(status)
