@@ -416,7 +416,7 @@ $(document).ready(function(){
   $("#cancel_btn").tooltip({placement:'bottom', delay: {show:500, hide:100}});
   $("#cancel_btn").click(function(e){
     var gcode = '!\n'  // ! is enter stop state char
-    $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
+    // $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
     send_gcode(gcode, "Stopping ...", false); 
     var delayedresume = setTimeout(function() {
       var gcode = '~\nG90\nM81\nG0X0Y0F'+app_settings.max_seek_speed+'\n'  // ~ is resume char
@@ -429,7 +429,7 @@ $(document).ready(function(){
   $("#homing_cycle").tooltip({placement:'bottom', delay: {show:500, hide:100}});
   $("#homing_cycle").click(function(e){
     var gcode = '!\n'  // ! is enter stop state char
-    $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
+    // $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
     send_gcode(gcode, "Resetting ...", false); 
     var delayedresume = setTimeout(function() {
       var gcode = '~\nG30\n'  // ~ is resume char

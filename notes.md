@@ -1,5 +1,24 @@
 
 
+CHANGE LOG
+-----------
+- confgurable work area (for modded lasersaurs)
+- out of bounds checks before sending jobs
+- visual feedback on color selection
+- zoom preview added
+- about modal reporting LasaurApp and firmware version
+- shortcut keys for tabs, jogging, pause, stop, goToOrigin
+- manual numerical entry widget for jogging and offsets
+- new internal job data handling (json-based 'lsa' files)
+- export for gcode and .lsa files
+- passes configurable on stored jobs
+- laser job tab optimized for more flexibility
+- clear queue button added
+- quick import button added
+- long line segmentation for snappier pause
+
+
+
 BBB
 ---
 - pin P8:46 connected to avr reset would prevent the BBB from booting
@@ -10,8 +29,10 @@ BBB
 
 TODO (raster branch)
 ---------------------
+- bbox send always sends global bbox
+- status incorrect when lasersaur is switched off/disconnects
 - gcode import support, and lsa
-- pause, not responsive
+- z-axis ui buttons
 - importing progress bar
 
 
@@ -19,8 +40,6 @@ TODO
 -----
 - login/claim, single user restriction, keep login alive signal
 - dial in widget
-- doc link to reveal library location so people can add more files
-- open/save gcode files, show warning and link to supported features
 - shortcut keys, e.g 1,2,3 for tabs, arrors for direct control
 
 
