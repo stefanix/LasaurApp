@@ -202,8 +202,8 @@ class SVGReader:
                     h = lh[0]
                     self.dpi = round(25.4*w/self._target_size[0])  # round, assume integer dpi
                     log.info("px unit DPIs from page and target size -> " + str(round(self.dpi,2)))
-            except ValueError:
-                log.warn("invalid w, h numerals") 
+            except ValueError, TypeError:
+                log.warn("invalid w, h numerals or no target_size") 
 
         # 5. Fall back on px unit DPIs default value
         if not self.dpi:

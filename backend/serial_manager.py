@@ -55,6 +55,8 @@ class SerialManagerClass:
             'serial_stop_request': False,
             'door_open': False,
             'chiller_off': False,
+            'x': False,
+            'y': False,
             'firmware_version': None
         }
 
@@ -217,15 +219,16 @@ class SerialManagerClass:
 
 
     def set_pause(self, flag):
-        if flag and not self.is_queue_empty():  # pause
-            print "tx_buffer: " + self.tx_buffer
-            self.status['paused'] = True
-            return True
-        elif not flag:  # unpause
-            self.status['paused'] = False
-            return True
-        else:
+        # returns pause status
+        if self.is_queue_empty():
             return False
+        else:
+            if flag:  # pause
+                self.status['paused'] = True
+                return True
+            else:     # unpause
+                self.status['paused'] = False
+                return False
 
     
     def send_queue_as_ready(self):
@@ -372,6 +375,16 @@ class SerialManagerClass:
                 self.status['chiller_off'] = True
             else:
                 self.status['chiller_off'] = False
+
+            if 'X' in line:
+                self.status['x'] = line[line.find('X')+1:line.find('Y')]
+            # else:
+            #     self.status['x'] = False
+
+            if 'Y' in line:
+                self.status['y'] = line[line.find('Y')+1:line.find('V')]
+            # else:
+            #     self.status['y'] = False
 
             if 'V' in line:
                 self.status['firmware_version'] = line[line.find('V')+1:]                     

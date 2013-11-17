@@ -1,13 +1,14 @@
 
 import sys, os, time
 import glob, json, argparse, copy
+import tempfile
 import socket, webbrowser
 from wsgiref.simple_server import WSGIRequestHandler, make_server
 from bottle import *
 from serial_manager import SerialManager
 from flash import flash_upload, reset_atmega
 from build import build_firmware
-from filereaders import read_svg, read_dxf
+from filereaders import read_svg, read_dxf, read_ngc
 
 
 APPNAME = "lasaurapp"
@@ -128,9 +129,6 @@ def run_with_callback(host, port):
 
         
 
-@route('/hello')
-def hello_handler():
-    return "Hello World!!"
 
 @route('/longtest')
 def longtest_handler():
@@ -192,6 +190,7 @@ def decode_filename(name):
 def static_queue_handler(name): 
     return static_file(name, root=storage_dir(), mimetype='text/plain')
 
+
 @route('/queue/list')
 def library_list_handler():
     # base64.urlsafe_b64encode()
@@ -210,15 +209,15 @@ def library_list_handler():
 @route('/queue/save', method='POST')
 def queue_save_handler():
     ret = '0'
-    if 'gcode_name' in request.forms and 'gcode_program' in request.forms:
-        name = request.forms.get('gcode_name')
-        gcode_program = request.forms.get('gcode_program')
+    if 'job_name' in request.forms and 'job_data' in request.forms:
+        name = request.forms.get('job_name')
+        job_data = request.forms.get('job_data')
         filename = os.path.abspath(os.path.join(storage_dir(), name.strip('/\\')))
         if os.path.exists(filename) or os.path.exists(filename+'.starred'):
             return "file_exists"
         try:
             fp = open(filename, 'w')
-            fp.write(gcode_program)
+            fp.write(job_data)
             print "file saved: " + filename
             ret = '1'
         finally:
@@ -229,7 +228,7 @@ def queue_save_handler():
 
 @route('/queue/rm/:name')
 def queue_rm_handler(name):
-    # delete gcode item, on success return '1'
+    # delete queue item, on success return '1'
     ret = '0'
     filename = os.path.abspath(os.path.join(storage_dir(), name.strip('/\\')))
     if filename.startswith(storage_dir()):
@@ -240,7 +239,30 @@ def queue_rm_handler(name):
                 ret = '1'
             finally:
                 pass
-    return ret   
+    return ret 
+
+@route('/queue/clear')
+def queue_clear_handler():
+    # delete all queue items, on success return '1'
+    ret = '0'
+    files = []
+    cwd_temp = os.getcwd()
+    try:
+        os.chdir(storage_dir())
+        files = filter(os.path.isfile, glob.glob("*"))
+        files.sort(key=lambda x: os.path.getmtime(x))
+    finally:
+        os.chdir(cwd_temp)
+    for filename in files:
+        if not filename.endswith('.starred'):
+            filename = os.path.join(storage_dir(), filename)
+            try:
+                os.remove(filename);
+                print "file deleted: " + filename
+                ret = '1'
+            finally:
+                pass
+    return ret
     
 @route('/queue/star/:name')
 def queue_star_handler(name):
@@ -262,7 +284,8 @@ def queue_unstar_handler(name):
             ret = '1'
     return ret 
 
-    
+
+
 
 @route('/')
 @route('/index.html')
@@ -270,9 +293,25 @@ def queue_unstar_handler(name):
 def default_handler():
     return static_file('app.html', root=os.path.join(resources_dir(), 'frontend') )
 
-@route('/canvas')
-def canvas_handler():
-    return static_file('testCanvas.html', root=os.path.join(resources_dir(), 'frontend'))    
+
+@route('/stash_download', method='POST')
+def stash_download():
+    """Create a download file event from string."""
+    filedata = request.forms.get('filedata')
+    fp = tempfile.NamedTemporaryFile(mode='w', delete=False)
+    filename = fp.name
+    with fp:
+        fp.write(filedata)
+        fp.close()
+    print filedata
+    print "file stashed: " + os.path.basename(filename)
+    return os.path.basename(filename)
+
+@route('/download/:filename/:dlname')
+def download(filename, dlname):
+    print "requesting: " + filename
+    return static_file(filename, root=tempfile.gettempdir(), download=dlname)
+  
 
 @route('/serial/:connect')
 def serial_handler(connect):
@@ -312,24 +351,25 @@ def serial_handler(connect):
 def get_status():
     status = copy.deepcopy(SerialManager.get_hardware_status())
     status['serial_connected'] = SerialManager.is_connected()
+    status['lasaurapp_version'] = VERSION
     return json.dumps(status)
 
 
 @route('/pause/:flag')
 def set_pause(flag):
+    # returns pause status
     if flag == '1':
         if SerialManager.set_pause(True):
             print "pausing ..."
             return '1'
         else:
-            print "warn: nothing to pause"
-            return ''
+            return '0'
     elif flag == '0':
         print "resuming ..."
         if SerialManager.set_pause(False):
             return '1'
         else:
-            return ''
+            return '0'
 
 
 
@@ -408,20 +448,11 @@ def reset_atmega_handler():
     return '1'
 
 
-# @route('/gcode/:gcode_line')
-# def gcode_handler(gcode_line):
-#     if SerialManager.is_connected():    
-#         print gcode_line
-#         SerialManager.queue_gcode_line(gcode_line)
-#         return "Queued for sending."
-#     else:
-#         return ""
-
 @route('/gcode', method='POST')
-def gcode_submit_handler():
-    gcode_program = request.forms.get('gcode_program')
-    if gcode_program and SerialManager.is_connected():
-        lines = gcode_program.split('\n')
+def job_submit_handler():
+    job_data = request.forms.get('job_data')
+    if job_data and SerialManager.is_connected():
+        lines = job_data.split('\n')
         print "Adding to queue %s lines" % len(lines)
         for line in lines:
             SerialManager.queue_gcode_line(line)
@@ -434,11 +465,19 @@ def queue_pct_done_handler():
     return SerialManager.get_queue_percentage_done()
 
 
-@route('/svg_reader', method='POST')
-def svg_upload():
+@route('/file_reader', method='POST')
+def file_reader():
     """Parse SVG string."""
     filename = request.forms.get('filename')
     filedata = request.forms.get('filedata')
+    dimensions = request.forms.get('dimensions')
+    try:
+        dimensions = json.loads(dimensions)
+    except TypeError:
+        dimensions = None
+    # print "dims", dimensions[0], ":", dimensions[1]
+
+
     dpi_forced = None
     try:
         dpi_forced = float(request.forms.get('dpi'))
@@ -455,38 +494,18 @@ def svg_upload():
         print "You uploaded %s (%d bytes)." % (filename, len(filedata))
         if filename[-4:] in ['.dxf', '.DXF']: 
             res = read_dxf(filedata, TOLERANCE, optimize)
+        elif filename[-4:] in ['.svg', '.SVG']: 
+            res = read_svg(filedata, dimensions, TOLERANCE, dpi_forced, optimize)
+        elif filename[-4:] in ['.ngc', '.NGC']:
+            res = read_ngc(filedata, TOLERANCE, optimize)
         else:
-            res = read_svg(filedata, [1220,610], TOLERANCE, dpi_forced, optimize)
+            print "error: unsupported file format"
+
         # print boundarys
         jsondata = json.dumps(res)
         # print "returning %d items as %d bytes." % (len(res['boundarys']), len(jsondata))
         return jsondata
     return "You missed a field."
-
-
-# @route('/svg_reader', method='POST')
-# def svg_upload():
-#     """Parse SVG string."""
-#     data = request.files.get('data')
-#     if data.file:
-#         raw = data.file.read() # This is dangerous for big files
-#         filename = data.filename
-#         print "You uploaded %s (%d bytes)." % (filename, len(raw))
-#         boundarys = read_svg(raw, [1220,610], 0.08)
-#         return json.dumps(boundarys)
-#     return "You missed a field."
-
-
-# @route('/svg_upload', method='POST')
-# # file echo - used as a fall back for browser not supporting the file API
-# def svg_upload():
-#     data = request.files.get('data')
-#     if data.file:
-#         raw = data.file.read() # This is dangerous for big files
-#         filename = data.filename
-#         print "You uploaded %s (%d bytes)." % (filename, len(raw))
-#         return raw
-#     return "You missed a field."
 
 
 

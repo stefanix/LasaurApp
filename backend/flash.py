@@ -132,23 +132,36 @@ def flash_upload(serial_port, resources_dir, firmware_file, hardware='x86'):
 
 
 def reset_atmega(hardware=''):
+    print "Resetting Atmega ..."
     if hardware == 'beaglebone':
         try:
             fw = file("/sys/class/gpio/export", "w")
             fw.write("%d" % (71))
             fw.close()
+            fwb = file("/sys/class/gpio/export", "w")
+            fwb.write("%d" % (73))
+            fwb.close()
         except IOError:
             pass
         fw = file("/sys/class/gpio/gpio71/direction", "w")
         fw.write("out")
         fw.close()
+        fwb = file("/sys/class/gpio/gpio73/direction", "w")
+        fwb.write("out")
+        fwb.close()
         fw = file("/sys/class/gpio/gpio71/value", "w")
         fw.write("0")
         fw.flush()
+        fwb = file("/sys/class/gpio/gpio73/value", "w")
+        fwb.write("0")
+        fwb.flush()
         time.sleep(0.2)
         fw.write("1")
         fw.flush()
         fw.close()
+        fwb.write("1")
+        fwb.flush()
+        fwb.close()
     elif hardware == 'raspberrypi':
         import RPi.GPIO as GPIO
         GPIO.setmode(GPIO.BCM)  # use chip pin number

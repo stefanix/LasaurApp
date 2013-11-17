@@ -1,53 +1,65 @@
 
 var hardware_ready_state = false;
+var firmware_version_reported = false;
+var lasaurapp_version_reported = false;
+var progress_not_yet_done_flag = false;
+
 
 (function($){
-	$.fn.uxmessage = function(kind, text) {
-	  if (text.length > 80) {
-	    text = text.slice(0,100) + '\n...'
-	  }
-	  
-  	if (kind == 'notice') {
-  		$('#log_content').prepend('<div class="log_item log_notice well" style="display:none">' + text + '</div>');
-  		$('#log_content').children('div').first().show('blind');
-  		if ($("#log_content").is(':hidden')) {
-    		$().toastmessage('showNoticeToast', text);
-    	}
-  	} else if (kind == 'success') {
-  		$('#log_content').prepend('<div class="log_item log_success well" style="display:none">' + text + '</div>');
-  		$('#log_content').children('div').first().show('blind');
-  		if ($("#log_content").is(':hidden')) {
-    		$().toastmessage('showSuccessToast', text);		
+  $.fn.uxmessage = function(kind, text, max_length) {
+    if (max_length == null) {
+      max_length = 100;
+    }
+
+    if (text.length > max_length) {
+      text = text.slice(0,max_length) + '\n...'
+    }
+
+    text = text.replace(/\n/g,'<br>')
+    
+    if (kind == 'notice') {
+      $('#log_content').prepend('<div class="log_item log_notice well" style="display:none">' + text + '</div>');
+      $('#log_content').children('div').first().show('blind');
+      if ($("#log_content").is(':hidden')) {
+        $().toastmessage('showNoticeToast', text);
       }
-  	} else if (kind == 'warning') {
-  		$('#log_content').prepend('<div class="log_item log_warning well" style="display:none">' + text + '</div>');
-  		$('#log_content').children('div').first().show('blind');
-  		if ($("#log_content").is(':hidden')) {
-    		$().toastmessage('showWarningToast', text);		
-    	}
-  	} else if (kind == 'error') {
-  		$('#log_content').prepend('<div class="log_item log_error well" style="display:none">' + text + '</div>');
-  		$('#log_content').children('div').first().show('blind');
-  		if ($("#log_content").is(':hidden')) {
-    		$().toastmessage('showErrorToast', text);		
-    	}
-  	}
+    } else if (kind == 'success') {
+      $('#log_content').prepend('<div class="log_item log_success well" style="display:none">' + text + '</div>');
+      $('#log_content').children('div').first().show('blind');
+      if ($("#log_content").is(':hidden')) {
+        $().toastmessage('showSuccessToast', text);   
+      }
+    } else if (kind == 'warning') {
+      $('#log_content').prepend('<div class="log_item log_warning well" style="display:none">' + text + '</div>');
+      $('#log_content').children('div').first().show('blind');
+      if ($("#log_content").is(':hidden')) {
+        $().toastmessage('showWarningToast', text);   
+      }
+    } else if (kind == 'error') {
+      $('#log_content').prepend('<div class="log_item log_error well" style="display:none">' + text + '</div>');
+      $('#log_content').children('div').first().show('blind');
+      if ($("#log_content").is(':hidden')) {
+        $().toastmessage('showErrorToast', text);   
+      }
+    }
 
-  	while ($('#log_content').children('div').length > 200) {
-  	  $('#log_content').children('div').last().remove();
-  	}
+    while ($('#log_content').children('div').length > 200) {
+      $('#log_content').children('div').last().remove();
+    }
 
-	};
+  };
 })(jQuery); 
 
 
 function send_gcode(gcode, success_msg, progress) {
-  if (hardware_ready_state || gcode[0] == '!' || gcode[0] == '~') {
+  // if (hardware_ready_state || gcode[0] == '!' || gcode[0] == '~') {
+  if (true) {
     if (typeof gcode === "string" && gcode != '') {
+      // $().uxmessage('notice', gcode, Infinity);
       $.ajax({
         type: "POST",
         url: "/gcode",
-        data: {'gcode_program':gcode},
+        data: {'job_data':gcode},
         // dataType: "json",
         success: function (data) {
           if (data == "__ok__") {
@@ -57,25 +69,8 @@ function send_gcode(gcode, success_msg, progress) {
               if ($("#progressbar").children().first().width() == 0) {
                 $("#progressbar").children().first().width('5%');
                 $("#progressbar").show();
-                var progress_not_yet_done_flag = true;
-                var progresstimer = setInterval(function() {
-                  $.get('/queue_pct_done', function(data2) {
-                    if (data2.length > 0) {
-                      var pct = parseInt(data2);
-                      $("#progressbar").children().first().width(pct+'%');                
-                    } else {
-                      if (progress_not_yet_done_flag) {
-                        $("#progressbar").children().first().width('100%');
-                        $().uxmessage('notice', "Done.");
-                        progress_not_yet_done_flag = false;
-                      } else {
-                        $('#progressbar').hide();
-                        $("#progressbar").children().first().width(0); 
-                        clearInterval(progresstimer);
-                      }
-                    }
-                  });
-                }, 2000);
+                progress_not_yet_done_flag = true;
+                setTimeout(update_progress, 2000);
               }
             }
           } else {
@@ -98,177 +93,101 @@ function send_gcode(gcode, success_msg, progress) {
 }
 
 
-var queue_num_index = 1;
-function save_and_add_to_job_queue(name, gcode) {  
-  if ((typeof(name) == 'undefined') || ($.trim(name) == '')) {
-    var date = new Date();
-    name = date.toDateString() +' - '+ queue_num_index
-  }
-  //// store gcode - on success add to queue
-	$.post("/queue/save", { 'gcode_name':name, 'gcode_program':gcode }, function(data) {
-		if (data == "1") {
-		  queue_num_index += 1;
-      add_to_job_queue(name);
-    } else if (data == "file_exists") {
-      // try again with numeral appendix
-      $().uxmessage('notice', "File already exists. Appending numeral.");
-      save_and_add_to_job_queue(name+' - '+ queue_num_index, gcode);
-		} else {
-			$().uxmessage('error', "Failed to store G-code.");
-		}
+function update_progress() {
+  $.get('/queue_pct_done', function(data) {
+    if (data.length > 0) {
+      var pct = parseInt(data);
+      $("#progressbar").children().first().width(pct+'%');
+      setTimeout(update_progress, 2000);         
+    } else {
+      if (progress_not_yet_done_flag) {
+        $("#progressbar").children().first().width('100%');
+        $().uxmessage('notice', "Done.");
+        progress_not_yet_done_flag = false;
+        setTimeout(update_progress, 2000);
+      } else {
+        $('#progressbar').hide();
+        $("#progressbar").children().first().width(0); 
+      }
+    }
   });
 }
 
-function add_to_job_queue(name) {
-  //// delete excessive queue items
-  var num_non_starred = 0;
-  $.each($('#gcode_queue li'), function(index, li_item) {
-    if ($(li_item).find('a span.icon-star-empty').length > 0) {
-      num_non_starred++;
-      if (num_non_starred > 7) {
-        remove_queue_item(li_item);
-      }          
-    }
-  });
-  //// add list item to page
-  var star_class = 'icon-star-empty';
-  if (name.slice(-8) == '.starred') {
-    name = name.slice(0,-8);
-    star_class = 'icon-star';
-  }
-	$('#gcode_queue').prepend('<li><a href="#"><span>'+ name +'</span><span class="starwidget '+ star_class +' pull-right" title=" star to keep in queue"></span></a></li>')
-	$('span.starwidget').tooltip({delay:{ show: 1500, hide: 100}})  
-  //// action for loading gcode
-	$('#gcode_queue li:first a').click(function(){
-	  var name = $(this).children('span:first').text();
-	  if ($(this).find('span.icon-star').length > 0) {
-	    name = name + '.starred'
-	  }
-    $.get("/queue/get/" + name, function(gdata) {
-      if (name.slice(-8) == '.starred') {
-        name = name.slice(0,-8);
-      }      
-      load_into_gcode_widget(gdata, name);
-    }).error(function() {
-      $().uxmessage('error', "File not found: " + name);
-    });
-    return false;   
-	});  	
-  //// action for star
-  $('#gcode_queue li:first a span.starwidget').click(function() {
-    if ($(this).hasClass('icon-star')) {
-      //// unstar
-      $(this).removeClass('icon-star');
-      $(this).addClass('icon-star-empty');
-      $.get("/queue/unstar/" + name, function(data) {
-        // ui already cahnged
-        if (data != "1") {
-          // on failure revert ui
-          $(this).removeClass('icon-star-empty');
-          $(this).addClass('icon-star');        
-        }      
-      }).error(function() {
-        // on failure revert ui
-        $(this).removeClass('icon-star-empty');
-        $(this).addClass('icon-star');  
-      });       
-    } else {
-      //// star
-      $(this).removeClass('icon-star-empty');
-      $(this).addClass('icon-star');
-      $.get("/queue/star/" + name, function(data) {
-        // ui already cahnged
-        if (data != "1") {
-          // on failure revert ui
-          $(this).removeClass('icon-star');
-          $(this).addClass('icon-star-empty');         
-        }
-      }).error(function() {
-        // on failure revert ui
-        $(this).removeClass('icon-star');
-        $(this).addClass('icon-star-empty');  
-      });        
-    }
+
+function open_bigcanvas(scale, deselectedColors) {
+  var w = scale * app_settings.canvas_dimensions[0];
+  var h = scale * app_settings.canvas_dimensions[1];
+  $('#container').before('<a id="close_big_canvas" href="#"><canvas id="big_canvas" width="'+w+'px" height="'+h+'px" style="border:1px dashed #aaaaaa;"></canvas></a>');
+  var mid = $('body').innerWidth()/2.0-30;
+  $('#close_big_canvas').click(function(e){
+    close_bigcanvas();
     return false;
   });
-}
-
-
-function remove_queue_item(li_item) {
-  // request a delete
-  name = $(li_item).find('a span:first').text();
-  $.get("/queue/rm/" + name, function(data) {
-    if (data == "1") {
-      $(li_item).remove()
+  $("html").on('keypress.closecanvas', function (e) {
+    if ((e.which && e.which == 13) || (e.keyCode && e.keyCode == 13) ||
+        (e.which && e.which == 27) || (e.keyCode && e.keyCode == 27)) {
+      // on enter or escape
+      close_bigcanvas();
+      return false;
     } else {
-      $().uxmessage('error', "Failed to delete queue item: " + name);
+      return true;
     }
-  });  
-}
-
-function add_to_library_queue(gcode, name) {
-  if ((typeof(name) == 'undefined') || ($.trim(name) == '')) {
-    var date = new Date();
-    name = date.toDateString() +' - '+ queue_num_index
+  });
+  // $('#big_canvas').focus();
+  $('#container').hide();
+  var bigcanvas = new Canvas('#big_canvas');
+  // DataHandler.draw(bigcanvas, 4*app_settings.to_canvas_scale, getDeselectedColors());
+  if (deselectedColors === undefined) {
+    DataHandler.draw(bigcanvas, scale*app_settings.to_canvas_scale);
+  } else {
+    DataHandler.draw(bigcanvas, scale*app_settings.to_canvas_scale, deselectedColors);
   }
-	$('#gcode_library').prepend('<li><a href="#"><span>'+ name +'</span><i class="icon-star pull-right"></i><div style="display:none">'+ gcode +'</div></a></li>')
-	
-	$('#gcode_library li a').click(function(){
-	  load_into_gcode_widget($(this).next().text(), $(this).text())
-	});
-
-	$('#gcode_library li a i').click(function(){
-	  $().uxmessage('success', "star ...");
-	});
 }
 
 
-function load_into_gcode_widget(gcode, name) {
-	$('#gcode_name').val(name);
-	$('#gcode_program').val(gcode);
-	// make sure preview refreshes
-	$('#gcode_program').trigger('blur');
+function close_bigcanvas() {
+  $('#big_canvas').remove();
+  $('#close_big_canvas').remove();
+  $('html').off('keypress.closecanvas');
+  delete bigcanvas;
+  $('#container').show();
 }
 
 
-function mapConstrainFeedrate(rate) {
-  rate = parseInt(rate);
-  if (rate < .1) {
-    rate = .1;
-    $().uxmessage('warning', "Feedrate constrained to 0.1");
-  } else if (rate > 24000) {
-    rate = 24000;
-    $().uxmessage('warning', "Feedrate constrained to 24000");
-  }
-  return rate.toString();
-}
-  
-function mapConstrainIntesity(intens) {
-  intens = parseInt(intens);
-  if (intens < 0) {
-    intens = 0;
-    $().uxmessage('warning', "Intensity constrained to 0");
-  } else if (intens > 100) {
-    intens = 100;
-    $().uxmessage('warning', "Intensity constrained to 100");
-  }
-  //map to 255 for now until we change the backend
-  return Math.round(intens * 2.55).toString();
+function generate_download(filename, filedata) {
+  $.ajax({
+    type: "POST",
+    url: "/stash_download",
+    data: {'filedata': filedata},
+    success: function (data) {
+      window.open("/download/" + data + "/" + filename, '_blank');
+    },
+    error: function (data) {
+      $().uxmessage('error', "Timeout. LasaurApp server down?");
+    },
+    complete: function (data) {
+      // future use
+    }
+  });
 }
 
 
-
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 
 
 $(document).ready(function(){
   
-  $().uxmessage('notice', "app frontend started");
+  $().uxmessage('notice', "Frontend started.");
   
+  $('#feedrate_field').val(app_settings.max_seek_speed);
+
   $('#tab_logs_button').click(function(){
     $('#log_content').show()
     $('#tab_logs div.alert').show()
   })
+
 
   //////// serial connect and pause button ////////
   var connect_btn_state = false;
@@ -285,13 +204,13 @@ $(document).ready(function(){
       $("#connect_btn").removeClass("btn-warning");
       $("#connect_btn").addClass("btn-success");      
     } else {
-  		connect_btn_state = false
+      connect_btn_state = false
       if (!connect_btn_in_hover) {
         $("#connect_btn").html("Disconnected");
-      }		
+      }   
       $("#connect_btn").removeClass("btn-danger");
-  	  $("#connect_btn").removeClass("btn-success");
-  	  $("#connect_btn").addClass("btn-warning");     
+      $("#connect_btn").removeClass("btn-success");
+      $("#connect_btn").addClass("btn-warning");     
     }
   }
     
@@ -360,54 +279,86 @@ $(document).ready(function(){
         if (data.transmission_error) {
           $().uxmessage('error', "Transmission Error!");
           $().uxmessage('notice', "If this happens a lot tell the author of this software.");
-        }    
+        }
+        if (data.x && data.y) {
+          // only update if not manually entering at the same time
+          if (!$('#x_location_field').is(":focus") &&
+              !$('#y_location_field').is(":focus") &&
+              !$('#location_set_btn').is(":focus") &&
+              !$('#origin_set_btn').is(":focus"))
+          {
+            var x = parseFloat(data.x).toFixed(2) - app_settings.table_offset[0];
+            $('#x_location_field').val(x.toFixed(2));
+            $('#x_location_field').animate({
+              opacity: 0.5
+            }, 100, function() {
+              $('#x_location_field').animate({
+                opacity: 1.0
+              }, 600, function() {});
+            });
+            var y = parseFloat(data.y).toFixed(2) - app_settings.table_offset[1];
+            $('#y_location_field').val(y.toFixed(2));
+            $('#y_location_field').animate({
+              opacity: 0.5
+            }, 100, function() {
+              $('#y_location_field').animate({
+                opacity: 1.0
+              }, 600, function() {});
+            });
+          }
+        }
         if (data.firmware_version && !firmware_version_reported) {
-          $().uxmessage('notice', "LasaurGrbl " + data.firmware_version);
-          firmware_version_reported = true
+          $().uxmessage('notice', "Firmware v" + data.firmware_version);
+          $('#firmware_version').html(data.firmware_version);
+          firmware_version_reported = true;
         }
       }
+      if (data.lasaurapp_version && !lasaurapp_version_reported) {
+        $().uxmessage('notice', "LasaurApp v" + data.lasaurapp_version);
+        $('#lasaurapp_version').html(data.lasaurapp_version);
+        lasaurapp_version_reported = true;
+      }
+      // schedule next hardware poll
+      setTimeout(function() {poll_hardware_status()}, 4000);
     }).error(function() {
       // lost connection to server
-      connect_btn_set_state(false); 
+      connect_btn_set_state(false);
+      // schedule next hardware poll
+      setTimeout(function() {poll_hardware_status()}, 8000);
     });
   }
-  // call once, to get immediate status
-    poll_hardware_status();
-  // register with timed callback
-  var firmware_version_reported = false
-  var connectiontimer = setInterval(function() {
-    poll_hardware_status();
-  }, 4000);
+  // kick off hardware polling
+  poll_hardware_status();
 
   connect_btn_width = $("#connect_btn").innerWidth();
   $("#connect_btn").width(connect_btn_width);
-  $("#connect_btn").click(function(e){	
-  	if (connect_btn_state == true) {
-  		$.get('/serial/0', function(data) {
-  			if (data != "") {
-  				connect_btn_set_state(false);   
-  			} else {
-  			  // was already disconnected
-  			  connect_btn_set_state(false);
-  			}
-  			$("#connect_btn").html("Disconnected");
-  		});
-  	}	else {
-  	  $("#connect_btn").html('Connecting...');
-  		$.get('/serial/1', function(data) {
-  			if (data != "") {
-  			  connect_btn_set_state(true);
-  			  $("#connect_btn").html("Connected");		  
-  			} else {
-  			  // failed to connect
-  			  connect_btn_set_state(false);
-		  	  $("#connect_btn").removeClass("btn-warning");
-      	  $("#connect_btn").addClass("btn-danger");  
-  			}		
-  		});
-  	}	
-  	e.preventDefault();		
-  });	
+  $("#connect_btn").click(function(e){  
+    if (connect_btn_state == true) {
+      $.get('/serial/0', function(data) {
+        if (data != "") {
+          connect_btn_set_state(false);   
+        } else {
+          // was already disconnected
+          connect_btn_set_state(false);
+        }
+        $("#connect_btn").html("Disconnected");
+      });
+    } else {
+      $("#connect_btn").html('Connecting...');
+      $.get('/serial/1', function(data) {
+        if (data != "") {
+          connect_btn_set_state(true);
+          $("#connect_btn").html("Connected");      
+        } else {
+          // failed to connect
+          connect_btn_set_state(false);
+          $("#connect_btn").removeClass("btn-warning");
+          $("#connect_btn").addClass("btn-danger");  
+        }   
+      });
+    } 
+    e.preventDefault();   
+  }); 
   $("#connect_btn").hover(
     function () {
       connect_btn_in_hover = true;
@@ -433,25 +384,27 @@ $(document).ready(function(){
   $("#pause_btn").click(function(e){  
     if (pause_btn_state == true) {  // unpause
       $.get('/pause/0', function(data) {
-        if (data != "") {
+        if (data == '0') {
           pause_btn_state = false;
           $("#pause_btn").removeClass('btn-primary');
           $("#pause_btn").removeClass('btn-warning');
           $("#pause_btn").html('<i class="icon-pause"></i>');
+          $().uxmessage('notice', "Continuing...");
         }
       });
     } else {  // pause
       $("#pause_btn").addClass('btn-warning');
       $.get('/pause/1', function(data) {
-        if (data != "") {
+        if (data == "1") {
           pause_btn_state = true;
           $("#pause_btn").removeClass("btn-warning");
           $("#pause_btn").addClass('btn-primary');
           $("#pause_btn").html('<i class="icon-play"></i>');
-          $().uxmessage('notice', "Pausing (after finishing hardware buffer)");
-        } else {
-          // failed to pause, nothing processing?
+          $().uxmessage('notice', "Pausing in a bit...");
+        } else if (data == '0') {
           $("#pause_btn").removeClass("btn-warning");
+          $("#pause_btn").removeClass("btn-primary");
+          $().uxmessage('notice', "Not pausing...");
         }   
       });
     } 
@@ -462,25 +415,25 @@ $(document).ready(function(){
   
   $("#cancel_btn").tooltip({placement:'bottom', delay: {show:500, hide:100}});
   $("#cancel_btn").click(function(e){
-  	var gcode = '!\n'  // ! is enter stop state char
-  	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
-  	send_gcode(gcode, "Stopping ...", false);	
-	  var delayedresume = setTimeout(function() {
-    	var gcode = '~\nG90\nM81\nG0X0Y0F'+app_settings.max_seek_speed+'\n'  // ~ is resume char
-    	$().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
-    	send_gcode(gcode, "Resetting ...", false);
-	  }, 1000);
-  	e.preventDefault();		
+    var gcode = '!\n'  // ! is enter stop state char
+    // $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
+    send_gcode(gcode, "Stopping ...", false); 
+    var delayedresume = setTimeout(function() {
+      var gcode = '~\nG90\nM81\nG0X0Y0F'+app_settings.max_seek_speed+'\n'  // ~ is resume char
+      // $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
+      send_gcode(gcode, "Resetting ...", false);
+    }, 1000);
+    e.preventDefault();   
   });
   
   $("#homing_cycle").tooltip({placement:'bottom', delay: {show:500, hide:100}});
   $("#homing_cycle").click(function(e){
     var gcode = '!\n'  // ! is enter stop state char
-    $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
+    // $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
     send_gcode(gcode, "Resetting ...", false); 
     var delayedresume = setTimeout(function() {
       var gcode = '~\nG30\n'  // ~ is resume char
-      $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
+      // $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
       send_gcode(gcode, "Homing cycle ...", false);
     }, 1000);
     e.preventDefault(); 
@@ -491,24 +444,80 @@ $(document).ready(function(){
   $("#go_to_origin").click(function(e){
     var gcode;
     if(e.shiftKey) {
-    	// also reset offset
-    	reset_offset();
+      // also reset offset
+      reset_offset();
     }
     gcode = 'G90\nG0X0Y0F'+app_settings.max_seek_speed+'\n'
     // $().uxmessage('notice', gcode);  
-  	send_gcode(gcode, "Going to origin ...", false);
-  	e.preventDefault();		
+    send_gcode(gcode, "Going to origin ...", false);
+    e.preventDefault();   
   });  
 
   $("#reset_atmega").click(function(e){
     $.get('/reset_atmega', function(data) {
       if (data != "") {
         $().uxmessage('success', "Atmega restarted!");
+        firmware_version_reported = false;
       } else {
         $().uxmessage('error', "Atmega restart failed!");
       }   
     });
     e.preventDefault();   
+  });
+
+
+  /// tab shortcut keys /////////////////////////
+  $(document).on('keypress', null, 'p', function(e){
+    $('#pause_btn').trigger('click');
+    return false;
+  });
+
+  $(document).on('keypress', null, '0', function(e){
+    $('#go_to_origin').trigger('click');
+    return false;
+  });
+
+  var cancel_modal_active = false;
+  $(document).on('keyup', null, 'esc', function(e){
+    if (cancel_modal_active === true) {
+      $('#cancel_modal').modal('hide');
+      cancel_modal_active = false;
+    } else {
+      $('#cancel_modal').modal('show');
+      $('#really_cancel_btn').focus();
+      cancel_modal_active = true;
+    }
+    return false;
+  });
+
+  $('#really_cancel_btn').click(function(e){
+    $('#cancel_btn').trigger('click');
+    $('#cancel_modal').modal('hide');
+    cancel_modal_active = false;
+  });
+
+
+
+  /// tab shortcut keys /////////////////////////
+
+  $(document).on('keypress', null, 'j', function(e){
+    $('#tab_jobs_button').trigger('click');
+    return false;
+  });
+
+  $(document).on('keypress', null, 'i', function(e){
+    $('#tab_import_button').trigger('click');
+    return false;
+  });
+
+  $(document).on('keypress', null, 'm', function(e){
+    $('#tab_mover_button').trigger('click');
+    return false;
+  });
+
+  $(document).on('keypress', null, 'l', function(e){
+    $('#tab_logs_button').trigger('click');
+    return false;
   });
   
 });  // ready
