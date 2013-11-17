@@ -25,22 +25,25 @@
 
 // Version number
 // (must not contain capital letters)
-#define LASAURGRBL_VERSION "13.04c"
+#define LASAURGRBL_VERSION "14.01-alpha"
 // build for new driveboard hardware
 #define DRIVEBOARD
-// build for 0.9 deg steppers
-// #define NANOTEC_STEPPER_09
+
+#define V1401
+
 #define BAUD_RATE 57600
 // #define DEBUG_IGNORE_SENSORS  // set for debugging
 
 
-#define CONFIG_X_STEPS_PER_MM 32.80839895 //microsteps/mm
-#ifndef NANOTEC_STEPPER_09
+#ifndef V1401
+  #define CONFIG_X_STEPS_PER_MM 32.80839895 //microsteps/mm
   #define CONFIG_Y_STEPS_PER_MM 32.80839895 //microsteps/mm
+  #define CONFIG_Z_STEPS_PER_MM 32.80839895 //microsteps/mm
 #else
-  #define CONFIG_Y_STEPS_PER_MM 65.6167979 //microsteps/mm
+  #define CONFIG_X_STEPS_PER_MM 88.88888888 //microsteps/mm
+  #define CONFIG_Y_STEPS_PER_MM 90.90909090 //microsteps/mm
+  #define CONFIG_Z_STEPS_PER_MM 33.33333333 //microsteps/mm
 #endif
-#define CONFIG_Z_STEPS_PER_MM 32.80839895 //microsteps/mm
 #define CONFIG_PULSE_MICROSECONDS 5
 #define CONFIG_FEEDRATE 8000.0 // in millimeters per minute
 #define CONFIG_SEEKRATE 8000.0
@@ -49,12 +52,12 @@
 #define CONFIG_X_ORIGIN_OFFSET 5.0  // mm, x-offset of table origin from physical home
 #define CONFIG_Y_ORIGIN_OFFSET 5.0  // mm, y-offset of table origin from physical home
 #define CONFIG_Z_ORIGIN_OFFSET 0.0   // mm, z-offset of table origin from physical home
-#define CONFIG_INVERT_X_AXIS 1  // 0 is regular, 1 inverts the x direction
-#ifndef NANOTEC_STEPPER_09
-  #define CONFIG_INVERT_Y_AXIS 1  // 0 is regular, 1 inverts the y direction
+#ifndef V1401
+  #define CONFIG_INVERT_X_AXIS 1  // 0 is regular, 1 inverts the y direction
 #else
-  #define CONFIG_INVERT_Y_AXIS 0  // 0 is regular, 1 inverts the y direction
+  #define CONFIG_INVERT_X_AXIS 0
 #endif
+#define CONFIG_INVERT_Y_AXIS 1  // 0 is regular, 1 inverts the y direction
 #define CONFIG_INVERT_Z_AXIS 1  // 0 is regular, 1 inverts the y direction
 
 
