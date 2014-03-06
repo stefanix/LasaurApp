@@ -44,13 +44,13 @@ except ImportError:
 #   * non-pixel units (cm, mm, in, pt, pc)
 #   * 'style' attribute and presentation attributes
 #   * curves, arcs, cirles, ellipses tesellated according to tolerance
+#   * raster images
 #  
 # Intentinally not Supported:
 #   * markers
 #   * masking
 #   * em, ex, % units
 #   * text (needs to be converted to paths)
-#   * raster images
 #   * style sheets
 #
 # ToDo:
@@ -96,6 +96,8 @@ class SVGReader:
         
         # # tags that should not be further traversed
         # self.ignore_tags = {'defs':None, 'pattern':None, 'clipPath':None}
+
+        self.rasters = []
 
 
         
@@ -236,6 +238,9 @@ class SVGReader:
         parse_results = {'boundarys':self.boundarys, 'dpi':self.dpi}
         if self.lasertags:
             parse_results['lasertags'] = self.lasertags
+            
+        if self.rasters:
+            parse_results['rasters'] = self.rasters
 
         return parse_results
 
@@ -249,6 +254,7 @@ class SVGReader:
                 # and inherit from parent
                 node = {
                     'paths': [],
+                    'rasters': [],
                     'xform': [1,0,0,1,0,0],
                     'xformToWorld': parentNode['xformToWorld'],
                     'display': parentNode.get('display'),
@@ -283,6 +289,20 @@ class SVGReader:
                 # 4. any lasertags (cut settings)?
                 if node.has_key('lasertags'):
                     self.lasertags.extend(node['lasertags'])
+                        
+                # 5. Raster Data [(x, y, pitch, data)]
+                for raster in node['rasters']:
+                    if raster:
+                        # Get the image location and dimensions
+                        corner = raster[0]
+                        matrixApply(node['xformToWorld'], corner)
+                        vertexScale(corner, self.px2mm)
+
+                        size = raster[1]
+                        matrixApply(node['xformToWorld'], size)
+                        vertexScale(size, self.px2mm)
+                        
+                        self.rasters.append(raster)
             
                 # recursive call
                 self.parse_children(child, node)
