@@ -26,6 +26,7 @@
 #include "gcode.h"
 #include "serial.h"
 
+unsigned long int MINIMUM_STEPS_PER_MINUTE = 40000;
 
 int main() {
   sei();  //enable interrupts

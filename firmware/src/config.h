@@ -25,88 +25,86 @@
 
 // Version number
 // (must not contain capital letters)
-#define LASAURGRBL_VERSION "14.01"
+#define LASAURGRBL_VERSION "14.01c"
 // build for new driveboard hardware
-#define DRIVEBOARD
-
-#define V1401
-
+//#define DRIVEBOARD
+// build for 0.9 deg steppers
+// #define NANOTEC_STEPPER_09
 #define BAUD_RATE 57600
-// #define DEBUG_IGNORE_SENSORS  // set for debugging
+//#define DEBUG_IGNORE_SENSORS  // set for debugging
 
 
-#ifndef V1401
-  #define CONFIG_X_STEPS_PER_MM 32.80839895 //microsteps/mm
-  #define CONFIG_Y_STEPS_PER_MM 32.80839895 //microsteps/mm
-  #define CONFIG_Z_STEPS_PER_MM 32.80839895 //microsteps/mm
+#define CONFIG_X_STEPS_PER_MM 80 //microsteps/mm
+#ifndef NANOTEC_STEPPER_09
+  #define CONFIG_Y_STEPS_PER_MM 80 //microsteps/mm
 #else
-  #define CONFIG_X_STEPS_PER_MM 88.88888888 //microsteps/mm
-  #define CONFIG_Y_STEPS_PER_MM 90.90909090 //microsteps/mm
-  #define CONFIG_Z_STEPS_PER_MM 33.33333333 //microsteps/mm
+  #define CONFIG_Y_STEPS_PER_MM 80 //microsteps/mm
 #endif
-#define CONFIG_PULSE_MICROSECONDS 5
-#define CONFIG_FEEDRATE 8000.0 // in millimeters per minute
-#define CONFIG_SEEKRATE 8000.0
-#define CONFIG_ACCELERATION 1800000.0 // mm/min^2, typically 1000000-8000000, divide by (60*60) to get mm/sec^2
+#define CONFIG_Z_STEPS_PER_MM 80 //microsteps/mm
+#define CONFIG_PULSE_MICROSECONDS 10
+#define CONFIG_FEEDRATE 10000.0 // in millimeters per minute
+#define CONFIG_SEEKRATE 10000.0
+#define CONFIG_ACCELERATION 9000000.0 // mm/min^2, typically 1000000-8000000, divide by (60*60) to get mm/sec^2
 #define CONFIG_JUNCTION_DEVIATION 0.006 // mm
-#define CONFIG_X_ORIGIN_OFFSET 5.0  // mm, x-offset of table origin from physical home
-#define CONFIG_Y_ORIGIN_OFFSET 5.0  // mm, y-offset of table origin from physical home
+#define CONFIG_X_ORIGIN_OFFSET 1.0  // mm, x-offset of table origin from physical home
+#define CONFIG_Y_ORIGIN_OFFSET 1.0  // mm, y-offset of table origin from physical home
 #define CONFIG_Z_ORIGIN_OFFSET 0.0   // mm, z-offset of table origin from physical home
-#ifndef V1401
-  #define CONFIG_INVERT_X_AXIS 1  // 0 is regular, 1 inverts the y direction
+#define CONFIG_INVERT_X_AXIS 1  // 0 is regular, 1 inverts the x direction
+#ifndef NANOTEC_STEPPER_09
+  #define CONFIG_INVERT_Y_AXIS 1  // 0 is regular, 1 inverts the y direction
 #else
-  #define CONFIG_INVERT_X_AXIS 0
+  #define CONFIG_INVERT_Y_AXIS 0  // 0 is regular, 1 inverts the y direction
 #endif
-#define CONFIG_INVERT_Y_AXIS 1  // 0 is regular, 1 inverts the y direction
 #define CONFIG_INVERT_Z_AXIS 1  // 0 is regular, 1 inverts the y direction
 
+// The laser Enable pin is a PWM controlled Pin. They use Arduino Uno digital pin 6 (PWM) look at the sense_control.c Not sure if I can directly drive my 40 watt chinese laser with this PWM signal since the Laser enable pin on my laser driver is hooked up directly to the Texas Instruments TL494CN PWM chip's DTC pin.  That pin is responsible for controlling maximum duty cycle.  Whether or not I can PWM the pin and achieve the same results is yet to be deduced.
 
 #define SENSE_DDR               DDRD
 #define SENSE_PORT              PORTD
 #define SENSE_PIN               PIND
 #ifndef DRIVEBOARD
-  #define POWER_BIT             2
+  #define POWER_BIT             2 // DriverBoard stuff
 #endif
-#define CHILLER_BIT             3
-#define DOOR_BIT                2
+#define CHILLER_BIT             3 // Arduino Uno digital pin 3 (PWM)
+#define DOOR_BIT                2 // Arduino Uno digital pin 2
 
 #ifdef DRIVEBOARD
   #define ASSIST_DDR            DDRD
   #define ASSIST_PORT           PORTD
-  #define AIR_ASSIST_BIT        4
-  #define AUX1_ASSIST_BIT       7
-  #define AUX2_ASSIST_BIT       5
+  #define AIR_ASSIST_BIT        4 // DriverBoard stuff
+  #define AUX1_ASSIST_BIT       7 // DriverBoard stuff
+  #define AUX2_ASSIST_BIT       5 // DriverBoard stuff
 #else
-  #define LIMITS_OVERWRITE_DDR  DDRD
+  #define LIMITS_OVERWRITE_DDR  DDRD 
   #define LIMITS_OVERWRITE_PORT PORTD
-  #define LIMITS_OVERWRITE_BIT  7  
+  #define LIMITS_OVERWRITE_BIT  7 // Arduino Uno digital pin 7
 #endif
   
 #define LIMIT_DDR               DDRC
 #define LIMIT_PORT              PORTC
 #define LIMIT_PIN               PINC
-#define X1_LIMIT_BIT            0
-#define X2_LIMIT_BIT            1
-#define Y1_LIMIT_BIT            2
-#define Y2_LIMIT_BIT            3
+#define X1_LIMIT_BIT            0 // Arduino Uno analog pin 0
+#define X2_LIMIT_BIT            1 // Arduino Uno analog pin 1
+#define Y1_LIMIT_BIT            2 // Arduino Uno analog pin 2
+#define Y2_LIMIT_BIT            3 // Arduino Uno analog pin 3
 #ifdef DRIVEBOARD
-  #define Z1_LIMIT_BIT          4
-  #define Z2_LIMIT_BIT          5
+  #define Z1_LIMIT_BIT          4 // DriverBoard stuff
+  #define Z2_LIMIT_BIT          5 // DriverBoard stuff
 #else
   #define ASSIST_DDR            DDRC
   #define ASSIST_PORT           PORTC
-  #define AIR_ASSIST_BIT        4
-  #define AUX1_ASSIST_BIT       5
+  #define AIR_ASSIST_BIT        4 // Arduino Uno analog pin 4
+  #define AUX1_ASSIST_BIT       5 // Arduino Uno analog pin 5
 #endif
 
 #define STEPPING_DDR            DDRB
 #define STEPPING_PORT           PORTB
-#define X_STEP_BIT              0
-#define Y_STEP_BIT              1
-#define Z_STEP_BIT              2
-#define X_DIRECTION_BIT         3
-#define Y_DIRECTION_BIT         4
-#define Z_DIRECTION_BIT         5
+#define X_STEP_BIT              0 // Arduino Uno digital pin 8
+#define Y_STEP_BIT              1 // Arduino Uno digital pin 9 (PWM)
+#define Z_STEP_BIT              2 // Arduino Uno digital pin 10 (PWM)
+#define X_DIRECTION_BIT         3 // Arduino Uno digital pin 11 (PWM)
+#define Y_DIRECTION_BIT         4 // Arduino Uno digital pin 12
+#define Z_DIRECTION_BIT         5 // Arduino Uno digital pin 13
 
 
 
@@ -163,7 +161,7 @@
 // slower than this value, except when sleeping. This parameter overrides the minimum planner speed.
 // This is primarily used to guarantee that the end of a movement is always reached and not stop to
 // never reach its target. This parameter should always be greater than zero.
-#define MINIMUM_STEPS_PER_MINUTE 1600U // (steps/min) - Integer value only
+extern unsigned long int MINIMUM_STEPS_PER_MINUTE; // (steps/min) - Integer value only (change in "main.c")
 // 1600 @ 32step_per_mm = 50mm/min
   
 

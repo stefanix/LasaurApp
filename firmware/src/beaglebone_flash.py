@@ -13,7 +13,7 @@ import os, sys
 
 AVRDUDEAPP    = "avrdude"
 AVRDUDECONFIG = "/etc/avrdude.conf"
-SERIAL_PORT = "/dev/ttyO1"
+SERIAL_PORT = "/dev/tty.usbmodem1411"
 DEVICE = "atmega328p"
 PROGRAMMER = "arduino"    # use this for bootloader
 SERIAL_OPTION = '-P %(port)s' % {'port':SERIAL_PORT}
