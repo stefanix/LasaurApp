@@ -25,7 +25,7 @@
 
 // Version number
 // (must not contain capital letters)
-#define LASAURGRBL_VERSION "13.04c"
+#define LASAURGRBL_VERSION "13.06"
 // build for new driveboard hardware
 #define DRIVEBOARD
 // build for 0.9 deg steppers
