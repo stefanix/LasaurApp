@@ -416,4 +416,15 @@ $(document).ready(function(){
     var gcode = 'M81\n';
     send_gcode(gcode, "Air assist off ...", false) 
   });
+  
+  /// aux assist buttons ////////////////////////
+
+  $("#aux_on_btn").click(function(e) {
+    var gcode = 'M82\n';
+    send_gcode(gcode, "Auxillary 1 on ...", false) 
+  });  
+  $("#aux_off_btn").click(function(e) {
+    var gcode = 'M83\n';
+    send_gcode(gcode, "Auxillary 1 off ...", false) 
+  });
 });  // ready

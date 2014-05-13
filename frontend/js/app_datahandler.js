@@ -105,8 +105,10 @@ DataHandler = {
     for (var i=0; i<this.passes.length; i++) {
       var pass = this.passes[i];
       var colors = pass['colors'];
+      var minimumfeedrate = this.mapConstrainMinFeedrate(pass['minimumfeedrate']);
       var feedrate = this.mapConstrainFeedrate(pass['feedrate']);
       var intensity = this.mapConstrainIntesity(pass['intensity']);
+      glist.push("G69F"+minimumfeedrate+"\n");
       glist.push("G1F"+feedrate+"\nS"+intensity+"\n");
       for (var c=0; c<colors.length; c++) {
         var color = colors[c];
@@ -245,9 +247,10 @@ DataHandler = {
     this.passes = [];
     for (var i=0; i<lasertags.length; i++) {
       var vals = lasertags[i];
-      if (vals.length == 11) {
+      if (vals.length == 12) {
         var pass = vals[0];
-        var feedrate = vals[1];
+        var minimumfeedrate = vals[1];
+        var feedrate = vals[2];
         var intensity = vals[3];
         if (typeof(pass) === 'number' && pass > 0) {
           //make sure to have enough pass widgets
@@ -258,6 +261,10 @@ DataHandler = {
             }
           }
           pass = pass-1;  // convert to zero-indexed
+          // Minimum feedrate
+          if (minimumfeedrate != '' && typeof(minimumfeedrate) === 'number') {
+            this.passes[pass]['minimumfeedrate'] = minimumfeedrate;
+          }
           // feedrate
           if (feedrate != '' && typeof(feedrate) === 'number') {
             this.passes[pass]['feedrate'] = feedrate;
@@ -478,6 +485,18 @@ DataHandler = {
     }
     return rate.toString();
   },
+    
+    mapConstrainMinFeedrate : function(minrate) {
+        minrate = parseInt(minrate);
+        if (minrate < .1) {
+            minrate = .1;
+            $().uxmessage('warning', "Minimum Feedrate constrained to 0.1");
+        } else if (minrate > 24000) {
+            minrate = 24000;
+            $().uxmessage('warning', "Minimum Feedrate constrained to 24000");
+        }
+        return minrate.toString();
+    },
     
   mapConstrainIntesity : function(intens) {
     intens = parseInt(intens);

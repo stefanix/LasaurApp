@@ -646,7 +646,7 @@ if args.beaglebone:
 elif args.raspberrypi:
     HARDWARE = 'raspberrypi'
     NETWORK_PORT = 80
-    SERIAL_PORT = "/dev/ttyAMA0"
+    SERIAL_PORT = "/dev/ttyACM0"
     import RPi.GPIO as GPIO
     # GPIO.setwarnings(False) # surpress warnings
     GPIO.setmode(GPIO.BCM)  # use chip pin number
@@ -666,7 +666,7 @@ elif args.raspberrypi:
     # no need to setup the serial pins
     # although /boot/cmdline.txt and /etc/inittab needs
     # to be edited to deactivate the serial terminal login
-    # (basically anything related to ttyAMA0)
+    # (basically anything related to ttyACM0)
 
 
 if args.list_serial_devices:

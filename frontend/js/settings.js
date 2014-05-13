@@ -1,13 +1,14 @@
 
 var app_settings = {
-  work_area_dimensions: [1220,610],
+  work_area_dimensions: [330,230],
   max_seek_speed: 8000,
-  default_feedrate: 1500,
-  default_intensity: 30,
+  default_feedrate: 3000,
+  default_minimum_feedrate: 500,
+  default_intensity: 7,
   num_digits: 2, 
   max_num_queue_items: 24,
   max_segment_length: 5.0,
-  table_offset: [5,5],  // has to match firmware
+  table_offset: [1,1],  // has to match firmware
 }
 
 
