@@ -17,7 +17,7 @@ def read_svg(svg_string, target_size, tolerance, forced_dpi=None, optimize=True)
     parse_results = svgReader.parse(svg_string, forced_dpi)
     if optimize:
         optimize_all(parse_results['boundarys'], tolerance)
-    # {'boundarys':b, 'dpi':d, 'lasertags':l}
+    # {'boundarys':b, 'dpi':d, 'lasertags':l, 'rasters':r}
     return parse_results
 
 
