@@ -6,15 +6,16 @@ import math
 import logging
 
 from .webcolors import hex_to_rgb, rgb_to_hex
-from .utilities import matrixMult, matrixApply, vertexScale, parseFloats
+from .utilities import matrixMult, matrixApply, matrixApplyScale, vertexScale, parseFloats
 from .svg_tag_reader import SVGTagReader
+from config import config
 
 
 logging.basicConfig()
 log = logging.getLogger("svg_reader")
-# log.setLevel(logging.DEBUG)
+log.setLevel(logging.DEBUG)
 # log.setLevel(logging.INFO)
-log.setLevel(logging.WARN)
+# log.setLevel(logging.WARN)
 
 
 try:
@@ -235,7 +236,11 @@ class SVGReader:
         self.parse_children(svgRootElement, node)
         
         # build result dictionary
-        parse_results = {'boundarys':self.boundarys, 'dpi':self.dpi}
+        parse_results = {'dpi':self.dpi}
+
+        if self.boundarys:
+            parse_results['boundarys'] = self.boundarys
+            
         if self.lasertags:
             parse_results['lasertags'] = self.lasertags
             
@@ -292,18 +297,39 @@ class SVGReader:
                         
                 # 5. Raster Data [(x, y, pitch, data)]
                 for raster in node['rasters']:
-                    if raster:
-                        # Get the image location and dimensions
-                        corner = raster[0]
-                        matrixApply(node['xformToWorld'], corner)
-                        vertexScale(corner, self.px2mm)
+                    # pos to world coordinates and then to mm units
+                    pos = raster['pos']
+                    matrixApply(node['xformToWorld'], pos)
+                    vertexScale(pos, self.px2mm)
 
-                        size = raster[1]
-                        matrixApply(node['xformToWorld'], size)
-                        vertexScale(size, self.px2mm)
-                        
-                        self.rasters.append(raster)
-            
+                    # size to world scale and then to mm units
+                    size = raster['size']
+                    matrixApplyScale(node['xformToWorld'], size)
+                    vertexScale(size, self.px2mm)
+                    
+                    # resize image so pixel size matches kerf
+                    kerf = config['kerf']
+                    new_size = (int(round(size[0]/kerf)), int(round(size[1]/kerf)))
+
+                    max_raster_size = config['max_raster_size']
+                    if new_size[0] > max_raster_size[0] or new_size[1] > max_raster_size[1]:
+                        log.warn("Raster job request exceeds %sx%s pixels" % max_raster_size)
+                        continue
+
+                    image = raster['image']
+                    image = image.resize(new_size)
+                    # image.show()
+                    
+                    raster['size_px'] = image.size
+
+                    # convert image to lasersaur format
+                    # each pixel is mapped to 33-118 and converted 
+                    # to ascii. All of them are in the printable range of 32-126
+                    img_laserformat = "".join([(chr(x/3+33)) for x in image.getdata()])
+                    raster['image'] = img_laserformat 
+
+                    self.rasters.append(raster)
+
                 # recursive call
                 self.parse_children(child, node)
 

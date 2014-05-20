@@ -128,16 +128,22 @@ $(document).ready(function(){
       
   function handleParsedGeometry(data) {
     // data is a dict with the following keys [boundarys, dpi, lasertags, rasters]
-    var rasters = data.rasters;
-    var boundarys = data.boundarys;
-    if (boundarys || rasters) {
-      DataHandler.setByPaths(boundarys);
-      if (path_optimize) {
-        DataHandler.segmentizeLongLines();
+    if ('boundarys' in data || 'rasters' in data) {
+
+      if ('boundarys' in data) {    
+        DataHandler.setByPaths(data.boundarys);
+        if (path_optimize) {
+          DataHandler.segmentizeLongLines();
+        }
       }
 
-      if (rasters) {
-        DataHandler.addRasters(rasters);
+      if ('rasters' in data) {
+        // raster_stats = {'pos':data.rasters[0]['pos'], 
+        //                 'size': data.rasters[0]['size'], 
+        //                 'size_px': data.rasters[0]['size_px'], 
+        //                 'len':data.rasters[0]['image'].length}
+        // alert(JSON.stringify(raster_stats))
+        DataHandler.addRasters(data.rasters);
       }
       
       // some init

@@ -8,20 +8,21 @@
 DataHandler = {
 
   paths_by_color : {},
-  rasters_by_color : {},
+  raster_list : [],
   passes : [],
   stats_by_color : {},
 
 
   clear : function() {
     this.paths_by_color = {};
-    this.rasters_by_color = {};
+    this.raster_list = [];
     this.passes = [];
     this.stats_by_color = {};
   },
 
   isEmpty : function() {
-    return (Object.keys(this.paths_by_color).length == 0 && Object.keys(this.rasters_by_color).length == 0);
+    return (Object.keys(this.paths_by_color).length == 0 && 
+            this.raster_list.length == 0);
   },
 
 
@@ -35,10 +36,7 @@ DataHandler = {
     this.clear();
     for (var color in paths_by_color) {
       var paths_src = paths_by_color[color];
-      if (!this.rasters_by_color[color])
-        this.rasters_by_color[color] = [];
-      if (!this.paths_by_color[color])
-        this.paths_by_color[color] = [];
+      this.paths_by_color[color] = [];
       var paths = this.paths_by_color[color];
       for (var i=0; i<paths_src.length; i++) {
         var path = [];
@@ -67,12 +65,13 @@ DataHandler = {
     // read internal format
     // {'passes':{'colors':['#000000',..], 'feedrate':450, 'intensity':100},
     //  'paths_by_color':{'#000000':[[[x,y],[x,y], ..],[], ..], '#ffffff':[..]}
+    //  'raster_list':[{},{},...]
     // }
     this.clear();
     var data = JSON.parse(strdata);
     this.passes = data['passes'];
     this.paths_by_color = data['paths_by_color'];
-    this.rasters_by_color = data['rasters_by_color'];
+    this.raster_list = data['raster_list'];
     if ('stats_by_color' in data) {
       this.stats_by_color = data['stats_by_color'];
     } else {
@@ -80,19 +79,12 @@ DataHandler = {
     }
   },
 
-  addRasters : function(rasters_by_color) {
-    // read raster
-    // {'#000000':[[x, y], [width, height], [pix_w, pix_h], data)], '#ffffff':[..]}
-    for (var color in rasters_by_color) {
-      var rasters_src = rasters_by_color[color];
-      if (color == 0)
-        color = '#0000ff'
-      if (!this.rasters_by_color[color])
-        this.rasters_by_color[color] = [];
-      if (!this.paths_by_color[color])
-        this.paths_by_color[color] = [];
-      var rasters = this.rasters_by_color[color];
-      rasters.push(rasters_src);
+  addRasters : function(raster_list) {
+    // raster_list has this format:
+    // [{'pos':[x,y], 'size':[w,h], 'size_px':[w,h], 'image':data}, {}, ...]
+    for (var i=0; i<raster_list.length; i++) {
+      // maybe do some sanity checks here
+      this.raster_list.push(raster_list[i]);
     }
     // also calculate stats
     this.calculateBasicStats();
@@ -105,15 +97,9 @@ DataHandler = {
     // write internal format
     // exclude_colors is optional
     var paths_by_color = this.paths_by_color;
-    var rasters_by_color = this.rasters_by_color;
+    var raster_list = this.raster_list;
     if (!(exclude_colors === undefined)) {
       paths_by_color = {};
-      rasters_by_color = {};
-      for (var color in this.rasters_by_color) {
-        if (!(color in exclude_colors)) {
-          rasters_by_color[color] = this.rasters_by_color[color];
-        }
-      }
       for (var color in this.paths_by_color) {
         if (!(color in exclude_colors)) {
           paths_by_color[color] = this.paths_by_color[color];
@@ -122,16 +108,84 @@ DataHandler = {
     }
     var data = {'passes': this.passes,
                 'paths_by_color': paths_by_color,
-                'rasters_by_color': rasters_by_color}
+                'raster_list': this.raster_list}
     return JSON.stringify(data);
   },
 
   getGcode : function() {
-    // write machinable gcode, organize by passes
+    // write machinable gcode, organize by passes, rasters first
     // header
     var glist = [];
     glist.push("G90\nM80\n");
     glist.push("G0F"+app_settings.max_seek_speed+"\n");
+    // rasters
+    for (var k=0; k<this.raster_list.length; k++) {
+      var raster = this.raster_list[k];
+
+      // raster Data
+      //////////////
+      // G8 P0.1
+      // G8 X50
+      // G8 N
+      // G8 D<data>
+      // G8 D<raster data encoded in ascii>
+      // G8 N
+      // G8 D<data>
+      // ...
+
+      // G8 P0.1 sets the dimensions of one 'dot'. It's the space reserved for
+      // one data pixel, one character in the raster data. The technical minimum
+      // is 0.034mm (based on the minimum step distance) but for best results
+      // this should reflect the focus diameter of the setup.
+
+      // G8 X50 defines the direction of the raster data and the offset. So 'X'
+      // means data will be interpreted as x-axis lines. The offset is necessary
+      // to achieve constant speed during engraving. It's the distance used for
+      // accelerating the head (and also decelerating).
+
+      // G8 D<data> sends the actual data. Likewise lines will be concatenated
+      // until a 'G8 N' arrives. Currently line length is limited to 80
+      // characters. The actual data is encoded into the extended ascii range
+      // ([128,255]). Each character is a dot. The new raster line marker also
+      // resets the head to the next line which is 0.1mm (or whatever was defined
+      // with G8 Px) under the next
+      ///////////////
+      
+      var x1 = raster.pos[0];
+      var y1 = raster.pos[1];
+      var width = raster.size[0];
+      var height = raster.size[1];
+      var pixwidth = raster.size_px[0];
+      var pixheight = raster.size_px[1];
+      var image = raster.image;
+
+      glist.push("G1F"+app_settings.raster_feedrate+"\n");
+      glist.push("G0X"+x1.toFixed(app_settings.num_digits)+"Y"+y1.toFixed(app_settings.num_digits)+"\n");
+      glist.push("G8P"+app_settings.kerf.toFixed(app_settings.num_digits+2)+"\n");
+      glist.push("G8X"+app_settings.raster_offset.toFixed(app_settings.num_digits)+"\n");
+      glist.push("G8N\n");
+
+      var p = 0;
+      var pp = 0;
+      var linechars = app_settings.raster_linechars
+      var nfull = Math.floor(pixwidth/linechars)
+      var partialchars = pixwidth % linechars
+
+      for (var l=0; l<pixheight; l++) {  // raster lines
+        // full command lines
+        for (var f=0; f<nfull; f++) {
+          pp = p+linechars;
+          glist.push("G8D" + image.slice(p,pp) + "\n");
+          p = pp;
+        }
+        // one partial command line
+        pp = p+partialchars;
+        glist.push("G8D" + image.slice(p,p+partialchars) + "\n");
+        p = pp;
+        // next raster line
+        glist.push("G8N\n");
+      }
+    }
     // passes
     for (var i=0; i<this.passes.length; i++) {
       var pass = this.passes[i];
@@ -141,59 +195,6 @@ DataHandler = {
       glist.push("G1F"+feedrate+"\nS"+intensity+"\n");
       for (var c=0; c<colors.length; c++) {
         var color = colors[c];
-        // Rasters
-        var rasters = this.rasters_by_color[color];
-        for (var k=0; k<rasters.length; k++) {
-          var raster = rasters[k];
-
-          // Raster Data
-          var x1 = raster[0][0];
-          var y1 = raster[0][1];
-          var width = raster[1][0];
-          var height = raster[1][1];
-          var pixwidth = raster[2][0];
-          var pixheight = raster[2][1];
-          var data = raster[3];
-
-          // Raster Variables
-          var dot_pitch = 0.0847; // (300dpi) Needs PPI change to be configurable.
-
-          // Calculate the offset based on acceleration and feedrate.
-          var offset = 0.5 * feedrate * feedrate / app_settings.acceleration;
-          offset *= 1.1;  // Add some margin.
-          if (offset < 5)
-            offset = 5;
-
-          // Setup the raster header
-          glist.push("G00X"+x1.toFixed(app_settings.num_digits)+"Y"+y1.toFixed(app_settings.num_digits)+"\n");
-          glist.push("G08P"+dot_pitch.toFixed(app_settings.num_digits+2)+"\n");
-          glist.push("G08X"+offset.toFixed(app_settings.num_digits)+"Z0\n");
-          glist.push("G08N0\n");
-
-          // Calculate pixels per pulse
-          var pppX = pixwidth / (width / dot_pitch);
-          var pppY = pixheight / (height / dot_pitch);
-
-          // Now for the raster data
-          for (var y = 0; y < pixheight; y += pppY) {
-            var line = Math.round(y) * pixwidth;
-            var count = 0;
-            glist.push("G8 D");
-            for (var x = 0; x < pixwidth; x += pppX) {
-              var pixel = line + Math.round(x);
-              if (data[pixel] == 0) {
-                glist.push("1");
-              } else {
-                glist.push("0");
-              }
-              count++;
-              if (count % 70 == 0) {
-                  glist.push("\nG8 D");
-              }
-            }
-            glist.push("\nG8 N0\n");
-          }
-        }
         // Paths
         var paths = this.paths_by_color[color];
         for (var k=0; k<paths.length; k++) {
@@ -250,9 +251,9 @@ DataHandler = {
     var x_prev = 0;
     var y_prev = 0;
     // rasters
-    for (var color in this.rasters_by_color) {
+    for (var color in this.raster_list) {
       if (exclude_colors === undefined || !(color in exclude_colors)) {
-        var rasters = this.rasters_by_color[color];
+        var rasters = this.raster_list[color];
         if (rasters) {
           for (var k=0; k<rasters.length; k++) {
             var raster = rasters[k];
@@ -438,14 +439,14 @@ DataHandler = {
 
   getAllColors : function() {
     // return list of colors
-    return Object.keys(this.paths_by_color) + Object.keys(this.rasters_by_color);
+    return Object.keys(this.paths_by_color) + Object.keys(this.raster_list);
   },
 
   getColorOrder : function() {
       var color_order = {};
       var color_count = 0;
       // Rasters first
-      for (var color in this.rasters_by_color) {
+      for (var color in this.raster_list) {
         color_order[color] = color_count;
         color_count++;
       }
@@ -508,10 +509,10 @@ DataHandler = {
     }
 
     // rasters
-    for (var color in this.rasters_by_color) {
+    for (var color in this.raster_list) {
       var raster_lengths_color = 0;
       var bbox_color = [Infinity, Infinity, 0, 0];
-      var rasters = this.rasters_by_color[color];
+      var rasters = this.raster_list[color];
       if (rasters) {
         for (var k=0; k<rasters.length; k++) {
           var raster = rasters[k];
