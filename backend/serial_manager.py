@@ -18,8 +18,8 @@ class SerialManagerClass:
 
         # TX_CHUNK_SIZE - this is the number of bytes to be 
         # written to the device in one go. It needs to match the device.
-        self.TX_CHUNK_SIZE = 64
-        self.RX_CHUNK_SIZE = 256
+        self.TX_CHUNK_SIZE = 62 # was 64
+        self.RX_CHUNK_SIZE = 62 # was 256
         self.nRequested = 0
         
         # used for calculating percentage done
@@ -32,8 +32,8 @@ class SerialManagerClass:
 
         self.LASAURGRBL_FIRST_STRING = "LasaurGrbl"
 
-        self.fec_redundancy = 2  # use forward error correction
-        # self.fec_redundancy = 1  # use error detection
+        #self.fec_redundancy = 2  # use forward error correction
+        self.fec_redundancy = 1  # use error detection
 
         self.ready_char = '\x12'
         self.request_ready_char = '\x14'
