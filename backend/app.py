@@ -646,7 +646,7 @@ if args.beaglebone:
 elif args.raspberrypi:
     HARDWARE = 'raspberrypi'
     NETWORK_PORT = 80
-    SERIAL_PORT = "/dev/ttyACM0"
+    SERIAL_PORT = "/dev/ttyAMA0"
     import RPi.GPIO as GPIO
     # GPIO.setwarnings(False) # surpress warnings
     GPIO.setmode(GPIO.BCM)  # use chip pin number
