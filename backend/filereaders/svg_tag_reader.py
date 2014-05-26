@@ -5,14 +5,14 @@ import re
 import math
 import logging
 import base64
-import io
+# import io
 
 from .utilities import matrixMult, parseFloats
 
 from .svg_attribute_reader import SVGAttributeReader
 from .svg_path_reader import SVGPathReader
 
-from PIL import Image
+# from PIL import Image
 
 log = logging.getLogger("svg_reader")
 
@@ -201,29 +201,35 @@ class SVGTagReader:
             return
 
         if data.startswith('data:image/'):
-            match = self.re_match_imagemime(data)
-            if match:
-                image_type = match.groups()[0]
-                log.debug("Embedded %s image found ..." % (image_type))
-                image = Image.open(io.BytesIO(base64.b64decode(data[22:].encode('utf-8'))))
-            else:
-                log.warn("Unsupported image format embedded.")
-                return
+            image = data
+            # match = self.re_match_imagemime(data)
+            # if match:
+            #     image_type = match.groups()[0]
+            #     log.debug("Embedded %s image found ..." % (image_type))
+            #     # image = Image.open(io.BytesIO(base64.b64decode(data[22:].encode('utf-8'))))
+            #     # image = data[22:]
+            # else:
+            #     log.warn("Unsupported image format embedded.")
+            #     return
         else:
-            if data.startswith("file://"):
-                image = Image.open(data)
-            else:
-                log.warn("Only locally linked (and embedded) images supported.")
-                return
+            # if data.startswith("file://"):
+            #     with open(data, "rb") as image_file:
+            #         image = base64.b64encode(image_file.read())
+            # else:
+            #     log.warn("Only locally linked (and embedded) images supported.")
+            #     return
+            image = ''
+            log.error("Only embedded images are supported.")
             
         # image.show()
-        converted_image = image.convert("L")
+        # converted_image = image.convert("L")
         # converted_image.show()
 
         raster = {}
         raster['pos'] = [x, y]
         raster['size_mm'] = [width, height]
-        raster['image'] = converted_image
+        # raster['image'] = converted_image
+        raster['image'] = image
         node['rasters'].append(raster)
 
 

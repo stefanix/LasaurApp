@@ -307,30 +307,30 @@ class SVGReader:
                     matrixApplyScale(node['xformToWorld'], size)
                     vertexScale(size, self.px2mm)
                     
-                    # resize image so pixel size matches kerf
-                    kerf = config['kerf']
-                    new_size = (int(round(size[0]/kerf)), int(round(size[1]/kerf)))
+                    # # resize image so pixel size matches kerf
+                    # kerf = config['kerf']
+                    # new_size = (int(round(size[0]/kerf)), int(round(size[1]/kerf)))
 
-                    max_raster_size = config['max_raster_size']
-                    if new_size[0] > max_raster_size[0] or new_size[1] > max_raster_size[1]:
-                        log.warn("Raster job request exceeds %sx%s pixels" % max_raster_size)
-                        continue
+                    # max_raster_size = config['max_raster_size']
+                    # if new_size[0] > max_raster_size[0] or new_size[1] > max_raster_size[1]:
+                    #     log.warn("Raster job request exceeds %sx%s pixels" % max_raster_size)
+                    #     continue
 
-                    image = raster['image']
-                    image = image.resize(new_size)
-                    # image.show()
+                    # image = raster['image']
+                    # image = image.resize(new_size)
+                    # # image.show()
                     
-                    raster['size_px'] = image.size
+                    # raster['size_px'] = image.size
 
-                    # convert image to lasersaur format
-                    # each pixel is mapped to extendted ascii [128,255]
-                    # img_laserformat = "".join([(chr(x/2+128)) for x in image.getdata()])
+                    # # convert image to lasersaur format
+                    # # each pixel is mapped to extendted ascii [128,255]
+                    # # img_laserformat = "".join([(chr(x/2+128)) for x in image.getdata()])
 
-                    # each pixel is mapped to [33,118] and converted 
-                    # to ascii. All of them are in the printable range of [32,126]
-                    img_laserformat = "".join([(chr(x/3+33)) for x in image.getdata()])
-                    raster['image'] = img_laserformat 
-
+                    # # each pixel is mapped to [33,118] and converted 
+                    # # to ascii. All of them are in the printable range of [32,126]
+                    # img_laserformat = "".join([(chr(x/3+33)) for x in image.getdata()])
+                    # raster['image'] = img_laserformat 
+                    
                     self.rasters.append(raster)
 
                 # recursive call

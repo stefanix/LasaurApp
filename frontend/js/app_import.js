@@ -129,7 +129,6 @@ $(document).ready(function(){
       
   function handleParsedGeometry(data) {
     // data is a dict with the following keys [boundarys, dpi, lasertags, rasters]
-    alert(JSON.stringify(data))
     if ('boundarys' in data || 'rasters' in data) {
 
       if ('boundarys' in data) {    
@@ -140,12 +139,57 @@ $(document).ready(function(){
       }
 
       if ('rasters' in data) {
-        raster_stats = {'pos':data.rasters[0]['pos'], 
-                        'size_mm': data.rasters[0]['size_mm'], 
-                        'size_px': data.rasters[0]['size_px'], 
-                        'len':data.rasters[0]['image'].length}
-        alert(JSON.stringify(raster_stats))
-        DataHandler.addRasters(data.rasters);
+        for (var i=0; i<data.rasters.length; i++) {
+          var raster = data.rasters[i];
+          // convert base64 to Image object
+          var imgid = 'rasterimg' + i;
+          // $('#tab_import').append('<img id="'+imgid+'" src="'+raster['image']+'">');
+          // var img = document.getElementById(imgid);
+          var img = new Image();
+          img.src = raster['image'];
+
+          // Create the canvas element
+          var canvas_temp = document.createElement("canvas");
+          // make one pixel equal kerf
+          canvas_temp.width = Math.round(raster['size_mm'][0]/app_settings.raster_kerf);
+          canvas_temp.height = Math.round(raster['size_mm'][1]/app_settings.raster_kerf);
+
+          // Draw the image onto the canvas
+          var ctx = canvas_temp.getContext("2d");
+          ctx.drawImage(img, 0, 0, canvas_temp.width, canvas_temp.height);
+
+          // Get the pixel data
+          var imageData = ctx.getImageData(0, 0, canvas_temp.width, canvas_temp.height);
+
+          // Loop through imageData.data
+          for (var x=0; x<imageData.width; x++) {
+            for (var y=0; y<imageData.height; y++) {
+              var index = 4 * (y * imageData.width + x);
+              var r = imageData.data[index];
+              var g = imageData.data[index + 1];
+              var b = imageData.data[index + 2];
+              // var a = imageData.data[index + 3];
+
+              var grayScale = (r*0.3) + (g*0.59) + (b*.11);
+
+             imageData.data[index] = grayScale;
+             imageData.data[index + 1] = grayScale;
+             imageData.data[index + 2] = grayScale;
+            }
+          }
+          ctx.putImageData(imageData, 0, 0);
+
+          // img.src = canvas_temp.toDataURL("image/png");
+          $('#tab_import').append('<img id="'+imgid+'_gray" src="'+canvas_temp.toDataURL("image/png")+'">');
+
+          // stats
+          raster_stats = {'pos':raster['pos'],
+                          'size_mm':raster['size_mm'],
+                          'size_px':[img.width, img.height],
+                          'len':raster['image'].length}
+          $('#tab_import').append('<p>'+JSON.stringify(raster_stats)+'</p>');
+          // DataHandler.addRasters(data.rasters);
+        }
       }
       
       // some init
