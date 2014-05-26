@@ -81,10 +81,19 @@ DataHandler = {
 
   addRasters : function(rasters) {
     // rasters has this format:
-    // [{'pos':[x,y], 'size':[w,h], 'size_px':[w,h], 'image':data}, {}, ...]
+    // [{'pos':[x,y], 'size_mm':[w,h], 'image':data}, {}, ...]
+    // data is image in base64, svg/html standard
     for (var i=0; i<rasters.length; i++) {
-      // maybe do some sanity checks here
-      this.rasters.push(rasters[i]);
+      var raster = rasters[i];
+      // convert base64 to an Image object
+      // scale to make one pixel equal kerf
+      var img = new Image();
+      img.src = raster['image'];
+      img.width = Math.round(raster['size_mm'][0]/app_settings.raster_kerf);
+      img.height = Math.round(raster['size_mm'][1]/app_settings.raster_kerf);
+      raster['image'] = img;
+      
+      this.rasters.push(raster);
     }
     // also calculate stats
     this.calculateBasicStats();
@@ -155,9 +164,32 @@ DataHandler = {
       var y1 = raster.pos[1];
       var width = raster.size_mm[0];
       var height = raster.size_mm[1];
-      var pixwidth = raster.size_px[0];
-      var pixheight = raster.size_px[1];
       var image = raster.image;
+
+      // create a canvas for image manipulation
+      var canvas_temp = document.createElement("canvas");
+      var ctx = canvas_temp.getContext("2d");
+      // make one pixel equal kerf
+      canvas_temp.width = image.width;
+      canvas_temp.height = image.height;
+      ctx.drawImage(image, 0, 0);
+
+      // convert to grayscale and map to 
+      // extended ascii range [128,255]
+      var data_ascii = [];
+      var data = ctx.getImageData(0, 0, canvas_temp.width, canvas_temp.height);
+      for (var x=0; x<data.width; x++) {
+        for (var y=0; y<data.height; y++) {
+          var index = 4 * (y * data.width + x);
+          var r = data.data[index];
+          var g = data.data[index + 1];
+          var b = data.data[index + 2];
+          // var a = data.data[index + 3];
+          data_ascii.push(String.fromCharCode(((r*0.3)+(g*0.59)+(b*.11))/2+128));
+        }
+      }
+      // ctx.putImageData(data, 0, 0);
+      data_ascii = data_ascii.join('');
 
       glist.push("G1F"+app_settings.raster_feedrate+"\n");
       glist.push("G0X"+x1.toFixed(app_settings.num_digits)+"Y"+y1.toFixed(app_settings.num_digits)+"\n");
@@ -175,12 +207,12 @@ DataHandler = {
         // full command lines
         for (var f=0; f<nfull; f++) {
           pp = p+linechars;
-          glist.push("G8D" + image.slice(p,pp) + "\n");
+          glist.push("G8D" + data_ascii.slice(p,pp) + "\n");
           p = pp;
         }
         // one partial command line
         pp = p+partialchars;
-        glist.push("G8D" + image.slice(p,p+partialchars) + "\n");
+        glist.push("G8D" + data_ascii.slice(p,p+partialchars) + "\n");
         p = pp;
         // next raster line
         glist.push("G8N\n");
@@ -259,32 +291,34 @@ DataHandler = {
         var y1 = raster.pos[1]*scale;
         var width = raster.size_mm[0]*scale;
         var height = raster.size_mm[1]*scale;
-        var pixwidth = raster.size_px[0];
-        var pixheight = raster.size_px[1];
         var image = raster.image;
-
-        var ppmmX = pixwidth / width;
-        var ppmmY = pixheight / height;
+        var pixwidth = image.width;
+        var pixheight = image.height;
         var offset = app_settings.raster_offset;
 
-        canvas.stroke('#aaaaaa');
-        canvas.line(x_prev, y_prev, x1-offset, y);
-        for (var y = y1; y < y1 + height; y++) {
-          var line = Math.round(ppmmY * (y-y1)) * pixwidth;
-          for (var x=x1; x < x1 + width; x++) {
-            var pixel = Math.round(line + (x - x1) * ppmmX);
-            // convert pixel value from extended ascii to hex: [128,255] -> [0-ff]
-            // hexpx = ((image[pixel].charCodeAt()-128)*2).toString(16)
+        // var ppmmX = pixwidth / width;
+        // var ppmmY = pixheight / height;
 
-            // convert pixel value from extended ascii to hex: [33,118] -> [0-ff]
-            hexpx = ((image[pixel].charCodeAt()-33)*3).toString(16)
-            canvas.stroke('#'+hexpx+hexpx+hexpx);
-            canvas.line(x, y, x+1, y);
-          }
-          canvas.stroke('#aaaaaa');
-          canvas.line(x1 + width, y, x1 + width + offset, y);
-          canvas.line(x1 - offset, y, x1, y);
-        }
+        // canvas.stroke('#aaaaaa');
+        // canvas.line(x_prev, y_prev, x1-offset, y);
+        // for (var y = y1; y < y1 + height; y++) {
+        //   var line = Math.round(ppmmY * (y-y1)) * pixwidth;
+        //   for (var x=x1; x < x1 + width; x++) {
+        //     var pixel = Math.round(line + (x - x1) * ppmmX);
+        //     // convert pixel value from extended ascii to hex: [128,255] -> [0-ff]
+        //     // hexpx = ((image[pixel].charCodeAt()-128)*2).toString(16)
+
+        //     // convert pixel value from extended ascii to hex: [33,118] -> [0-ff]
+        //     hexpx = ((image[pixel].charCodeAt()-33)*3).toString(16)
+        //     canvas.stroke('#'+hexpx+hexpx+hexpx);
+        //     canvas.line(x, y, x+1, y);
+        //   }
+        //   canvas.stroke('#aaaaaa');
+        //   canvas.line(x1 + width, y, x1 + width + offset, y);
+        //   canvas.line(x1 - offset, y, x1, y);
+        // }
+
+        canvas.ctx.drawImage(image, x1, y1, width, height);
 
         x_prev = x1 + width + offset;
         y_prev = y1 + height;
@@ -514,7 +548,7 @@ DataHandler = {
         this.bboxExpand(bbox_raster, 
                         raster.pos[0] + raster.size_mm[0] + app_settings.raster_offset, 
                         raster.pos[1] + raster.size_mm[1]);
-        length_rasters += (2*app_settings.raster_offset + raster.size_mm[0]) * raster.size_px[1];
+        length_rasters += (2*app_settings.raster_offset + raster.size_mm[0]) * raster.image.height;
       }
       stats['rasters'] = {
         'bbox':bbox_raster,
