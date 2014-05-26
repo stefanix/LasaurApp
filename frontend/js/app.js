@@ -7,11 +7,11 @@ var progress_not_yet_done_flag = false;
 
 (function($){
   $.fn.uxmessage = function(kind, text, max_length) {
-    if (max_length == null) {
-      max_length = 100;
+    if (max_length == undefined) {
+        max_length = 100;
     }
 
-    if (text.length > max_length) {
+    if (max_length !== false && text.length > max_length) {
       text = text.slice(0,max_length) + '\n...'
     }
 

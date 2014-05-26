@@ -11,6 +11,7 @@ var app_settings = {
   raster_kerf: 0.3,
   raster_offset: 40,
   raster_feedrate: 3000,
+  raster_linechars: 70,
 }
 
 

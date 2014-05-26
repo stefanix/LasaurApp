@@ -118,6 +118,7 @@ $(document).ready(function(){
       },
       error: function (data) {
         $().uxmessage('error', "backend error.");
+        $().uxmessage('error', JSON.stringify(data), false);
       },
       complete: function (data) {
         $('#file_import_btn').button('reset');
@@ -128,6 +129,7 @@ $(document).ready(function(){
       
   function handleParsedGeometry(data) {
     // data is a dict with the following keys [boundarys, dpi, lasertags, rasters]
+    alert(JSON.stringify(data))
     if ('boundarys' in data || 'rasters' in data) {
 
       if ('boundarys' in data) {    
@@ -138,11 +140,11 @@ $(document).ready(function(){
       }
 
       if ('rasters' in data) {
-        // raster_stats = {'pos':data.rasters[0]['pos'], 
-        //                 'size': data.rasters[0]['size'], 
-        //                 'size_px': data.rasters[0]['size_px'], 
-        //                 'len':data.rasters[0]['image'].length}
-        // alert(JSON.stringify(raster_stats))
+        raster_stats = {'pos':data.rasters[0]['pos'], 
+                        'size_mm': data.rasters[0]['size_mm'], 
+                        'size_px': data.rasters[0]['size_px'], 
+                        'len':data.rasters[0]['image'].length}
+        alert(JSON.stringify(raster_stats))
         DataHandler.addRasters(data.rasters);
       }
       

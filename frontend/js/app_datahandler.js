@@ -8,21 +8,21 @@
 DataHandler = {
 
   paths_by_color : {},
-  raster_list : [],
+  rasters : [],
   passes : [],
-  stats_by_color : {},
+  stats : {},
 
 
   clear : function() {
     this.paths_by_color = {};
-    this.raster_list = [];
+    this.rasters = [];
     this.passes = [];
-    this.stats_by_color = {};
+    this.stats = {};
   },
 
   isEmpty : function() {
     return (Object.keys(this.paths_by_color).length == 0 && 
-            this.raster_list.length == 0);
+            this.rasters.length == 0);
   },
 
 
@@ -65,26 +65,26 @@ DataHandler = {
     // read internal format
     // {'passes':{'colors':['#000000',..], 'feedrate':450, 'intensity':100},
     //  'paths_by_color':{'#000000':[[[x,y],[x,y], ..],[], ..], '#ffffff':[..]}
-    //  'raster_list':[{},{},...]
+    //  'rasters':[{},{},...]
     // }
     this.clear();
     var data = JSON.parse(strdata);
     this.passes = data['passes'];
     this.paths_by_color = data['paths_by_color'];
-    this.raster_list = data['raster_list'];
-    if ('stats_by_color' in data) {
-      this.stats_by_color = data['stats_by_color'];
+    this.rasters = data['rasters'];
+    if ('stats' in data) {
+      this.stats = data['stats'];
     } else {
       this.calculateBasicStats();
     }
   },
 
-  addRasters : function(raster_list) {
-    // raster_list has this format:
+  addRasters : function(rasters) {
+    // rasters has this format:
     // [{'pos':[x,y], 'size':[w,h], 'size_px':[w,h], 'image':data}, {}, ...]
-    for (var i=0; i<raster_list.length; i++) {
+    for (var i=0; i<rasters.length; i++) {
       // maybe do some sanity checks here
-      this.raster_list.push(raster_list[i]);
+      this.rasters.push(rasters[i]);
     }
     // also calculate stats
     this.calculateBasicStats();
@@ -97,7 +97,7 @@ DataHandler = {
     // write internal format
     // exclude_colors is optional
     var paths_by_color = this.paths_by_color;
-    var raster_list = this.raster_list;
+    var rasters = this.rasters;
     if (!(exclude_colors === undefined)) {
       paths_by_color = {};
       for (var color in this.paths_by_color) {
@@ -108,7 +108,7 @@ DataHandler = {
     }
     var data = {'passes': this.passes,
                 'paths_by_color': paths_by_color,
-                'raster_list': this.raster_list}
+                'rasters': this.rasters}
     return JSON.stringify(data);
   },
 
@@ -119,8 +119,8 @@ DataHandler = {
     glist.push("G90\nM80\n");
     glist.push("G0F"+app_settings.max_seek_speed+"\n");
     // rasters
-    for (var k=0; k<this.raster_list.length; k++) {
-      var raster = this.raster_list[k];
+    for (var k=0; k<this.rasters.length; k++) {
+      var raster = this.rasters[k];
 
       // raster Data
       //////////////
@@ -150,11 +150,11 @@ DataHandler = {
       // resets the head to the next line which is 0.1mm (or whatever was defined
       // with G8 Px) under the next
       ///////////////
-      
+
       var x1 = raster.pos[0];
       var y1 = raster.pos[1];
-      var width = raster.size[0];
-      var height = raster.size[1];
+      var width = raster.size_mm[0];
+      var height = raster.size_mm[1];
       var pixwidth = raster.size_px[0];
       var pixheight = raster.size_px[1];
       var image = raster.image;
@@ -222,10 +222,10 @@ DataHandler = {
   },
 
   getBboxGcode : function() {
-    if (!('_all_' in this.stats_by_color)) {
+    if (!('_all_' in this.stats)) {
       this.calculateBasicStats();
     }
-    var bbox = this.stats_by_color['_all_']['bbox'];
+    var bbox = this.stats['_all_']['bbox'];
     var glist = [];
     glist.push("G90\n");
     glist.push("G0F"+app_settings.max_seek_speed+"\n");
@@ -243,53 +243,51 @@ DataHandler = {
   // rendering //////////////////////////////////
 
 
-  draw : function (canvas, scale, exclude_colors) {
-    // draw any path used in passes
-    // exclude_colors is optional
+  draw : function (canvas, scale, exclude_colors, exclude_rasters) {
+    // draw rasters and paths
+    // exclude_colors, exclude_rasters is optional
     canvas.background('#ffffff');
     canvas.noFill();
     var x_prev = 0;
     var y_prev = 0;
     // rasters
-    for (var color in this.raster_list) {
-      if (exclude_colors === undefined || !(color in exclude_colors)) {
-        var rasters = this.raster_list[color];
-        if (rasters) {
-          for (var k=0; k<rasters.length; k++) {
-            var raster = rasters[k];
-            var x1 = raster[0][0]*scale;
-            var y1 = raster[0][1]*scale;
-            var width = raster[1][0]*scale;
-            var height = raster[1][1]*scale;
-            var pixwidth = raster[2][0];
-            var pixheight = raster[2][1];
-            var data = raster[3];
+    if (exclude_rasters === undefined || exclude_rasters !== true) {
+      for (var k=0; k<this.rasters.length; k++) {
+        var raster = this.rasters[k];
 
-            // For rendering, use 1 pixel per mm (coarse) and an arbitrary offset to speed things up.
-            var ppmmX = pixwidth / width;
-            var ppmmY = pixheight / height;
-            var offset = 20;
+        var x1 = raster.pos[0]*scale;
+        var y1 = raster.pos[1]*scale;
+        var width = raster.size_mm[0]*scale;
+        var height = raster.size_mm[1]*scale;
+        var pixwidth = raster.size_px[0];
+        var pixheight = raster.size_px[1];
+        var image = raster.image;
 
-            canvas.stroke('#aaaaaa');
-            canvas.line(x_prev, y_prev, x1-offset, y);
-            for (var y = y1; y < y1 + height; y++) {
-              var line = Math.round(ppmmY * (y-y1)) * pixwidth;
-              for (var x=x1; x < x1 + width; x++) {
-                var pixel = Math.round(line + (x - x1) * ppmmX);
-                if (data[pixel] == 255)
-                  canvas.stroke('#eeeeee');
-                else
-                  canvas.stroke(color);
-                canvas.line(x, y, x+1, y);
-              }
-              canvas.stroke('#aaaaaa');
-              canvas.line(x1 + width, y, x1 + width + offset, y);
-              canvas.line(x1 - offset, y, x1, y);
-            }
-            x_prev = x1 + width + offset;
-            y_prev = y1 + height;
+        var ppmmX = pixwidth / width;
+        var ppmmY = pixheight / height;
+        var offset = app_settings.raster_offset;
+
+        canvas.stroke('#aaaaaa');
+        canvas.line(x_prev, y_prev, x1-offset, y);
+        for (var y = y1; y < y1 + height; y++) {
+          var line = Math.round(ppmmY * (y-y1)) * pixwidth;
+          for (var x=x1; x < x1 + width; x++) {
+            var pixel = Math.round(line + (x - x1) * ppmmX);
+            // convert pixel value from extended ascii to hex: [128,255] -> [0-ff]
+            // hexpx = ((image[pixel].charCodeAt()-128)*2).toString(16)
+
+            // convert pixel value from extended ascii to hex: [33,118] -> [0-ff]
+            hexpx = ((image[pixel].charCodeAt()-33)*3).toString(16)
+            canvas.stroke('#'+hexpx+hexpx+hexpx);
+            canvas.line(x, y, x+1, y);
           }
+          canvas.stroke('#aaaaaa');
+          canvas.line(x1 + width, y, x1 + width + offset, y);
+          canvas.line(x1 - offset, y, x1, y);
         }
+
+        x_prev = x1 + width + offset;
+        y_prev = y1 + height;
       }
     }
     // paths
@@ -322,27 +320,29 @@ DataHandler = {
   draw_bboxes : function (canvas, scale) {
     // draw with bboxes by color
     // only include colors that are in passe
-    var stat;
-    var xmin;
-    var ymin;
-    var xmax;
-    var ymax;
     var bbox_combined = [Infinity, Infinity, 0, 0];
-    // for all job colors
-    for (var color in this.getPassesColors()) {
-      // draw color bboxes
-      stat = this.stats_by_color[color];
-      xmin = stat['bbox'][0]*scale;
-      ymin = stat['bbox'][1]*scale;
-      xmax = stat['bbox'][2]*scale;
-      ymax = stat['bbox'][3]*scale;
+
+    function drawbb(stats) {
+      var xmin = stat['bbox'][0]*scale;
+      var ymin = stat['bbox'][1]*scale;
+      var xmax = stat['bbox'][2]*scale;
+      var ymax = stat['bbox'][3]*scale;
       canvas.stroke('#dddddd');
       canvas.line(xmin,ymin,xmin,ymax);
       canvas.line(xmin,ymax,xmax,ymax);
       canvas.line(xmax,ymax,xmax,ymin);
       canvas.line(xmax,ymin,xmin,ymin);
       this.bboxExpand(bbox_combined, xmin, ymin);
-      this.bboxExpand(bbox_combined, xmax, ymax);
+      this.bboxExpand(bbox_combined, xmax, ymax); 
+    }
+
+    // rasters
+    if ('rasters' in this.stats) {
+      drawbb(this.stats['rasters']);
+    }
+    // for all job colors
+    for (var color in this.getPassesColors()) {
+      drawbb(this.stats[color]);
     }
     // draw global bbox
     xmin = bbox_combined[0];
@@ -439,18 +439,12 @@ DataHandler = {
 
   getAllColors : function() {
     // return list of colors
-    return Object.keys(this.paths_by_color) + Object.keys(this.raster_list);
+    return Object.keys(this.paths_by_color);
   },
 
   getColorOrder : function() {
       var color_order = {};
       var color_count = 0;
-      // Rasters first
-      for (var color in this.raster_list) {
-        color_order[color] = color_count;
-        color_count++;
-      }
-      // Then paths
       for (var color in this.paths_by_color) {
         color_order[color] = color_count;
         color_count++;
@@ -465,14 +459,14 @@ DataHandler = {
     // calculate bounding boxes and path lengths
     // for each color and also for '_all_'
     // bbox and length only account for feed lines
-    // saves results in this.stats_by_color like so:
+    // saves results in this.stats like so:
     // {'_all_':{'bbox':[xmin,ymin,xmax,ymax], 'length':numeral}, '#ffffff':{}, ..}
 
     var x_prev = 0;
     var y_prev = 0;
     var path_length_all = 0;
     var bbox_all = [Infinity, Infinity, 0, 0];
-    var stats_by_color = {};
+    var stats = {};
 
     // paths
     for (var color in this.paths_by_color) {
@@ -498,7 +492,7 @@ DataHandler = {
           }
         }
       }
-      stats_by_color[color] = {
+      stats[color] = {
         'bbox':bbox_color,
         'length':path_lenths_color
       }
@@ -509,35 +503,34 @@ DataHandler = {
     }
 
     // rasters
-    for (var color in this.raster_list) {
-      var raster_lengths_color = 0;
-      var bbox_color = [Infinity, Infinity, 0, 0];
-      var rasters = this.raster_list[color];
-      if (rasters) {
-        for (var k=0; k<rasters.length; k++) {
-          var raster = rasters[k];
-          var x = raster[0][0];
-          var y = raster[0][1];
-          var width = raster[1][0];
-          var height = raster[1][1];
-          this.bboxExpand(bbox_color, x, y);
-          this.bboxExpand(bbox_color, x + width, y + height);
-        }
+    if (this.rasters.length > 0) {
+      var length_rasters = 0;
+      var bbox_raster = [Infinity, Infinity, 0, 0];
+      for (var k=0; k<this.rasters.length; k++) {
+        var raster = this.rasters[k];
+        this.bboxExpand(bbox_raster, 
+                        raster.pos[0] - app_settings.raster_offset,
+                        raster.pos[1]);
+        this.bboxExpand(bbox_raster, 
+                        raster.pos[0] + raster.size_mm[0] + app_settings.raster_offset, 
+                        raster.pos[1] + raster.size_mm[1]);
+        length_rasters += (2*app_settings.raster_offset + raster.size_mm[0]) * raster.size_px[1];
       }
-      stats_by_color[color] = {
-        'bbox':bbox_color,
-        'length':raster_lengths_color
+      stats['rasters'] = {
+        'bbox':bbox_raster,
+        'length':length_rasters
       }
       // add to total also
-      path_length_all += raster_lengths_color;
-      this.bboxExpand(bbox_all, bbox_color[0], bbox_color[1]);
-      this.bboxExpand(bbox_all, bbox_color[2], bbox_color[3]);
+      this.bboxExpand(bbox_all, bbox_raster[0], bbox_raster[1]);
+      this.bboxExpand(bbox_all, bbox_raster[2], bbox_raster[3]);
     }
-    stats_by_color['_all_'] = {
+
+    // store in object var
+    stats['_all_'] = {
       'bbox':bbox_all,
       'length':path_length_all
     }
-    this.stats_by_color = stats_by_color;
+    this.stats = stats;
   },
 
 
@@ -551,7 +544,7 @@ DataHandler = {
   getJobPathLength : function() {
     var total_length = 0;
     for (var color in this.getPassesColors()) {
-      stat = this.stats_by_color[color];
+      stat = this.stats[color];
       total_length += stat['length'];
     }
     return total_length;
@@ -560,7 +553,7 @@ DataHandler = {
   getJobBbox : function() {
     var total_bbox = [Infinity, Infinity, 0, 0];
     for (var color in this.getPassesColors()) {
-      stat = this.stats_by_color[color];
+      stat = this.stats[color];
       this.bboxExpand(total_bbox, stat['bbox'][0], stat['bbox'][1]);
       this.bboxExpand(total_bbox, stat['bbox'][2], stat['bbox'][3]);
     }

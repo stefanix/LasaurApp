@@ -222,7 +222,7 @@ class SVGTagReader:
 
         raster = {}
         raster['pos'] = [x, y]
-        raster['size'] = [width, height]
+        raster['size_mm'] = [width, height]
         raster['image'] = converted_image
         node['rasters'].append(raster)
 

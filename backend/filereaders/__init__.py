@@ -15,7 +15,7 @@ from .path_optimizers import optimize_all
 def read_svg(svg_string, target_size, tolerance, forced_dpi=None, optimize=True):
     svgReader = SVGReader(tolerance, target_size)
     parse_results = svgReader.parse(svg_string, forced_dpi)
-    if optimize:
+    if optimize and 'boundarys' in parse_results:
         optimize_all(parse_results['boundarys'], tolerance)
     # {'boundarys':b, 'dpi':d, 'lasertags':l, 'rasters':r}
     return parse_results
@@ -24,7 +24,7 @@ def read_svg(svg_string, target_size, tolerance, forced_dpi=None, optimize=True)
 def read_dxf(dxf_string, tolerance, optimize=True):
     dxfReader = DXFReader(tolerance)
     parse_results = dxfReader.parse(dxf_string)
-    if optimize:
+    if optimize and 'boundarys' in parse_results:
         optimize_all(parse_results['boundarys'], tolerance)
     # # flip y-axis
     # for color,paths in parse_results['boundarys'].items():
@@ -37,7 +37,7 @@ def read_dxf(dxf_string, tolerance, optimize=True):
 def read_ngc(ngc_string, tolerance, optimize=True):
     ngcReader = NGCReader(tolerance)
     parse_results = ngcReader.parse(ngc_string)
-    if optimize:
+    if optimize and 'boundarys' in parse_results:
         optimize_all(parse_results['boundarys'], tolerance)
     return parse_results
 

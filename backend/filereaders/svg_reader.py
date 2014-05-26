@@ -303,7 +303,7 @@ class SVGReader:
                     vertexScale(pos, self.px2mm)
 
                     # size to world scale and then to mm units
-                    size = raster['size']
+                    size = raster['size_mm']
                     matrixApplyScale(node['xformToWorld'], size)
                     vertexScale(size, self.px2mm)
                     
@@ -323,8 +323,11 @@ class SVGReader:
                     raster['size_px'] = image.size
 
                     # convert image to lasersaur format
-                    # each pixel is mapped to 33-118 and converted 
-                    # to ascii. All of them are in the printable range of 32-126
+                    # each pixel is mapped to extendted ascii [128,255]
+                    # img_laserformat = "".join([(chr(x/2+128)) for x in image.getdata()])
+
+                    # each pixel is mapped to [33,118] and converted 
+                    # to ascii. All of them are in the printable range of [32,126]
                     img_laserformat = "".join([(chr(x/3+33)) for x in image.getdata()])
                     raster['image'] = img_laserformat 
 
