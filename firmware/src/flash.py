@@ -59,7 +59,7 @@ elif sys.platform == "linux" or sys.platform == "linux2":  #Linux
 
 SERIAL_PORT = None
 CONFIG_FILE = "lasaurapp.conf"
-GUESS_PPREFIX = "ttyACM"
+GUESS_PPREFIX = "tty.usbmodem"
 
 
 def build():
