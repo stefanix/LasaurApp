@@ -14,7 +14,7 @@ from filereaders import read_svg, read_dxf, read_ngc
 APPNAME = "lasaurapp"
 VERSION = "14.01"
 COMPANY_NAME = "com.nortd.labs"
-SERIAL_PORT = /dev/ttyACM0
+SERIAL_PORT = "/dev/ttyACM0"
 BITSPERSECOND = 57600
 NETWORK_PORT = 4444
 HARDWARE = 'raspberrypi'  # also: 'beaglebone', 'raspberrypi' ,'x86'
