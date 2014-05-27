@@ -34,17 +34,17 @@
 //#define DEBUG_IGNORE_SENSORS  // set for debugging
 
 
-#define CONFIG_X_STEPS_PER_MM 80 //microsteps/mm
+#define CONFIG_X_STEPS_PER_MM 40 //microsteps/mm
 #ifndef NANOTEC_STEPPER_09
-  #define CONFIG_Y_STEPS_PER_MM 80 //microsteps/mm
+  #define CONFIG_Y_STEPS_PER_MM 40 //microsteps/mm
 #else
-  #define CONFIG_Y_STEPS_PER_MM 80 //microsteps/mm
+  #define CONFIG_Y_STEPS_PER_MM 40 //microsteps/mm
 #endif
-#define CONFIG_Z_STEPS_PER_MM 80 //microsteps/mm
+#define CONFIG_Z_STEPS_PER_MM 40 //microsteps/mm
 #define CONFIG_PULSE_MICROSECONDS 10
-#define CONFIG_FEEDRATE 10000.0 // in millimeters per minute
-#define CONFIG_SEEKRATE 10000.0
-#define CONFIG_ACCELERATION 9000000.0 // mm/min^2, typically 1000000-8000000, divide by (60*60) to get mm/sec^2
+#define CONFIG_FEEDRATE 5000.0 // in millimeters per minute
+#define CONFIG_SEEKRATE 5000.0
+#define CONFIG_ACCELERATION 4500000.0 // mm/min^2, typically 1000000-8000000, divide by (60*60) to get mm/sec^2
 #define CONFIG_JUNCTION_DEVIATION 0.006 // mm
 #define CONFIG_X_ORIGIN_OFFSET 1.0  // mm, x-offset of table origin from physical home
 #define CONFIG_Y_ORIGIN_OFFSET 1.0  // mm, y-offset of table origin from physical home
