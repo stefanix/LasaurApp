@@ -466,11 +466,15 @@ static void adjust_speed( uint32_t steps_per_minute ) {
   if (steps_per_minute < MINIMUM_STEPS_PER_MINUTE) { steps_per_minute = MINIMUM_STEPS_PER_MINUTE; }
   cycles_per_step_event = config_step_timer((CYCLES_PER_MICROSECOND*1000000*60)/steps_per_minute);
   // beam dynamics
-  uint8_t adjusted_intensity = current_block->nominal_laser_intensity * 
+    if (adjusted_intensity >= 2){
+        uint8_t adjusted_intensity = current_block->nominal_laser_intensity *
                                ((float)steps_per_minute/(float)current_block->nominal_rate);
   uint8_t constrained_intensity = max(adjusted_intensity, 0);
   control_laser_intensity(constrained_intensity);
-
+    }
+    else {
+        adjusted_intensity == 2
+    }
   // depending on intensity adapt PWM freq
   // assuming: TCCR0A = _BV(COM0A1) | _BV(WGM00);  // phase correct PWM mode
   if (constrained_intensity > 40) {
