@@ -487,9 +487,9 @@ static void adjust_speed( uint32_t steps_per_minute ) {
       //TCCR0B = _BV(CS02) | _BV(CS00);    // 1024 => 31Hz
   } else {
       //TCCR0B = _BV(CS00);                // 1 => 31.3kHz
-      TCCR0B = _BV(CS01);                // 8 => 3.9kHz
+      //TCCR0B = _BV(CS01);                // 8 => 3.9kHz
       //TCCR0B = _BV(CS01) | _BV(CS00);    // 64 => 489Hz
-      //TCCR0B = _BV(CS02);                // 256 => 122Hz
+      TCCR0B = _BV(CS02);                // 256 => 122Hz
       //TCCR0B = _BV(CS02) | _BV(CS00);    // 1024 => 31Hz
   }
 }
