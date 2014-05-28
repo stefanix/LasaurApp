@@ -161,7 +161,7 @@
 // slower than this value, except when sleeping. This parameter overrides the minimum planner speed.
 // This is primarily used to guarantee that the end of a movement is always reached and not stop to
 // never reach its target. This parameter should always be greater than zero.
-#define MINIMUM_STEPS_PER_MINUTE 15000U // (steps/min) - Integer value only
+#define MINIMUM_STEPS_PER_MINUTE 20000U // (steps/min) - Integer value only
 // 1600 @ 32step_per_mm = 50mm/min
   
 
