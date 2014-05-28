@@ -34,13 +34,13 @@
 // #define DEBUG_IGNORE_SENSORS  // set for debugging
 
 
-#define CONFIG_X_STEPS_PER_MM 80.00000000 //microsteps/mm
+#define CONFIG_X_STEPS_PER_MM 80.00000000 //microsteps/mm MUST BE FORMAT (XX.XXXXXXXX)
 #ifndef NANOTEC_STEPPER_09
-  #define CONFIG_Y_STEPS_PER_MM 80.00000000 //microsteps/mm
+  #define CONFIG_Y_STEPS_PER_MM 80.00000000 //microsteps/mm MUST BE FORMAT (XX.XXXXXXXX)
 #else
-  #define CONFIG_Y_STEPS_PER_MM 80.0000000 //microsteps/mm
+  #define CONFIG_Y_STEPS_PER_MM 80.0000000 //microsteps/mm MUST BE FORMAT (XX.XXXXXXXX)
 #endif
-#define CONFIG_Z_STEPS_PER_MM 80.00000000 //microsteps/mm
+#define CONFIG_Z_STEPS_PER_MM 80.00000000 //microsteps/mm MUST BE FORMAT (XX.XXXXXXXX)
 #define CONFIG_PULSE_MICROSECONDS 10
 #define CONFIG_FEEDRATE 5000.0 // in millimeters per minute
 #define CONFIG_SEEKRATE 5000.0
