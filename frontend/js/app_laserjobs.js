@@ -221,12 +221,6 @@ function addPasses(num) {
                   ' padding:4px; background-color:#eeeeee">' + 
                 '<div class="form-inline" style="margin-bottom:0px">' +
                   '<label>Pass '+ passnum +': </label>' +
-                '<div class="input-prepend" style="margin-left:6px">' +
-                '<span class="add-on" style="margin-right:-5px;">MF</span>' +
-                '<input type="text" class="minimumfeedrate" value="'+app_settings.default_minimum_feedrate+
-                '" title="minimum feedrate 1-'+app_settings.max_seek_speed+
-                'mm/min" style="width:32px" data-delay="500">' +
-                '</div>' +
                   '<div class="input-prepend" style="margin-left:6px">' +
                     '<span class="add-on" style="margin-right:-5px;">F</span>' +
                     '<input type="text" class="feedrate" value="'+app_settings.default_feedrate+
@@ -276,11 +270,10 @@ function readPassesWidget() {
         colors.push($(this).find('div span').text());
       }
     });
-    if (colors.length > 0) {
-      var minimumfeedrate = $(this).find('.minimumfeedrate').val();
+    if (colors.length > 0) { 
       var feedrate = $(this).find('.feedrate').val();
       var intensity = $(this).find('.intensity').val();
-      DataHandler.addPass({'colors':colors, 'minimumfeedrate':minimumfeedrate, 'feedrate':feedrate, 'intensity':intensity});
+      DataHandler.addPass({'colors':colors, 'feedrate':feedrate, 'intensity':intensity});
     }
   });
   return DataHandler.hasPasses();
@@ -300,8 +293,6 @@ function writePassesWidget() {
         if (passes_to_create >= 1) {
           addPasses(passes_to_create);
         }
-        // minimum feedrate
-        $('#passes > div:nth-child('+num+') .minimumfeedrate').val(pass['minimumfeedrate']);
         // feedrate
         $('#passes > div:nth-child('+num+') .feedrate').val(pass['feedrate']);
         // intensity
@@ -466,13 +457,11 @@ $(document).ready(function(){
 
 
   /// passes ////////////////////////////////////
-  $('#import_minimumfeedrate_1').tooltip();
+
   $('#import_feedrate_1').tooltip();
   $('#import_intensity_1').tooltip();
-  $('#import_minimumfeedrate_2').tooltip();
   $('#import_feedrate_2').tooltip();
   $('#import_intensity_2').tooltip();
-  $('#import_minimumfeedrate_3').tooltip();
   $('#import_feedrate_3').tooltip();
   $('#import_intensity_3').tooltip();
 

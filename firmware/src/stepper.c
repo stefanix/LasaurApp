@@ -466,38 +466,26 @@ static void adjust_speed( uint32_t steps_per_minute ) {
   if (steps_per_minute < MINIMUM_STEPS_PER_MINUTE) { steps_per_minute = MINIMUM_STEPS_PER_MINUTE; }
   cycles_per_step_event = config_step_timer((CYCLES_PER_MICROSECOND*1000000*60)/steps_per_minute);
   // beam dynamics
-    uint8_t adjusted_intensity = (float)current_block->nominal_laser_intensity;
-    //temporary fix to keep the laser intensity at a relative default
-   if (current_block->nominal_laser_intensity != 100){
-       uint8_t adjusted_intensity = current_block->nominal_laser_intensity *
-       ((float)steps_per_minute/(float)current_block->nominal_rate);
-       if (steps_per_minute == MINIMUM_STEPS_PER_MINUTE && current_block->nominal_rate != MINIMUM_STEPS_PER_MINUTE){
-           uint8_t adjusted_intensity = (float)current_block->nominal_laser_intensity * .45;
-       }
-       else if (current_block->nominal_rate == MINIMUM_STEPS_PER_MINUTE){
-           uint8_t adjusted_intensity = (float)current_block->nominal_laser_intensity;
-       }
-   }
-    
-   // end temporary fix
+  uint8_t adjusted_intensity = current_block->nominal_laser_intensity * 
+                               ((float)steps_per_minute/(float)current_block->nominal_rate);
   uint8_t constrained_intensity = max(adjusted_intensity, 0);
   control_laser_intensity(constrained_intensity);
 
   // depending on intensity adapt PWM freq
   // assuming: TCCR0A = _BV(COM0A1) | _BV(WGM00);  // phase correct PWM mode
-  if (constrained_intensity > 40 && constrained_intensity != 100) {
+  if (constrained_intensity > 40) {
       TCCR0B = _BV(CS00);                // 1 => 31.3kHz
       //TCCR0B = _BV(CS01);                // 8 => 3.9kHz
       //TCCR0B = _BV(CS01) | _BV(CS00);    // 64 => 489Hz
       //TCCR0B = _BV(CS02);                // 256 => 122Hz
       //TCCR0B = _BV(CS02) | _BV(CS00);    // 1024 => 31Hz
- } else if (constrained_intensity > 10 && constrained_intensity != 100) {
+ } else if (constrained_intensity > 10) {
       //TCCR0B = _BV(CS00);                // 1 => 31.3kHz
       TCCR0B = _BV(CS01);                // 8 => 3.9kHz
       //TCCR0B = _BV(CS01) | _BV(CS00);    // 64 => 489Hz
       //TCCR0B = _BV(CS02);                // 256 => 122Hz
       //TCCR0B = _BV(CS02) | _BV(CS00);    // 1024 => 31Hz
-  } else if (constrained_intensity != 100){
+  } else {
       //TCCR0B = _BV(CS00);                // 1 => 31.3kHz
       //TCCR0B = _BV(CS01);                // 8 => 3.9kHz
       TCCR0B = _BV(CS01) | _BV(CS00);    // 64 => 489Hz

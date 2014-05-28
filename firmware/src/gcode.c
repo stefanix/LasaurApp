@@ -35,19 +35,18 @@
 #define MM_PER_INCH (25.4)
 
 #define NEXT_ACTION_NONE 0
-#define NEXT_ACTION_MINFEED 1
-#define NEXT_ACTION_SEEK 2
-#define NEXT_ACTION_FEED 3
-#define NEXT_ACTION_DWELL 4
-#define NEXT_ACTION_HOMING_CYCLE 5
-#define NEXT_ACTION_SET_COORDINATE_OFFSET 6
-#define NEXT_ACTION_AIR_ASSIST_ENABLE 7
-#define NEXT_ACTION_AIR_ASSIST_DISABLE 8
-#define NEXT_ACTION_AUX1_ASSIST_ENABLE 9
-#define NEXT_ACTION_AUX1_ASSIST_DISABLE 10
+#define NEXT_ACTION_SEEK 1 
+#define NEXT_ACTION_FEED 2
+#define NEXT_ACTION_DWELL 3
+#define NEXT_ACTION_HOMING_CYCLE 4
+#define NEXT_ACTION_SET_COORDINATE_OFFSET 5
+#define NEXT_ACTION_AIR_ASSIST_ENABLE 6
+#define NEXT_ACTION_AIR_ASSIST_DISABLE 7
+#define NEXT_ACTION_AUX1_ASSIST_ENABLE 8
+#define NEXT_ACTION_AUX1_ASSIST_DISABLE 9
 #ifdef DRIVEBOARD
-  #define NEXT_ACTION_AUX2_ASSIST_ENABLE 11
-  #define NEXT_ACTION_AUX2_ASSIST_DISABLE 12
+  #define NEXT_ACTION_AUX2_ASSIST_ENABLE 10
+  #define NEXT_ACTION_AUX2_ASSIST_DISABLE 11
 #endif
 
 #define OFFSET_G54 0
@@ -68,7 +67,6 @@ typedef struct {
   bool absolute_mode;              // 0 = relative motion, 1 = absolute motion {G90, G91}
   double feed_rate;                // mm/min {F}
   double seek_rate;                // mm/min {F}
-  unsigned long int min_feedrate;  // {G69} mm/min {F} custom gcode for adjusting minimum mm/min in Config.h
   double position[3];              // projected position once all scheduled motions will have been executed
   double offsets[6];               // coord system offsets {G54_X,G54_Y,G54_Z,G55_X,G55_Y,G55_Z}
   uint8_t offselect;               // currently active offset, 0 -> G54, 1 -> G55
@@ -87,7 +85,6 @@ void gcode_init() {
   memset(&gc, 0, sizeof(gc));
   gc.feed_rate = CONFIG_FEEDRATE;
   gc.seek_rate = CONFIG_SEEKRATE;
-  gc.min_feedrate = MINIMUM_STEPS_PER_MINUTE;
   gc.absolute_mode = true;
   gc.nominal_laser_intensity = 0U;   
   gc.offselect = OFFSET_G54;
@@ -318,7 +315,6 @@ uint8_t gcode_execute_line(char *line) {
           case 30: next_action = NEXT_ACTION_HOMING_CYCLE; break;
           case 54: gc.offselect = OFFSET_G54; break;
           case 55: gc.offselect = OFFSET_G55; break;
-          case 69: gc.motion_mode = next_action = NEXT_ACTION_MINFEED;
           case 90: gc.absolute_mode = true; break;
           case 91: gc.absolute_mode = false; break;
           default: FAIL(STATUS_UNSUPPORTED_STATEMENT);
@@ -359,9 +355,7 @@ uint8_t gcode_execute_line(char *line) {
         if (unit_converted_value <= 0) { FAIL(STATUS_BAD_NUMBER_FORMAT); }
         if (gc.motion_mode == NEXT_ACTION_SEEK) {
           gc.seek_rate = unit_converted_value;
-        }else if (gc.motion_mode == NEXT_ACTION_MINFEED){
-           gc.min_feedrate = unit_converted_value * CONFIG_X_STEPS_PER_MM;
-        }else {
+        } else {
           gc.feed_rate = unit_converted_value;
         }
         break;
@@ -407,14 +401,9 @@ uint8_t gcode_execute_line(char *line) {
         planner_line( target[X_AXIS] + gc.offsets[3*gc.offselect+X_AXIS], 
                       target[Y_AXIS] + gc.offsets[3*gc.offselect+Y_AXIS], 
                       target[Z_AXIS] + gc.offsets[3*gc.offselect+Z_AXIS], 
-                       gc.feed_rate, gc.nominal_laser_intensity );
+                      gc.feed_rate, gc.nominal_laser_intensity );                   
       }
-      break;
-      case NEXT_ACTION_MINFEED://custom command for allowing minimum feedrate adjustment
-          printString("Minimum steps per minute changed from:"); printInteger(MINIMUM_STEPS_PER_MINUTE / CONFIG_X_STEPS_PER_MM);printString("mm/min");
-          MINIMUM_STEPS_PER_MINUTE = gc.min_feedrate;
-          printString(" to "); printInteger(MINIMUM_STEPS_PER_MINUTE / CONFIG_X_STEPS_PER_MM); printString("mm/min \r\n");
-          break;
+      break; 
     case NEXT_ACTION_DWELL:
       planner_dwell(p, gc.nominal_laser_intensity);
       break;

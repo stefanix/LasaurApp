@@ -42,9 +42,9 @@
 #endif
 #define CONFIG_Z_STEPS_PER_MM 80.00000000 //microsteps/mm MUST BE FORMAT (XX.XXXXXXXX)
 #define CONFIG_PULSE_MICROSECONDS 10
-#define CONFIG_FEEDRATE 5000.0 // in millimeters per minute
-#define CONFIG_SEEKRATE 5000.0
-#define CONFIG_ACCELERATION 4500000.0 // mm/min^2, typically 1000000-8000000, divide by (60*60) to get mm/sec^2
+#define CONFIG_FEEDRATE 8000.0 // in millimeters per minute
+#define CONFIG_SEEKRATE 8000.0
+#define CONFIG_ACCELERATION 1800000.0 // mm/min^2, typically 1000000-8000000, divide by (60*60) to get mm/sec^2
 #define CONFIG_JUNCTION_DEVIATION 0.006 // mm
 #define CONFIG_X_ORIGIN_OFFSET 1.0  // mm, x-offset of table origin from physical home
 #define CONFIG_Y_ORIGIN_OFFSET 1.0  // mm, y-offset of table origin from physical home
@@ -161,7 +161,7 @@
 // slower than this value, except when sleeping. This parameter overrides the minimum planner speed.
 // This is primarily used to guarantee that the end of a movement is always reached and not stop to
 // never reach its target. This parameter should always be greater than zero.
-extern unsigned long int MINIMUM_STEPS_PER_MINUTE; // (steps/min) - Integer value only (change in "main.c")
+#define MINIMUM_STEPS_PER_MINUTE 1600U // (steps/min) - Integer value only
 // 1600 @ 32step_per_mm = 50mm/min
   
 
