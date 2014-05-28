@@ -31,14 +31,14 @@
 // build for 0.9 deg steppers
 // #define NANOTEC_STEPPER_09
 #define BAUD_RATE 57600
-//#define DEBUG_IGNORE_SENSORS  // set for debugging
+// #define DEBUG_IGNORE_SENSORS  // set for debugging
 
 
-#define CONFIG_X_STEPS_PER_MM 40 //microsteps/mm
+#define CONFIG_X_STEPS_PER_MM 32.80839895 //microsteps/mm
 #ifndef NANOTEC_STEPPER_09
-  #define CONFIG_Y_STEPS_PER_MM 40 //microsteps/mm
+  #define CONFIG_Y_STEPS_PER_MM 32.80839895 //microsteps/mm
 #else
-  #define CONFIG_Y_STEPS_PER_MM 40 //microsteps/mm
+  #define CONFIG_Y_STEPS_PER_MM 65.6167979 //microsteps/mm
 #endif
 #define CONFIG_Z_STEPS_PER_MM 40 //microsteps/mm
 #define CONFIG_PULSE_MICROSECONDS 10

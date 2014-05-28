@@ -74,7 +74,7 @@ void planner_init();
 // Add a new linear movement to the buffer.
 // x, y and z is the signed, absolute target position in millimaters.
 // Feed rate specifies the speed of the motion.
-void planner_line(double x, double y, double z, int feed_rate, uint8_t nominal_laser_intensity);
+void planner_line(double x, double y, double z, double feed_rate, uint8_t nominal_laser_intensity);
 
 // Add a new piercing action, lasing at one spot.
 void planner_dwell(double seconds, uint8_t nominal_laser_intensity);

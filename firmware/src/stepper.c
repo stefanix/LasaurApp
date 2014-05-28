@@ -58,6 +58,7 @@
 #define CYCLES_PER_MICROSECOND (F_CPU/1000000)  //16000000/1000000 = 16
 #define CYCLES_PER_ACCELERATION_TICK (F_CPU/ACCELERATION_TICKS_PER_SECOND)  // 16MHz/100 = 160000
 
+
 static int32_t stepper_position[3];  // real-time position in absolute steps
 static block_t *current_block;  // A pointer to the block currently being traced
 
@@ -83,6 +84,8 @@ static volatile uint8_t stop_status;          // yields the reason for a stop re
 static bool acceleration_tick();
 static void adjust_speed( uint32_t steps_per_minute );
 static uint32_t config_step_timer(uint32_t cycles);
+
+
 
 // Initialize and start the stepper motor subsystem
 void stepper_init() {  

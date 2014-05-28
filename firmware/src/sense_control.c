@@ -25,7 +25,6 @@
 
 
 
-
 void sense_init() {
   //// chiller, door, (power)
   SENSE_DDR &= ~(SENSE_MASK);  // set as input pins 
@@ -48,7 +47,7 @@ void control_init() {
   DDRD |= (1 << DDD6);      // set PD6 as an output
   OCR0A = 0;              // set PWM to a 0% duty cycle
   TCCR0A = _BV(COM0A1) | _BV(WGM00);   // phase correct PWM mode
-  //TCCR0A = _BV(COM0A1) | _BV(WGM01) | _BV(WGM00);  // fast PWM mode
+  // TCCR0A = _BV(COM0A1) | _BV(WGM01) | _BV(WGM00);  // fast PWM mode
   // prescaler: PWMfreq = 16000/(2*256*prescaler)
     if (control_laser_intensity == 100){
         TCCR0B = _BV(CS00);                // 1 => 31.3kHz

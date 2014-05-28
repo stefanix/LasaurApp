@@ -138,7 +138,7 @@ void gcode_process_line() {
       gc.position[Y_AXIS] = stepper_get_position_y();
       gc.position[Z_AXIS] = stepper_get_position_z();
       position_update_requested = false;
-      printString("gcode pos update\n");  // debug
+      //printString("gcode pos update\n");  // debug
     }
         
     if (stepper_stop_requested()) {
