@@ -38,7 +38,7 @@
 #ifndef NANOTEC_STEPPER_09
   #define CONFIG_Y_STEPS_PER_MM 32.00000000 //microsteps/mm
 #else
-  #define CONFIG_Y_STEPS_PER_MM 32.00000000 //microsteps/mm
+  #define CONFIG_Y_STEPS_PER_MM 32.0000000 //microsteps/mm
 #endif
 #define CONFIG_Z_STEPS_PER_MM 40 //microsteps/mm
 #define CONFIG_PULSE_MICROSECONDS 10
