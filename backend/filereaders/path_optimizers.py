@@ -30,7 +30,7 @@ def connect_segments(paths, epsilon2):
 
     This function joins path segments if either the next start point
     or end point is congruent with the current end point. In case of
-    an end point join it reverse the path segment.
+    an end point join it reverses the path segment.
     """
     join_count = 0
     reverse_count = 0

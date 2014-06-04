@@ -69,9 +69,26 @@ DataHandler = {
     // }
     this.clear();
     var data = JSON.parse(strdata);
-    this.passes = data['passes'];
-    this.paths_by_color = data['paths_by_color'];
-    this.rasters = data['rasters'];
+    // passes
+    if ('passes' in data) {
+      this.passes = data['passes'];
+    }
+    // paths
+    if ('paths_by_color' in data) {
+      this.paths_by_color = data['paths_by_color'];
+    }
+    // rasters
+    if ('rasters' in data) {
+      for (var i=0; i<data['rasters'].length; i++) {
+        var raster = data['rasters'][i];
+        // convert base64 to Image object
+        var img = new Image();
+        img.src = raster['image'];
+        raster['image'] = img;
+        this.rasters.push(raster);
+      }
+    }
+    // stats
     if ('stats' in data) {
       this.stats = data['stats'];
     } else {
@@ -102,22 +119,40 @@ DataHandler = {
 
   // writers //////////////////////////////////
 
-  getJson : function(exclude_colors) {
+  getJson : function(exclude_colors, exclude_rasters) {
     // write internal format
     // exclude_colors is optional
-    var paths_by_color = this.paths_by_color;
-    var rasters = this.rasters;
-    if (!(exclude_colors === undefined)) {
-      paths_by_color = {};
-      for (var color in this.paths_by_color) {
-        if (!(color in exclude_colors)) {
-          paths_by_color[color] = this.paths_by_color[color];
+    var data = {};
+    // passes
+    if (Object.keys(this.passes).length !== 0) {
+      data['passes'] = this.passes;
+    }
+    // paths
+    if (Object.keys(this.paths_by_color).length !== 0) {
+      var paths_by_color = this.paths_by_color;
+      if (!(exclude_colors === undefined)) {
+        paths_by_color = {};
+        for (var color in this.paths_by_color) {
+          if (!(color in exclude_colors)) {
+            paths_by_color[color] = this.paths_by_color[color];
+          }
         }
       }
+      data['paths_by_color'] = paths_by_color;
     }
-    var data = {'passes': this.passes,
-                'paths_by_color': paths_by_color,
-                'rasters': this.rasters}
+    // rasters
+    if ((exclude_rasters === undefined) || !(exclude_rasters === true)) {
+      data['rasters'] = [];
+      for (var i=0; i<this.rasters.length; i++) {
+        var raster = this.rasters[i];
+        // convert from Image object to base64
+        raster_export = {'pos':raster['pos'],
+                         'size_mm':raster['size_mm'],
+                         'image':raster['image'].src}
+        data['rasters'].push(raster_export);
+      }
+    }
+
     return JSON.stringify(data);
   },
 
@@ -193,17 +228,17 @@ DataHandler = {
 
       glist.push("G1F"+app_settings.raster_feedrate+"\n");
       glist.push("G0X"+x1.toFixed(app_settings.num_digits)+"Y"+y1.toFixed(app_settings.num_digits)+"\n");
-      glist.push("G8P"+app_settings.kerf.toFixed(app_settings.num_digits+2)+"\n");
+      glist.push("G8P"+app_settings.raster_kerf.toFixed(app_settings.num_digits+2)+"\n");
       glist.push("G8X"+app_settings.raster_offset.toFixed(app_settings.num_digits)+"\n");
       glist.push("G8N\n");
 
       var p = 0;
       var pp = 0;
       var linechars = app_settings.raster_linechars
-      var nfull = Math.floor(pixwidth/linechars)
-      var partialchars = pixwidth % linechars
+      var nfull = Math.floor(image.width/linechars)
+      var partialchars = image.width % linechars
 
-      for (var l=0; l<pixheight; l++) {  // raster lines
+      for (var l=0; l<image.height; l++) {  // raster lines
         // full command lines
         for (var f=0; f<nfull; f++) {
           pp = p+linechars;
@@ -273,7 +308,6 @@ DataHandler = {
 
 
   // rendering //////////////////////////////////
-
 
   draw : function (canvas, scale, exclude_colors, exclude_rasters) {
     // draw rasters and paths
@@ -356,27 +390,27 @@ DataHandler = {
     // only include colors that are in passe
     var bbox_combined = [Infinity, Infinity, 0, 0];
 
-    function drawbb(stats) {
-      var xmin = stat['bbox'][0]*scale;
-      var ymin = stat['bbox'][1]*scale;
-      var xmax = stat['bbox'][2]*scale;
-      var ymax = stat['bbox'][3]*scale;
+    function drawbb(stats, obj) {
+      var xmin = stats['bbox'][0]*scale;
+      var ymin = stats['bbox'][1]*scale;
+      var xmax = stats['bbox'][2]*scale;
+      var ymax = stats['bbox'][3]*scale;
       canvas.stroke('#dddddd');
       canvas.line(xmin,ymin,xmin,ymax);
       canvas.line(xmin,ymax,xmax,ymax);
       canvas.line(xmax,ymax,xmax,ymin);
       canvas.line(xmax,ymin,xmin,ymin);
-      this.bboxExpand(bbox_combined, xmin, ymin);
-      this.bboxExpand(bbox_combined, xmax, ymax); 
+      obj.bboxExpand(bbox_combined, xmin, ymin);
+      obj.bboxExpand(bbox_combined, xmax, ymax); 
     }
 
     // rasters
     if ('rasters' in this.stats) {
-      drawbb(this.stats['rasters']);
+      drawbb(this.stats['rasters'], this);
     }
     // for all job colors
     for (var color in this.getPassesColors()) {
-      drawbb(this.stats[color]);
+      drawbb(this.stats[color], this);
     }
     // draw global bbox
     xmin = bbox_combined[0];
