@@ -298,39 +298,13 @@ class SVGReader:
                 # 5. Raster Data [(x, y, pitch, data)]
                 for raster in node['rasters']:
                     # pos to world coordinates and then to mm units
-                    pos = raster['pos']
-                    matrixApply(node['xformToWorld'], pos)
-                    vertexScale(pos, self.px2mm)
+                    matrixApply(node['xformToWorld'], raster['pos'])
+                    vertexScale(raster['pos'], self.px2mm)
 
                     # size to world scale and then to mm units
-                    size = raster['size_mm']
-                    matrixApplyScale(node['xformToWorld'], size)
-                    vertexScale(size, self.px2mm)
-                    
-                    # # resize image so pixel size matches kerf
-                    # kerf = config['kerf']
-                    # new_size = (int(round(size[0]/kerf)), int(round(size[1]/kerf)))
-
-                    # max_raster_size = config['max_raster_size']
-                    # if new_size[0] > max_raster_size[0] or new_size[1] > max_raster_size[1]:
-                    #     log.warn("Raster job request exceeds %sx%s pixels" % max_raster_size)
-                    #     continue
-
-                    # image = raster['image']
-                    # image = image.resize(new_size)
-                    # # image.show()
-                    
-                    # raster['size_px'] = image.size
-
-                    # # convert image to lasersaur format
-                    # # each pixel is mapped to extendted ascii [128,255]
-                    # # img_laserformat = "".join([(chr(x/2+128)) for x in image.getdata()])
-
-                    # # each pixel is mapped to [33,118] and converted 
-                    # # to ascii. All of them are in the printable range of [32,126]
-                    # img_laserformat = "".join([(chr(x/3+33)) for x in image.getdata()])
-                    # raster['image'] = img_laserformat 
-                    
+                    matrixApplyScale(node['xformToWorld'], raster['size_mm'])
+                    vertexScale(raster['size_mm'], self.px2mm)
+                                       
                     self.rasters.append(raster)
 
                 # recursive call

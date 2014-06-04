@@ -139,23 +139,20 @@ $(document).ready(function(){
       }
 
       if ('rasters' in data) {
+        // // debug, show image, stats
         // for (var i=0; i<data.rasters.length; i++) {
         //   var raster = data.rasters[i];
         //   // convert base64 to Image object
-        //   // var imgid = 'rasterimg' + i;
-        //   // $('#tab_import').append('<img id="'+imgid+'" src="'+raster['image']+'">');
-        //   // var img = document.getElementById(imgid);
+        //   var imgid = 'rasterimg' + i;
+        //   $('#tab_import').append('<img id="'+imgid+'" src="'+raster['image']+'">');
+        //   var img = document.getElementById(imgid);
 
-
-        //   // // img.src = canvas_temp.toDataURL("image/png");
-        //   // $('#tab_import').append('<img id="'+imgid+'_gray" src="'+canvas_temp.toDataURL("image/png")+'">');
-
-        //   // // stats
-        //   // raster_stats = {'pos':raster['pos'],
-        //   //                 'size_mm':raster['size_mm'],
-        //   //                 'size_px':[img.width, img.height],
-        //   //                 'len':raster['image'].length}
-        //   // $('#tab_import').append('<p>'+JSON.stringify(raster_stats)+'</p>');
+        //   // stats
+        //   raster_stats = {'pos':raster['pos'],
+        //                   'size_mm':raster['size_mm'],
+        //                   'size_px':[img.width, img.height],
+        //                   'len':raster['image'].length}
+        //   $('#tab_import').append('<p>'+JSON.stringify(raster_stats)+'</p>');
         // }
         DataHandler.addRasters(data.rasters);
       }
