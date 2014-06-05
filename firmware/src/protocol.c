@@ -239,42 +239,78 @@ inline void on_cmd() {
 
 
 inline void on_param() {
-  switch(param_current) {
-    case PARAM_TARGET_X:
-      if(pdata.count == 3) {
-        double val = double_from_chars_3(pdata.chars[0], pdata.chars[1], pdata.chars[2]);
+  if(pdata.count == 4) {
+    double val = num_from_chars( pdata.chars[0], pdata.chars[1], 
+                                 pdata.chars[2], pdata.chars[3] );
+    switch(param_current) {
+      case PARAM_TARGET_X:
         st.target[X_AXIS] = val;
-      } else {
-        st.status_code = STATUS_WRONG_DATA;
-      }
-      break;
-    case PARAM_TARGET_Y:
-      data_count = 3;
-      break;
-    case PARAM_TARGET_Z:
-      data_count = 3;
-      break;
-    case PARAM_FEEDRATE:
-      data_count = 3;
-      break;
-    case PARAM_INTENSITY:
-      data_count = 3;
-      break;
-    case PARAM_DURATION:
-      data_count = 3;
-      break;
-    case PARAM_PIXEL_WIDTH:
-      data_count = 3;
-      break;
-    default:
-      st.status_code = STATUS_UNSUPPORTED_PARAMETER;
+        break;
+      case PARAM_TARGET_Y:
+        st.target[Y_AXIS] = val;
+        break;
+      case PARAM_TARGET_Z:
+        st.target[Z_AXIS] = val;
+        break;
+      case PARAM_FEEDRATE:
+        st.feedrate = val;
+        break;
+      case PARAM_INTENSITY:
+        st.intensity = val;
+        break;
+      case PARAM_DURATION:
+        st.duration = val;
+        break;
+      case PARAM_PIXEL_WIDTH:
+        st.pixel_width = val;
+        break;
+      default:
+        st.status_code = STATUS_INVALID_PARAMETER;
+    }
+  } else {
+    st.status_code = STATUS_INVALID_DATA;
   }
 }
 
 
-inline double double_from_chars_4(uint8_t char0, uint8_t char1, uint8_t char2, uint8_t char3) {
-  // each char is [128,255]
-  // 2^14 = 16384
-  // [-16384, 16383]
-  int char0 = (char0-128)*128.0 + (char1-128) + (char2-128)/128.0 + (char3-128)/16384.0;
+inline double num_from_chars(uint8_t char0, uint8_t char1, uint8_t char2, uint8_t char3) {
+  // chars expected to be extended ascii [128,255]
+  // 28bit total, three decimals are restored
+  // number is in [-134217.728, 134217.727] 
+  return ((((char3-128)*2097152+(char2-128)*16384+(char1-128)*128+(char0-128))-134217728)/1000.0);
 }
+
+// inline void chars_from_num(num, uint8_t* char0, uint8_t* char1, uint8_t* char2, uint8_t* char3) {
+//   // num to be [-134217.728, 134217.727]
+//   // three decimals are retained
+//   uint32_t num = lround(num*1000 + 134217728);
+//   char0 = (num&127)+128
+//   char1 = ((num&(127<<7))>>7)+128
+//   char2 = ((num&(127<<14))>>14)+128
+//   char3 = ((num&(127<<21))>>21)+128
+//   return char3, char2, char1, char0
+// }
+
+// IN PYTHON
+// def double_from_chars_4(char3, char2, char1, char0):
+//     # chars expected to be extended ascii [128,255]
+//     return ((((char3-128)*128*128*128 + (char2-128)*128*128 + (char1-128)*128 + (char0-128) )- 2**27)/1000.0)
+//
+// def chars4_from_double(num):
+//     # num to be [-134217.728, 134217.727]
+//     # three decimals are retained
+//     num = int(round( (num*1000) + (2**27)))
+//     char0 = (num&127)+128
+//     char1 = ((num&(127<<7))>>7)+128
+//     char2 = ((num&(127<<14))>>14)+128
+//     char3 = ((num&(127<<21))>>21)+128
+//     return char3, char2, char1, char0
+//
+// def check(val):
+//     char3, char2, char1, char0 = chars4_from_double(val)
+//     val2 = double_from_chars_4(char3, char2, char1, char0)
+//     print "assert %s == %s" % (val, val2)
+//     # assert val == val2
+//
+// check(13925.2443)
+
