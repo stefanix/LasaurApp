@@ -112,7 +112,7 @@ void gcode_process_line() {
   uint8_t print_extended_status = false;
 
   while ((numChars==0) || (chr != '\n')) {
-    chr = serial_read();  // blocks until there is data
+    chr = serial_gcode_read();  // blocks until there is data
     if (numChars + 1 >= BUFFER_LINE_SIZE) {  // +1 for \0
       // reached line size, other side sent too long lines
       stepper_request_stop(STATUS_LINE_BUFFER_OVERFLOW);
@@ -309,6 +309,23 @@ uint8_t gcode_execute_line(char *line) {
           case 0: gc.motion_mode = next_action = NEXT_ACTION_SEEK; break;
           case 1: gc.motion_mode = next_action = NEXT_ACTION_FEED; break;
           case 4: next_action = NEXT_ACTION_DWELL; break;
+          case 8:
+            if (line[char_counter] == 'D') {
+              // Special case to append raster data
+              uint32_t len;
+              char_counter++;
+              len = strlen(line) - char_counter;
+              if (len >= RASTER_BUFFER_SIZE || len > 70) {
+                gc.status_code = STATUS_RX_BUFFER_OVERFLOW;
+                stepper_request_stop(gc.status_code);
+              } else {
+                planner_raster_data(&line[char_counter], len, false);
+              }
+              return gc.status_code;
+            } else {
+              next_action = NEXT_ACTION_RASTER;
+            }
+            break;
           case 10: next_action = NEXT_ACTION_SET_COORDINATE_OFFSET; break;
           case 20: gc.inches_mode = true; break;
           case 21: gc.inches_mode = false; break;
@@ -367,7 +384,7 @@ uint8_t gcode_execute_line(char *line) {
         }
         got_actual_line_command = true;
         break;        
-      case 'P':  // dwelling seconds or CS selector
+      case 'P':  // dwelling seconds or CS selector or pixel width
         if (next_action == NEXT_ACTION_SET_COORDINATE_OFFSET) {
           cs = trunc(value);
         } else {
@@ -393,7 +410,7 @@ uint8_t gcode_execute_line(char *line) {
         planner_line( target[X_AXIS] + gc.offsets[3*gc.offselect+X_AXIS], 
                       target[Y_AXIS] + gc.offsets[3*gc.offselect+Y_AXIS], 
                       target[Z_AXIS] + gc.offsets[3*gc.offselect+Z_AXIS], 
-                      gc.seek_rate, 0 );
+                      gc.seek_rate, 0, 0 );
       }
       break;   
     case NEXT_ACTION_FEED:
@@ -401,27 +418,20 @@ uint8_t gcode_execute_line(char *line) {
         planner_line( target[X_AXIS] + gc.offsets[3*gc.offselect+X_AXIS], 
                       target[Y_AXIS] + gc.offsets[3*gc.offselect+Y_AXIS], 
                       target[Z_AXIS] + gc.offsets[3*gc.offselect+Z_AXIS], 
-                      gc.feed_rate, gc.nominal_laser_intensity );                   
+                      gc.feed_rate, gc.nominal_laser_intensity, 0 );                   
       }
-      break; 
+      break;
+    case NEXT_ACTION_RASTER:
+      if (got_actual_line_command) {
+        planner_line( target[X_AXIS] + gc.offsets[3*gc.offselect+X_AXIS], 
+                      target[Y_AXIS] + gc.offsets[3*gc.offselect+Y_AXIS], 
+                      target[Z_AXIS] + gc.offsets[3*gc.offselect+Z_AXIS], 
+                      gc.feed_rate, gc.nominal_laser_intensity, p );                
+      }
+      break;
     case NEXT_ACTION_DWELL:
       planner_dwell(p, gc.nominal_laser_intensity);
       break;
-    // case NEXT_ACTION_STOP:
-    //   planner_stop();  // stop and cancel the remaining program
-    //   gc.position[X_AXIS] = stepper_get_position_x();
-    //   gc.position[Y_AXIS] = stepper_get_position_y();
-    //   gc.position[Z_AXIS] = stepper_get_position_z();
-    //   planner_set_position(gc.position[X_AXIS], gc.position[Y_AXIS], gc.position[Z_AXIS]);
-    //   // move to table origin
-    //   target[X_AXIS] = 0;
-    //   target[Y_AXIS] = 0;
-    //   target[Z_AXIS] = 0;         
-    //   planner_line( target[X_AXIS] + gc.offsets[3*gc.offselect+X_AXIS], 
-    //                 target[Y_AXIS] + gc.offsets[3*gc.offselect+Y_AXIS], 
-    //                 target[Z_AXIS] + gc.offsets[3*gc.offselect+Z_AXIS], 
-    //                 gc.seek_rate, 0 );
-    //   break;
     case NEXT_ACTION_HOMING_CYCLE:
       stepper_homing_cycle();
       // now that we are at the physical home
@@ -437,7 +447,7 @@ uint8_t gcode_execute_line(char *line) {
       planner_line( target[X_AXIS] + gc.offsets[3*gc.offselect+X_AXIS], 
                     target[Y_AXIS] + gc.offsets[3*gc.offselect+Y_AXIS], 
                     target[Z_AXIS] + gc.offsets[3*gc.offselect+Z_AXIS], 
-                    gc.seek_rate, 0 );
+                    gc.seek_rate, 0, 0 );
       break;
     case NEXT_ACTION_SET_COORDINATE_OFFSET:
       if (cs == OFFSET_G54 || cs == OFFSET_G55) {

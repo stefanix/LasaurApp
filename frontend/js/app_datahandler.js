@@ -201,6 +201,12 @@ DataHandler = {
       var height = raster.size_mm[1];
       var image = raster.image;
 
+      var offset = app_settings.raster_offset;
+      var kerf = app_settings.raster_kerf;
+      var feedrate = app_settings.raster_feedrate;
+      var intensity = app_settings.raster_intensity;
+      var num_digits = app_settings.num_digits;
+
       // create a canvas for image manipulation
       var canvas_temp = document.createElement("canvas");
       var ctx = canvas_temp.getContext("2d");
@@ -226,12 +232,10 @@ DataHandler = {
       // ctx.putImageData(data, 0, 0);
       data_ascii = data_ascii.join('');
 
-      glist.push("G1F"+app_settings.raster_feedrate+"\n");
-      glist.push("G0X"+x1.toFixed(app_settings.num_digits)+"Y"+y1.toFixed(app_settings.num_digits)+"\n");
-      glist.push("G8P"+app_settings.raster_kerf.toFixed(app_settings.num_digits+2)+"\n");
-      glist.push("G8X"+app_settings.raster_offset.toFixed(app_settings.num_digits)+"\n");
-      glist.push("G8N\n");
+      glist.push("G1F"+feedrate+"\nS"+intensity+"\n");
+      glist.push("G8P"+(width/image.width).toFixed(num_digits)+"\n");
 
+      var y = 0;
       var p = 0;
       var pp = 0;
       var linechars = app_settings.raster_linechars
@@ -239,6 +243,14 @@ DataHandler = {
       var partialchars = image.width % linechars
 
       for (var l=0; l<image.height; l++) {  // raster lines
+        y = l*kerf+y1;
+        glist.push("G0X"+(x1-offset).toFixed(num_digits)+"Y"+y.toFixed(num_digits)+"\n");
+        // accel line
+        glist.push("G0X"+(x1).toFixed(num_digits)+"\n");
+        // raster line
+        glist.push("G8X"+(x1+width).toFixed(num_digits)+"\n");
+
+        // raster data
         // full command lines
         for (var f=0; f<nfull; f++) {
           pp = p+linechars;
@@ -249,8 +261,10 @@ DataHandler = {
         pp = p+partialchars;
         glist.push("G8D" + data_ascii.slice(p,p+partialchars) + "\n");
         p = pp;
-        // next raster line
-        glist.push("G8N\n");
+
+        // decel line
+        glist.push("G0X"+(x1+width+offset).toFixed(num_digits)+"\n");
+
       }
     }
     // passes

@@ -32,6 +32,9 @@
 #define CHAR_STOP '!'
 #define CHAR_RESUME '~'
 
+#define RASTER_DATA_START '\x02'
+#define RASTER_DATA_END '\x03'
+
 /** ring buffer **********************************
 * [_][h][e][l][l][o][_][_][_] -> wrap around     *
 *     |              |                           *
@@ -69,6 +72,7 @@ volatile uint8_t tx_buffer_tail = 0;
 volatile uint8_t send_ready_flag = 0;
 volatile uint8_t request_ready_flag = 0;
 
+volatile bool raster_mode = false;
 
 
 static void set_baud_rate(long baud) {
@@ -135,13 +139,35 @@ SIGNAL(USART_UDRE_vect) {
 }
 
 
-
-uint8_t serial_read() {
-  // wait, if buffer is empty
+uint8_t serial_gcode_read() {
+  // Block if buffer is empty.
   while (rx_buffer_tail == rx_buffer_head) {
-    // sleep_mode();
+    // Block while in raster mode.
+    // In this mode the serial inerrupt provides data
+    // in the rx_buffer which get directly consumed
+    // by the stepper interrupt.
+    while (raster_mode) {
+      sleep_mode();  // sleep a tiny bit
+    }
+    sleep_mode();
   }
-  // return return data, advance tail
+  return serial_read();
+}
+
+
+uint8_t serial_raster_read() {
+  if (rx_buffer_tail == rx_buffer_head || !raster_mode) {
+    // oops, no raster data
+    // rastering too fast or serial transmission too slow
+    return 0;
+  } else {
+    return serial_read();
+  }
+}
+
+
+inline uint8_t serial_read() {
+  // return data, advance tail
 	uint8_t data = rx_buffer[rx_buffer_tail];
   if (++rx_buffer_tail == RX_BUFFER_SIZE) {rx_buffer_tail = 0;}  // increment
   ATOMIC_BLOCK(ATOMIC_FORCEON) {
@@ -156,6 +182,8 @@ uint8_t serial_read() {
   }
 	return data;
 }
+
+
 
 // rx interrupt, called whenever a new byte is in UDR0
 SIGNAL(USART_RX_vect) {
@@ -174,6 +202,10 @@ SIGNAL(USART_RX_vect) {
       // send ready when enough slots open up
       request_ready_flag = 1;
     }
+  } else if (data == RASTER_DATA_START) {
+
+  } else if (data == RASTER_DATA_END) {
+
   } else {
     uint8_t head = rx_buffer_head;  // optimize for volatile    
     uint8_t next_head = head + 1;

@@ -261,7 +261,8 @@ ISR(TIMER1_COMPA_vect) {
       busy = false;
       return;       
     }      
-    if (current_block->type == TYPE_LINE) {  // starting on new line block
+    if (current_block->type == TYPE_LINE || current_block->type == TYPE_RASTER_LINE) {
+      // starting on new line block
       adjusted_rate = current_block->initial_rate;
       acceleration_tick_counter = CYCLES_PER_ACCELERATION_TICK/2; // start halfway, midpoint rule.
       adjust_speed( adjusted_rate ); // initialize cycles_per_step_event
@@ -274,7 +275,7 @@ ISR(TIMER1_COMPA_vect) {
 
   // process current block, populate out_bits (or handle other commands)
   switch (current_block->type) {
-    case TYPE_LINE:
+    case TYPE_LINE || TYPE_RASTER_LINE:
       ////// Execute step displacement profile by bresenham line algorithm
       out_bits = current_block->direction_bits;
       counter_x += current_block->steps_x;
@@ -353,6 +354,23 @@ ISR(TIMER1_COMPA_vect) {
             adjusted_rate = current_block->nominal_rate;
             adjust_speed( adjusted_rate );
           }
+          // Special case raster line. 
+          // Adjust intensity according raster buffer.
+          if (current_block->type == TYPE_RASTER_LINE) {
+            double x_pos = stepper_position[X_AXIS]/CONFIG_X_STEPS_PER_MM;
+            if ((step_events_completed % current_block->pixel_steps) == 1) {
+              // after every pixel width get the next raster value
+              // disable nested interrupts
+              // this is to prevent race conditions with the serial interrupt
+              // over the rx_buffer variables.
+              cli() ; 
+              uint8_t chr = serial_raster_read()
+              sei();
+              // map [128,255] -> [0, nominal_laser_intensity]
+              // (chr-128)*2 * (255/current_block->nominal_laser_intensity)
+              adjust_intensity( (510*(chr-128))/current_block->nominal_laser_intensity );
+            }
+          }
         }
       } else {  // block finished
         current_block = NULL;
@@ -410,7 +428,7 @@ ISR(TIMER1_COMPA_vect) {
 // This function determines an acceleration velocity change every CYCLES_PER_ACCELERATION_TICK by
 // keeping track of the number of elapsed cycles during a de/ac-celeration. The code assumes that
 // step_events occur significantly more often than the acceleration velocity iterations.
-static bool acceleration_tick() {
+inline static bool acceleration_tick() {
   acceleration_tick_counter += cycles_per_step_event;
   if(acceleration_tick_counter > CYCLES_PER_ACCELERATION_TICK) {
     acceleration_tick_counter -= CYCLES_PER_ACCELERATION_TICK;
@@ -423,7 +441,7 @@ static bool acceleration_tick() {
 
 // Configures the prescaler and ceiling of timer 1 to produce the given rate as accurately as possible.
 // Returns the actual number of cycles per interrupt
-static uint32_t config_step_timer(uint32_t cycles) {
+inline static uint32_t config_step_timer(uint32_t cycles) {
   uint16_t ceiling;
   uint16_t prescaler;
   uint32_t actual_cycles;
@@ -461,7 +479,7 @@ static uint32_t config_step_timer(uint32_t cycles) {
 }
 
 
-static void adjust_speed( uint32_t steps_per_minute ) {
+inline static void adjust_speed( uint32_t steps_per_minute ) {
   // steps_per_minute is typicaly just adjusted_rate
   if (steps_per_minute < MINIMUM_STEPS_PER_MINUTE) { steps_per_minute = MINIMUM_STEPS_PER_MINUTE; }
   cycles_per_step_event = config_step_timer((CYCLES_PER_MICROSECOND*1000000*60)/steps_per_minute);
@@ -469,6 +487,11 @@ static void adjust_speed( uint32_t steps_per_minute ) {
   uint8_t adjusted_intensity = current_block->nominal_laser_intensity * 
                                ((float)steps_per_minute/(float)current_block->nominal_rate);
   uint8_t constrained_intensity = max(adjusted_intensity, 0);
+  adjust_intensity(constrained_intensity);
+}
+
+
+inline static void adjust_intensity( uint8_t intensity ) {
   control_laser_intensity(constrained_intensity);
 
   // depending on intensity adapt PWM freq

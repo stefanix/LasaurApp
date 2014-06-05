@@ -28,7 +28,7 @@
 
 
 // The number of linear motions that can be in the plan at any give time
-#define BLOCK_BUFFER_SIZE 16  // do not make bigger than uint8_t
+#define BLOCK_BUFFER_SIZE 14  // do not make bigger than uint8_t
 
 static block_t block_buffer[BLOCK_BUFFER_SIZE];  // ring buffer for motion instructions
 static volatile uint8_t block_buffer_head;       // index of the next block to be pushed
@@ -68,7 +68,7 @@ void planner_init() {
 
 // Add a new linear movement to the buffer. x, y and z is 
 // the signed, absolute target position in millimeters. Feed rate specifies the speed of the motion.
-void planner_line(double x, double y, double z, double feed_rate, uint8_t nominal_laser_intensity) {    
+void planner_line(double x, double y, double z, double feed_rate, uint8_t nominal_laser_intensity, uint16_t pixel_width) {    
   // calculate target position in absolute steps
   int32_t target[3];
   target[X_AXIS] = lround(x*CONFIG_X_STEPS_PER_MM);
@@ -93,7 +93,12 @@ void planner_line(double x, double y, double z, double feed_rate, uint8_t nomina
   block_t *block = &block_buffer[block_buffer_head];
   
   // set block type to line command
-  block->type = TYPE_LINE;
+  if (pixel_width != 0) {
+    block->type = TYPE_RASTER_LINE;
+    block->pixel_steps = lround(pixel_width*CONFIG_X_STEPS_PER_MM);
+  } else {
+    block->type = TYPE_LINE;
+  }
 
   // set nominal laser intensity
   block->nominal_laser_intensity = nominal_laser_intensity;

@@ -73,7 +73,7 @@ void control_init() {
 }
 
 
-void control_laser_intensity(uint8_t intensity) {
+inline void control_laser_intensity(uint8_t intensity) {
   OCR0A = intensity;
 }
 

@@ -26,12 +26,13 @@
 
 // Command types the planner and stepper can schedule for execution 
 #define TYPE_LINE 0
-#define TYPE_AIR_ASSIST_ENABLE 1
-#define TYPE_AIR_ASSIST_DISABLE 2
-#define TYPE_AUX1_ASSIST_ENABLE 3
-#define TYPE_AUX1_ASSIST_DISABLE 4
-#define TYPE_AUX2_ASSIST_ENABLE 5
-#define TYPE_AUX2_ASSIST_DISABLE 6
+#define TYPE_RASTER_LINE 1
+#define TYPE_AIR_ASSIST_ENABLE 2
+#define TYPE_AIR_ASSIST_DISABLE 3
+#define TYPE_AUX1_ASSIST_ENABLE 4
+#define TYPE_AUX1_ASSIST_DISABLE 5
+#define TYPE_AUX2_ASSIST_ENABLE 6
+#define TYPE_AUX2_ASSIST_DISABLE 7
 
 #define planner_control_air_assist_enable() planner_command(TYPE_AIR_ASSIST_ENABLE)
 #define planner_control_air_assist_disable() planner_command(TYPE_AIR_ASSIST_DISABLE)
@@ -66,6 +67,7 @@ typedef struct {
   uint32_t accelerate_until;          // The index of the step event on which to stop acceleration
   uint32_t decelerate_after;          // The index of the step event on which to start decelerating
 
+  uint16_t pixel_steps;               // Number of steps for each raster pixel (only in TYPE_RASTER_LINE)
 } block_t;
       
 // Initialize the motion plan subsystem      
@@ -74,7 +76,7 @@ void planner_init();
 // Add a new linear movement to the buffer.
 // x, y and z is the signed, absolute target position in millimaters.
 // Feed rate specifies the speed of the motion.
-void planner_line(double x, double y, double z, double feed_rate, uint8_t nominal_laser_intensity);
+void planner_line(double x, double y, double z, double feed_rate, uint8_t nominal_laser_intensity, uint16_t pixel_width);
 
 // Add a new piercing action, lasing at one spot.
 void planner_dwell(double seconds, uint8_t nominal_laser_intensity);

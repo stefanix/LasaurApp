@@ -1,7 +1,30 @@
 
 
+Raster
+======
+
+The elementary building block for doing rasters is the raster line. It's the
+same as a normal line but when cruising at constant speed the intensity is
+modulated according to a raster buffer.
+
+To get constant speed for the entire raster line an acceleration and
+deceleration line needs to come before and after it.
+
+Assume raster line along x-axis.
+
+G0 X<start> Y<start+kerf>
+G0 X<start+offset>
+G8 X<start+offset+width>
+G8 D<raster data>
+G8 D<raster data>
+G8 D<raster data>
+G0 X<start+offset+width+offset>
+...
+
+
+
 Beam Dynamics Contemplations
------------------------------
+============================
 
 ### intensity assumptions
 intensity 100% = 100 pulses per 32us
