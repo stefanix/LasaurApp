@@ -13,8 +13,7 @@ import StringIO
 
 class NGCReader:
     """Parse subset of G-Code.
-
-
+    TODO!!
     """
 
     def __init__(self, tolerance):
