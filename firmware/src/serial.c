@@ -203,8 +203,9 @@ SIGNAL(USART_RX_vect) {
       request_ready_flag = 1;
     }
   } else if (data == RASTER_DATA_START) {
-
+    raster_mode = true;
   } else if (data == RASTER_DATA_END) {
+    raster_mode = false;
 
   } else {
     uint8_t head = rx_buffer_head;  // optimize for volatile    
