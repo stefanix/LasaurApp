@@ -37,7 +37,12 @@ def read_dxf(dxf_string, tolerance, optimize=True):
 def read_ngc(ngc_string, tolerance, optimize=True):
     ngcReader = NGCReader(tolerance)
     parse_results = ngcReader.parse(ngc_string)
+<<<<<<< HEAD
     if optimize and 'boundarys' in parse_results:
         optimize_all(parse_results['boundarys'], tolerance)
+=======
+    # if optimize:
+    #     optimize_all(parse_results['boundarys'], tolerance)
+>>>>>>> master
     return parse_results
 
