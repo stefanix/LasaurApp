@@ -470,12 +470,13 @@ static void adjust_speed( uint32_t steps_per_minute ) {
     ((float)steps_per_minute/(float)current_block->nominal_rate);
     uint8_t constrained_intensity = max(adjusted_intensity, 0);
     control_laser_intensity(constrained_intensity);
-    if (adjusted_intensity < 2){
-        uint8_t adjusted_intensity = 2;
-    }
-    else if (current_block->nominal_laser_intensity == 100){
+    if (current_block->nominal_laser_intensity == 100){
         uint8_t adjusted_intensity = 100;
     }
+    else if (adjusted_intensity < 2){
+        uint8_t adjusted_intensity = 2;
+    }
+    
     // depending on intensity adapt PWM freq
     // assuming: TCCR0A = _BV(COM0A1) | _BV(WGM00);  // phase correct PWM mode
     if (constrained_intensity > 40) {
