@@ -30,6 +30,28 @@
 #include <stdbool.h>
 
 
+#define STOPERROR_OK "A"
+#define STOPERROR_ANY "!"
+
+#define STOPERROR_SERIAL_STOP_REQUEST "B"
+#define STOPERROR_RX_BUFFER_OVERFLOW "C"
+
+#define STOPERROR_LIMIT_HIT_ANY "D"
+#define STOPERROR_LIMIT_HIT_X1 "E"
+#define STOPERROR_LIMIT_HIT_X2 "F"
+#define STOPERROR_LIMIT_HIT_Y1 "G"
+#define STOPERROR_LIMIT_HIT_Y2 "H"
+#define STOPERROR_LIMIT_HIT_Z1 "I"
+#define STOPERROR_LIMIT_HIT_Z2 "J"
+#define STOPERROR_POWER_OFF "K"
+
+#define STOPERROR_INVALID_MARKER "L"
+#define STOPERROR_INVALID_DATA "M"
+#define STOPERROR_INVALID_COMMAND "N"
+#define STOPERROR_INVALID_PARAMETER "O"
+#define STOPERROR_TRANSMISSION_ERROR "P"
+
+
 // Initialize and start the stepper motor subsystem
 void stepper_init();
 

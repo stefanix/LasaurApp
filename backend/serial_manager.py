@@ -7,6 +7,46 @@ from serial.tools import list_ports
 from collections import deque
 
 
+CMD_NONE = "A"
+CMD_LINE = "B"
+CMD_DWELL = "C"
+CMD_RASTER = "D"
+CMD_HOMING = "E"
+
+CMD_REF_RELATIVE = "F" 
+CMD_REF_ABSOLUTE = "G"
+
+CMD_SET_OFFSET_TABLE = "H"
+CMD_SET_OFFSET_CUSTOM = "I"
+CMD_DEF_OFFSET_TABLE = "J"
+CMD_DEF_OFFSET_CUSTOM = "K"
+CMD_SEL_OFFSET_TABLE = "L"
+CMD_SEL_OFFSET_CUSTOM = "M"
+
+CMD_AIR_ENABLE = "N"
+CMD_AIR_DISABLE = "O"
+CMD_AUX1_ENABLE = "P"
+CMD_AUX1_DISABLE = "Q"
+CMD_AUX2_ENABLE = "R"
+CMD_AUX2_DISABLE = "S"
+
+CMD_RASTER_DATA_START = '\x02'
+CMD_RASTER_DATA_END = '\x03'
+
+CMD_GET_STATUS = "?"
+
+PARAM_TARGET_X = "x"
+PARAM_TARGET_Y = "y" 
+PARAM_TARGET_Z = "z" 
+PARAM_FEEDRATE = "f"
+PARAM_INTENSITY = "s"
+PARAM_DURATION = "d"
+PARAM_PIXEL_WIDTH = "p"
+
+CMD_STOP = '!'
+CMD_RESUME = '~'
+
+
 class SerialManagerClass:
     
     def __init__(self):
@@ -40,7 +80,6 @@ class SerialManagerClass:
         self.last_request_ready = 0
 
 
-
     def reset_status(self):
         self.status = {
             'ready': True,  # turns True by querying status
@@ -61,101 +100,6 @@ class SerialManagerClass:
         }
 
 
-
-    def list_devices(self, baudrate):
-        ports = []
-        if os.name == 'posix':
-            iterator = sorted(list_ports.grep('tty'))
-            print "Found ports:"
-            for port, desc, hwid in iterator:
-                ports.append(port)
-                print "%-20s" % (port,)
-                print "    desc: %s" % (desc,)
-                print "    hwid: %s" % (hwid,)            
-        else:
-            # iterator = sorted(list_ports.grep(''))  # does not return USB-style
-            # scan for available ports. return a list of tuples (num, name)
-            available = []
-            for i in range(24):
-                try:
-                    s = serial.Serial(port=i, baudrate=baudrate)
-                    ports.append(s.portstr)                
-                    available.append( (i, s.portstr))
-                    s.close()
-                except serial.SerialException:
-                    pass
-            print "Found ports:"
-            for n,s in available: print "(%d) %s" % (n,s)
-        return ports
-
-
-            
-    def match_device(self, search_regex, baudrate):
-        if os.name == 'posix':
-            matched_ports = list_ports.grep(search_regex)
-            if matched_ports:
-                for match_tuple in matched_ports:
-                    if match_tuple:
-                        return match_tuple[0]
-            print "No serial port match for anything like: " + search_regex
-            return None
-        else:
-            # windows hack because pyserial does not enumerate USB-style com ports
-            print "Trying to find Controller ..."
-            for i in range(24):
-                try:
-                    s = serial.Serial(port=i, baudrate=baudrate, timeout=2.0)
-                    lasaur_hello = s.read(32)
-                    if lasaur_hello.find(self.LASAURGRBL_FIRST_STRING) > -1:
-                        return s.portstr
-                    s.close()
-                except serial.SerialException:
-                    pass      
-            return None      
-        
-
-    def connect(self, port, baudrate):
-        self.rx_buffer = ""
-        self.tx_buffer = ""        
-        self.remoteXON = True
-        self.job_size = 0
-        self.reset_status()
-                
-        # Create serial device with both read timeout set to 0.
-        # This results in the read() being non-blocking
-        # Write on the other hand uses a large timeout but should not be blocking
-        # much because we ask it only to write TX_CHUNK_SIZE at a time.
-        # BUG WARNING: the pyserial write function does not report how
-        # many bytes were actually written if this is different from requested.
-        # Work around: use a big enough timeout and a small enough chunk size.
-        self.device = serial.Serial(port, baudrate, timeout=0, writeTimeout=0.1)
-
-
-    def close(self):
-        if self.device:
-            try:
-                self.device.flushOutput()
-                self.device.flushInput()
-                self.device.close()
-                self.device = None
-            except:
-                self.device = None
-            self.status['ready'] = False
-            return True
-        else:
-            return False
-                    
-    def is_connected(self):
-        return bool(self.device)
-
-    def get_hardware_status(self):
-        if self.is_queue_empty():
-            # trigger a status report
-            # will update for the next status request
-            self.queue_gcode_line('?')
-        return self.status
-
-
     def flush_input(self):
         if self.device:
             self.device.flushInput()
@@ -163,43 +107,6 @@ class SerialManagerClass:
     def flush_output(self):
         if self.device:
             self.device.flushOutput()
-
-
-    def queue_gcode_line(self, gcode):
-        if gcode and self.is_connected():
-            gcode = gcode.strip()
-    
-            if gcode[0] == '%':
-                return
-            elif gcode[0] == '!':
-                self.cancel_queue()
-                self.reset_status()
-                self.tx_buffer = '!\n'
-                self.job_size = 2
-                self.job_active = True
-            else:
-                if gcode != '?':  # not ready unless just a ?-query
-                    self.status['ready'] = False
-                    
-                if self.fec_redundancy > 0:  # using error correction
-                    # prepend marker and checksum
-                    checksum = 0
-                    for c in gcode:
-                        ascii_ord = ord(c)
-                        if ascii_ord > ord(' ') and c != '~' and c != '!':  #ignore 32 and lower, ~, !
-                            checksum += ascii_ord
-                            if checksum >= 128:
-                                checksum -= 128
-                    checksum = (checksum >> 1) + 128
-                    gcode_redundant = ""
-                    for n in range(self.fec_redundancy-1):
-                        gcode_redundant += '^' + chr(checksum) + gcode + '\n'
-                    gcode = gcode_redundant + '*' + chr(checksum) + gcode
-
-                self.tx_buffer += gcode + '\n'
-                self.job_size += len(gcode) + 1
-                self.job_active = True
-
 
 
     def cancel_queue(self):
@@ -211,24 +118,21 @@ class SerialManagerClass:
     def is_queue_empty(self):
         return len(self.tx_buffer) == 0
         
-    
-    def get_queue_percentage_done(self):
-        if self.job_size == 0:
-            return ""
-        return str(100-100*len(self.tx_buffer)/self.job_size)
+
+    def queue_command(self, command):
+        self.tx_buffer += command
+        self.job_size += 1
+        self.job_active = True
 
 
-    def set_pause(self, flag):
-        # returns pause status
-        if self.is_queue_empty():
-            return False
-        else:
-            if flag:  # pause
-                self.status['paused'] = True
-                return True
-            else:     # unpause
-                self.status['paused'] = False
-                return False
+    def queue_param(self, param, val):
+
+
+    def queue_target(self, pos):
+        self.queue_param(PARAM_TARGET_X, x)
+        self.queue_param(PARAM_TARGET_Y, y)
+        if len(pos) > 2;
+            self.queue_param(PARAM_TARGET_Z, z)
 
     
     def send_queue_as_ready(self):
@@ -390,6 +294,268 @@ class SerialManagerClass:
                 self.status['firmware_version'] = line[line.find('V')+1:]                     
 
 
+
+
+
+
+    ###########################################################################
+    ### API ###################################################################
+    ###########################################################################
+
+    def list_devices(self, baudrate):
+        ports = []
+        if os.name == 'posix':
+            iterator = sorted(list_ports.grep('tty'))
+            print "Found ports:"
+            for port, desc, hwid in iterator:
+                ports.append(port)
+                print "%-20s" % (port,)
+                print "    desc: %s" % (desc,)
+                print "    hwid: %s" % (hwid,)            
+        else:
+            # iterator = sorted(list_ports.grep(''))  # does not return USB-style
+            # scan for available ports. return a list of tuples (num, name)
+            available = []
+            for i in range(24):
+                try:
+                    s = serial.Serial(port=i, baudrate=baudrate)
+                    ports.append(s.portstr)                
+                    available.append( (i, s.portstr))
+                    s.close()
+                except serial.SerialException:
+                    pass
+            print "Found ports:"
+            for n,s in available: print "(%d) %s" % (n,s)
+        return ports
+
+            
+    def match_device(self, search_regex, baudrate):
+        if os.name == 'posix':
+            matched_ports = list_ports.grep(search_regex)
+            if matched_ports:
+                for match_tuple in matched_ports:
+                    if match_tuple:
+                        return match_tuple[0]
+            print "No serial port match for anything like: " + search_regex
+            return None
+        else:
+            # windows hack because pyserial does not enumerate USB-style com ports
+            print "Trying to find Controller ..."
+            for i in range(24):
+                try:
+                    s = serial.Serial(port=i, baudrate=baudrate, timeout=2.0)
+                    lasaur_hello = s.read(32)
+                    if lasaur_hello.find(self.LASAURGRBL_FIRST_STRING) > -1:
+                        return s.portstr
+                    s.close()
+                except serial.SerialException:
+                    pass      
+            return None      
+        
+
+    def connect(self, port, baudrate):
+        self.rx_buffer = ""
+        self.tx_buffer = ""        
+        self.remoteXON = True
+        self.job_size = 0
+        self.reset_status()
+                
+        # Create serial device with both read timeout set to 0.
+        # This results in the read() being non-blocking
+        # Write on the other hand uses a large timeout but should not be blocking
+        # much because we ask it only to write TX_CHUNK_SIZE at a time.
+        # BUG WARNING: the pyserial write function does not report how
+        # many bytes were actually written if this is different from requested.
+        # Work around: use a big enough timeout and a small enough chunk size.
+        self.device = serial.Serial(port, baudrate, timeout=0, writeTimeout=0.1)
+
+
+    def close(self):
+        if self.device:
+            try:
+                self.device.flushOutput()
+                self.device.flushInput()
+                self.device.close()
+                self.device = None
+            except:
+                self.device = None
+            self.status['ready'] = False
+            return True
+        else:
+            return False
+
+              
+    def is_connected(self):
+        return bool(self.device)
+
+
+    def process(self):
+        """Keep calling this to process serial"""
+        self.send_queue_as_ready()
+
+
+    def hardware_status(self):
+        if self.is_queue_empty():
+            # trigger a status report
+            # will update for the next status request
+            self.queue_gcode_line('?')
+        return self.status
+
+
+    def percentage_done(self):
+        if self.job_size == 0:
+            return ""
+        return str(100-100*len(self.tx_buffer)/self.job_size)
+
+
+    def set_pause(self, flag):
+        # returns pause status
+        if self.is_queue_empty():
+            return False
+        else:
+            if flag:  # pause
+                self.status['paused'] = True
+                return True
+            else:     # unpause
+                self.status['paused'] = False
+                return False
+
+
+    def queue_gcode_line(self, gcode):
+        if gcode and self.is_connected():
+            gcode = gcode.strip()
+    
+            if gcode[0] == '%':
+                return
+            elif gcode[0] == '!':
+                self.cancel_queue()
+                self.reset_status()
+                self.tx_buffer = '!\n'
+                self.job_size = 2
+                self.job_active = True
+            else:
+                if gcode != '?':  # not ready unless just a ?-query
+                    self.status['ready'] = False
+                    
+                if self.fec_redundancy > 0:  # using error correction
+                    # prepend marker and checksum
+                    checksum = 0
+                    for c in gcode:
+                        ascii_ord = ord(c)
+                        if ascii_ord > ord(' ') and c != '~' and c != '!':  #ignore 32 and lower, ~, !
+                            checksum += ascii_ord
+                            if checksum >= 128:
+                                checksum -= 128
+                    checksum = (checksum >> 1) + 128
+                    gcode_redundant = ""
+                    for n in range(self.fec_redundancy-1):
+                        gcode_redundant += '^' + chr(checksum) + gcode + '\n'
+                    gcode = gcode_redundant + '*' + chr(checksum) + gcode
+
+                self.tx_buffer += gcode + '\n'
+                self.job_size += len(gcode) + 1
+                self.job_active = True
+
+
+    def job(jobdict):
+        """Queue a job.
+        A job dictionary can define vector and raster passes.
+        It can set the feedrate, intensity, and pierce time.
+        The job dictionary with the following keys:
+        { passes,
+            colors,
+            feedrate,
+            intensity,
+            pierce_time,
+            relative,
+            air_assist,
+          paths
+          rasterpass,
+          rasters,
+        }
+        """
+        if not jobdict.has_key('passes'):
+            return "no passes defined"
+
+        if jobdict.has_key('rasters') and jobdict.has_key('rasterpass'):
+            rfeedrate = jobdict['rasterpass']['feedrate']
+            rintensity = jobdict['rasterpass']['intensity']
+
+
+        if jobdict.has_key('paths') and jobdict.has_key('passes'):
+            for ppass in jobdict['passes']:
+                for color in ppass['colors']:
+                    if jobdict.['paths'].has_key(color):
+                        for path in jobdict['paths'][color]
+                            if len(path) > 0:
+                                # first vertex, seek
+                                self.queue_param(PARAM_FEEDRATE, DEFAULT_SEEK_FEEDRATE)  ### Maybe we need seek command
+                                self.queue_param(PARAM_INTENSITY, 0.0)
+                                self.queue_target(path[0])
+                                self.queue_command(CMD_LINE)
+                            elif len(path) > 1:
+                                self.queue_param(PARAM_FEEDRATE, ppass['feedrate'])
+                                self.queue_param(PARAM_INTENSITY, ppass['intensity'])
+                                for i in xrange(1, len(path)):
+                                    # rest, feed
+                                    pos = path[i]
+                                    self.queue_target(pos)
+                                    self.queue_command(CMD_LINE)
+
+
+    def stop(self):
+        self.cancel_queue()
+        self.reset_status()
+        self.queue_command(CMD_STOP)
+
+
+    def resume(self):
+        self.queue_command(CMD_RESUME)
+
+
+    def homing(self):
+        # only home when no job active
+        if not self.job_active:
+            self.queue_command(CMD_HOMING)
+        else:
+            print "WARN: ignoring homing command while job running"
+
+
+    def set_offset_table(self):
+        self.queue_command(CMD_SET_OFFSET_TABLE)
+    def set_offset_custom(self):
+        self.queue_command(CMD_SET_OFFSET_CUSTOM)
+    def def_offset_table(self, pos):
+        self.queue_target(pos)
+        self.queue_command(CMD_DEF_OFFSET_TABLE)
+    def def_offset_custom(self, pos):
+        self.queue_target(pos)
+        self.queue_command(CMD_DEF_OFFSET_CUSTOM)
+    def sel_offset_table(self):
+        self.queue_command(CMD_SEL_OFFSET_TABLE)
+    def sel_offset_custom(self):
+        self.queue_command(CMD_SEL_OFFSET_CUSTOM)
+
+
+    def air(self, bVal):
+        if bVal:
+            self.queue_command(CMD_AIR_ENABLE)
+        else:
+            self.queue_command(CMD_AIR_DISABLE)
+
+
+    def aux1(self, bVal):
+        if bVal:
+            self.queue_command(CMD_AUX1_ENABLE)
+        else:
+            self.queue_command(CMD_AUX1_DISABLE)
+
+
+    def aux2(self, bVal):
+        if bVal:
+            self.queue_command(CMD_AUX2_ENABLE)
+        else:
+            self.queue_command(CMD_AUX2_DISABLE)
 
 
             

@@ -19,6 +19,29 @@ CHANGE LOG
 
 
 
+Backend Interface
+-----------------
+- job by lsa job file
+  - feed, raster feed
+  - seek by sending job file with one vertex per path
+  - feedrate
+  - intensity
+  - pierce/dwell
+  - jog relative
+  - air assist switching
+- homing
+- set/use offset
+- stop
+- resume
+- pause
+- connect/disconnect
+- flash
+- reset
+- queues
+
+
+
+
 BBB
 ---
 - pin P8:46 connected to avr reset would prevent the BBB from booting

@@ -72,7 +72,7 @@ volatile uint8_t tx_buffer_tail = 0;
 volatile uint8_t send_ready_flag = 0;
 volatile uint8_t request_ready_flag = 0;
 
-volatile bool raster_mode = false;
+bool raster_mode = false;
 
 
 static void set_baud_rate(long baud) {
@@ -139,29 +139,70 @@ SIGNAL(USART_UDRE_vect) {
 }
 
 
-uint8_t serial_gcode_read() {
-  // Block if buffer is empty.
-  while (rx_buffer_tail == rx_buffer_head) {
+uint8_t serial_protocol_read() {
+  // called from protocol loop
+  while (raster_mode) {
     // Block while in raster mode.
     // In this mode the serial inerrupt provides data
     // in the rx_buffer which get directly consumed
     // by the stepper interrupt.
-    while (raster_mode) {
-      sleep_mode();  // sleep a tiny bit
-    }
+    sleep_mode();  // sleep a tiny bit
+  }
+  // we are out of raster_mode
+  while (rx_buffer_tail == rx_buffer_head) {
     sleep_mode();
   }
-  return serial_read();
+  // we have non-raster data
+  uint8_t data = serial_read();
+  if (data == RASTER_DATA_START) {
+    raster_mode = true;
+    // comsume the byte, return next non-raster byte
+    while (raster_mode) {
+      sleep_mode();
+    }
+    while (rx_buffer_tail == rx_buffer_head) {
+      sleep_mode();
+    }
+    return serial_read();
+  } else {
+    return data;
+  }
 }
 
 
 uint8_t serial_raster_read() {
-  if (rx_buffer_tail == rx_buffer_head || !raster_mode) {
-    // oops, no raster data
-    // rastering too fast or serial transmission too slow
-    return 0;
+  /** raster buffer ********************************
+  * The rx_buffer doubles as a raster buffer. This *
+  * depends on the right sequence of commands:     *
+  * accel-line, raster-line, decel-line            *
+  * and then streaming of raster-data.             *
+  * serial_protocol_read enters the raster_mode    *
+  * serial_raster_read exits it. During the raster *
+  * streaming serial_protocol_read is blocking and *
+  * serial_raster_read gets called from the        *
+  * interrupt while executing the raster line.     *
+  * To exit the raster_mode, all the raster data   *
+  * and one more needs to be read.                 *
+  *************************************************/
+  // called from stepper interrupt
+  if (raster_mode) {
+    if (rx_buffer_tail == rx_buffer_head) {
+      // oops, no raster data, sending side is flaking
+      // rastering too fast or serial transmission too slow
+      return 0;
+    } else {
+      uint8_t data = serial_read();
+      if (data == RASTER_DATA_END) {
+        raster_mode = false;
+        return 0;
+      } else {
+        return data;
+      }
+    }
   } else {
-    return serial_read();
+    // oops, not even in raster mode
+    // sending side seems to be flaking
+    return 0;
   }
 }
 
@@ -190,7 +231,7 @@ SIGNAL(USART_RX_vect) {
   uint8_t data = UDR0;
   if (data == CHAR_STOP) {
     // special stop character, bypass buffer
-    stepper_request_stop(STATUS_SERIAL_STOP_REQUEST);
+    stepper_request_stop(STOPERROR_SERIAL_STOP_REQUEST);
   } else if (data == CHAR_RESUME) {
     // special resume character, bypass buffer
     stepper_stop_resume();
@@ -202,11 +243,6 @@ SIGNAL(USART_RX_vect) {
       // send ready when enough slots open up
       request_ready_flag = 1;
     }
-  } else if (data == RASTER_DATA_START) {
-    raster_mode = true;
-  } else if (data == RASTER_DATA_END) {
-    raster_mode = false;
-
   } else {
     uint8_t head = rx_buffer_head;  // optimize for volatile    
     uint8_t next_head = head + 1;
@@ -214,7 +250,7 @@ SIGNAL(USART_RX_vect) {
 
     if (next_head == rx_buffer_tail) {
       // buffer is full, other side sent too much data
-      stepper_request_stop(STATUS_RX_BUFFER_OVERFLOW);
+      stepper_request_stop(STOPERROR_RX_BUFFER_OVERFLOW);
     } else {
       rx_buffer[head] = data;
       rx_buffer_head = next_head;

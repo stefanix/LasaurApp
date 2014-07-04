@@ -120,7 +120,7 @@ def run_with_callback(host, port):
     sys.stdout.flush()  # make sure everything gets flushed
     while 1:
         try:
-            SerialManager.send_queue_as_ready()
+            SerialManager.process()
             server.handle_request()
         except KeyboardInterrupt:
             break
@@ -349,7 +349,7 @@ def serial_handler(connect):
 
 @route('/status')
 def get_status():
-    status = copy.deepcopy(SerialManager.get_hardware_status())
+    status = copy.deepcopy(SerialManager.hardware_status())
     status['serial_connected'] = SerialManager.is_connected()
     status['lasaurapp_version'] = VERSION
     return json.dumps(status)
@@ -448,21 +448,27 @@ def reset_atmega_handler():
     return '1'
 
 
-@route('/gcode', method='POST')
+@route('/job', method='POST')
 def job_submit_handler():
-    job_data = request.forms.get('job_data')
-    if job_data and SerialManager.is_connected():
-        lines = job_data.split('\n')
-        print "Adding to queue %s lines" % len(lines)
-        for line in lines:
-            SerialManager.queue_gcode_line(line)
-        return "__ok__"
-    else:
+    """Submit a job in lsa format.
+
+    """
+    if not SerialManager.is_connected():
         return "serial disconnected"
+
+    job_data = request.forms.get('job_data')
+    if not job_data:
+        return "no job data"
+
+    jobdict = json.loads(job_data)
+    SerialManager.job(jobdict)
+
+    return "__ok__"
+        
 
 @route('/queue_pct_done')
 def queue_pct_done_handler():
-    return SerialManager.get_queue_percentage_done()
+    return SerialManager.percentage_done()
 
 
 @route('/file_reader', method='POST')

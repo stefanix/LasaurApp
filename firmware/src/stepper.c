@@ -116,7 +116,7 @@ void stepper_init() {
   acceleration_tick_counter = 0;
   current_block = NULL;
   stop_requested = false;
-  stop_status = STATUS_OK;
+  stop_status = STOPERROR_OK;
   busy = false;
   
   // start in the idle state
@@ -169,6 +169,7 @@ bool stepper_stop_requested() {
 }
 
 void stepper_stop_resume() {
+  stop_status = STOPERROR_OK;
   stop_requested = false;
 }
 
@@ -225,13 +226,13 @@ ISR(TIMER1_COMPA_vect) {
   #ifndef DEBUG_IGNORE_SENSORS
     // stop program when any limit is hit or the e-stop turned the power off
     if (SENSE_LIMITS) {
-      stepper_request_stop(STATUS_LIMIT_HIT);
+      stepper_request_stop(STOPERROR_LIMIT_HIT_ANY);
       busy = false;
       return;    
     }
     #ifndef DRIVEBOARD
       else if (SENSE_POWER_OFF) {
-        stepper_request_stop(STATUS_POWER_OFF);
+        stepper_request_stop(STOPERROR_POWER_OFF);
         busy = false;
         return;
       }
