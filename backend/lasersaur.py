@@ -7,6 +7,18 @@ from serial.tools import list_ports
 from collections import deque
 
 
+__author__  = 'Stefan Hechenberger <stefan@nortd.com>'
+__all__ = [
+    'connect', 'connected', 'close',
+    'process', 'percentage', 'homing',
+    'feedrate', 'intensity', 'move',
+    'pause', 'unpause', 'stop', 'unstop',
+    'air_on', 'air_off', 'aux1_on', 'aux1_off', 'aux2_on', 'aux2_off',
+    'set_offset_table', 'set_offset_custom',
+    'def_offset_table', 'def_offset_custom',
+    'sel_offset_table', 'sel_offset_custom' ]
+
+
 CMD_NONE = "A"
 CMD_LINE = "B"
 CMD_DWELL = "C"
@@ -47,8 +59,11 @@ CMD_STOP = '!'
 CMD_RESUME = '~'
 
 
-class SerialManagerClass:
-    
+class LasersaurClass:
+    """Lasersaur serial control.
+    Use Lasersaur singelton instead of instancing.
+    """
+
     def __init__(self):
         self.device = None
 
@@ -82,7 +97,7 @@ class SerialManagerClass:
 
     def reset_status(self):
         self.status = {
-            'ready': True,  # turns True by querying status
+            'ready': True,
             'paused': False,  # this is also a control flag
             'buffer_overflow': False,
             'transmission_error': False,
@@ -96,36 +111,16 @@ class SerialManagerClass:
             'chiller_off': False,
             'x': False,
             'y': False,
+            'z': False,
             'firmware_version': None
         }
-
 
 
     def cancel_queue(self):
         self.tx_buffer = ''
         self.job_size = 0
         self.job_active = False
-                  
-
-    def is_queue_empty(self):
-        return len(self.tx_buffer) == 0
-        
-
-    def queue_command(self, command):
-        self.tx_buffer += command
-        self.job_size += 1
-        self.job_active = True
-
-
-    def queue_param(self, param, val):
-
-
-    def queue_target(self, pos):
-        self.queue_param(PARAM_TARGET_X, x)
-        self.queue_param(PARAM_TARGET_Y, y)
-        if len(pos) > 2;
-            self.queue_param(PARAM_TARGET_Z, z)
-
+    
     
     def send_queue_as_ready(self):
         """Continuously call this to keep processing queue."""    
@@ -274,13 +269,12 @@ class SerialManagerClass:
 
             if 'X' in line:
                 self.status['x'] = line[line.find('X')+1:line.find('Y')]
-            # else:
-            #     self.status['x'] = False
 
             if 'Y' in line:
                 self.status['y'] = line[line.find('Y')+1:line.find('V')]
-            # else:
-            #     self.status['y'] = False
+
+            if 'Z' in line:
+                self.status['z'] = line[line.find('Z')+1:line.find('Z')]
 
             if 'V' in line:
                 self.status['firmware_version'] = line[line.find('V')+1:]                     
@@ -367,6 +361,10 @@ class SerialManagerClass:
         self.device.flushOutput()
 
 
+    def connected(self):
+        return bool(self.device)
+
+
     def close(self):
         if self.device:
             try:
@@ -381,77 +379,53 @@ class SerialManagerClass:
         else:
             return False
 
-              
-    def is_connected(self):
-        return bool(self.device)
-
-
+            
     def process(self):
         """Keep calling this to process serial"""
         self.send_queue_as_ready()
 
 
-    def hardware_status(self):
-        if self.is_queue_empty():
-            # trigger a status report
-            # will update for the next status request
-            self.queue_gcode_line('?')
-        return self.status
+    def percentage(self):
+        """Return the percentage done as an integer between 0-100.
+        Return -1 if no job is active."""
+        if self.job_size == 0 or not self.job_active:
+            return -1
+        return int(100-100*len(self.tx_buffer)/float(self.job_size))
 
 
-    def percentage_done(self):
-        if self.job_size == 0:
-            return ""
-        return str(100-100*len(self.tx_buffer)/self.job_size)
-
-
-    def set_pause(self, flag):
-        # returns pause status
-        if self.is_queue_empty():
-            return False
+    def homing(self):
+        """Run homing cycle."""
+        if not self.job_active:
+            self.send_command(CMD_HOMING)
         else:
-            if flag:  # pause
-                self.status['paused'] = True
-                return True
-            else:     # unpause
-                self.status['paused'] = False
-                return False
+            print "WARN: ignoring homing command while job running"
 
 
-    # def queue_gcode_line(self, gcode):
-    #     if gcode and self.is_connected():
-    #         gcode = gcode.strip()
-    
-    #         if gcode[0] == '%':
-    #             return
-    #         elif gcode[0] == '!':
-    #             self.cancel_queue()
-    #             self.reset_status()
-    #             self.tx_buffer = '!\n'
-    #             self.job_size = 2
-    #             self.job_active = True
-    #         else:
-    #             if gcode != '?':  # not ready unless just a ?-query
-    #                 self.status['ready'] = False
-                    
-    #             if self.fec_redundancy > 0:  # using error correction
-    #                 # prepend marker and checksum
-    #                 checksum = 0
-    #                 for c in gcode:
-    #                     ascii_ord = ord(c)
-    #                     if ascii_ord > ord(' ') and c != '~' and c != '!':  #ignore 32 and lower, ~, !
-    #                         checksum += ascii_ord
-    #                         if checksum >= 128:
-    #                             checksum -= 128
-    #                 checksum = (checksum >> 1) + 128
-    #                 gcode_redundant = ""
-    #                 for n in range(self.fec_redundancy-1):
-    #                     gcode_redundant += '^' + chr(checksum) + gcode + '\n'
-    #                 gcode = gcode_redundant + '*' + chr(checksum) + gcode
 
-    #             self.tx_buffer += gcode + '\n'
-    #             self.job_size += len(gcode) + 1
-    #             self.job_active = True
+
+    def send_command(self, command):
+        self.tx_buffer += command
+        self.job_size += 1
+        self.job_active = True
+
+
+    def send_param(self, param, val):
+
+
+
+    def feedrate(self, val):
+        self.send_param(PARAM_FEEDRATE, val)
+
+    def intensity(self, val):
+        self.send_param(PARAM_INTENSITY, val)
+
+    def move(self, x, y, z=0.0):
+        self.send_param(PARAM_TARGET_X, x)
+        self.send_param(PARAM_TARGET_Y, y)
+        self.send_param(PARAM_TARGET_Z, z)
+        self.send_command(CMD_LINE)
+
+
 
 
     def job(jobdict):
@@ -490,75 +464,117 @@ class SerialManagerClass:
                         for path in jobdict['paths'][color]
                             if len(path) > 0:
                                 # first vertex, seek
-                                self.queue_param(PARAM_FEEDRATE, ppass['seekrate'])
-                                self.queue_param(PARAM_INTENSITY, 0.0)
-                                self.queue_target(path[0])
-                                self.queue_command(CMD_LINE)
+                                self.feedrate(ppass['seekrate'])
+                                self.intensity(0.0)
+                                self.move(path[0][0], path[0][1], path[0][2])
                             elif len(path) > 1:
-                                self.queue_param(PARAM_FEEDRATE, ppass['feedrate'])
-                                self.queue_param(PARAM_INTENSITY, ppass['intensity'])
+                                self.feedrate(ppass['feedrate'])
+                                self.intensity(ppass['intensity'])                                
                                 for i in xrange(1, len(path)):
                                     # rest, feed
-                                    pos = path[i]
-                                    self.queue_target(pos)
-                                    self.queue_command(CMD_LINE)
+                                    self.move(path[i][0], path[i][1], path[i][2])
+
+
+    def pause(self):        
+        if len(self.tx_buffer) == 0:
+            return False
+        else:
+            self.status['paused'] = True
+            return True
+
+    def unpause(self, flag):
+        if len(self.tx_buffer) == 0:
+            return False
+        else:
+            self.status['paused'] = False
+            return False
 
 
     def stop(self):
+        """Force stop condition."""
         self.cancel_queue()
         self.reset_status()
-        self.queue_command(CMD_STOP)
+        self.send_command(CMD_STOP)
 
 
-    def resume(self):
-        self.queue_command(CMD_RESUME)
+    def unstop(self):
+        """Resume from stop condition."""
+        self.send_command(CMD_RESUME)
 
 
-    def homing(self):
-        # only home when no job active
-        if not self.job_active:
-            self.queue_command(CMD_HOMING)
-        else:
-            print "WARN: ignoring homing command while job running"
+    def air_on(self):
+        self.send_command(CMD_AIR_ENABLE)
+    def air_off(self):
+        self.send_command(CMD_AIR_DISABLE)
+
+
+    def aux1_on(self):
+        self.send_command(CMD_AUX1_ENABLE)
+    def aux1_off(self):
+        self.send_command(CMD_AUX1_DISABLE)
+
+
+    def aux2_on(self):
+        self.send_command(CMD_AUX2_ENABLE)
+    def aux2_off(self):
+        self.send_command(CMD_AUX2_DISABLE)
 
 
     def set_offset_table(self):
-        self.queue_command(CMD_SET_OFFSET_TABLE)
+        self.send_command(CMD_SET_OFFSET_TABLE)
     def set_offset_custom(self):
-        self.queue_command(CMD_SET_OFFSET_CUSTOM)
-    def def_offset_table(self, pos):
-        self.queue_target(pos)
-        self.queue_command(CMD_DEF_OFFSET_TABLE)
-    def def_offset_custom(self, pos):
-        self.queue_target(pos)
-        self.queue_command(CMD_DEF_OFFSET_CUSTOM)
+        self.send_command(CMD_SET_OFFSET_CUSTOM)
+    def def_offset_table(self, x, y, z):
+        self.send_param(PARAM_TARGET_X, x)
+        self.send_param(PARAM_TARGET_Y, y)
+        self.send_param(PARAM_TARGET_Z, z)
+        self.send_command(CMD_DEF_OFFSET_TABLE)
+    def def_offset_custom(self, x, y, z):
+        self.send_param(PARAM_TARGET_X, x)
+        self.send_param(PARAM_TARGET_Y, y)
+        self.send_param(PARAM_TARGET_Z, z)
+        self.send_command(CMD_DEF_OFFSET_CUSTOM)
     def sel_offset_table(self):
-        self.queue_command(CMD_SEL_OFFSET_TABLE)
+        self.send_command(CMD_SEL_OFFSET_TABLE)
     def sel_offset_custom(self):
-        self.queue_command(CMD_SEL_OFFSET_CUSTOM)
-
-
-    def air(self, bVal):
-        if bVal:
-            self.queue_command(CMD_AIR_ENABLE)
-        else:
-            self.queue_command(CMD_AIR_DISABLE)
-
-
-    def aux1(self, bVal):
-        if bVal:
-            self.queue_command(CMD_AUX1_ENABLE)
-        else:
-            self.queue_command(CMD_AUX1_DISABLE)
-
-
-    def aux2(self, bVal):
-        if bVal:
-            self.queue_command(CMD_AUX2_ENABLE)
-        else:
-            self.queue_command(CMD_AUX2_DISABLE)
+        self.send_command(CMD_SEL_OFFSET_CUSTOM)
 
 
             
-# singelton
-SerialManager = SerialManagerClass()
+### SINGLETON
+Lasersaur = LasersaurClass()
+
+### ALIASES
+connect = Lasersaur.connect
+connected = Lasersaur.connected
+close =  Lasersaur.close
+
+process =  Lasersaur.process
+percentage =  Lasersaur.percentage
+homing =  Lasersaur.homing
+
+feedrate =  Lasersaur.feedrate
+intensity =  Lasersaur.intensity
+move =  Lasersaur.move
+job =  Lasersaur.job
+
+pause =  Lasersaur.pause
+unpause =  Lasersaur.unpause
+stop =  Lasersaur.stop
+unstop =  Lasersaur.unstop
+
+air_on = Lasersaur.air_on
+air_off = Lasersaur.air_off
+aux1_on = Lasersaur.aux1_on
+aux1_off = Lasersaur.aux1_off
+aux2_on = Lasersaur.aux2_on
+aux2_off = Lasersaur.aux2_off
+
+set_offset_table = Lasersaur.set_offset_table
+set_offset_custom = Lasersaur.set_offset_custom
+
+def_offset_table = Lasersaur.def_offset_table
+def_offset_custom = Lasersaur.def_offset_custom
+
+sel_offset_table = Lasersaur.sel_offset_table
+sel_offset_custom = Lasersaur.sel_offset_custom

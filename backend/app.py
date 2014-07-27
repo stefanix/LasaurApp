@@ -324,9 +324,6 @@ def serial_handler(connect):
                     SERIAL_PORT = SerialManager.match_device(GUESS_PREFIX, BITSPERSECOND)
                 SerialManager.connect(SERIAL_PORT, BITSPERSECOND)
                 ret = "Serial connected to %s:%d." % (SERIAL_PORT, BITSPERSECOND)  + '<br>'
-                time.sleep(1.0) # allow some time to receive a prompt/welcome
-                SerialManager.flush_input()
-                SerialManager.flush_output()
                 return ret
             except serial.SerialException:
                 SERIAL_PORT = None
