@@ -23,20 +23,17 @@
 #include "planner.h"
 #include "stepper.h"
 #include "sense_control.h"
-#include "gcode.h"
+#include "protocol.h"
 #include "serial.h"
 
 
 int main() {
-  sei();  //enable interrupts
   serial_init();
-  gcode_init();
+  protocol_init();
   planner_init();      
   stepper_init();
   sense_init();
   control_init();
   
-  while(true) {
-    gcode_process_line();
-  }
+  protocol_loop();
 }

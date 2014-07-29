@@ -26,8 +26,6 @@
 // Version number
 // (must not contain capital letters)
 #define LASAURGRBL_VERSION "14.01"
-// build for new driveboard hardware
-#define DRIVEBOARD
 
 #define V1401
 
@@ -64,23 +62,14 @@
 #define SENSE_DDR               DDRD
 #define SENSE_PORT              PORTD
 #define SENSE_PIN               PIND
-#ifndef DRIVEBOARD
-  #define POWER_BIT             2
-#endif
 #define CHILLER_BIT             3
 #define DOOR_BIT                2
 
-#ifdef DRIVEBOARD
-  #define ASSIST_DDR            DDRD
-  #define ASSIST_PORT           PORTD
-  #define AIR_ASSIST_BIT        4
-  #define AUX1_ASSIST_BIT       7
-  #define AUX2_ASSIST_BIT       5
-#else
-  #define LIMITS_OVERWRITE_DDR  DDRD
-  #define LIMITS_OVERWRITE_PORT PORTD
-  #define LIMITS_OVERWRITE_BIT  7  
-#endif
+#define ASSIST_DDR              DDRD
+#define ASSIST_PORT             PORTD
+#define AIR_ASSIST_BIT          4
+#define AUX1_ASSIST_BIT         7
+#define AUX2_ASSIST_BIT         5
   
 #define LIMIT_DDR               DDRC
 #define LIMIT_PORT              PORTC
@@ -89,15 +78,9 @@
 #define X2_LIMIT_BIT            1
 #define Y1_LIMIT_BIT            2
 #define Y2_LIMIT_BIT            3
-#ifdef DRIVEBOARD
-  #define Z1_LIMIT_BIT          4
-  #define Z2_LIMIT_BIT          5
-#else
-  #define ASSIST_DDR            DDRC
-  #define ASSIST_PORT           PORTC
-  #define AIR_ASSIST_BIT        4
-  #define AUX1_ASSIST_BIT       5
-#endif
+#define Z1_LIMIT_BIT            4
+#define Z2_LIMIT_BIT            5
+
 
 #define STEPPING_DDR            DDRB
 #define STEPPING_PORT           PORTB
@@ -110,18 +93,13 @@
 
 
 
-#ifdef DRIVEBOARD
-  #define SENSE_MASK ((1<<CHILLER_BIT)|(1<<DOOR_BIT))
-  #define LIMIT_MASK ((1<<X1_LIMIT_BIT)|(1<<X2_LIMIT_BIT)|(1<<Y1_LIMIT_BIT)|(1<<Y2_LIMIT_BIT)|(1<<Z1_LIMIT_BIT)|(1<<Z2_LIMIT_BIT))
-#else
-  #define SENSE_MASK ((1<<POWER_BIT)|(1<<CHILLER_BIT)|(1<<DOOR_BIT))
-  #define LIMIT_MASK ((1<<X1_LIMIT_BIT)|(1<<X2_LIMIT_BIT)|(1<<Y1_LIMIT_BIT)|(1<<Y2_LIMIT_BIT))
-#endif
+#define SENSE_MASK ((1<<CHILLER_BIT)|(1<<DOOR_BIT))
+#define LIMIT_MASK ((1<<X1_LIMIT_BIT)|(1<<X2_LIMIT_BIT)|(1<<Y1_LIMIT_BIT)|(1<<Y2_LIMIT_BIT)|(1<<Z1_LIMIT_BIT)|(1<<Z2_LIMIT_BIT))
 #define STEPPING_MASK ((1<<X_STEP_BIT)|(1<<Y_STEP_BIT)|(1<<Z_STEP_BIT))
 #define DIRECTION_MASK ((1<<X_DIRECTION_BIT)|(1<<Y_DIRECTION_BIT)|(1<<Z_DIRECTION_BIT))
 
 // figure out INVERT_MASK
-// careful! direction pins hardcoded here#if DRIVEBOARD
+// careful! direction pins hardcoded here
 // (1<<X_DIRECTION_BIT) | (1<<Y_DIRECTION_BIT) | (1<<Y_DIRECTION_BIT)
 #if CONFIG_INVERT_X_AXIS && CONFIG_INVERT_Y_AXIS && CONFIG_INVERT_Z_AXIS
   #define INVERT_MASK 56U

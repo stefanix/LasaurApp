@@ -40,15 +40,25 @@ elif sys.platform == "linux" or sys.platform == "linux2":  #Linux
 # No need to edit anything below this line
 
 
-def build_firmware(source_dir, firmware_dir, firmware_name):
+def build_firmware(firmware_name):
+    """Build the firmware and name it firmware_name.hex.
+    The source code is assumed to be in ../firmware/src/
+    And the hex file will be placed in ../firmware/
+    Returns 0 on success.
+    """
     ret = 0
+
+    thislocation = os.path.dirname(os.path.realpath(__file__))
+    firmware_dir = os.path.join(thislocation, '..', 'firmware')
+    source_dir = os.path.join(firmware_dir, 'src')
+
     cwd_temp = os.getcwd()
     os.chdir(source_dir)
 
     DEVICE = "atmega328p"
     CLOCK = "16000000"
     BUILDNAME = firmware_name
-    OBJECTS  = ["main", "serial", "gcode", "planner", "sense_control", "stepper"]
+    OBJECTS  = ["main", "serial", "protocol", "planner", "sense_control", "stepper"]
 
     COMPILE = AVRGCCAPP + " -Wall -Os -DF_CPU=" + CLOCK + " -mmcu=" + DEVICE + " -I. -ffunction-sections" + " --std=c99"
 

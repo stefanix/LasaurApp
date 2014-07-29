@@ -424,9 +424,7 @@ def flash_firmware_handler(firmware_file=FIRMWARE):
 def build_firmware_handler():
     ret = []
     buildname = "LasaurGrbl_from_src"
-    firmware_dir = os.path.join(resources_dir(), 'firmware')
-    source_dir = os.path.join(resources_dir(), 'firmware', 'src')
-    return_code = build_firmware(source_dir, firmware_dir, buildname)
+    return_code = build_firmware(buildname)
     if return_code != 0:
         print ret
         ret.append('<h2>FAIL: build error!</h2>')
@@ -726,9 +724,7 @@ else:
     elif args.build_flash:
         # build
         buildname = "LasaurGrbl_from_src"
-        firmware_dir = os.path.join(resources_dir(), 'firmware')
-        source_dir = os.path.join(resources_dir(), 'firmware', 'src')
-        return_code = build_firmware(source_dir, firmware_dir, buildname)
+        return_code = build_firmware(buildname)
         if return_code != 0:
             print ret
         else:

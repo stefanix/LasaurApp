@@ -54,6 +54,7 @@ get_curent_value()
 #include "serial.h"
 #include "planner.h"
 #include "stepper.h"
+#include "sense_control.h"
 
 
 
@@ -64,42 +65,42 @@ get_curent_value()
 #define OFFSET_CUSTOM 1
 
 
-#define CMD_NONE "A"
-#define CMD_LINE "B"
-#define CMD_DWELL "C"
-#define CMD_RASTER "D"
-#define CMD_HOMING "E"
+#define CMD_NONE 'A'
+#define CMD_LINE 'B'
+#define CMD_DWELL 'C'
+#define CMD_RASTER 'D'
 
-#define CMD_REF_RELATIVE "F" 
-#define CMD_REF_ABSOLUTE "G"
+#define CMD_SET_FEEDRATE 'E'
+#define CMD_SET_INTENSITY 'F'
 
-#define CMD_SET_OFFSET_TABLE "H"
-#define CMD_SET_OFFSET_CUSTOM "I"
-#define CMD_DEF_OFFSET_TABLE "J"
-#define CMD_DEF_OFFSET_CUSTOM "K"
-#define CMD_SEL_OFFSET_TABLE "L"
-#define CMD_SEL_OFFSET_CUSTOM "M"
+#define CMD_REF_RELATIVE 'G' 
+#define CMD_REF_ABSOLUTE 'H'
 
-#define CMD_AIR_ENABLE "N"
-#define CMD_AIR_DISABLE "O"
-#define CMD_AUX1_ENABLE "P"
-#define CMD_AUX1_DISABLE "Q"
-#define CMD_AUX2_ENABLE "R"
-#define CMD_AUX2_DISABLE "S"
+#define CMD_HOMING 'I'
 
-#define CMD_RASTER_DATA_START '\x02'
-#define CMD_RASTER_DATA_END '\x03'
+#define CMD_SET_OFFSET_TABLE 'J'
+#define CMD_SET_OFFSET_CUSTOM 'K'
+#define CMD_DEF_OFFSET_TABLE 'L'
+#define CMD_DEF_OFFSET_CUSTOM 'M'
+#define CMD_SEL_OFFSET_TABLE 'N'
+#define CMD_SEL_OFFSET_CUSTOM 'O'
 
-#define CMD_GET_STATUS "?"
+#define CMD_AIR_ENABLE 'P'
+#define CMD_AIR_DISABLE 'Q'
+#define CMD_AUX1_ENABLE 'R'
+#define CMD_AUX1_DISABLE 'S'
+#define CMD_AUX2_ENABLE 'T'
+#define CMD_AUX2_DISABLE 'U'
 
+#define CMD_GET_STATUS 'V'
 
-#define PARAM_TARGET_X "x"
-#define PARAM_TARGET_Y "y" 
-#define PARAM_TARGET_Z "z" 
-#define PARAM_FEEDRATE "f"
-#define PARAM_INTENSITY "s"
-#define PARAM_DURATION "d"
-#define PARAM_PIXEL_WIDTH "p"
+#define PARAM_TARGET_X 'x'
+#define PARAM_TARGET_Y 'y' 
+#define PARAM_TARGET_Z 'z' 
+#define PARAM_FEEDRATE 'f'
+#define PARAM_INTENSITY 's'
+#define PARAM_DURATION 'd'
+#define PARAM_PIXEL_WIDTH 'p'
 
 
 #define PARAM_MAX_DATA_LENGTH 4
@@ -126,7 +127,9 @@ static data_t pdata;
 
 // uint8_t line_checksum_ok_already;
 static volatile bool position_update_requested;  // make sure to update to stepper position on next occasion
-
+static void on_cmd(uint8_t command);
+static void on_param(uint8_t parameter);
+static double get_curent_value();
 
 
 void protocol_init() {
@@ -147,7 +150,7 @@ void protocol_init() {
   st.offsets[3+Y_AXIS] = CONFIG_Y_ORIGIN_OFFSET;
   st.offsets[3+Z_AXIS] = CONFIG_Z_ORIGIN_OFFSET;
   position_update_requested = false;
-  line_checksum_ok_already = false; 
+  // line_checksum_ok_already = false; 
 }
 
 
@@ -155,10 +158,6 @@ void protocol_loop() {
   uint8_t chr;
   while(true) {
     chr = serial_protocol_read();  // blocks until there is data
-
-    if (chr == CMD_GET_STATUS) {
-      print_extended_status = true;
-    }
 
     // handle position update after a stop
     if (position_update_requested) {
@@ -169,29 +168,29 @@ void protocol_loop() {
     }
 
     if (stepper_stop_requested()) {
-      printString(STOPERROR_ANY);  // report harware is in stop mode
+      serial_write(STOPERROR_ANY);  // report harware is in stop mode
       uint8_t status_code = stepper_stop_status();
-      printString(status_code);
+      serial_write(status_code);
       // stop conditions: see STOPERROR #defines in stepper.h
       if (status_code == STOPERROR_LIMIT_HIT_ANY) {
         // provide more details on which limit was hit
         if (SENSE_X1_LIMIT) {
-          printString(STOPERROR_LIMIT_HIT_X1);
+          serial_write(STOPERROR_LIMIT_HIT_X1);
         }
         if (SENSE_X2_LIMIT) {
-          printString(STOPERROR_LIMIT_HIT_X2);
+          serial_write(STOPERROR_LIMIT_HIT_X2);
         }
         if (SENSE_Y1_LIMIT) {
-          printString(STOPERROR_LIMIT_HIT_Y1);
+          serial_write(STOPERROR_LIMIT_HIT_Y1);
         }
         if (SENSE_Y2_LIMIT) {
-          printString(STOPERROR_LIMIT_HIT_Y2);
+          serial_write(STOPERROR_LIMIT_HIT_Y2);
         }
         if (SENSE_Z1_LIMIT) {
-          printString(STOPERROR_LIMIT_HIT_Z1);
+          serial_write(STOPERROR_LIMIT_HIT_Z1);
         }
         if (SENSE_Z2_LIMIT) {
-          printString(STOPERROR_LIMIT_HIT_Z2);
+          serial_write(STOPERROR_LIMIT_HIT_Z2);
         }
       }
     } else {
@@ -215,39 +214,29 @@ void protocol_loop() {
         }
       }
     }
-
-    if (chr == CMD_GET_STATUS) {
-      // position
-      printString("X");
-      printFloat(stepper_get_position_x());
-      printString("Y");
-      printFloat(stepper_get_position_y());
-      printString("Z");
-      printFloat(stepper_get_position_z());       
-      // version
-      printPgmString(PSTR("V" LASAURGRBL_VERSION));
-    }
-
-    printString("\n");
-
+    serial_write('\n');
   }
 }
 
 
 
 inline void on_cmd(uint8_t command) {
+  uint8_t cs;
   switch(command) {
     case CMD_NONE:
       break;
     case CMD_LINE: case CMD_RASTER:
-        uint16_t pixel_width = 0;
         if(command == CMD_RASTER) {
-          pixel_width = st.pixel_width;
+          planner_line( st.target[X_AXIS] + st.offsets[3*st.offselect+X_AXIS], 
+                        st.target[Y_AXIS] + st.offsets[3*st.offselect+Y_AXIS], 
+                        st.target[Z_AXIS] + st.offsets[3*st.offselect+Z_AXIS], 
+                        st.feedrate, st.intensity, st.pixel_width );
+        } else {
+          planner_line( st.target[X_AXIS] + st.offsets[3*st.offselect+X_AXIS], 
+                        st.target[Y_AXIS] + st.offsets[3*st.offselect+Y_AXIS], 
+                        st.target[Z_AXIS] + st.offsets[3*st.offselect+Z_AXIS], 
+                        st.feedrate, st.intensity, 0 );
         }
-        planner_line( st.target[X_AXIS] + st.offsets[3*st.offselect+X_AXIS], 
-                      st.target[Y_AXIS] + st.offsets[3*st.offselect+Y_AXIS], 
-                      st.target[Z_AXIS] + st.offsets[3*st.offselect+Z_AXIS], 
-                      st.feedrate, st.intensity, pixel_width );
       break;
     case CMD_DWELL:
       planner_dwell(st.duration, st.intensity);
@@ -283,7 +272,7 @@ inline void on_cmd(uint8_t command) {
       break;
     case CMD_SET_OFFSET_TABLE: case CMD_SET_OFFSET_CUSTOM:
       // set offset to current position
-      uint8_t cs = OFFSET_TABLE;
+      cs = OFFSET_TABLE;
       if(command == CMD_SET_OFFSET_CUSTOM) {
         cs = OFFSET_CUSTOM;
       }
@@ -296,7 +285,7 @@ inline void on_cmd(uint8_t command) {
       break;
     case CMD_DEF_OFFSET_TABLE: case CMD_DEF_OFFSET_CUSTOM:
       // set offset to target
-      uint8_t cs = OFFSET_TABLE;
+      cs = OFFSET_TABLE;
       if(CMD_SET_OFFSET_CUSTOM) {
         cs = OFFSET_CUSTOM;
       }
@@ -332,10 +321,16 @@ inline void on_cmd(uint8_t command) {
     case CMD_AUX2_DISABLE:
       planner_control_aux2_assist_disable();
       break;
-    case CMD_RASTER_DATA_START:
-
-      break;  
-    case CMD_RASTER_DATA_START:
+    case CMD_GET_STATUS:
+      // position
+      serial_write('X');
+      printFloat(stepper_get_position_x());
+      serial_write('Y');
+      printFloat(stepper_get_position_y());
+      serial_write('Z');
+      printFloat(stepper_get_position_z());       
+      // version
+      printPgmString(PSTR("V" LASAURGRBL_VERSION));
 
       break;    
     default:
@@ -347,7 +342,7 @@ inline void on_cmd(uint8_t command) {
 
 
 
-inline void on_param(parameter) {
+inline void on_param(uint8_t parameter) {
   if(pdata.count == 4) {
     switch(parameter) {
       case PARAM_TARGET_X:
@@ -397,7 +392,6 @@ inline double get_curent_value() {
   //// char1 = ((num&(127<<7))>>7)+128
   //// char2 = ((num&(127<<14))>>14)+128
   //// char3 = ((num&(127<<21))>>21)+128
-  pdata.chars[0]
   return (((( pdata.chars[3]-128)*2097152 + 
               (pdata.chars[2]-128)*16384 + 
               (pdata.chars[1]-128)*128 + 

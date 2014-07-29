@@ -49,7 +49,7 @@
 #include <string.h>
 #include "stepper.h"
 #include "config.h"
-#include "gcode.h"
+#include "protocol.h"
 #include "planner.h"
 #include "sense_control.h"
 #include "serial.h"  //for debug
@@ -84,11 +84,12 @@ static volatile uint8_t stop_status;          // yields the reason for a stop re
 static bool acceleration_tick();
 static void adjust_speed( uint32_t steps_per_minute );
 static uint32_t config_step_timer(uint32_t cycles);
-
+static void adjust_intensity( uint8_t intensity );
 
 
 // Initialize and start the stepper motor subsystem
-void stepper_init() {  
+void stepper_init() {
+  sei();  //enable interrupts
   // Configure directions of interface pins
   STEPPING_DDR |= (STEPPING_MASK | DIRECTION_MASK);
   STEPPING_PORT = (STEPPING_PORT & ~(STEPPING_MASK | DIRECTION_MASK)) | INVERT_MASK;
@@ -218,7 +219,7 @@ ISR(TIMER1_COMPA_vect) {
     stepper_go_idle(); 
     planner_reset_block_buffer();
     planner_request_position_update();
-    gcode_request_position_update();
+    protocol_request_position_update();
     busy = false;
     return;
   }
@@ -230,13 +231,6 @@ ISR(TIMER1_COMPA_vect) {
       busy = false;
       return;    
     }
-    #ifndef DRIVEBOARD
-      else if (SENSE_POWER_OFF) {
-        stepper_request_stop(STOPERROR_POWER_OFF);
-        busy = false;
-        return;
-      }
-    #endif
   #endif
   
   // pulse steppers
@@ -358,14 +352,13 @@ ISR(TIMER1_COMPA_vect) {
           // Special case raster line. 
           // Adjust intensity according raster buffer.
           if (current_block->type == TYPE_RASTER_LINE) {
-            double x_pos = stepper_position[X_AXIS]/CONFIG_X_STEPS_PER_MM;
             if ((step_events_completed % current_block->pixel_steps) == 1) {
               // after every pixel width get the next raster value
               // disable nested interrupts
               // this is to prevent race conditions with the serial interrupt
               // over the rx_buffer variables.
-              cli() ; 
-              uint8_t chr = serial_raster_read()
+              cli(); 
+              uint8_t chr = serial_raster_read();
               sei();
               // map [128,255] -> [0, nominal_laser_intensity]
               // (chr-128)*2 * (255/current_block->nominal_laser_intensity)
@@ -405,19 +398,17 @@ ISR(TIMER1_COMPA_vect) {
       planner_discard_current_block();  
       break;    
 
-    #ifdef DRIVEBOARD
-      case TYPE_AUX2_ASSIST_ENABLE:
-        control_aux2_assist(true);
-        current_block = NULL;
-        planner_discard_current_block();  
-        break;
+    case TYPE_AUX2_ASSIST_ENABLE:
+      control_aux2_assist(true);
+      current_block = NULL;
+      planner_discard_current_block();  
+      break;
 
-      case TYPE_AUX2_ASSIST_DISABLE:
-        control_aux2_assist(false);
-        current_block = NULL;
-        planner_discard_current_block();  
-        break;    
-    #endif
+    case TYPE_AUX2_ASSIST_DISABLE:
+      control_aux2_assist(false);
+      current_block = NULL;
+      planner_discard_current_block();  
+      break;    
   }
   
   busy = false;
@@ -429,7 +420,7 @@ ISR(TIMER1_COMPA_vect) {
 // This function determines an acceleration velocity change every CYCLES_PER_ACCELERATION_TICK by
 // keeping track of the number of elapsed cycles during a de/ac-celeration. The code assumes that
 // step_events occur significantly more often than the acceleration velocity iterations.
-inline static bool acceleration_tick() {
+inline bool acceleration_tick() {
   acceleration_tick_counter += cycles_per_step_event;
   if(acceleration_tick_counter > CYCLES_PER_ACCELERATION_TICK) {
     acceleration_tick_counter -= CYCLES_PER_ACCELERATION_TICK;
@@ -442,7 +433,7 @@ inline static bool acceleration_tick() {
 
 // Configures the prescaler and ceiling of timer 1 to produce the given rate as accurately as possible.
 // Returns the actual number of cycles per interrupt
-inline static uint32_t config_step_timer(uint32_t cycles) {
+inline uint32_t config_step_timer(uint32_t cycles) {
   uint16_t ceiling;
   uint16_t prescaler;
   uint32_t actual_cycles;
@@ -480,7 +471,7 @@ inline static uint32_t config_step_timer(uint32_t cycles) {
 }
 
 
-inline static void adjust_speed( uint32_t steps_per_minute ) {
+inline void adjust_speed( uint32_t steps_per_minute ) {
   // steps_per_minute is typicaly just adjusted_rate
   if (steps_per_minute < MINIMUM_STEPS_PER_MINUTE) { steps_per_minute = MINIMUM_STEPS_PER_MINUTE; }
   cycles_per_step_event = config_step_timer((CYCLES_PER_MICROSECOND*1000000*60)/steps_per_minute);
@@ -492,15 +483,15 @@ inline static void adjust_speed( uint32_t steps_per_minute ) {
 }
 
 
-inline static void adjust_intensity( uint8_t intensity ) {
-  control_laser_intensity(constrained_intensity);
+inline void adjust_intensity( uint8_t intensity ) {
+  control_laser_intensity(intensity);
 
   // depending on intensity adapt PWM freq
   // assuming: TCCR0A = _BV(COM0A1) | _BV(WGM00);  // phase correct PWM mode
-  if (constrained_intensity > 40) {
+  if (intensity > 40) {
     // set PWM freq to 3.9kHz
     TCCR0B = _BV(CS01);
-  } else if (constrained_intensity > 10) {
+  } else if (intensity > 10) {
     // set PWM freq to 489Hz
     TCCR0B = _BV(CS01) | _BV(CS00);
   } else {

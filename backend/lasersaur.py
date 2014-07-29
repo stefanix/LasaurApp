@@ -3,8 +3,7 @@ import os
 import sys
 import time
 import serial
-from serial.tools import list_ports
-from collections import deque
+import serial.tools.list_ports
 
 
 __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
@@ -19,50 +18,58 @@ __all__ = [
     'sel_offset_table', 'sel_offset_custom' ]
 
 
-CMD_NONE = "A"
-CMD_LINE = "B"
-CMD_DWELL = "C"
-CMD_RASTER = "D"
-CMD_HOMING = "E"
 
-CMD_REF_RELATIVE = "F" 
-CMD_REF_ABSOLUTE = "G"
-
-CMD_SET_OFFSET_TABLE = "H"
-CMD_SET_OFFSET_CUSTOM = "I"
-CMD_DEF_OFFSET_TABLE = "J"
-CMD_DEF_OFFSET_CUSTOM = "K"
-CMD_SEL_OFFSET_TABLE = "L"
-CMD_SEL_OFFSET_CUSTOM = "M"
-
-CMD_AIR_ENABLE = "N"
-CMD_AIR_DISABLE = "O"
-CMD_AUX1_ENABLE = "P"
-CMD_AUX1_DISABLE = "Q"
-CMD_AUX2_ENABLE = "R"
-CMD_AUX2_DISABLE = "S"
-
-CMD_RASTER_DATA_START = '\x02'
-CMD_RASTER_DATA_END = '\x03'
-
-CMD_GET_STATUS = "?"
-
-PARAM_TARGET_X = "x"
-PARAM_TARGET_Y = "y" 
-PARAM_TARGET_Z = "z" 
-PARAM_FEEDRATE = "f"
-PARAM_INTENSITY = "s"
-PARAM_DURATION = "d"
-PARAM_PIXEL_WIDTH = "p"
-
-CMD_STOP = '!'
-CMD_RESUME = '~'
 
 
 class LasersaurClass:
     """Lasersaur serial control.
     Use Lasersaur singelton instead of instancing.
     """
+
+    CMD_NONE = "A"
+    CMD_LINE = "B"
+    CMD_DWELL = "C"
+    CMD_RASTER = "D"
+
+    CMD_SET_FEEDRATE = "E"
+    CMD_SET_INTENSITY = "F"
+
+    CMD_REF_RELATIVE = "G" 
+    CMD_REF_ABSOLUTE = "H"
+
+    CMD_HOMING = "I"
+
+    CMD_SET_OFFSET_TABLE = "J"
+    CMD_SET_OFFSET_CUSTOM = "K"
+    CMD_DEF_OFFSET_TABLE = "L"
+    CMD_DEF_OFFSET_CUSTOM = "M"
+    CMD_SEL_OFFSET_TABLE = "N"
+    CMD_SEL_OFFSET_CUSTOM = "O"
+
+    CMD_AIR_ENABLE = "P"
+    CMD_AIR_DISABLE = "Q"
+    CMD_AUX1_ENABLE = "R"
+    CMD_AUX1_DISABLE = "S"
+    CMD_AUX2_ENABLE = "T"
+    CMD_AUX2_DISABLE = "U"
+
+    CMD_GET_STATUS = "V"
+
+    CMD_RASTER_DATA_START = '\x02'
+    CMD_RASTER_DATA_END = '\x03'
+
+
+    PARAM_TARGET_X = "x"
+    PARAM_TARGET_Y = "y" 
+    PARAM_TARGET_Z = "z" 
+    PARAM_FEEDRATE = "f"
+    PARAM_INTENSITY = "s"
+    PARAM_DURATION = "d"
+    PARAM_PIXEL_WIDTH = "p"
+
+    CMD_STOP = '!'
+    CMD_RESUME = '~'
+
 
     def __init__(self):
         self.device = None
@@ -90,8 +97,8 @@ class LasersaurClass:
         self.fec_redundancy = 2  # use forward error correction
         # self.fec_redundancy = 1  # use error detection
 
-        self.ready_char = '\x12'
-        self.request_ready_char = '\x14'
+        self.READY = '\x12'
+        self.REQUEST_READY = '\x14'
         self.last_request_ready = 0
 
 
@@ -130,11 +137,11 @@ class LasersaurClass:
                 chars = self.device.read(self.RX_CHUNK_SIZE)
                 if len(chars) > 0:
                     ## check for data request
-                    if self.ready_char in chars:
+                    if self.READY in chars:
                         # print "=========================== READY"
                         self.nRequested = self.TX_CHUNK_SIZE
                         #remove control chars
-                        chars = chars.replace(self.ready_char, "")
+                        chars = chars.replace(self.READY, "")
                     ## assemble lines
                     self.rx_buffer += chars
                     while(1):  # process all lines in buffer
@@ -161,7 +168,7 @@ class LasersaurClass:
                         self.nRequested -= actuallySent
                         if self.nRequested <= 0:
                             self.last_request_ready = 0  # make sure to request ready
-                    elif self.tx_buffer[0] in ['!', '~']:  # send control chars no matter what
+                    elif self.tx_buffer[0] in [CMD_STOP, CMD_RESUME]:  # send control chars no matter what
                         try:
                             actuallySent = self.device.write(self.tx_buffer[:1])
                         except serial.SerialTimeoutException:
@@ -176,7 +183,7 @@ class LasersaurClass:
                             # only ask once (and after a big time out)
                             # print "=========================== REQUEST READY"
                             try:
-                                actuallySent = self.device.write(self.request_ready_char)
+                                actuallySent = self.device.write(self.REQUEST_READY)
                             except serial.SerialTimeoutException:
                                 # skip, report
                                 actuallySent = self.nRequested  # pyserial does not report this sufficiently
@@ -191,7 +198,7 @@ class LasersaurClass:
                         # print "(LasaurGrbl may take some extra time to finalize)"
                         self.job_size = 0
                         self.job_active = False
-                        # ready whenever a job is done, including a status request via '?'
+                        # ready whenever a job is done, including a status request
                         self.status['ready'] = True
             except OSError:
                 # Serial port appears closed => reset
@@ -291,7 +298,7 @@ class LasersaurClass:
     def list_devices(self, baudrate):
         ports = []
         if os.name == 'posix':
-            iterator = sorted(list_ports.grep('tty'))
+            iterator = sorted(serial.tools.list_ports.grep('tty'))
             print "Found ports:"
             for port, desc, hwid in iterator:
                 ports.append(port)
@@ -317,7 +324,7 @@ class LasersaurClass:
             
     def match_device(self, search_regex, baudrate):
         if os.name == 'posix':
-            matched_ports = list_ports.grep(search_regex)
+            matched_ports = serial.tools.list_ports.grep(search_regex)
             if matched_ports:
                 for match_tuple in matched_ports:
                     if match_tuple:
@@ -339,7 +346,7 @@ class LasersaurClass:
             return None      
         
 
-    def connect(self, port, baudrate):
+    def connect(self, port, baudrate=57600):
         self.rx_buffer = ""
         self.tx_buffer = ""        
         self.remoteXON = True
@@ -396,7 +403,7 @@ class LasersaurClass:
     def homing(self):
         """Run homing cycle."""
         if not self.job_active:
-            self.send_command(CMD_HOMING)
+            self.send_command(self.CMD_HOMING)
         else:
             print "WARN: ignoring homing command while job running"
 
@@ -410,20 +417,30 @@ class LasersaurClass:
 
 
     def send_param(self, param, val):
+        # num to be [-134217.728, 134217.727]
+        # three decimals are retained
+        num = int(round((val*1000)+(2**27)))
+        char0 = chr((num&127)+128)
+        char1 = chr(((num&(127<<7))>>7)+128)
+        char2 = chr(((num&(127<<14))>>14)+128)
+        char3 = chr(((num&(127<<21))>>21)+128)
+        self.tx_buffer += char0 + char1 + char2 + char3 + param
+        self.job_size += 5
+        self.job_active = True
 
 
 
     def feedrate(self, val):
-        self.send_param(PARAM_FEEDRATE, val)
+        self.send_param(self.PARAM_FEEDRATE, val)
 
     def intensity(self, val):
-        self.send_param(PARAM_INTENSITY, val)
+        self.send_param(self.PARAM_INTENSITY, val)
 
     def move(self, x, y, z=0.0):
-        self.send_param(PARAM_TARGET_X, x)
-        self.send_param(PARAM_TARGET_Y, y)
-        self.send_param(PARAM_TARGET_Z, z)
-        self.send_command(CMD_LINE)
+        self.send_param(self.PARAM_TARGET_X, x)
+        self.send_param(self.PARAM_TARGET_Y, y)
+        self.send_param(self.PARAM_TARGET_Z, z)
+        self.send_command(self.CMD_LINE)
 
 
 
@@ -460,8 +477,8 @@ class LasersaurClass:
         if jobdict.has_key('passes') and jobdict.has_key('paths'):
             for ppass in jobdict['passes']:
                 for color in ppass['colors']:
-                    if jobdict.['paths'].has_key(color):
-                        for path in jobdict['paths'][color]
+                    if jobdict['paths'].has_key(color):
+                        for path in jobdict['paths'][color]:
                             if len(path) > 0:
                                 # first vertex, seek
                                 self.feedrate(ppass['seekrate'])
@@ -470,6 +487,7 @@ class LasersaurClass:
                             elif len(path) > 1:
                                 self.feedrate(ppass['feedrate'])
                                 self.intensity(ppass['intensity'])                                
+                                # TODO dwell according to pierce time
                                 for i in xrange(1, len(path)):
                                     # rest, feed
                                     self.move(path[i][0], path[i][1], path[i][2])
@@ -494,50 +512,50 @@ class LasersaurClass:
         """Force stop condition."""
         self.cancel_queue()
         self.reset_status()
-        self.send_command(CMD_STOP)
+        self.send_command(self.CMD_STOP)
 
 
     def unstop(self):
         """Resume from stop condition."""
-        self.send_command(CMD_RESUME)
+        self.send_command(self.CMD_RESUME)
 
 
     def air_on(self):
-        self.send_command(CMD_AIR_ENABLE)
+        self.send_command(self.CMD_AIR_ENABLE)
     def air_off(self):
-        self.send_command(CMD_AIR_DISABLE)
+        self.send_command(self.CMD_AIR_DISABLE)
 
 
     def aux1_on(self):
-        self.send_command(CMD_AUX1_ENABLE)
+        self.send_command(self.CMD_AUX1_ENABLE)
     def aux1_off(self):
-        self.send_command(CMD_AUX1_DISABLE)
+        self.send_command(self.CMD_AUX1_DISABLE)
 
 
     def aux2_on(self):
-        self.send_command(CMD_AUX2_ENABLE)
+        self.send_command(self.CMD_AUX2_ENABLE)
     def aux2_off(self):
-        self.send_command(CMD_AUX2_DISABLE)
+        self.send_command(self.CMD_AUX2_DISABLE)
 
 
     def set_offset_table(self):
-        self.send_command(CMD_SET_OFFSET_TABLE)
+        self.send_command(self.CMD_SET_OFFSET_TABLE)
     def set_offset_custom(self):
-        self.send_command(CMD_SET_OFFSET_CUSTOM)
+        self.send_command(self.CMD_SET_OFFSET_CUSTOM)
     def def_offset_table(self, x, y, z):
-        self.send_param(PARAM_TARGET_X, x)
-        self.send_param(PARAM_TARGET_Y, y)
-        self.send_param(PARAM_TARGET_Z, z)
-        self.send_command(CMD_DEF_OFFSET_TABLE)
+        self.send_param(self.PARAM_TARGET_X, x)
+        self.send_param(self.PARAM_TARGET_Y, y)
+        self.send_param(self.PARAM_TARGET_Z, z)
+        self.send_command(self.CMD_DEF_OFFSET_TABLE)
     def def_offset_custom(self, x, y, z):
-        self.send_param(PARAM_TARGET_X, x)
-        self.send_param(PARAM_TARGET_Y, y)
-        self.send_param(PARAM_TARGET_Z, z)
-        self.send_command(CMD_DEF_OFFSET_CUSTOM)
+        self.send_param(self.PARAM_TARGET_X, x)
+        self.send_param(self.PARAM_TARGET_Y, y)
+        self.send_param(self.PARAM_TARGET_Z, z)
+        self.send_command(self.CMD_DEF_OFFSET_CUSTOM)
     def sel_offset_table(self):
-        self.send_command(CMD_SEL_OFFSET_TABLE)
+        self.send_command(self.CMD_SEL_OFFSET_TABLE)
     def sel_offset_custom(self):
-        self.send_command(CMD_SEL_OFFSET_CUSTOM)
+        self.send_command(self.CMD_SEL_OFFSET_CUSTOM)
 
 
             

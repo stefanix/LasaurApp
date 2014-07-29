@@ -25,7 +25,8 @@
 
 void serial_init();
 void serial_write(uint8_t data);
-uint8_t serial_gcode_read();
+uint8_t serial_read();
+uint8_t serial_protocol_read();
 uint8_t serial_raster_read();
 uint8_t serial_available();
 

@@ -23,11 +23,12 @@
 #include <avr/interrupt.h>
 #include <util/atomic.h>
 #include <avr/sleep.h>
+#include <avr/pgmspace.h>
 #include <math.h>
 #include "serial.h"
 #include "config.h"
 #include "stepper.h"
-#include "gcode.h"
+#include "protocol.h"
 
 #define CHAR_STOP '!'
 #define CHAR_RESUME '~'
@@ -84,6 +85,7 @@ static void set_baud_rate(long baud) {
 
 
 void serial_init() {
+  sei();  //enable interrupts
   set_baud_rate(BAUD_RATE);
   
 	/* baud doubler off  - Only needed on Uno XXX */
@@ -136,6 +138,24 @@ SIGNAL(USART_UDRE_vect) {
   
   // disable tx interrupt, if buffer empty
   if (tail == tx_buffer_head) { UCSR0B &= ~(1 << UDRIE0); }  
+}
+
+
+inline uint8_t serial_read() {
+  // return data, advance tail
+  uint8_t data = rx_buffer[rx_buffer_tail];
+  if (++rx_buffer_tail == RX_BUFFER_SIZE) {rx_buffer_tail = 0;}  // increment
+  ATOMIC_BLOCK(ATOMIC_FORCEON) {
+    if (rx_buffer_open_slots == RX_CHUNK_SIZE) {  // enough slots opening up
+      if (request_ready_flag) {
+        send_ready_flag = 1;
+        UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt  
+        request_ready_flag = 0;
+      }
+    }    
+    rx_buffer_open_slots++;
+  }
+  return data;
 }
 
 
@@ -204,24 +224,6 @@ uint8_t serial_raster_read() {
     // sending side seems to be flaking
     return 0;
   }
-}
-
-
-inline uint8_t serial_read() {
-  // return data, advance tail
-	uint8_t data = rx_buffer[rx_buffer_tail];
-  if (++rx_buffer_tail == RX_BUFFER_SIZE) {rx_buffer_tail = 0;}  // increment
-  ATOMIC_BLOCK(ATOMIC_FORCEON) {
-    if (rx_buffer_open_slots == RX_CHUNK_SIZE) {  // enough slots opening up
-      if (request_ready_flag) {
-        send_ready_flag = 1;
-        UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt  
-        request_ready_flag = 0;
-      }
-    }    
-    rx_buffer_open_slots++;
-  }
-	return data;
 }
 
 
