@@ -25,16 +25,16 @@
 
 void serial_init();
 void serial_write(uint8_t data);
-uint8_t serial_read();
+void serial_write_number(double num);
+
 uint8_t serial_protocol_read();
 uint8_t serial_raster_read();
 uint8_t serial_available();
 
-
-void printString(const char *s);
-void printPgmString(const char *s);
-void printInteger(long n);
-void printIntegerInBase(unsigned long n, unsigned long base);
-void printFloat(double n);
+// void printString(const char *s);
+// void printPgmString(const char *s);
+// void printInteger(long n);
+// void printIntegerInBase(unsigned long n, unsigned long base);
+// void printFloat(double n);
 
 #endif

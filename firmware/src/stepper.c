@@ -225,9 +225,26 @@ ISR(TIMER1_COMPA_vect) {
   }
 
   #ifndef DEBUG_IGNORE_SENSORS
-    // stop program when any limit is hit or the e-stop turned the power off
+    // stop program when any limit is hit
     if (SENSE_LIMITS) {
-      stepper_request_stop(STOPERROR_LIMIT_HIT_ANY);
+      if (SENSE_X1_LIMIT) {
+        stepper_request_stop(STOPERROR_LIMIT_HIT_X1);
+      }
+      if (SENSE_X2_LIMIT) {
+        stepper_request_stop(STOPERROR_LIMIT_HIT_X2);
+      }
+      if (SENSE_Y1_LIMIT) {
+        stepper_request_stop(STOPERROR_LIMIT_HIT_Y1);
+      }
+      if (SENSE_Y2_LIMIT) {
+        stepper_request_stop(STOPERROR_LIMIT_HIT_Y2);
+      }
+      if (SENSE_Z1_LIMIT) {
+        stepper_request_stop(STOPERROR_LIMIT_HIT_Z1);
+      }
+      if (SENSE_Z2_LIMIT) {
+        stepper_request_stop(STOPERROR_LIMIT_HIT_Z2);
+      }
       busy = false;
       return;    
     }

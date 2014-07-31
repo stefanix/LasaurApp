@@ -7,16 +7,6 @@ import serial.tools.list_ports
 
 
 __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
-__all__ = [
-    'connect', 'connected', 'close',
-    'process', 'percentage', 'homing',
-    'feedrate', 'intensity', 'move',
-    'pause', 'unpause', 'stop', 'unstop',
-    'air_on', 'air_off', 'aux1_on', 'aux1_off', 'aux2_on', 'aux2_off',
-    'set_offset_table', 'set_offset_custom',
-    'def_offset_table', 'def_offset_custom',
-    'sel_offset_table', 'sel_offset_custom' ]
-
 
 
 
@@ -25,6 +15,13 @@ class LasersaurClass:
     """Lasersaur serial control.
     Use Lasersaur singelton instead of instancing.
     """
+
+    CMD_STOP = '!'
+    CMD_RESUME = '~'
+    CMD_STATUS = '?'
+
+    CMD_RASTER_DATA_START = '\x02'
+    CMD_RASTER_DATA_END = '\x03'
 
     CMD_NONE = "A"
     CMD_LINE = "B"
@@ -53,11 +50,6 @@ class LasersaurClass:
     CMD_AUX2_ENABLE = "T"
     CMD_AUX2_DISABLE = "U"
 
-    CMD_GET_STATUS = "V"
-
-    CMD_RASTER_DATA_START = '\x02'
-    CMD_RASTER_DATA_END = '\x03'
-
 
     PARAM_TARGET_X = "x"
     PARAM_TARGET_Y = "y" 
@@ -67,14 +59,45 @@ class LasersaurClass:
     PARAM_DURATION = "d"
     PARAM_PIXEL_WIDTH = "p"
 
-    CMD_STOP = '!'
-    CMD_RESUME = '~'
+
+    # status: error flags
+    ERROR_SERIAL_STOP_REQUEST = '!'
+    ERROR_RX_BUFFER_OVERFLOW = '"'
+
+    ERROR_LIMIT_HIT_X1 = '$'
+    ERROR_LIMIT_HIT_X2 = '%'
+    ERROR_LIMIT_HIT_Y1 = '&'
+    ERROR_LIMIT_HIT_Y2 = '*'
+    ERROR_LIMIT_HIT_Z1 = '+'
+    ERROR_LIMIT_HIT_Z2 = '-'
+
+    ERROR_INVALID_MARKER = '#'
+    ERROR_INVALID_DATA = ':'
+    ERROR_INVALID_COMMAND = '<'
+    ERROR_INVALID_PARAMETER ='>'
+    ERROR_TRANSMISSION_ERROR ='='
+
+    # status: info flags
+    INFO_IDLE_YES = 'A'
+    INFO_IDLE_NO = 'B'
+    INFO_DOOR_OPEN = 'C'
+    INFO_DOOR_CLOSED = 'D'
+    INFO_CHILLER_OFF = 'E'
+    INFO_CHILLER_ON = 'F'
+    INFO_FEC_CORRECTION = 'G'
+
+    # status: info params
+    INFO_POS_X = 'x'
+    INFO_POS_Y = 'y'
+    INFO_POS_Z = 'z'
+    INFO_VERSION = 'v'
+
+
 
 
     def __init__(self):
         self.device = None
 
-        self.rx_buffer = ""
         self.tx_buffer = ""        
         self.remoteXON = True
 
@@ -89,7 +112,7 @@ class LasersaurClass:
         self.job_active = False
 
         # status flags
-        self.status = {}
+        self._status = {}
         self.reset_status()
 
         self.LASAURGRBL_FIRST_STRING = "LasaurGrbl"
@@ -103,24 +126,42 @@ class LasersaurClass:
 
 
     def reset_status(self):
-        self.status = {
+        self._status = {
             'ready': True,
-            'paused': False,  # this is also a control flag
+            'paused': False,
+
             'buffer_overflow': False,
-            'transmission_error': False,
-            'bad_number_format_error': False,
-            'expected_command_letter_error': False,
-            'unsupported_statement_error': False,
-            'power_off': False,
-            'limit_hit': False,
             'serial_stop_request': False,
+            'limit_x1': False,
+            'limit_x2': False,
+            'limit_y1': False,
+            'limit_y2': False,
+            'limit_z1': False,
+            'limit_z2': False,
+            'invalid_marker': False,
+            'invalid_data': False,
+            'invalid_command': False,
+            'invalid_parameter': False,
+            'transmission_error': False,
+
             'door_open': False,
             'chiller_off': False,
+
             'x': False,
             'y': False,
             'z': False,
             'firmware_version': None
+
+            # removed
+            # limit_hit
+            # 'bad_number_format_error': False,
+            # 'expected_command_letter_error': False,
+            # 'unsupported_statement_error': False,            
         }
+
+
+    def print_status(self):
+        print self._status
 
 
     def cancel_queue(self):
@@ -131,7 +172,7 @@ class LasersaurClass:
     
     def send_queue_as_ready(self):
         """Continuously call this to keep processing queue."""    
-        if self.device and not self.status['paused']:
+        if self.device and not self._status['paused']:
             try:
                 ### receiving
                 chars = self.device.read(self.RX_CHUNK_SIZE)
@@ -142,16 +183,158 @@ class LasersaurClass:
                         self.nRequested = self.TX_CHUNK_SIZE
                         #remove control chars
                         chars = chars.replace(self.READY, "")
-                    ## assemble lines
-                    self.rx_buffer += chars
-                    while(1):  # process all lines in buffer
-                        posNewline = self.rx_buffer.find('\n')
-                        if posNewline == -1:
-                            break  # no more complete lines
-                        else:  # we got a line
-                            line = self.rx_buffer[:posNewline]
-                            self.rx_buffer = self.rx_buffer[posNewline+1:]
-                        self.process_status_line(line)
+                    ## process chars
+                    for char in chars:
+                        if ord(char) < 128:  ### marker
+                            if 32 < ord(char) < 65: # stop error flags                            
+                                # chr is in [!-@], process flag
+                                if char == ERROR_SERIAL_STOP_REQUEST:
+                                    self._status['serial_stop_request'] = True
+                                elif char == ERROR_RX_BUFFER_OVERFLOW:
+                                    self._status['buffer_overflow'] = True
+                                elif char == ERROR_LIMIT_HIT_X1:
+                                    self._status['limit_x1'] = True
+                                elif char == ERROR_LIMIT_HIT_X2:
+                                    self._status['limit_x2'] = True
+                                elif char == ERROR_LIMIT_HIT_Y1:
+                                    self._status['limit_y1'] = True
+                                elif char == ERROR_LIMIT_HIT_Y2:
+                                    self._status['limit_y2'] = True
+                                elif char == ERROR_LIMIT_HIT_Z1:
+                                    self._status['limit_z1'] = True
+                                elif char == ERROR_LIMIT_HIT_Z2:
+                                    self._status['limit_z2'] = True
+                                elif char == ERROR_INVALID_MARKER:
+                                    self._status['invalid_marker'] = True
+                                elif char == ERROR_INVALID_DATA:
+                                    self._status['invalid_data'] = True
+                                elif char == ERROR_INVALID_COMMAND:
+                                    self._status['invalid_command'] = True
+                                elif char == ERROR_INVALID_PARAMETER:
+                                    self._status['invalid_parameter'] = True
+                                elif char == ERROR_TRANSMISSION_ERROR:
+                                    self._status['transmission_error'] = True
+                                # in stop mode
+                                self.cancel_queue()
+                                # not ready whenever in stop mode
+                                self._status['ready'] = False
+                                self.print_status()
+
+                            elif 64 < ord(char) < 91:  # info flags
+                                # chr is in [A-Z], info flag
+                                elif char == WARN_FEC_CORRECTION:
+                                    sys.stdout.write("\nFEC Correction!\n")
+                                    sys.stdout.flush()                                              
+                                    # self._status['fec_correction'] = True
+                                elif char == INFO_IDLE_YES:
+                                    # self._status['ready'] = True
+                                elif char == INFO_IDLE_NO:
+
+                                elif char == INFO_DOOR_OPEN:
+                                    self._status['door_open'] = True
+                                elif char == INFO_DOOR_CLOSED:
+                                    self._status['door_open'] = False
+                                elif char == INFO_CHILLER_OFF:
+                                    self._status['chiller_off'] = True
+                                elif char == INFO_CHILLER_ON:
+                                    self._status['chiller_off'] = False
+                                else:
+                                    print "ERROR: invalid flag"
+                            elif 96 < ord(char) < 123:  # parameter
+                                # char is in [a-z], process parameter
+                                num = ((((pdata_chars[3]-128)*2097152 
+                                       + (pdata_chars[2]-128)*16384 
+                                       + (pdata_chars[1]-128)*128 
+                                       + (pdata_chars[0]-128) )- 134217728)/1000.0)
+                                if char == INFO_POS_X:
+                                    self._status['x'] = num
+                                elif char == INFO_POS_Y:
+                                    self._status['y'] = num
+                                elif char == INFO_POS_Z:
+                                    self._status['z'] = num
+                                elif char == STATUS_VERSION:
+                                    num = 'v' + str(int(num)/100.0)
+                                    self._status['firmware_version'] = num
+                                else:
+                                    print "ERROR: invalid param"
+                            else:
+                                print "ERROR: invalid marker"
+                            pdata_count = 0
+                        else:  ### data
+                            # char is in [128,255]
+                            if pdata_count < 4:
+                                pdata_chars[pdata_count] = char
+                                pdata_count += 1
+                            else:
+                                print "ERROR: invalid data"
+
+
+
+                        if char == '^':
+                        else:
+                            if '!' in line:
+                                # in stop mode
+                                self.cancel_queue()
+                                # not ready whenever in stop mode
+                                self._status['ready'] = False
+                                sys.stdout.write(line + "\n")
+                                sys.stdout.flush()
+                            else:
+                                sys.stdout.write(".")
+                                sys.stdout.flush()
+
+                            if 'N' in line:
+                                self._status['bad_number_format_error'] = True
+                            if 'E' in line:
+                                self._status['expected_command_letter_error'] = True
+                            if 'U' in line:
+                                self._status['unsupported_statement_error'] = True
+
+                            if 'B' in line:  # Stop: Buffer Overflow
+                                self._status['buffer_overflow'] = True
+                            else:
+                                self._status['buffer_overflow'] = False
+
+                            if 'T' in line:  # Stop: Transmission Error
+                                self._status['transmission_error'] = True
+                            else:
+                                self._status['transmission_error'] = False                                
+
+                            if 'L' in line:  # Stop: A limit was hit
+                                self._status['limit_hit'] = True
+                            else:
+                                self._status['limit_hit'] = False
+
+                            if 'R' in line:  # Stop: by serial requested
+                                self._status['serial_stop_request'] = True
+                            else:
+                                self._status['serial_stop_request'] = False
+
+                            if 'D' in line:  # Warning: Door Open
+                                self._status['door_open'] = True
+                            else:
+                                self._status['door_open'] = False
+
+                            if 'C' in line:  # Warning: Chiller Off
+                                self._status['chiller_off'] = True
+                            else:
+                                self._status['chiller_off'] = False
+
+                            if 'X' in line:
+                                self._status['x'] = line[line.find('X')+1:line.find('Y')]
+
+                            if 'Y' in line:
+                                self._status['y'] = line[line.find('Y')+1:line.find('V')]
+
+                            if 'Z' in line:
+                                self._status['z'] = line[line.find('Z')+1:line.find('Z')]
+
+                            if 'V' in line:
+                                self._status['firmware_version'] = line[line.find('V')+1:]                     
+
+
+
+               
                 
                 ### sending
                 if self.tx_buffer:
@@ -168,7 +351,7 @@ class LasersaurClass:
                         self.nRequested -= actuallySent
                         if self.nRequested <= 0:
                             self.last_request_ready = 0  # make sure to request ready
-                    elif self.tx_buffer[0] in [CMD_STOP, CMD_RESUME]:  # send control chars no matter what
+                    elif self.tx_buffer[0] in [self.CMD_STOP, self.CMD_RESUME]:  # send control chars no matter what
                         try:
                             actuallySent = self.device.write(self.tx_buffer[:1])
                         except serial.SerialTimeoutException:
@@ -199,7 +382,7 @@ class LasersaurClass:
                         self.job_size = 0
                         self.job_active = False
                         # ready whenever a job is done, including a status request
-                        self.status['ready'] = True
+                        self._status['ready'] = True
             except OSError:
                 # Serial port appears closed => reset
                 self.close()
@@ -208,83 +391,8 @@ class LasersaurClass:
                 self.close()     
         else:
             # serial disconnected    
-            self.status['ready'] = False  
+            self._status['ready'] = False  
 
-
-
-    def process_status_line(self, line):
-        if '#' in line[:3]:
-            # print and ignore
-            sys.stdout.write(line + "\n")
-            sys.stdout.flush()
-        elif '^' in line:
-            sys.stdout.write("\nFEC Correction!\n")
-            sys.stdout.flush()                                              
-        else:
-            if '!' in line:
-                # in stop mode
-                self.cancel_queue()
-                # not ready whenever in stop mode
-                self.status['ready'] = False
-                sys.stdout.write(line + "\n")
-                sys.stdout.flush()
-            else:
-                sys.stdout.write(".")
-                sys.stdout.flush()
-
-            if 'N' in line:
-                self.status['bad_number_format_error'] = True
-            if 'E' in line:
-                self.status['expected_command_letter_error'] = True
-            if 'U' in line:
-                self.status['unsupported_statement_error'] = True
-
-            if 'B' in line:  # Stop: Buffer Overflow
-                self.status['buffer_overflow'] = True
-            else:
-                self.status['buffer_overflow'] = False
-
-            if 'T' in line:  # Stop: Transmission Error
-                self.status['transmission_error'] = True
-            else:
-                self.status['transmission_error'] = False                                
-
-            if 'P' in line:  # Stop: Power is off
-                self.status['power_off'] = True
-            else:
-                self.status['power_off'] = False
-
-            if 'L' in line:  # Stop: A limit was hit
-                self.status['limit_hit'] = True
-            else:
-                self.status['limit_hit'] = False
-
-            if 'R' in line:  # Stop: by serial requested
-                self.status['serial_stop_request'] = True
-            else:
-                self.status['serial_stop_request'] = False
-
-            if 'D' in line:  # Warning: Door Open
-                self.status['door_open'] = True
-            else:
-                self.status['door_open'] = False
-
-            if 'C' in line:  # Warning: Chiller Off
-                self.status['chiller_off'] = True
-            else:
-                self.status['chiller_off'] = False
-
-            if 'X' in line:
-                self.status['x'] = line[line.find('X')+1:line.find('Y')]
-
-            if 'Y' in line:
-                self.status['y'] = line[line.find('Y')+1:line.find('V')]
-
-            if 'Z' in line:
-                self.status['z'] = line[line.find('Z')+1:line.find('Z')]
-
-            if 'V' in line:
-                self.status['firmware_version'] = line[line.find('V')+1:]                     
 
 
 
@@ -346,8 +454,7 @@ class LasersaurClass:
             return None      
         
 
-    def connect(self, port, baudrate=57600):
-        self.rx_buffer = ""
+    def connect(self, port="/dev/ttyACM0", baudrate=57600):
         self.tx_buffer = ""        
         self.remoteXON = True
         self.job_size = 0
@@ -381,7 +488,7 @@ class LasersaurClass:
                 self.device = None
             except:
                 self.device = None
-            self.status['ready'] = False
+            self._status['ready'] = False
             return True
         else:
             return False
@@ -398,6 +505,14 @@ class LasersaurClass:
         if self.job_size == 0 or not self.job_active:
             return -1
         return int(100-100*len(self.tx_buffer)/float(self.job_size))
+
+
+    def status(self):
+        """Request status."""
+        if not self.job_active:
+            self.send_command(self.CMD_GET_STATUS)
+        else:
+            print "WARN: ignoring status request while job running"
 
 
     def homing(self):
@@ -497,14 +612,14 @@ class LasersaurClass:
         if len(self.tx_buffer) == 0:
             return False
         else:
-            self.status['paused'] = True
+            self._status['paused'] = True
             return True
 
     def unpause(self, flag):
         if len(self.tx_buffer) == 0:
             return False
         else:
-            self.status['paused'] = False
+            self._status['paused'] = False
             return False
 
 
@@ -569,6 +684,7 @@ close =  Lasersaur.close
 
 process =  Lasersaur.process
 percentage =  Lasersaur.percentage
+status =  Lasersaur.status
 homing =  Lasersaur.homing
 
 feedrate =  Lasersaur.feedrate

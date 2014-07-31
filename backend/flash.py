@@ -6,7 +6,13 @@
 import os, sys, time, subprocess
 
 
-def flash_upload(serial_port, resources_dir, firmware_file, hardware='x86'):
+thislocation = os.path.dirname(os.path.realpath(__file__))
+resources_dir = os.path.join(thislocation, '..')
+firmware_file = "LasaurGrbl.hex"
+serial_port = "/dev/ttyACM0"
+
+
+def flash_upload(serial_port=serial_port, resources_dir=resources_dir, firmware_file=firmware_file, hardware='x86'):
     firmware_file = firmware_file.replace("/", "").replace("\\", "")  # make sure no evil injection
     FIRMWARE = os.path.join(resources_dir, "firmware", firmware_file)
     if not os.path.exists(FIRMWARE):

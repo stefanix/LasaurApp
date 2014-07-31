@@ -64,45 +64,6 @@ get_curent_value()
 #define OFFSET_TABLE 0
 #define OFFSET_CUSTOM 1
 
-
-#define CMD_NONE 'A'
-#define CMD_LINE 'B'
-#define CMD_DWELL 'C'
-#define CMD_RASTER 'D'
-
-#define CMD_SET_FEEDRATE 'E'
-#define CMD_SET_INTENSITY 'F'
-
-#define CMD_REF_RELATIVE 'G' 
-#define CMD_REF_ABSOLUTE 'H'
-
-#define CMD_HOMING 'I'
-
-#define CMD_SET_OFFSET_TABLE 'J'
-#define CMD_SET_OFFSET_CUSTOM 'K'
-#define CMD_DEF_OFFSET_TABLE 'L'
-#define CMD_DEF_OFFSET_CUSTOM 'M'
-#define CMD_SEL_OFFSET_TABLE 'N'
-#define CMD_SEL_OFFSET_CUSTOM 'O'
-
-#define CMD_AIR_ENABLE 'P'
-#define CMD_AIR_DISABLE 'Q'
-#define CMD_AUX1_ENABLE 'R'
-#define CMD_AUX1_DISABLE 'S'
-#define CMD_AUX2_ENABLE 'T'
-#define CMD_AUX2_DISABLE 'U'
-
-#define CMD_GET_STATUS 'V'
-
-#define PARAM_TARGET_X 'x'
-#define PARAM_TARGET_Y 'y' 
-#define PARAM_TARGET_Z 'z' 
-#define PARAM_FEEDRATE 'f'
-#define PARAM_INTENSITY 's'
-#define PARAM_DURATION 'd'
-#define PARAM_PIXEL_WIDTH 'p'
-
-
 #define PARAM_MAX_DATA_LENGTH 4
 
 
@@ -127,6 +88,9 @@ static data_t pdata;
 
 // uint8_t line_checksum_ok_already;
 static volatile bool position_update_requested;  // make sure to update to stepper position on next occasion
+static volatile bool status_requested;           // when set protocol_idle will write status to serial
+static bool machine_idle;                        // when no serial data and no blockes processing
+
 static void on_cmd(uint8_t command);
 static void on_param(uint8_t parameter);
 static double get_curent_value();
@@ -150,7 +114,9 @@ void protocol_init() {
   st.offsets[3+Y_AXIS] = CONFIG_Y_ORIGIN_OFFSET;
   st.offsets[3+Z_AXIS] = CONFIG_Z_ORIGIN_OFFSET;
   position_update_requested = false;
-  // line_checksum_ok_already = false; 
+  // line_checksum_ok_already = false;
+  status_requested = true;
+  machine_idle = true;
 }
 
 
@@ -168,31 +134,7 @@ void protocol_loop() {
     }
 
     if (stepper_stop_requested()) {
-      serial_write(STOPERROR_ANY);  // report harware is in stop mode
-      uint8_t status_code = stepper_stop_status();
-      serial_write(status_code);
-      // stop conditions: see STOPERROR #defines in stepper.h
-      if (status_code == STOPERROR_LIMIT_HIT_ANY) {
-        // provide more details on which limit was hit
-        if (SENSE_X1_LIMIT) {
-          serial_write(STOPERROR_LIMIT_HIT_X1);
-        }
-        if (SENSE_X2_LIMIT) {
-          serial_write(STOPERROR_LIMIT_HIT_X2);
-        }
-        if (SENSE_Y1_LIMIT) {
-          serial_write(STOPERROR_LIMIT_HIT_Y1);
-        }
-        if (SENSE_Y2_LIMIT) {
-          serial_write(STOPERROR_LIMIT_HIT_Y2);
-        }
-        if (SENSE_Z1_LIMIT) {
-          serial_write(STOPERROR_LIMIT_HIT_Z1);
-        }
-        if (SENSE_Z2_LIMIT) {
-          serial_write(STOPERROR_LIMIT_HIT_Z2);
-        }
-      }
+      protocol_request_status();
     } else {
       if(chr < 128) {  /////////////////////////////// marker
         if(chr > 64 && chr < 91) {  ///////// command
@@ -214,6 +156,8 @@ void protocol_loop() {
         }
       }
     }
+
+    protocol_idle();
     serial_write('\n');
   }
 }
@@ -320,19 +264,7 @@ inline void on_cmd(uint8_t command) {
       break;
     case CMD_AUX2_DISABLE:
       planner_control_aux2_assist_disable();
-      break;
-    case CMD_GET_STATUS:
-      // position
-      serial_write('X');
-      printFloat(stepper_get_position_x());
-      serial_write('Y');
-      printFloat(stepper_get_position_y());
-      serial_write('Z');
-      printFloat(stepper_get_position_z());       
-      // version
-      printPgmString(PSTR("V" LASAURGRBL_VERSION));
-
-      break;    
+      break;   
     default:
       stepper_request_stop(STOPERROR_INVALID_COMMAND);
   }
@@ -375,6 +307,84 @@ inline void on_param(uint8_t parameter) {
 }
 
 
+void protocol_request_status() {
+  status_requested = true;
+}
+
+
+void protocol_end_of_job_check() {
+  if(!planner_blocks_available()) {
+    // probably end of job
+    // (can also be the serial is super slow)
+    machine_idle = true;
+  }
+}
+
+
+void protocol_idle() {
+  // Continuously called in protocol_loop
+  // Also called when the protocol loop is blocked by
+  // one of the following conditions:
+  // - serial reading
+  //   - in raster mode
+  //   - serial buffer empty
+  // - planing actions (line, command)
+  //   - block buffer full
+
+  if (planner_blocks_available()) {
+    machine_idle = false;
+  }
+
+  if (status_requested) {
+    // idle flag
+    if (machine_idle) {
+      serial_write(INFO_IDLE_YES);
+    } else {
+      serial_write(INFO_IDLE_NO);
+    }
+
+    // Handle STOPERROR conditions
+    uint8_t stop_code = stepper_stop_status();
+    if (stop_code != STOPERROR_OK) {
+      // report a stop error
+      serial_write(stop_code);
+      // always report limits
+      if (SENSE_X1_LIMIT && stop_code != STOPERROR_LIMIT_HIT_X1) {
+        serial_write(STOPERROR_LIMIT_HIT_X1);
+      }
+      if (SENSE_X2_LIMIT && stop_code != STOPERROR_LIMIT_HIT_X2) {
+        serial_write(STOPERROR_LIMIT_HIT_X2);
+      }
+      if (SENSE_Y1_LIMIT && stop_code != STOPERROR_LIMIT_HIT_Y1) {
+        serial_write(STOPERROR_LIMIT_HIT_Y1);
+      }
+      if (SENSE_Y2_LIMIT && stop_code != STOPERROR_LIMIT_HIT_Y2) {
+        serial_write(STOPERROR_LIMIT_HIT_Y2);
+      }
+      if (SENSE_Z1_LIMIT && stop_code != STOPERROR_LIMIT_HIT_Z1) {
+        serial_write(STOPERROR_LIMIT_HIT_Z1);
+      }
+      if (SENSE_Z2_LIMIT && stop_code != STOPERROR_LIMIT_HIT_Z2) {
+        serial_write(STOPERROR_LIMIT_HIT_Z2);
+      }
+    }
+
+    // position
+    serial_write_number(stepper_get_position_x());
+    serial_write(STATUS_POS_X);
+    serial_write_number(stepper_get_position_y());
+    serial_write(STATUS_POS_Y);
+    serial_write_number(stepper_get_position_z());       
+    serial_write(STATUS_POS_Z);
+    // version
+    serial_write_number(LASAURGRBL_VERSION);       
+    serial_write(STATUS_VERSION);
+
+    status_requested = false;
+  }
+}
+
+
 void protocol_request_position_update() {
   position_update_requested = true;
 }
@@ -392,10 +402,10 @@ inline double get_curent_value() {
   //// char1 = ((num&(127<<7))>>7)+128
   //// char2 = ((num&(127<<14))>>14)+128
   //// char3 = ((num&(127<<21))>>21)+128
-  return (((( pdata.chars[3]-128)*2097152 + 
-              (pdata.chars[2]-128)*16384 + 
+  return (((( pdata.chars[3]-128)*2097152 +  // 2097152 = 128*128*128
+              (pdata.chars[2]-128)*16384 +   //   16384 = 128*128
               (pdata.chars[1]-128)*128 + 
-              (pdata.chars[0]-128))-134217728 ) / 1000.0);
+              (pdata.chars[0]-128))-134217728 ) / 1000.0);  // 134217728 = 2**27
 }
 
 

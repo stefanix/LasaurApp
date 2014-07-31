@@ -25,6 +25,7 @@
 #include "planner.h"
 #include "stepper.h"
 #include "config.h"
+#include "protocol.h"
 
 
 // The number of linear motions that can be in the plan at any give time
@@ -80,13 +81,13 @@ void planner_line(double x, double y, double z, double feed_rate, uint8_t nomina
   while(block_buffer_tail == next_buffer_head) {  // buffer full condition
     // good! We are well ahead of the robot. Rest here until buffer has room.
     // sleep_mode();
+    protocol_idle();
   }
   
   // handle position update after a stop
   if (position_update_requested) {
     planner_set_position(stepper_get_position_x(), stepper_get_position_y(), stepper_get_position_z());
     position_update_requested = false;
-    //printString("planner pos update\n");  // debug
   }
   
   // prepare to set up new block
@@ -223,6 +224,7 @@ void planner_command(uint8_t type) {
   while(block_buffer_tail == next_buffer_head) {  // buffer full condition
     // good! We are well ahead of the robot. Rest here until buffer has room.
     // sleep_mode();
+    protocol_idle();
   }    
 
   // Prepare to set up new block

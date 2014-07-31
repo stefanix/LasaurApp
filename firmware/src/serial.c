@@ -30,11 +30,7 @@
 #include "stepper.h"
 #include "protocol.h"
 
-#define CHAR_STOP '!'
-#define CHAR_RESUME '~'
 
-#define RASTER_DATA_START '\x02'
-#define RASTER_DATA_END '\x03'
 
 /** ring buffer **********************************
 * [_][h][e][l][l][o][_][_][_] -> wrap around     *
@@ -75,6 +71,8 @@ volatile uint8_t request_ready_flag = 0;
 
 bool raster_mode = false;
 
+uint8_t serial_read();
+
 
 static void set_baud_rate(long baud) {
   uint16_t UBRR0_value = ((F_CPU / 16 + baud / 2) / baud - 1);
@@ -100,8 +98,8 @@ void serial_init() {
 	  
 	// defaults to 8-bit, no parity, 1 stop bit
 	
-  printPgmString(PSTR("# LasaurGrbl " LASAURGRBL_VERSION));
-  printPgmString(PSTR("\n"));
+  // printPgmString(PSTR("# LasaurGrbl " LASAURGRBL_VERSION));
+  // printPgmString(PSTR("\n"));
 }
 
 
@@ -122,6 +120,18 @@ void serial_write(uint8_t data) {
     
   	UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt  
 }
+
+
+inline void serial_write_number(double num) {
+  // num to be [-134217.728, 134217.727]
+  // three decimals are retained
+  uint32_t num = lround(num*1000 + 134217728);
+  serial_write((num&127)+128);
+  serial_write(((num&(127<<7))>>7)+128);
+  serial_write(((num&(127<<14))>>14)+128);
+  serial_write(((num&(127<<21))>>21)+128);
+}
+
 
 // tx interrupt, called when UDR0 gets empty
 SIGNAL(USART_UDRE_vect) {
@@ -158,6 +168,41 @@ inline uint8_t serial_read() {
   return data;
 }
 
+// rx interrupt, called whenever a new byte is in UDR0
+SIGNAL(USART_RX_vect) {
+  uint8_t data = UDR0;
+  if (data == CMD_STOP) {
+    // special stop character, bypass buffer
+    stepper_request_stop(STOPERROR_SERIAL_STOP_REQUEST);
+  } else if (data == CMD_RESUME) {
+    // special resume character, bypass buffer
+    stepper_stop_resume();
+  } else if (data == CMD_STATUS) {
+    protocol_request_status();
+  } else if (data == CHAR_REQUEST_READY) {
+    if (rx_buffer_open_slots > RX_CHUNK_SIZE) {
+      send_ready_flag = 1;
+      UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt 
+    } else {
+      // send ready when enough slots open up
+      request_ready_flag = 1;
+    }
+  } else {
+    uint8_t head = rx_buffer_head;  // optimize for volatile    
+    uint8_t next_head = head + 1;
+    if (next_head == RX_BUFFER_SIZE) {next_head = 0;}
+
+    if (next_head == rx_buffer_tail) {
+      // buffer is full, other side sent too much data
+      stepper_request_stop(STOPERROR_RX_BUFFER_OVERFLOW);
+    } else {
+      rx_buffer[head] = data;
+      rx_buffer_head = next_head;
+      rx_buffer_open_slots--;
+    }
+  }
+}
+
 
 uint8_t serial_protocol_read() {
   // called from protocol loop
@@ -167,22 +212,31 @@ uint8_t serial_protocol_read() {
     // in the rx_buffer which get directly consumed
     // by the stepper interrupt.
     sleep_mode();  // sleep a tiny bit
+    protocol_idle();
   }
-  // we are out of raster_mode
+  // wait, buffer empty
   while (rx_buffer_tail == rx_buffer_head) {
     sleep_mode();
+    protocol_end_of_job_check();
+    protocol_idle();
   }
   // we have non-raster data
   uint8_t data = serial_read();
-  if (data == RASTER_DATA_START) {
+  if (data == CMD_RASTER_DATA_START) {
     raster_mode = true;
     // comsume the byte, return next non-raster byte
+    // wait, raster mode
     while (raster_mode) {
       sleep_mode();
+      protocol_idle();
     }
+    // wait, buffer empty
     while (rx_buffer_tail == rx_buffer_head) {
       sleep_mode();
+      protocol_end_of_job_check();
+      protocol_idle();
     }
+    // back to normal mode
     return serial_read();
   } else {
     return data;
@@ -212,7 +266,7 @@ uint8_t serial_raster_read() {
       return 0;
     } else {
       uint8_t data = serial_read();
-      if (data == RASTER_DATA_END) {
+      if (data == CMD_RASTER_DATA_END) {
         raster_mode = false;
         return 0;
       } else {
@@ -227,112 +281,76 @@ uint8_t serial_raster_read() {
 }
 
 
-
-// rx interrupt, called whenever a new byte is in UDR0
-SIGNAL(USART_RX_vect) {
-  uint8_t data = UDR0;
-  if (data == CHAR_STOP) {
-    // special stop character, bypass buffer
-    stepper_request_stop(STOPERROR_SERIAL_STOP_REQUEST);
-  } else if (data == CHAR_RESUME) {
-    // special resume character, bypass buffer
-    stepper_stop_resume();
-  } else if (data == CHAR_REQUEST_READY) {
-    if (rx_buffer_open_slots > RX_CHUNK_SIZE) {
-      send_ready_flag = 1;
-      UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt 
-    } else {
-      // send ready when enough slots open up
-      request_ready_flag = 1;
-    }
-  } else {
-    uint8_t head = rx_buffer_head;  // optimize for volatile    
-    uint8_t next_head = head + 1;
-    if (next_head == RX_BUFFER_SIZE) {next_head = 0;}
-
-    if (next_head == rx_buffer_tail) {
-      // buffer is full, other side sent too much data
-      stepper_request_stop(STOPERROR_RX_BUFFER_OVERFLOW);
-    } else {
-      rx_buffer[head] = data;
-      rx_buffer_head = next_head;
-      rx_buffer_open_slots--;
-    }
-  }
-}
-
-
 uint8_t serial_available() {
   return RX_BUFFER_SIZE - rx_buffer_open_slots;
 }
 
 
+// void printString(const char *s) {
+//   while (*s) {
+//     serial_write(*s++);
+//   }
+// }
 
-void printString(const char *s) {
-  while (*s) {
-    serial_write(*s++);
-  }
-}
+// // Print a string stored in PGM-memory
+// void printPgmString(const char *s) {
+//   char c;
+//   while ((c = pgm_read_byte_near(s++))) {
+//     serial_write(c);
+//   }
+// }
 
-// Print a string stored in PGM-memory
-void printPgmString(const char *s) {
-  char c;
-  while ((c = pgm_read_byte_near(s++))) {
-    serial_write(c);
-  }
-}
+// void printIntegerInBase(unsigned long n, unsigned long base) {
+//   unsigned char buf[8 * sizeof(long)]; // Assumes 8-bit chars.
+//   unsigned long i = 0;
 
-void printIntegerInBase(unsigned long n, unsigned long base) {
-  unsigned char buf[8 * sizeof(long)]; // Assumes 8-bit chars.
-  unsigned long i = 0;
+//   if (n == 0) {
+//     serial_write('0');
+//     return;
+//   }
 
-  if (n == 0) {
-    serial_write('0');
-    return;
-  }
+//   while (n > 0) {
+//     buf[i++] = n % base;
+//     n /= base;
+//   }
 
-  while (n > 0) {
-    buf[i++] = n % base;
-    n /= base;
-  }
+//   for (; i > 0; i--) {
+//     serial_write(buf[i - 1] < 10 ?
+//     '0' + buf[i - 1] :
+//     'A' + buf[i - 1] - 10);
+//   }
+// }
 
-  for (; i > 0; i--) {
-    serial_write(buf[i - 1] < 10 ?
-    '0' + buf[i - 1] :
-    'A' + buf[i - 1] - 10);
-  }
-}
+// void printInteger(long n) {
+//   if (n < 0) {
+//     serial_write('-');
+//     n = -n;
+//   }
 
-void printInteger(long n) {
-  if (n < 0) {
-    serial_write('-');
-    n = -n;
-  }
+//   printIntegerInBase(n, 10);
+// }
 
-  printIntegerInBase(n, 10);
-}
-
-void printFloat(double n) {
-  if (n < 0) {
-    serial_write('-');
-    n = -n;
-  }
-  n += 0.5/1000; // Add rounding factor
+// void printFloat(double n) {
+//   if (n < 0) {
+//     serial_write('-');
+//     n = -n;
+//   }
+//   n += 0.5/1000; // Add rounding factor
  
-  long integer_part;
-  integer_part = (int)n;
-  printIntegerInBase(integer_part,10);
+//   long integer_part;
+//   integer_part = (int)n;
+//   printIntegerInBase(integer_part,10);
   
-  serial_write('.');
+//   serial_write('.');
   
-  n -= integer_part;
-  int decimals = 3;
-  uint8_t decimal_part;
-  while(decimals-- > 0) {
-    n *= 10;
-    decimal_part = (int) n;
-    serial_write('0'+decimal_part);
-    n -= decimal_part;
-  }
-}
+//   n -= integer_part;
+//   int decimals = 3;
+//   uint8_t decimal_part;
+//   while(decimals-- > 0) {
+//     n *= 10;
+//     decimal_part = (int) n;
+//     serial_write('0'+decimal_part);
+//     n -= decimal_part;
+//   }
+// }
 
