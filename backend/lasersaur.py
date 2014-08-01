@@ -109,11 +109,14 @@ class LasersaurClass:
         
         # used for calculating percentage done
         self.job_size = 0
-        self.job_active = False
 
         # status flags
         self._status = {}
         self.reset_status()
+
+        self.request_stop = False
+        self.request_resume = False
+        self.request_status = True  # cause an status request once connected
 
         self.LASAURGRBL_FIRST_STRING = "LasaurGrbl"
 
@@ -124,10 +127,13 @@ class LasersaurClass:
         self.REQUEST_READY = '\x14'
         self.last_request_ready = 0
 
+        self.pdata_count = 0
+        self.pdata_chars = [None, None, None, None]
+
 
     def reset_status(self):
         self._status = {
-            'ready': True,
+            'ready': False,  # when the machine is not busy
             'paused': False,
 
             'buffer_overflow': False,
@@ -147,9 +153,9 @@ class LasersaurClass:
             'door_open': False,
             'chiller_off': False,
 
-            'x': False,
-            'y': False,
-            'z': False,
+            'x': 0.0,
+            'y': 0.0,
+            'z': 0.0,
             'firmware_version': None
 
             # removed
@@ -161,14 +167,18 @@ class LasersaurClass:
 
 
     def print_status(self):
-        print self._status
+        symap = {False:'[ ]', True:'[x]' }
+        keys = self._status.keys()
+        keys.sort()
+        for k in keys:
+            if k not in ['x', 'y', 'z', 'firmware_version']:
+                print symap[self._status[k]] + ' ' + k
+        print  'x: ' + str(self._status['x'])
+        print  'x: ' + str(self._status['y'])
+        print  'x: ' + str(self._status['z'])
+        print  'firmware_version: ' + str(self._status['firmware_version'])
 
 
-    def cancel_queue(self):
-        self.tx_buffer = ''
-        self.job_size = 0
-        self.job_active = False
-    
     
     def send_queue_as_ready(self):
         """Continuously call this to keep processing queue."""    
@@ -185,158 +195,122 @@ class LasersaurClass:
                         chars = chars.replace(self.READY, "")
                     ## process chars
                     for char in chars:
+                        sys.stdout.write(char)
+                        sys.stdout.flush()
                         if ord(char) < 128:  ### marker
                             if 32 < ord(char) < 65: # stop error flags                            
                                 # chr is in [!-@], process flag
-                                if char == ERROR_SERIAL_STOP_REQUEST:
+                                if char == self.ERROR_SERIAL_STOP_REQUEST:
                                     self._status['serial_stop_request'] = True
-                                elif char == ERROR_RX_BUFFER_OVERFLOW:
+                                elif char == self.ERROR_RX_BUFFER_OVERFLOW:
                                     self._status['buffer_overflow'] = True
-                                elif char == ERROR_LIMIT_HIT_X1:
+                                elif char == self.ERROR_LIMIT_HIT_X1:
                                     self._status['limit_x1'] = True
-                                elif char == ERROR_LIMIT_HIT_X2:
+                                elif char == self.ERROR_LIMIT_HIT_X2:
                                     self._status['limit_x2'] = True
-                                elif char == ERROR_LIMIT_HIT_Y1:
+                                elif char == self.ERROR_LIMIT_HIT_Y1:
                                     self._status['limit_y1'] = True
-                                elif char == ERROR_LIMIT_HIT_Y2:
+                                elif char == self.ERROR_LIMIT_HIT_Y2:
                                     self._status['limit_y2'] = True
-                                elif char == ERROR_LIMIT_HIT_Z1:
+                                elif char == self.ERROR_LIMIT_HIT_Z1:
                                     self._status['limit_z1'] = True
-                                elif char == ERROR_LIMIT_HIT_Z2:
+                                elif char == self.ERROR_LIMIT_HIT_Z2:
                                     self._status['limit_z2'] = True
-                                elif char == ERROR_INVALID_MARKER:
+                                elif char == self.ERROR_INVALID_MARKER:
                                     self._status['invalid_marker'] = True
-                                elif char == ERROR_INVALID_DATA:
+                                elif char == self.ERROR_INVALID_DATA:
                                     self._status['invalid_data'] = True
-                                elif char == ERROR_INVALID_COMMAND:
+                                elif char == self.ERROR_INVALID_COMMAND:
                                     self._status['invalid_command'] = True
-                                elif char == ERROR_INVALID_PARAMETER:
+                                elif char == self.ERROR_INVALID_PARAMETER:
                                     self._status['invalid_parameter'] = True
-                                elif char == ERROR_TRANSMISSION_ERROR:
+                                elif char == self.ERROR_TRANSMISSION_ERROR:
                                     self._status['transmission_error'] = True
                                 # in stop mode
-                                self.cancel_queue()
+                                self.tx_buffer = ''
+                                self.job_size = 0
                                 # not ready whenever in stop mode
                                 self._status['ready'] = False
                                 self.print_status()
 
                             elif 64 < ord(char) < 91:  # info flags
                                 # chr is in [A-Z], info flag
-                                elif char == WARN_FEC_CORRECTION:
+                                if char == self.INFO_FEC_CORRECTION:
                                     sys.stdout.write("\nFEC Correction!\n")
                                     sys.stdout.flush()                                              
                                     # self._status['fec_correction'] = True
-                                elif char == INFO_IDLE_YES:
-                                    # self._status['ready'] = True
-                                elif char == INFO_IDLE_NO:
-
-                                elif char == INFO_DOOR_OPEN:
+                                elif char == self.INFO_IDLE_YES:
+                                    self._status['ready'] = True
+                                elif char == self.INFO_IDLE_NO:
+                                    self._status['ready'] = False
+                                elif char == self.INFO_DOOR_OPEN:
                                     self._status['door_open'] = True
-                                elif char == INFO_DOOR_CLOSED:
+                                elif char == self.INFO_DOOR_CLOSED:
                                     self._status['door_open'] = False
-                                elif char == INFO_CHILLER_OFF:
+                                elif char == self.INFO_CHILLER_OFF:
                                     self._status['chiller_off'] = True
-                                elif char == INFO_CHILLER_ON:
+                                elif char == self.INFO_CHILLER_ON:
                                     self._status['chiller_off'] = False
                                 else:
                                     print "ERROR: invalid flag"
                             elif 96 < ord(char) < 123:  # parameter
                                 # char is in [a-z], process parameter
-                                num = ((((pdata_chars[3]-128)*2097152 
-                                       + (pdata_chars[2]-128)*16384 
-                                       + (pdata_chars[1]-128)*128 
-                                       + (pdata_chars[0]-128) )- 134217728)/1000.0)
-                                if char == INFO_POS_X:
+                                num = ((((ord(self.pdata_chars[3])-128)*2097152 
+                                       + (ord(self.pdata_chars[2])-128)*16384 
+                                       + (ord(self.pdata_chars[1])-128)*128 
+                                       + (ord(self.pdata_chars[0])-128) )- 134217728)/1000.0)
+                                if char == self.INFO_POS_X:
                                     self._status['x'] = num
-                                elif char == INFO_POS_Y:
+                                elif char == self.INFO_POS_Y:
                                     self._status['y'] = num
-                                elif char == INFO_POS_Z:
+                                elif char == self.INFO_POS_Z:
                                     self._status['z'] = num
-                                elif char == STATUS_VERSION:
+                                elif char == self.INFO_VERSION:
                                     num = 'v' + str(int(num)/100.0)
                                     self._status['firmware_version'] = num
                                 else:
                                     print "ERROR: invalid param"
                             else:
+                                print ord(char)
+                                print char
                                 print "ERROR: invalid marker"
-                            pdata_count = 0
+                            self.pdata_count = 0
                         else:  ### data
                             # char is in [128,255]
-                            if pdata_count < 4:
-                                pdata_chars[pdata_count] = char
-                                pdata_count += 1
+                            if self.pdata_count < 4:
+                                self.pdata_chars[self.pdata_count] = char
+                                self.pdata_count += 1
                             else:
-                                print "ERROR: invalid data"
-
-
-
-                        if char == '^':
-                        else:
-                            if '!' in line:
-                                # in stop mode
-                                self.cancel_queue()
-                                # not ready whenever in stop mode
-                                self._status['ready'] = False
-                                sys.stdout.write(line + "\n")
-                                sys.stdout.flush()
-                            else:
-                                sys.stdout.write(".")
-                                sys.stdout.flush()
-
-                            if 'N' in line:
-                                self._status['bad_number_format_error'] = True
-                            if 'E' in line:
-                                self._status['expected_command_letter_error'] = True
-                            if 'U' in line:
-                                self._status['unsupported_statement_error'] = True
-
-                            if 'B' in line:  # Stop: Buffer Overflow
-                                self._status['buffer_overflow'] = True
-                            else:
-                                self._status['buffer_overflow'] = False
-
-                            if 'T' in line:  # Stop: Transmission Error
-                                self._status['transmission_error'] = True
-                            else:
-                                self._status['transmission_error'] = False                                
-
-                            if 'L' in line:  # Stop: A limit was hit
-                                self._status['limit_hit'] = True
-                            else:
-                                self._status['limit_hit'] = False
-
-                            if 'R' in line:  # Stop: by serial requested
-                                self._status['serial_stop_request'] = True
-                            else:
-                                self._status['serial_stop_request'] = False
-
-                            if 'D' in line:  # Warning: Door Open
-                                self._status['door_open'] = True
-                            else:
-                                self._status['door_open'] = False
-
-                            if 'C' in line:  # Warning: Chiller Off
-                                self._status['chiller_off'] = True
-                            else:
-                                self._status['chiller_off'] = False
-
-                            if 'X' in line:
-                                self._status['x'] = line[line.find('X')+1:line.find('Y')]
-
-                            if 'Y' in line:
-                                self._status['y'] = line[line.find('Y')+1:line.find('V')]
-
-                            if 'Z' in line:
-                                self._status['z'] = line[line.find('Z')+1:line.find('Z')]
-
-                            if 'V' in line:
-                                self._status['firmware_version'] = line[line.find('V')+1:]                     
-
-
-
-               
-                
-                ### sending
+                                print "ERROR: invalid data"                
+                ### sending super commands (handled in serial rx interrupt)
+                if self.request_status:
+                    try:
+                        self.device.write(self.CMD_STATUS)
+                        self.device.flushOutput()
+                        self.request_status = False
+                    except serial.SerialTimeoutException:
+                        sys.stdout.write("\nsending status request: writeTimeoutError\n")
+                        sys.stdout.flush()
+                if self.request_stop:
+                    try:
+                        self.device.write(self.CMD_STOP)
+                        self.device.flushOutput()
+                        self.request_stop = False
+                    except serial.SerialTimeoutException:
+                        sys.stdout.write("\nsending stop request: writeTimeoutError\n")
+                        sys.stdout.flush()
+                if self.request_resume:
+                    try:
+                        self.device.write(self.CMD_RESUME)
+                        self.device.flushOutput()
+                        self.request_resume = False
+                        # update status
+                        self.reset_status()
+                        self.request_status = True
+                    except serial.SerialTimeoutException:
+                        sys.stdout.write("\nsending resume request: writeTimeoutError\n")
+                        sys.stdout.flush()
+                ### sending from buffer
                 if self.tx_buffer:
                     if self.nRequested > 0:
                         try:
@@ -351,14 +325,6 @@ class LasersaurClass:
                         self.nRequested -= actuallySent
                         if self.nRequested <= 0:
                             self.last_request_ready = 0  # make sure to request ready
-                    elif self.tx_buffer[0] in [self.CMD_STOP, self.CMD_RESUME]:  # send control chars no matter what
-                        try:
-                            actuallySent = self.device.write(self.tx_buffer[:1])
-                        except serial.SerialTimeoutException:
-                            actuallySent = self.nRequested
-                            sys.stdout.write("\nsend_queue_as_ready: writeTimeoutError\n")
-                            sys.stdout.flush()
-                        self.tx_buffer = self.tx_buffer[actuallySent:]
                     else:
                         if (time.time()-self.last_request_ready) > 2.0:
                             # ask to send a ready byte
@@ -376,13 +342,10 @@ class LasersaurClass:
                                 self.last_request_ready = time.time()
                          
                 else:
-                    if self.job_active:
-                        # print "\nG-code stream finished!"
-                        # print "(LasaurGrbl may take some extra time to finalize)"
+                    if self.job_size:
+                        # print "\nstream finished!"
+                        # print "(firmware may take some extra time to finalize)"
                         self.job_size = 0
-                        self.job_active = False
-                        # ready whenever a job is done, including a status request
-                        self._status['ready'] = True
             except OSError:
                 # Serial port appears closed => reset
                 self.close()
@@ -459,7 +422,7 @@ class LasersaurClass:
         self.remoteXON = True
         self.job_size = 0
         self.reset_status()
-                
+
         # Create serial device with both read timeout set to 0.
         # This results in the read() being non-blocking
         # Write on the other hand uses a large timeout but should not be blocking
@@ -502,22 +465,20 @@ class LasersaurClass:
     def percentage(self):
         """Return the percentage done as an integer between 0-100.
         Return -1 if no job is active."""
-        if self.job_size == 0 or not self.job_active:
+        if self.job_size == 0:
             return -1
         return int(100-100*len(self.tx_buffer)/float(self.job_size))
 
 
     def status(self):
         """Request status."""
-        if not self.job_active:
-            self.send_command(self.CMD_GET_STATUS)
-        else:
-            print "WARN: ignoring status request while job running"
+        self.request_status = True
+        self.print_status()
 
 
     def homing(self):
         """Run homing cycle."""
-        if not self.job_active:
+        if self._status['ready']:
             self.send_command(self.CMD_HOMING)
         else:
             print "WARN: ignoring homing command while job running"
@@ -528,7 +489,6 @@ class LasersaurClass:
     def send_command(self, command):
         self.tx_buffer += command
         self.job_size += 1
-        self.job_active = True
 
 
     def send_param(self, param, val):
@@ -541,7 +501,6 @@ class LasersaurClass:
         char3 = chr(((num&(127<<21))>>21)+128)
         self.tx_buffer += char0 + char1 + char2 + char3 + param
         self.job_size += 5
-        self.job_active = True
 
 
 
@@ -625,14 +584,15 @@ class LasersaurClass:
 
     def stop(self):
         """Force stop condition."""
-        self.cancel_queue()
-        self.reset_status()
-        self.send_command(self.CMD_STOP)
+        self.tx_buffer = ''
+        self.job_size = 0
+        # self.reset_status()
+        self.request_stop = True
 
 
     def unstop(self):
         """Resume from stop condition."""
-        self.send_command(self.CMD_RESUME)
+        self.request_resume = True
 
 
     def air_on(self):

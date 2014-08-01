@@ -100,6 +100,11 @@ void serial_init() {
 	
   // printPgmString(PSTR("# LasaurGrbl " LASAURGRBL_VERSION));
   // printPgmString(PSTR("\n"));
+  serial_write(INFO_IDLE_YES);
+  serial_write(INFO_IDLE_NO);
+  serial_write(INFO_IDLE_YES);
+  serial_write(INFO_IDLE_NO);
+  serial_write(INFO_IDLE_YES);
 }
 
 
@@ -125,11 +130,11 @@ void serial_write(uint8_t data) {
 inline void serial_write_number(double num) {
   // num to be [-134217.728, 134217.727]
   // three decimals are retained
-  uint32_t num = lround(num*1000 + 134217728);
-  serial_write((num&127)+128);
-  serial_write(((num&(127<<7))>>7)+128);
-  serial_write(((num&(127<<14))>>14)+128);
-  serial_write(((num&(127<<21))>>21)+128);
+  uint32_t numint = lround(num*1000 + 134217728);
+  serial_write((numint&127)+128);
+  serial_write(((numint&((uint32_t)127<<7))>>7)+128);
+  serial_write(((numint&((uint32_t)127<<14))>>14)+128);
+  serial_write(((numint&((uint32_t)127<<21))>>21)+128);
 }
 
 
