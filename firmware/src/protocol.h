@@ -102,6 +102,7 @@
 #define STATUS_POS_Z 'z'
 #define STATUS_VERSION 'v'
 
+#define INFO_HELLO '~'
 
 
 // Initialize the parser.

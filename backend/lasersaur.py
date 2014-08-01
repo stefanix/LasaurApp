@@ -2,6 +2,7 @@
 import os
 import sys
 import time
+import threading
 import serial
 import serial.tools.list_ports
 
@@ -9,13 +10,16 @@ import serial.tools.list_ports
 __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
 
 
+DEFAULT_BAUDRATE = 57600
 
 
-class LasersaurClass:
+
+class LasersaurClass(threading.Thread):
     """Lasersaur serial control.
     Use Lasersaur singelton instead of instancing.
     """
 
+    ################ SENDING PROTOCOL
     CMD_STOP = '!'
     CMD_RESUME = '~'
     CMD_STATUS = '?'
@@ -59,7 +63,11 @@ class LasersaurClass:
     PARAM_DURATION = "d"
     PARAM_PIXEL_WIDTH = "p"
 
+    REQUEST_READY = '\x14'
+    ################
 
+
+    ################ RECEIVING PROTOCOL
     # status: error flags
     ERROR_SERIAL_STOP_REQUEST = '!'
     ERROR_RX_BUFFER_OVERFLOW = '"'
@@ -92,6 +100,9 @@ class LasersaurClass:
     INFO_POS_Z = 'z'
     INFO_VERSION = 'v'
 
+    INFO_HELLO = '~'
+    READY = '\x12'
+    ################
 
 
 
@@ -106,6 +117,7 @@ class LasersaurClass:
         self.TX_CHUNK_SIZE = 64
         self.RX_CHUNK_SIZE = 256
         self.nRequested = 0
+        self.last_request_ready = 0
         
         # used for calculating percentage done
         self.job_size = 0
@@ -118,17 +130,11 @@ class LasersaurClass:
         self.request_resume = False
         self.request_status = True  # cause an status request once connected
 
-        self.LASAURGRBL_FIRST_STRING = "LasaurGrbl"
-
-        self.fec_redundancy = 2  # use forward error correction
-        # self.fec_redundancy = 1  # use error detection
-
-        self.READY = '\x12'
-        self.REQUEST_READY = '\x14'
-        self.last_request_ready = 0
-
         self.pdata_count = 0
         self.pdata_chars = [None, None, None, None]
+
+        threading.Thread.__init__(self)
+        self.stop_processing = False
 
 
     def reset_status(self):
@@ -179,6 +185,25 @@ class LasersaurClass:
         print  'firmware_version: ' + str(self._status['firmware_version'])
 
 
+    def start_processing_thread(self):
+        if not self.is_alive():
+            self.stop_processing = False
+            self.start()  # this calls run() in a thread
+
+
+    def stop_processing_thread(self):
+        if self.is_alive():
+            self.stop_processing = True
+            self.join()
+
+
+
+    def run(self):
+        while True:
+            self.send_queue_as_ready()
+            if self.stop_processing:
+                break
+
     
     def send_queue_as_ready(self):
         """Continuously call this to keep processing queue."""    
@@ -187,17 +212,15 @@ class LasersaurClass:
                 ### receiving
                 chars = self.device.read(self.RX_CHUNK_SIZE)
                 if len(chars) > 0:
-                    ## check for data request
-                    if self.READY in chars:
-                        # print "=========================== READY"
-                        self.nRequested = self.TX_CHUNK_SIZE
-                        #remove control chars
-                        chars = chars.replace(self.READY, "")
                     ## process chars
                     for char in chars:
-                        sys.stdout.write(char)
-                        sys.stdout.flush()
-                        if ord(char) < 128:  ### marker
+                        # sys.stdout.write(char)
+                        # sys.stdout.flush()
+                        if ord(char) < 32:  ### flow
+                            ## check for data request
+                            if char == self.READY:
+                                self.nRequested = self.TX_CHUNK_SIZE
+                        elif ord(char) < 128:  ### markers
                             if 32 < ord(char) < 65: # stop error flags                            
                                 # chr is in [!-@], process flag
                                 if char == self.ERROR_SERIAL_STOP_REQUEST:
@@ -270,6 +293,8 @@ class LasersaurClass:
                                     self._status['firmware_version'] = num
                                 else:
                                     print "ERROR: invalid param"
+                            elif char == self.INFO_HELLO:
+                                print "Controller says Hello!"
                             else:
                                 print ord(char)
                                 print char
@@ -366,58 +391,38 @@ class LasersaurClass:
     ### API ###################################################################
     ###########################################################################
 
-    def list_devices(self, baudrate):
-        ports = []
+            
+    def find_controller(self, baudrate=DEFAULT_BAUDRATE):
         if os.name == 'posix':
             iterator = sorted(serial.tools.list_ports.grep('tty'))
-            print "Found ports:"
             for port, desc, hwid in iterator:
-                ports.append(port)
-                print "%-20s" % (port,)
-                print "    desc: %s" % (desc,)
-                print "    hwid: %s" % (hwid,)            
-        else:
-            # iterator = sorted(list_ports.grep(''))  # does not return USB-style
-            # scan for available ports. return a list of tuples (num, name)
-            available = []
-            for i in range(24):
+                print "Looking for controller on port: " + port
                 try:
-                    s = serial.Serial(port=i, baudrate=baudrate)
-                    ports.append(s.portstr)                
-                    available.append( (i, s.portstr))
+                    s = serial.Serial(port=port, baudrate=baudrate, timeout=2.0)
+                    lasaur_hello = s.read(8)
+                    if lasaur_hello.find(self.INFO_HELLO) > -1:
+                        return port
                     s.close()
                 except serial.SerialException:
                     pass
-            print "Found ports:"
-            for n,s in available: print "(%d) %s" % (n,s)
-        return ports
-
-            
-    def match_device(self, search_regex, baudrate):
-        if os.name == 'posix':
-            matched_ports = serial.tools.list_ports.grep(search_regex)
-            if matched_ports:
-                for match_tuple in matched_ports:
-                    if match_tuple:
-                        return match_tuple[0]
-            print "No serial port match for anything like: " + search_regex
-            return None
         else:
             # windows hack because pyserial does not enumerate USB-style com ports
-            print "Trying to find Controller ..."
+            print "Trying to find controller ..."
             for i in range(24):
                 try:
                     s = serial.Serial(port=i, baudrate=baudrate, timeout=2.0)
-                    lasaur_hello = s.read(32)
-                    if lasaur_hello.find(self.LASAURGRBL_FIRST_STRING) > -1:
+                    lasaur_hello = s.read(8)
+                    if lasaur_hello.find(self.INFO_HELLO) > -1:
                         return s.portstr
                     s.close()
                 except serial.SerialException:
                     pass      
-            return None      
+        print "ERROR: No controller found."
+        return None
+
         
 
-    def connect(self, port="/dev/ttyACM0", baudrate=57600):
+    def connect(self, port="/dev/ttyACM0", baudrate=DEFAULT_BAUDRATE):
         self.tx_buffer = ""        
         self.remoteXON = True
         self.job_size = 0
@@ -437,6 +442,8 @@ class LasersaurClass:
         self.device.flushInput()
         self.device.flushOutput()
 
+        self.start_processing_thread()
+
 
     def connected(self):
         return bool(self.device)
@@ -447,6 +454,7 @@ class LasersaurClass:
             try:
                 self.device.flushOutput()
                 self.device.flushInput()
+                self.stop_processing_thread()
                 self.device.close()
                 self.device = None
             except:
@@ -454,6 +462,7 @@ class LasersaurClass:
             self._status['ready'] = False
             return True
         else:
+            self.stop_processing_thread()
             return False
 
             
@@ -638,6 +647,7 @@ class LasersaurClass:
 Lasersaur = LasersaurClass()
 
 ### ALIASES
+find_controller = Lasersaur.find_controller
 connect = Lasersaur.connect
 connected = Lasersaur.connected
 close =  Lasersaur.close

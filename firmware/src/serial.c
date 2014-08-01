@@ -100,11 +100,12 @@ void serial_init() {
 	
   // printPgmString(PSTR("# LasaurGrbl " LASAURGRBL_VERSION));
   // printPgmString(PSTR("\n"));
-  serial_write(INFO_IDLE_YES);
-  serial_write(INFO_IDLE_NO);
-  serial_write(INFO_IDLE_YES);
-  serial_write(INFO_IDLE_NO);
-  serial_write(INFO_IDLE_YES);
+  // serial_write(INFO_IDLE_YES);
+  // serial_write(INFO_IDLE_NO);
+  // serial_write(INFO_IDLE_YES);
+  // serial_write(INFO_IDLE_NO);
+  // serial_write(INFO_IDLE_YES);
+  serial_write(INFO_HELLO);
 }
 
 

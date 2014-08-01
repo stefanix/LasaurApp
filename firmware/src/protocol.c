@@ -158,7 +158,6 @@ void protocol_loop() {
     }
 
     protocol_idle();
-    serial_write('\n');
   }
 }
 

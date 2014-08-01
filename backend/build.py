@@ -40,7 +40,7 @@ elif sys.platform == "linux" or sys.platform == "linux2":  #Linux
 # No need to edit anything below this line
 
 
-def build_firmware(firmware_name):
+def build_firmware(firmware_name="LasaurGrbl"):
     """Build the firmware and name it firmware_name.hex.
     The source code is assumed to be in ../firmware/src/
     And the hex file will be placed in ../firmware/
