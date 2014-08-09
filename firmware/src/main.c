@@ -28,6 +28,7 @@
 
 
 int main() {
+  sei();  //enable interrupts
   serial_init();
   protocol_init();
   planner_init();      
@@ -38,7 +39,7 @@ int main() {
   // planner_control_air_assist_enable();
   // planner_control_air_assist_enable();
   // stepper_homing_cycle();
-  planner_line( 500,500,500, 10000, 0, 0);
+  planner_line( 500,500,500, 2000, 100, 0);
   // planner_control_air_assist_disable();
 
   protocol_loop();

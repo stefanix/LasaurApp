@@ -330,6 +330,16 @@ void protocol_idle() {
   // - planing actions (line, command)
   //   - block buffer full
 
+
+  // if (planner_blocks_available()) {
+  //   // DEBUG: turn on
+  //   ASSIST_PORT |= (1 << AIR_ASSIST_BIT);
+  // } else {
+  //   // DEBUG: turn off
+  //   ASSIST_PORT &= ~(1 << AIR_ASSIST_BIT);
+  // }
+
+
   if (planner_blocks_available()) {
     machine_idle = false;
   }
@@ -473,3 +483,10 @@ inline double get_curent_value() {
 //
 // check(13925.2443)
 
+
+
+// int freeRam () {
+//   extern int __heap_start, *__brkval;
+//   int v;
+//   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+// }

@@ -89,7 +89,6 @@ static void adjust_intensity( uint8_t intensity );
 
 // Initialize and start the stepper motor subsystem
 void stepper_init() {
-  sei();  //enable interrupts
   // Configure directions of interface pins
   STEPPING_DDR |= (STEPPING_MASK | DIRECTION_MASK);
   STEPPING_PORT = (STEPPING_PORT & ~(STEPPING_MASK | DIRECTION_MASK)) | INVERT_MASK;
@@ -204,9 +203,6 @@ ISR(TIMER2_OVF_vect) {
   // reset step pins
   STEPPING_PORT = (STEPPING_PORT & ~STEPPING_MASK) | (INVERT_MASK & STEPPING_MASK);
   TCCR2B = 0; // Disable Timer2 to prevent re-entering this interrupt when it's not needed. 
-
-  // DEBUG: turn off air assist
-  ASSIST_PORT &= ~(1 << AIR_ASSIST_BIT);
 }
   
 
@@ -253,9 +249,6 @@ ISR(TIMER1_COMPA_vect) {
     }
   #endif
 
-  // DEBUG: turn on air assist
-  ASSIST_PORT |= (1 << AIR_ASSIST_BIT);
-  
   // pulse steppers
   STEPPING_PORT = (STEPPING_PORT & ~DIRECTION_MASK) | (out_bits & DIRECTION_MASK);
   STEPPING_PORT = (STEPPING_PORT & ~STEPPING_MASK) | out_bits;
@@ -293,7 +286,7 @@ ISR(TIMER1_COMPA_vect) {
 
   // process current block, populate out_bits (or handle other commands)
   switch (current_block->type) {
-    case TYPE_LINE || TYPE_RASTER_LINE:
+    case TYPE_LINE: case TYPE_RASTER_LINE:
       ////// Execute step displacement profile by bresenham line algorithm
       out_bits = current_block->direction_bits;
       counter_x += current_block->steps_x;

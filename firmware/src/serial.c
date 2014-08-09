@@ -83,7 +83,6 @@ static void set_baud_rate(long baud) {
 
 
 void serial_init() {
-  sei();  //enable interrupts
   set_baud_rate(BAUD_RATE);
   
 	/* baud doubler off  - Only needed on Uno XXX */
