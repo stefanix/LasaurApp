@@ -35,12 +35,6 @@ int main() {
   stepper_init();
   sense_init();
   control_init();
-
-  // planner_control_air_assist_enable();
-  // planner_control_air_assist_enable();
-  // stepper_homing_cycle();
-  planner_line( 500,500,500, 2000, 100, 0);
-  // planner_control_air_assist_disable();
-
+  
   protocol_loop();
 }
