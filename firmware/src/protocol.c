@@ -81,7 +81,7 @@ typedef struct {
 static state_t st;
 
 typedef struct {
-  uint8_t chars[PARAM_MAX_DATA_LENGTH];
+  uint32_t chars[PARAM_MAX_DATA_LENGTH];
   uint8_t count;
 } data_t;
 static data_t pdata;
@@ -347,25 +347,26 @@ void protocol_idle() {
     if (stop_code != STOPERROR_OK) {
       // report a stop error
       serial_write(stop_code);
-      // always report limits
-      if (SENSE_X1_LIMIT && stop_code != STOPERROR_LIMIT_HIT_X1) {
-        serial_write(STOPERROR_LIMIT_HIT_X1);
-      }
-      if (SENSE_X2_LIMIT && stop_code != STOPERROR_LIMIT_HIT_X2) {
-        serial_write(STOPERROR_LIMIT_HIT_X2);
-      }
-      if (SENSE_Y1_LIMIT && stop_code != STOPERROR_LIMIT_HIT_Y1) {
-        serial_write(STOPERROR_LIMIT_HIT_Y1);
-      }
-      if (SENSE_Y2_LIMIT && stop_code != STOPERROR_LIMIT_HIT_Y2) {
-        serial_write(STOPERROR_LIMIT_HIT_Y2);
-      }
-      if (SENSE_Z1_LIMIT && stop_code != STOPERROR_LIMIT_HIT_Z1) {
-        serial_write(STOPERROR_LIMIT_HIT_Z1);
-      }
-      if (SENSE_Z2_LIMIT && stop_code != STOPERROR_LIMIT_HIT_Z2) {
-        serial_write(STOPERROR_LIMIT_HIT_Z2);
-      }
+    }
+
+    // always report limits
+    if (SENSE_X1_LIMIT && stop_code != STOPERROR_LIMIT_HIT_X1) {
+      serial_write(STOPERROR_LIMIT_HIT_X1);
+    }
+    if (SENSE_X2_LIMIT && stop_code != STOPERROR_LIMIT_HIT_X2) {
+      serial_write(STOPERROR_LIMIT_HIT_X2);
+    }
+    if (SENSE_Y1_LIMIT && stop_code != STOPERROR_LIMIT_HIT_Y1) {
+      serial_write(STOPERROR_LIMIT_HIT_Y1);
+    }
+    if (SENSE_Y2_LIMIT && stop_code != STOPERROR_LIMIT_HIT_Y2) {
+      serial_write(STOPERROR_LIMIT_HIT_Y2);
+    }
+    if (SENSE_Z1_LIMIT && stop_code != STOPERROR_LIMIT_HIT_Z1) {
+      serial_write(STOPERROR_LIMIT_HIT_Z1);
+    }
+    if (SENSE_Z2_LIMIT && stop_code != STOPERROR_LIMIT_HIT_Z2) {
+      serial_write(STOPERROR_LIMIT_HIT_Z2);
     }
 
     // position
@@ -378,6 +379,26 @@ void protocol_idle() {
     // version
     serial_write_number(LASAURGRBL_VERSION);       
     serial_write(STATUS_VERSION);
+
+    // target (DEBUGGING)
+    serial_write_number(st.target[X_AXIS]);
+    serial_write(STATUS_TARGET_X);
+    serial_write_number(st.target[Y_AXIS]);
+    serial_write(STATUS_TARGET_Y);
+    serial_write_number(st.target[Z_AXIS]);       
+    serial_write(STATUS_TARGET_Z);
+
+    serial_write_number(st.feedrate);       
+    serial_write(STATUS_FEEDRATE);
+
+    serial_write_number(st.intensity);       
+    serial_write(STATUS_INTENSITY);
+
+    serial_write_number(st.duration);       
+    serial_write(STATUS_DURATION);
+
+    serial_write_number(st.pixel_width);       
+    serial_write(STATUS_PIXEL_WIDTH);
 
     status_requested = false;
   }
@@ -401,10 +422,10 @@ inline double get_curent_value() {
   //// char1 = ((num&(127<<7))>>7)+128
   //// char2 = ((num&(127<<14))>>14)+128
   //// char3 = ((num&(127<<21))>>21)+128
-  return (((( pdata.chars[3]-128)*2097152 +  // 2097152 = 128*128*128
-              (pdata.chars[2]-128)*16384 +   //   16384 = 128*128
-              (pdata.chars[1]-128)*128 + 
-              (pdata.chars[0]-128))-134217728 ) / 1000.0);  // 134217728 = 2**27
+  return ((((pdata.chars[3]-128)*2097152 +  // 2097152 = 128*128*128
+            (pdata.chars[2]-128)*16384 +   //   16384 = 128*128
+            (pdata.chars[1]-128)*128 + 
+            (pdata.chars[0]-128))-134217728 ) / 1000.0);  // 134217728 = 2**27
 }
 
 

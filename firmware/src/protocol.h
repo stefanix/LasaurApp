@@ -104,6 +104,16 @@
 
 #define INFO_HELLO '~'
 
+// status: debufgging
+#define STATUS_TARGET_X 'a'
+#define STATUS_TARGET_Y 'b'
+#define STATUS_TARGET_Z 'c'
+#define STATUS_FEEDRATE 'f'
+#define STATUS_INTENSITY 's'
+#define STATUS_DURATION 'd'
+#define STATUS_PIXEL_WIDTH 'p'
+
+
 
 // Initialize the parser.
 void protocol_init();

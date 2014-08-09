@@ -102,6 +102,14 @@ class LasersaurClass(threading.Thread):
 
     INFO_HELLO = '~'
     READY = '\x12'
+
+    INFO_TARGET_X = 'a'
+    INFO_TARGET_Y = 'b'
+    INFO_TARGET_Z = 'c'
+    INFO_FEEDRATE = 'f'
+    INFO_INTENSITY = 's'
+    INFO_DURATION = 'd'
+    INFO_PIXEL_WIDTH = 'p'
     ################
 
 
@@ -162,7 +170,14 @@ class LasersaurClass(threading.Thread):
             'x': 0.0,
             'y': 0.0,
             'z': 0.0,
-            'firmware_version': None
+            'firmware_version': None,
+            'x_target': 0.0,
+            'y_target': 0.0,
+            'z_target': 0.0,
+            'feedrate': 0.0,
+            'intensity': 0.0,
+            'duration': 0.0,
+            'pixel_width': 0.0
 
             # removed
             # limit_hit
@@ -177,12 +192,21 @@ class LasersaurClass(threading.Thread):
         keys = self._status.keys()
         keys.sort()
         for k in keys:
-            if k not in ['x', 'y', 'z', 'firmware_version']:
+            if k not in ['x', 'y', 'z', 'firmware_version',
+                         'x_target', 'y_target', 'z_target',
+                         'feedrate', 'intensity', 'duration', 'pixel_width']:
                 print symap[self._status[k]] + ' ' + k
         print  'x: ' + str(self._status['x'])
         print  'x: ' + str(self._status['y'])
         print  'x: ' + str(self._status['z'])
         print  'firmware_version: ' + str(self._status['firmware_version'])
+        print  'x_target: ' + str(self._status['x_target'])
+        print  'x_target: ' + str(self._status['y_target'])
+        print  'x_target: ' + str(self._status['z_target'])
+        print  'feedrate: ' + str(self._status['feedrate'])
+        print  'intensity: ' + str(self._status['intensity'])
+        print  'duration: ' + str(self._status['duration'])
+        print  'pixel_width: ' + str(self._status['pixel_width'])
 
 
     def start_processing_thread(self):
@@ -291,6 +315,21 @@ class LasersaurClass(threading.Thread):
                                 elif char == self.INFO_VERSION:
                                     num = 'v' + str(int(num)/100.0)
                                     self._status['firmware_version'] = num
+                                # debugging
+                                elif char == self.INFO_TARGET_X:
+                                    self._status['x_target'] = num
+                                elif char == self.INFO_TARGET_Y:
+                                    self._status['y_target'] = num
+                                elif char == self.INFO_TARGET_Z:
+                                    self._status['z_target'] = num
+                                elif char == self.INFO_FEEDRATE:
+                                    self._status['feedrate'] = num
+                                elif char == self.INFO_INTENSITY:
+                                    self._status['intensity'] = num
+                                elif char == self.INFO_DURATION:
+                                    self._status['duration'] = num
+                                elif char == self.INFO_PIXEL_WIDTH:
+                                    self._status['pixel_width'] = num
                                 else:
                                     print "ERROR: invalid param"
                             elif char == self.INFO_HELLO:

@@ -204,6 +204,9 @@ ISR(TIMER2_OVF_vect) {
   // reset step pins
   STEPPING_PORT = (STEPPING_PORT & ~STEPPING_MASK) | (INVERT_MASK & STEPPING_MASK);
   TCCR2B = 0; // Disable Timer2 to prevent re-entering this interrupt when it's not needed. 
+
+  // DEBUG: turn off air assist
+  ASSIST_PORT &= ~(1 << AIR_ASSIST_BIT);
 }
   
 
@@ -249,6 +252,9 @@ ISR(TIMER1_COMPA_vect) {
       return;    
     }
   #endif
+
+  // DEBUG: turn on air assist
+  ASSIST_PORT |= (1 << AIR_ASSIST_BIT);
   
   // pulse steppers
   STEPPING_PORT = (STEPPING_PORT & ~DIRECTION_MASK) | (out_bits & DIRECTION_MASK);

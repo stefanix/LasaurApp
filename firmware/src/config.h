@@ -62,34 +62,35 @@
 #define SENSE_DDR               DDRD
 #define SENSE_PORT              PORTD
 #define SENSE_PIN               PIND
-#define CHILLER_BIT             3
-#define DOOR_BIT                2
+#define CHILLER_BIT             3           // Arduino: 3
+#define DOOR_BIT                2           // Arduino: 2
 
 #define ASSIST_DDR              DDRD
 #define ASSIST_PORT             PORTD
-#define AIR_ASSIST_BIT          4
-#define AUX1_ASSIST_BIT         7
-#define AUX2_ASSIST_BIT         5
+#define AIR_ASSIST_BIT          4           // Arduino: 4
+#define AUX1_ASSIST_BIT         7           // Arduino: 7
+#define AUX2_ASSIST_BIT         5           // Arduino: 5
+// laser pwm                    6           // Ardunio: 6
   
 #define LIMIT_DDR               DDRC
 #define LIMIT_PORT              PORTC
 #define LIMIT_PIN               PINC
-#define X1_LIMIT_BIT            0
-#define X2_LIMIT_BIT            1
-#define Y1_LIMIT_BIT            2
-#define Y2_LIMIT_BIT            3
-#define Z1_LIMIT_BIT            4
-#define Z2_LIMIT_BIT            5
+#define X1_LIMIT_BIT            0           // Arduino: A0
+#define X2_LIMIT_BIT            1           // Arduino: A1
+#define Y1_LIMIT_BIT            2           // Arduino: A2
+#define Y2_LIMIT_BIT            3           // Arduino: A3
+#define Z1_LIMIT_BIT            4           // Arduino: A4
+#define Z2_LIMIT_BIT            5           // Arduino: A5
 
 
 #define STEPPING_DDR            DDRB
 #define STEPPING_PORT           PORTB
-#define X_STEP_BIT              0
-#define Y_STEP_BIT              1
-#define Z_STEP_BIT              2
-#define X_DIRECTION_BIT         3
-#define Y_DIRECTION_BIT         4
-#define Z_DIRECTION_BIT         5
+#define X_STEP_BIT              0           // Arduino: 8
+#define Y_STEP_BIT              1           // Arduino: 9
+#define Z_STEP_BIT              2           // Arduino: 10
+#define X_DIRECTION_BIT         3           // Arduino: 11
+#define Y_DIRECTION_BIT         4           // Arduino: 12
+#define Z_DIRECTION_BIT         5           // Arduino: 13
 
 
 
