@@ -171,14 +171,10 @@ class SerialManagerClass:
         job_list = []
         for line in lines:
             line = line.strip()
-            if line == '':
+            if line == '' or line[0] == '%':
                 continue
 
-            print "line: %s" % (line)
-    
-            if line[0] == '%':
-                continue
-            elif line[0] == '!':
+            if line[0] == '!':
                 self.cancel_queue()
                 self.reset_status()
                 job_list.append('!')
@@ -208,8 +204,6 @@ class SerialManagerClass:
         self.tx_buffer += gcode_processed
         self.job_size += len(gcode_processed) + 1
         self.job_active = True
-
-        print "tx_buffer: %s" % (self.tx_buffer)
 
 
     def cancel_queue(self):
