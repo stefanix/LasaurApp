@@ -171,6 +171,8 @@ class SerialManagerClass:
         job_list = []
         for line in lines:
             line = line.strip()
+            if line == '':
+                continue
 
             print "line: %s" % (line)
     
