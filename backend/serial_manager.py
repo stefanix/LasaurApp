@@ -152,7 +152,7 @@ class SerialManagerClass:
         if self.is_queue_empty():
             # trigger a status report
             # will update for the next status request
-            self.queue_gcode('?')
+            self.queue_gcode_line('?')
         return self.status
 
 
@@ -165,46 +165,43 @@ class SerialManagerClass:
             self.device.flushOutput()
 
 
-    def queue_gcode(self, gcode):
-        lines = gcode.split('\n')
-        print "Adding to queue %s lines" % len(lines)
-        job_list = []
-        for line in lines:
-            line = line.strip()
+    def queue_gcode_line(self, gcode):
+        if gcode and self.is_connected():
+            gcode = gcode.strip()
     
-            if line[0] == '%':
-                continue
-            elif line[0] == '!':
+            if gcode[0] == '%':
+                return
+            elif gcode[0] == '!':
                 self.cancel_queue()
                 self.reset_status()
-                job_list.append('!')
-                self.job_size = 0
+                self.tx_buffer = '!\n'
+                self.job_size = 2
+                self.job_active = True
             else:
-                if line != '?':  # not ready unless just a ?-query
+                if gcode != '?':  # not ready unless just a ?-query
                     self.status['ready'] = False
                     
                 if self.fec_redundancy > 0:  # using error correction
                     # prepend marker and checksum
                     checksum = 0
-                    for c in line:
+                    for c in gcode:
                         ascii_ord = ord(c)
                         if ascii_ord > ord(' ') and c != '~' and c != '!':  #ignore 32 and lower, ~, !
                             checksum += ascii_ord
                             if checksum >= 128:
                                 checksum -= 128
                     checksum = (checksum >> 1) + 128
-                    line_redundant = ""
+                    gcode_redundant = ""
                     for n in range(self.fec_redundancy-1):
-                        line_redundant += '^' + chr(checksum) + line + '\n'
-                    line = line_redundant + '*' + chr(checksum) + line
+                        gcode_redundant += '^' + chr(checksum) + gcode + '\n'
+                    gcode = gcode_redundant + '*' + chr(checksum) + gcode
 
-                job_list.append(line)
+                self.tx_buffer += gcode + '\n'
+                self.job_size += len(gcode) + 1
+                self.job_active = True
 
-        print "job_list: %s" % (job_list)
-        gcode_processed = '\n'.join(job_list) + '\n'
-        self.tx_buffer += gcode_processed + 1
-        self.job_size += len(gcode_processed)
-        self.job_active = True
+                print "tx_buffer: %s" % (self.tx_buffer)
+
 
 
     def cancel_queue(self):
