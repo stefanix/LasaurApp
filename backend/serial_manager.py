@@ -201,11 +201,11 @@ class SerialManagerClass:
                 job_list.append(line)
 
         gcode_processed = '\n'.join(job_list) + '\n'
-        self.tx_buffer += gcode_processed + 1
-        self.job_size += len(gcode_processed)
+        self.tx_buffer += gcode_processed
+        self.job_size += len(gcode_processed) + 1
         self.job_active = True
 
-        print "tx_buffer: %s" % (self.tx_buffer)
+        # print "tx_buffer: %s" % (self.tx_buffer)
 
 
     def cancel_queue(self):
