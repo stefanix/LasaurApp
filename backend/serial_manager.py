@@ -165,41 +165,45 @@ class SerialManagerClass:
             self.device.flushOutput()
 
 
-    def queue_gcode_line(self, gcode):
-        if gcode and self.is_connected():
-            gcode = gcode.strip()
+    def queue_gcode(self, gcode):
+        lines = gcode.split('\n')
+        print "Adding to queue %s lines" % len(lines)
+        job_list = []
+        for line in lines:
+            line = line.strip()
     
-            if gcode[0] == '%':
+            if line[0] == '%':
                 return
-            elif gcode[0] == '!':
+            elif line[0] == '!':
                 self.cancel_queue()
                 self.reset_status()
-                self.tx_buffer = '!\n'
-                self.job_size = 2
-                self.job_active = True
+                job_list.append('!')
+                self.job_size = 0
             else:
-                if gcode != '?':  # not ready unless just a ?-query
+                if line != '?':  # not ready unless just a ?-query
                     self.status['ready'] = False
                     
                 if self.fec_redundancy > 0:  # using error correction
                     # prepend marker and checksum
                     checksum = 0
-                    for c in gcode:
+                    for c in line:
                         ascii_ord = ord(c)
                         if ascii_ord > ord(' ') and c != '~' and c != '!':  #ignore 32 and lower, ~, !
                             checksum += ascii_ord
                             if checksum >= 128:
                                 checksum -= 128
                     checksum = (checksum >> 1) + 128
-                    gcode_redundant = ""
+                    line_redundant = ""
                     for n in range(self.fec_redundancy-1):
-                        gcode_redundant += '^' + chr(checksum) + gcode + '\n'
-                    gcode = gcode_redundant + '*' + chr(checksum) + gcode
+                        line_redundant += '^' + chr(checksum) + line + '\n'
+                    line = line_redundant + '*' + chr(checksum) + line
 
-                self.tx_buffer += gcode + '\n'
-                self.job_size += len(gcode) + 1
-                self.job_active = True
+                job_list.append(line)
 
+        gcode_processed = '\n'.join(job_list) + '\n'
+        self.tx_buffer += gcode_processed + 1
+        self.job_size += len(gcode_processed)
+        self.job_active = True
 
 
     def cancel_queue(self):
