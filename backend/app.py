@@ -459,6 +459,16 @@ def job_submit_handler():
         return "serial disconnected"
 
 
+@route('/gcodetest')
+def job_submit_handler_test():
+    job_data = "G91\nG0X10F6000\nG90"
+    if job_data and SerialManager.is_connected():
+        SerialManager.queue_gcode(job_data)
+        return "__ok__"
+    else:
+        return "serial disconnected"
+
+
 @route('/queue_pct_done')
 def queue_pct_done_handler():
     return SerialManager.get_queue_percentage_done()
