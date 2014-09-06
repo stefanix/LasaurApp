@@ -152,7 +152,7 @@ class SerialManagerClass:
         if self.is_queue_empty():
             # trigger a status report
             # will update for the next status request
-            self.queue_gcode_line('?')
+            self.queue_gcode('?')
         return self.status
 
 
