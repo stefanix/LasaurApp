@@ -452,10 +452,7 @@ def reset_atmega_handler():
 def job_submit_handler():
     job_data = request.forms.get('job_data')
     if job_data and SerialManager.is_connected():
-        lines = job_data.split('\n')
-        print "Adding to queue %s lines" % len(lines)
-        for line in lines:
-            SerialManager.queue_gcode_line(line)
+        SerialManager.queue_gcode(job_data)
         return "__ok__"
     else:
         return "serial disconnected"
