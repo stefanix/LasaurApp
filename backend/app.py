@@ -451,17 +451,6 @@ def reset_atmega_handler():
 @route('/gcode', method='POST')
 def job_submit_handler():
     job_data = request.forms.get('job_data')
-    print "\n-----------\nJOB:\n%s\n\n" % (job_data)
-    if job_data and SerialManager.is_connected():
-        SerialManager.queue_gcode(job_data)
-        return "__ok__"
-    else:
-        return "serial disconnected"
-
-
-@route('/gcodetest')
-def job_submit_handler_test():
-    job_data = "G91\nG0X10F6000\nG90"
     if job_data and SerialManager.is_connected():
         SerialManager.queue_gcode(job_data)
         return "__ok__"
