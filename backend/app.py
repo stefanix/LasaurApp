@@ -457,6 +457,7 @@ def job_submit_handler():
     else:
         return "serial disconnected"
 
+
 @route('/queue_pct_done')
 def queue_pct_done_handler():
     return SerialManager.get_queue_percentage_done()
