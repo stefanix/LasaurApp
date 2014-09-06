@@ -200,6 +200,7 @@ class SerialManagerClass:
 
                 job_list.append(line)
 
+        print "job_list: %s" % (job_list)
         gcode_processed = '\n'.join(job_list) + '\n'
         self.tx_buffer += gcode_processed + 1
         self.job_size += len(gcode_processed)
