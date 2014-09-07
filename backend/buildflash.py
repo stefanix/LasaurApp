@@ -14,7 +14,7 @@ if ret != 0:
     sys.exit()
 
 # flash
-ret = flash.flash_upload('/dev/ttyACM1')
+ret = flash.flash_upload('/dev/ttyACM0')
 if ret != 0:
     print "ERROR: flash failed"
     sys.exit()
