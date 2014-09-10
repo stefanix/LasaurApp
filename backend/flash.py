@@ -4,6 +4,7 @@
 # Open Source by the terms of the Gnu Public License (GPL3) or higher.
 
 import os, sys, time, subprocess
+import config
 
 
 thislocation = os.path.dirname(os.path.realpath(__file__))
@@ -12,14 +13,14 @@ firmware_file = "LasaurGrbl.hex"
 serial_port = "/dev/ttyACM0"
 
 
-def flash_upload(serial_port=serial_port, resources_dir=resources_dir, firmware_file=firmware_file, hardware='x86'):
+def flash_upload(serial_port=serial_port, resources_dir=resources_dir, firmware_file=firmware_file):
     firmware_file = firmware_file.replace("/", "").replace("\\", "")  # make sure no evil injection
     FIRMWARE = os.path.join(resources_dir, "firmware", firmware_file)
     if not os.path.exists(FIRMWARE):
         print "ERROR: invalid firmware path"
         return
 
-    if hardware == 'x86':
+    if not (config.beaglebone() or config.raspberrypi()):
         DEVICE = "atmega328p"
         CLOCK = "16000000"
         PROGRAMMER = "arduino"
@@ -51,7 +52,7 @@ def flash_upload(serial_port=serial_port, resources_dir=resources_dir, firmware_
         # fuse setting taken over from Makefile for reference
         #os.system('%(dude)s -U hfuse:w:0xd2:m -U lfuse:w:0xff:m' % {'dude':AVRDUDEAPP})
     
-    elif hardware in ['beaglebone', 'raspberrypi']:
+    elif config.beaglebone() or config.raspberrypi():
         # Make sure you have avrdude installed:
         # beaglebone:
         # opkg install libreadline5_5.2-r8.9_armv4.ipk
@@ -73,7 +74,7 @@ def flash_upload(serial_port=serial_port, resources_dir=resources_dir, firmware_
 
         ### Trigger the atmega328's reset pin to invoke bootloader
 
-        if hardware == 'beaglebone':
+        if config.beaglebone():
             print "Flashing from BeagleBone ..."
             # The reset pin is connected to GPIO2_7 (2*32+7 = 71).
             # Setting it to low triggers a reset.
@@ -112,7 +113,7 @@ def flash_upload(serial_port=serial_port, resources_dir=resources_dir, firmware_
             fwb.flush()
             fwb.close()
             time.sleep(0.1)
-        elif hardware == 'raspberrypi':
+        elif config.raspberrypi():
             print "Flashing from Raspberry Pi ..."
             import thread
             import RPi.GPIO as GPIO
@@ -137,9 +138,9 @@ def flash_upload(serial_port=serial_port, resources_dir=resources_dir, firmware_
         return subprocess.call(command, shell=True)
 
 
-def reset_atmega(hardware=''):
+def reset_atmega():
     print "Resetting Atmega ..."
-    if hardware == 'beaglebone':
+    if config.beaglebone():
         try:
             fw = file("/sys/class/gpio/export", "w")
             fw.write("%d" % (71))
@@ -168,7 +169,7 @@ def reset_atmega(hardware=''):
         fwb.write("1")
         fwb.flush()
         fwb.close()
-    elif hardware == 'raspberrypi':
+    elif config.raspberrypi():
         import RPi.GPIO as GPIO
         GPIO.setmode(GPIO.BCM)  # use chip pin number
         pinReset = 2

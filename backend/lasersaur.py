@@ -5,12 +5,11 @@ import time
 import threading
 import serial
 import serial.tools.list_ports
+from config import conf
 
 
 __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
 
-
-DEFAULT_BAUDRATE = 57600
 
 
 ################ SENDING PROTOCOL
@@ -232,12 +231,12 @@ class SerialLoopClass(threading.Thread):
         """Main loop of the serial thread."""
         while True:
             with self.lock:
-                self.send_queue_as_ready()
+                self._process()
             if self.stop_processing:
                 break
 
     
-    def send_queue_as_ready(self):
+    def _process(self):
         """Continuously call this to keep processing queue."""    
         if self.device and not self._status['paused']:
             try:
@@ -390,7 +389,7 @@ class SerialLoopClass(threading.Thread):
                         except serial.SerialTimeoutException:
                             # skip, report
                             actuallySent = self.nRequested  # pyserial does not report this sufficiently
-                            sys.stdout.write("\nsend_queue_as_ready: writeTimeoutError\n")
+                            sys.stdout.write("\n_process: writeTimeoutError\n")
                             sys.stdout.flush()
                         # sys.stdout.write(self.tx_buffer[:actuallySent])  # print w/ newline
                         self.tx_buffer = self.tx_buffer[actuallySent:]
@@ -408,7 +407,7 @@ class SerialLoopClass(threading.Thread):
                             except serial.SerialTimeoutException:
                                 # skip, report
                                 actuallySent = self.nRequested  # pyserial does not report this sufficiently
-                                sys.stdout.write("\nsend_queue_as_ready: writeTimeoutError, on ready request\n")
+                                sys.stdout.write("\n_process: writeTimeoutError, on ready request\n")
                                 sys.stdout.flush()
                             if actuallySent == 1:
                                 self.last_request_ready = time.time()
@@ -438,7 +437,7 @@ class SerialLoopClass(threading.Thread):
 ###########################################################################
 
             
-def find_controller(baudrate=DEFAULT_BAUDRATE):
+def find_controller(baudrate=conf['baudrate']):
     if os.name == 'posix':
         iterator = sorted(serial.tools.list_ports.grep('tty'))
         for port, desc, hwid in iterator:
@@ -468,7 +467,7 @@ def find_controller(baudrate=DEFAULT_BAUDRATE):
 
     
 
-def connect(port="/dev/ttyACM0", baudrate=DEFAULT_BAUDRATE):
+def connect(port=conf['serial_port'], baudrate=conf['baudrate']):
     global SerialLoop
     if not SerialLoop:
         SerialLoop = SerialLoopClass()
@@ -524,7 +523,35 @@ def close():
         SerialLoop = None
         return False
 
-        
+
+
+def flash(serial_port=conf['serial_port'], firmware_file=conf['firmware']):
+    import flash
+    reconnect = False
+    if connected():
+        close()
+        reconnect = True
+    ret = flash.flash_upload(serial_port=serial_port, firmware_file=firmware_file)
+    if reconnect:
+        connect()
+    if ret != 0:
+        print "ERROR: flash failed"
+    return ret
+
+
+def build(firmware_name="LasaurGrbl"):
+    import build
+    ret = build.build_firmware(firmware_name=firmware_name)
+    if ret != 0:
+        print "ERROR: build failed"
+    return ret
+
+
+def reset():
+    import flash
+    flash.reset_atmega()
+    return '1'
+
 
 def percentage():
     """Return the percentage done as an integer between 0-100.
@@ -577,52 +604,53 @@ def move(x, y, z=0.0):
 
 
 
-# def job(jobdict):
-#     """Queue a job.
-#     A job dictionary can define vector and raster passes.
-#     It can set the feedrate, intensity, and pierce time.
-#     The job dictionary with the following keys:
-#     { passes,
-#         colors,
-#         seekrate,
-#         feedrate,
-#         intensity,
-#         pierce_time,
-#         relative,
-#         air_assist,
-#       paths,
-#       rasterpass,
-#         seekrate,
-#         feedrate,
-#         intensity,
-#       rasters,
-#     }
-#     """
+def job(jobdict):
+    """Queue a job.
+    A job dictionary can define vector and raster passes.
+    It can set the feedrate, intensity, and pierce time.
+    The job is a dictionary with the following keys:
+    { passes,
+        colors,
+        seekrate,     (optional)
+        feedrate,
+        intensity,
+        pierce_time,  (optional)
+        relative,     (optional)
+        air_assist,   (optional)
+      paths,
+      rasterpass,
+        seekrate,
+        feedrate,
+        intensity,
+      rasters,
+    }
+    """
 
-#     if jobdict.has_key('rasterpass') and jobdict.has_key('rasters'):
-#         rseekrate = jobdict['rasterpass']['seekrate']
-#         rfeedrate = jobdict['rasterpass']['feedrate']
-#         rintensity = jobdict['rasterpass']['intensity']
-#         # TODO: queue raster
+    ### rasters
+    # if jobdict.has_key('rasterpass') and jobdict.has_key('rasters'):
+    #     rseekrate = jobdict['rasterpass']['seekrate']
+    #     rfeedrate = jobdict['rasterpass']['feedrate']
+    #     rintensity = jobdict['rasterpass']['intensity']
+    #     # TODO: queue raster
 
-
-#     if jobdict.has_key('passes') and jobdict.has_key('paths'):
-#         for ppass in jobdict['passes']:
-#             for color in ppass['colors']:
-#                 if jobdict['paths'].has_key(color):
-#                     for path in jobdict['paths'][color]:
-#                         if len(path) > 0:
-#                             # first vertex, seek
-#                             self.feedrate(ppass['seekrate'])
-#                             self.intensity(0.0)
-#                             self.move(path[0][0], path[0][1], path[0][2])
-#                         elif len(path) > 1:
-#                             self.feedrate(ppass['feedrate'])
-#                             self.intensity(ppass['intensity'])                                
-#                             # TODO dwell according to pierce time
-#                             for i in xrange(1, len(path)):
-#                                 # rest, feed
-#                                 self.move(path[i][0], path[i][1], path[i][2])
+    ### vectors
+    if jobdict.has_key('passes') and jobdict.has_key('paths'):
+        for ppass in jobdict['passes']:
+            for color in ppass['colors']:
+                if jobdict['paths'].has_key(color):
+                    for path in jobdict['paths'][color]:
+                        if len(path) > 0:
+                            # first vertex -> seek
+                            self.feedrate(ppass['seekrate'])
+                            self.intensity(0.0)
+                            self.move(path[0][0], path[0][1], path[0][2])
+                            # remaining verteces -> feed
+                            if len(path) > 1:
+                                self.feedrate(ppass['feedrate'])
+                                self.intensity(ppass['intensity'])                                
+                                # TODO dwell according to pierce time
+                                for i in xrange(1, len(path)):
+                                    self.move(path[i][0], path[i][1], path[i][2])
 
 
 def pause():

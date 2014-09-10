@@ -1,27 +1,35 @@
 
-import sys, os, time
-import glob, json, argparse, copy
+import sys
+import os
+import time
+import glob
+import json
+import argparse
+import copy
 import tempfile
-import socket, webbrowser
+import webbrowser
 from wsgiref.simple_server import WSGIRequestHandler, make_server
 from bottle import *
-from serial_manager import SerialManager
-from flash import flash_upload, reset_atmega
-from build import build_firmware
+from config import conf
+import lasersaur
 from filereaders import read_svg, read_dxf, read_ngc
 
 
-APPNAME = "lasaurapp"
-VERSION = "14.01b"
-COMPANY_NAME = "com.nortd.labs"
-SERIAL_PORT = None
-BITSPERSECOND = 57600
-NETWORK_PORT = 4444
-HARDWARE = 'x86'  # also: 'beaglebone', 'raspberrypi'
-CONFIG_FILE = "lasaurapp.conf"
-COOKIE_KEY = 'secret_key_jkn23489hsdf'
-FIRMWARE = "LasaurGrbl.hex"
-TOLERANCE = 0.08
+__author__  = 'Stefan Hechenberger <stefan@nortd.com>'
+
+
+
+
+### overwrite conf with setings from userconf.py
+try:
+    import userconfig
+    conf.update(userconfig.conf)
+    print "Config: using userconf.py"
+except ImportError:
+    print "Config: using defaults, no userconf.py present"
+
+
+
 
 
 if os.name == 'nt': #sys.platform == 'win32': 
@@ -56,12 +64,13 @@ def storage_dir():
         # # NSApplicationSupportDirectory = 14
         # # NSUserDomainMask = 1
         # # True for expanding the tilde into a fully qualified path
-        # appdata = path.join(NSSearchPathForDirectoriesInDomains(14, 1, True)[0], APPNAME)
-        directory = os.path.join(os.path.expanduser('~'), 'Library', 'Application Support', COMPANY_NAME, APPNAME)
+        # appdata = path.join(NSSearchPathForDirectoriesInDomains(14, 1, True)[0], conf['appname'])
+        directory = os.path.join(os.path.expanduser('~'), 
+            'Library', 'Application Support', conf['company_name'], conf['appname'])
     elif sys.platform == 'win32':
-        directory = os.path.join(os.path.expandvars('%APPDATA%'), COMPANY_NAME, APPNAME)
+        directory = os.path.join(os.path.expandvars('%APPDATA%'), conf['company_name'], conf['appname'])
     else:
-        directory = os.path.join(os.path.expanduser('~'), "." + APPNAME)
+        directory = os.path.join(os.path.expanduser('~'), "." + conf['appname'])
         
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -94,49 +103,29 @@ def run_with_callback(host, port):
     print "Persistent storage root is: " + storage_dir()
     print "-----------------------------------------------------------------------------"
     print "Bottle server starting up ..."
-    print "Serial is set to %d bps" % BITSPERSECOND
+    # print "Serial is set to %d bps" % BITSPERSECOND
     print "Point your browser to: "    
     print "http://%s:%d/      (local)" % ('127.0.0.1', port)  
-    # if host == '':
-    #     try:
-    #         print "http://%s:%d/   (public)" % (socket.gethostbyname(socket.gethostname()), port)
-    #     except socket.gaierror:
-    #         # print "http://beaglebone.local:4444/      (public)"
-    #         pass
     print "Use Ctrl-C to quit."
     print "-----------------------------------------------------------------------------"    
     print
-    # auto-connect on startup
-    global SERIAL_PORT
-    if not SERIAL_PORT:
-        SERIAL_PORT = SerialManager.match_device(GUESS_PREFIX, BITSPERSECOND)
-    SerialManager.connect(SERIAL_PORT, BITSPERSECOND)
+    lasersaur.connect()
     # open web-browser
     try:
         webbrowser.open_new_tab('http://127.0.0.1:'+str(port))
-        pass
     except webbrowser.Error:
         print "Cannot open Webbrowser, please do so manually."
     sys.stdout.flush()  # make sure everything gets flushed
     while 1:
         try:
-            SerialManager.process()
             server.handle_request()
         except KeyboardInterrupt:
             break
     print "\nShutting down..."
-    SerialManager.close()
+    lasersaur.close()
 
         
 
-
-@route('/longtest')
-def longtest_handler():
-    fp = open("longtest.ngc")
-    for line in fp:
-        SerialManager.queue_gcode_line(line)
-    return "Longtest queued."
-    
 
 
 @route('/css/:path#.+#')
@@ -317,26 +306,21 @@ def download(filename, dlname):
 def serial_handler(connect):
     if connect == '1':
         # print 'js is asking to connect serial'      
-        if not SerialManager.is_connected():
+        if not lasersaur.connected():
             try:
-                global SERIAL_PORT, BITSPERSECOND, GUESS_PREFIX
-                if not SERIAL_PORT:
-                    SERIAL_PORT = SerialManager.match_device(GUESS_PREFIX, BITSPERSECOND)
-                SerialManager.connect(SERIAL_PORT, BITSPERSECOND)
-                ret = "Serial connected to %s:%d." % (SERIAL_PORT, BITSPERSECOND)  + '<br>'
+                lasersaur.connect()
                 return ret
             except serial.SerialException:
-                SERIAL_PORT = None
                 print "Failed to connect to serial."    
                 return ""          
     elif connect == '0':
         # print 'js is asking to close serial'    
-        if SerialManager.is_connected():
-            if SerialManager.close(): return "1"
+        if lasersaur.connected():
+            if lasersaur.close(): return "1"
             else: return ""  
     elif connect == "2":
         # print 'js is asking if serial connected'
-        if SerialManager.is_connected(): return "1"
+        if lasersaur.connected(): return "1"
         else: return ""
     else:
         print 'ambigious connect request from js: ' + connect            
@@ -348,7 +332,7 @@ def serial_handler(connect):
 def get_status():
     status = copy.deepcopy(SerialManager.hardware_status())
     status['serial_connected'] = SerialManager.is_connected()
-    status['lasaurapp_version'] = VERSION
+    status['lasaurapp_version'] = conf['version']
     return json.dumps(status)
 
 
@@ -356,14 +340,14 @@ def get_status():
 def set_pause(flag):
     # returns pause status
     if flag == '1':
-        if SerialManager.set_pause(True):
+        if lasersaur.pause():
             print "pausing ..."
             return '1'
         else:
             return '0'
     elif flag == '0':
         print "resuming ..."
-        if SerialManager.set_pause(False):
+        if lasersaur.unpause(False):
             return '1'
         else:
             return '0'
@@ -372,36 +356,16 @@ def set_pause(flag):
 
 @route('/flash_firmware')
 @route('/flash_firmware/:firmware_file')
-def flash_firmware_handler(firmware_file=FIRMWARE):
-    global SERIAL_PORT, GUESS_PREFIX
-    return_code = 1
-    if SerialManager.is_connected():
-        SerialManager.close()
+def flash_firmware_handler(firmware_file=None):
     # get serial port by url argument
     # e.g: /flash_firmware?port=COM3
-    if 'port' in request.GET.keys():
-        serial_port = request.GET['port']
-        if serial_port[:3] == "COM" or serial_port[:4] == "tty.":
-            SERIAL_PORT = serial_port
-    # get serial port by enumeration method
-    # currenty this works on windows only for updating the firmware
-    if not SERIAL_PORT:
-        SERIAL_PORT = SerialManager.match_device(GUESS_PREFIX, BITSPERSECOND)
-    # resort to brute force methode
-    # find available com ports and try them all
-    if not SERIAL_PORT:
-        comport_list = SerialManager.list_devices(BITSPERSECOND)
-        for port in comport_list:
-            print "Trying com port: " + port
-            return_code = flash_upload(port, resources_dir(), firmware_file, HARDWARE)
-            if return_code == 0:
-                print "Success with com port: " + port
-                SERIAL_PORT = port
-                break
-    else:
-        return_code = flash_upload(SERIAL_PORT, resources_dir(), firmware_file, HARDWARE)
+    serial_port = request.GET.get('port')
+    if not (serial_port and (serial_port[:3] == "COM" or serial_port[:4] == "tty.")):
+        serial_port = None
+    return_code = lasersaur.flash(serial_port=serial_port, firmware_file=firmware_file)
+
     ret = []
-    ret.append('Using com port: %s<br>' % (SERIAL_PORT))    
+    # ret.append('Using com port: %s<br>' % (SERIAL_PORT))
     ret.append('Using firmware: %s<br>' % (firmware_file))    
     if return_code == 0:
         print "SUCCESS: Arduino appears to be flashed."
@@ -424,7 +388,7 @@ def flash_firmware_handler(firmware_file=FIRMWARE):
 def build_firmware_handler():
     ret = []
     buildname = "LasaurGrbl_from_src"
-    return_code = build_firmware(buildname)
+    return_code = lasersaur.build(firmware_name=buildname)
     if return_code != 0:
         print ret
         ret.append('<h2>FAIL: build error!</h2>')
@@ -439,16 +403,13 @@ def build_firmware_handler():
 
 @route('/reset_atmega')
 def reset_atmega_handler():
-    reset_atmega(HARDWARE)
-    return '1'
+    return lasersaur.reset()
 
 
 @route('/job', method='POST')
 def job_submit_handler():
-    """Submit a job in lsa format.
-
-    """
-    if not SerialManager.is_connected():
+    """Submit a job in lsa format."""
+    if not lasersaur.connected():
         return "serial disconnected"
 
     job_data = request.forms.get('job_data')
@@ -456,19 +417,19 @@ def job_submit_handler():
         return "no job data"
 
     jobdict = json.loads(job_data)
-    SerialManager.job(jobdict)
+    lasersaur.job(jobdict)
 
     return "__ok__"
         
 
 @route('/queue_pct_done')
 def queue_pct_done_handler():
-    return SerialManager.percentage_done()
+    return lasersaur.percentage()
 
 
 @route('/file_reader', method='POST')
 def file_reader():
-    """Parse SVG string."""
+    """Parse SVG/DXF/NGC string."""
     filename = request.forms.get('filename')
     filedata = request.forms.get('filedata')
     dimensions = request.forms.get('dimensions')
@@ -494,11 +455,11 @@ def file_reader():
     if filename and filedata:
         print "You uploaded %s (%d bytes)." % (filename, len(filedata))
         if filename[-4:] in ['.dxf', '.DXF']: 
-            res = read_dxf(filedata, TOLERANCE, optimize)
+            res = read_dxf(filedata, conf['tolerance'], optimize)
         elif filename[-4:] in ['.svg', '.SVG']: 
-            res = read_svg(filedata, dimensions, TOLERANCE, dpi_forced, optimize)
+            res = read_svg(filedata, dimensions, conf['tolerance'], dpi_forced, optimize)
         elif filename[-4:] in ['.ngc', '.NGC']:
-            res = read_ngc(filedata, TOLERANCE, optimize)
+            res = read_ngc(filedata, conf['tolerance'], optimize)
         else:
             print "error: unsupported file format"
 
@@ -510,42 +471,13 @@ def file_reader():
 
 
 
-# def check_user_credentials(username, password):
-#     return username in allowed and allowed[username] == password
-#     
-# @route('/login')
-# def login():
-#     username = request.forms.get('username')
-#     password = request.forms.get('password')
-#     if check_user_credentials(username, password):
-#         response.set_cookie("account", username, secret=COOKIE_KEY)
-#         return "Welcome %s! You are now logged in." % username
-#     else:
-#         return "Login failed."
-# 
-# @route('/logout')
-# def login():
-#     username = request.forms.get('username')
-#     password = request.forms.get('password')
-#     if check_user_credentials(username, password):
-#         response.delete_cookie("account", username, secret=COOKIE_KEY)
-#         return "Welcome %s! You are now logged out." % username
-#     else:
-#         return "Already logged out."  
-  
-
 
 ### Setup Argument Parser
 argparser = argparse.ArgumentParser(description='Run LasaurApp.', prog='lasaurapp')
 argparser.add_argument('port', metavar='serial_port', nargs='?', default=False,
                     help='serial port to the Lasersaur')
-argparser.add_argument('-v', '--version', action='version', version='%(prog)s ' + VERSION)
-argparser.add_argument('-p', '--public', dest='host_on_all_interfaces', action='store_true',
+argparser.add_argument('-v', '--version', action='version', version='%(prog)s ' + conf['version'])
                     default=False, help='bind to all network devices (default: bind to 127.0.0.1)')
-argparser.add_argument('-f', '--flash', dest='flash', action='store_true',
-                    default=False, help='flash Arduino with LasaurGrbl firmware')
-argparser.add_argument('-b', '--build', dest='build_flash', action='store_true',
-                    default=False, help='build and flash from firmware/src')
 argparser.add_argument('-l', '--list', dest='list_serial_devices', action='store_true',
                     default=False, help='list all serial devices currently connected')
 argparser.add_argument('-d', '--debug', dest='debug', action='store_true',
@@ -560,187 +492,18 @@ args = argparser.parse_args()
 
 
 
-print "LasaurApp " + VERSION
-
-if args.beaglebone:
-    HARDWARE = 'beaglebone'
-    NETWORK_PORT = 80
-    ### if running on beaglebone, setup (pin muxing) and use UART1
-    # for details see: http://www.nathandumont.com/node/250
-    SERIAL_PORT = "/dev/ttyO1"
-    if os.path.exists("/sys/kernel/debug/omap_mux/uart1_txd"):
-        # we are not on the beaglebone black, setup uart1
-        # echo 0 > /sys/kernel/debug/omap_mux/uart1_txd
-        fw = file("/sys/kernel/debug/omap_mux/uart1_txd", "w")
-        fw.write("%X" % (0))
-        fw.close()
-        # echo 20 > /sys/kernel/debug/omap_mux/uart1_rxd
-        fw = file("/sys/kernel/debug/omap_mux/uart1_rxd", "w")
-        fw.write("%X" % ((1 << 5) | 0))
-        fw.close()
-
-    ### Set up atmega328 reset control
-    # The reset pin is connected to GPIO2_7 (2*32+7 = 71).
-    # Setting it to low triggers a reset.
-    # echo 71 > /sys/class/gpio/export
-    try:
-        fw = file("/sys/class/gpio/export", "w")
-        fw.write("%d" % (71))
-        fw.close()
-    except IOError:
-        # probably already exported
-        pass
-    # set the gpio pin to output
-    # echo out > /sys/class/gpio/gpio71/direction
-    fw = file("/sys/class/gpio/gpio71/direction", "w")
-    fw.write("out")
-    fw.close()
-    # set the gpio pin high
-    # echo 1 > /sys/class/gpio/gpio71/value
-    fw = file("/sys/class/gpio/gpio71/value", "w")
-    fw.write("1")
-    fw.flush()
-    fw.close()
-
-    ### Set up atmega328 reset control - BeagleBone Black
-    # The reset pin is connected to GPIO2_9 (2*32+9 = 73).
-    # Setting it to low triggers a reset.
-    # echo 73 > /sys/class/gpio/export
-    try:
-        fw = file("/sys/class/gpio/export", "w")
-        fw.write("%d" % (73))
-        fw.close()
-    except IOError:
-        # probably already exported
-        pass
-    # set the gpio pin to output
-    # echo out > /sys/class/gpio/gpio73/direction
-    fw = file("/sys/class/gpio/gpio73/direction", "w")
-    fw.write("out")
-    fw.close()
-    # set the gpio pin high
-    # echo 1 > /sys/class/gpio/gpio73/value
-    fw = file("/sys/class/gpio/gpio73/value", "w")
-    fw.write("1")
-    fw.flush()
-    fw.close()
-
-    ### read stepper driver configure pin GPIO2_12 (2*32+12 = 76).
-    # Low means Geckos, high means SMC11s
-    try:
-        fw = file("/sys/class/gpio/export", "w")
-        fw.write("%d" % (76))
-        fw.close()
-    except IOError:
-        # probably already exported
-        pass
-    # set the gpio pin to input
-    fw = file("/sys/class/gpio/gpio76/direction", "w")
-    fw.write("in")
-    fw.close()
-    # set the gpio pin high
-    fw = file("/sys/class/gpio/gpio76/value", "r")
-    ret = fw.read()
-    fw.close()
-    print "Stepper driver configure pin is: " + str(ret)
-
-elif args.raspberrypi:
-    HARDWARE = 'raspberrypi'
-    NETWORK_PORT = 80
-    SERIAL_PORT = "/dev/ttyAMA0"
-    import RPi.GPIO as GPIO
-    # GPIO.setwarnings(False) # surpress warnings
-    GPIO.setmode(GPIO.BCM)  # use chip pin number
-    pinSense = 7
-    pinReset = 2
-    pinExt1 = 3
-    pinExt2 = 4
-    pinExt3 = 17
-    pinTX = 14
-    pinRX = 15
-    # read sens pin
-    GPIO.setup(pinSense, GPIO.IN)
-    isSMC11 = GPIO.input(pinSense)
-    # atmega reset pin
-    GPIO.setup(pinReset, GPIO.OUT)
-    GPIO.output(pinReset, GPIO.HIGH)
-    # no need to setup the serial pins
-    # although /boot/cmdline.txt and /etc/inittab needs
-    # to be edited to deactivate the serial terminal login
-    # (basically anything related to ttyAMA0)
+print "LasaurApp " + conf['version']
 
 
-if args.list_serial_devices:
-    SerialManager.list_devices(BITSPERSECOND)
-else:
-    if not SERIAL_PORT:
-        if args.port:
-            # (1) get the serial device from the argument list
-            SERIAL_PORT = args.port
-            print "Using serial device '"+ SERIAL_PORT +"' from command line."
-        else:
-            # (2) get the serial device from the config file        
-            if os.path.isfile(CONFIG_FILE):
-                fp = open(CONFIG_FILE)
-                line = fp.readline().strip()
-                if len(line) > 3:
-                    SERIAL_PORT = line
-                    print "Using serial device '"+ SERIAL_PORT +"' from '" + CONFIG_FILE + "'."
-
-    if not SERIAL_PORT:
-        if args.match:
-            GUESS_PREFIX = args.match
-            SERIAL_PORT = SerialManager.match_device(GUESS_PREFIX, BITSPERSECOND)
-            if SERIAL_PORT:
-                print "Using serial device '"+ str(SERIAL_PORT)
-                if os.name == 'posix':
-                    # not for windows for now
-                    print "(first device to match: " + args.match + ")"            
-        else:
-            SERIAL_PORT = SerialManager.match_device(GUESS_PREFIX, BITSPERSECOND)
-            if SERIAL_PORT:
-                print "Using serial device '"+ str(SERIAL_PORT) +"' by best guess."
     
-    if not SERIAL_PORT:
-        print "-----------------------------------------------------------------------------"
-        print "WARNING: LasaurApp doesn't know what serial device to connect to!"
-        print "Make sure the Lasersaur hardware is connectd to the USB interface."
-        if os.name == 'nt':
-            print "ON WINDOWS: You will also need to setup the virtual com port."
-            print "See 'Installing Drivers': http://arduino.cc/en/Guide/Windows"
-        print "-----------------------------------------------------------------------------"      
-    
-    # run
-    if args.debug:
-        debug(True)
-        if hasattr(sys, "_MEIPASS"):
-            print "Data root is: " + sys._MEIPASS             
-    if args.flash:
-        return_code = flash_upload(SERIAL_PORT, resources_dir(), FIRMWARE, HARDWARE)
-        if return_code == 0:
-            print "SUCCESS: Arduino appears to be flashed."
-        else:
-            print "ERROR: Failed to flash Arduino."
-    elif args.build_flash:
-        # build
-        buildname = "LasaurGrbl_from_src"
-        return_code = build_firmware(buildname)
-        if return_code != 0:
-            print ret
-        else:
-            print "SUCCESS: firmware built."
-            # flash
-            return_code = flash_upload(SERIAL_PORT, resources_dir(), FIRMWARE, HARDWARE)
-            if return_code == 0:
-                print "SUCCESS: Arduino appears to be flashed."
-            else:
-                print "ERROR: Failed to flash Arduino."
-    else:
-        if args.host_on_all_interfaces:
-            run_with_callback('', NETWORK_PORT)
-        else:
-            run_with_callback('127.0.0.1', NETWORK_PORT)    
+# run
+if args.debug:
+    debug(True)
+    if hasattr(sys, "_MEIPASS"):
+        print "Data root is: " + sys._MEIPASS             
 
-        
+run_with_callback('', conf['network_port'])
+
+    
 
 
