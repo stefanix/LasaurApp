@@ -35,8 +35,8 @@
 #define CMD_DWELL 'C'
 #define CMD_RASTER 'D'
 
-#define CMD_SET_FEEDRATE 'E'
-#define CMD_SET_INTENSITY 'F'
+// #define CMD_SET_FEEDRATE 'E'
+// #define CMD_SET_INTENSITY 'F'
 
 #define CMD_REF_RELATIVE 'G' 
 #define CMD_REF_ABSOLUTE 'H'

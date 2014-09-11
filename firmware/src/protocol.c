@@ -184,12 +184,12 @@ inline void on_cmd(uint8_t command) {
     case CMD_DWELL:
       planner_dwell(st.duration, st.intensity);
       break;
-    case CMD_SET_FEEDRATE:
-      st.feedrate = get_curent_value();
-      break;
-    case CMD_SET_INTENSITY:
-      st.intensity = get_curent_value();
-      break;
+    // case CMD_SET_FEEDRATE:
+    //   st.feedrate = get_curent_value();
+    //   break;
+    // case CMD_SET_INTENSITY:
+    //   st.intensity = get_curent_value();
+    //   break;
     case CMD_REF_RELATIVE:
       st.ref_mode = REF_RELATIVE;
       break;
@@ -277,13 +277,25 @@ inline void on_param(uint8_t parameter) {
   if(pdata.count == 4) {
     switch(parameter) {
       case PARAM_TARGET_X:
-        st.target[X_AXIS] = get_curent_value();
+        if(st.ref_mode == REF_ABSOLUTE) {
+          st.target[X_AXIS] = get_curent_value();
+        } else {
+          st.target[X_AXIS] += get_curent_value();
+        }
         break;
       case PARAM_TARGET_Y:
-        st.target[Y_AXIS] = get_curent_value();
+        if(st.ref_mode == REF_ABSOLUTE) {
+          st.target[Y_AXIS] = get_curent_value();
+        } else {
+          st.target[Y_AXIS] += get_curent_value();
+        }
         break;
       case PARAM_TARGET_Z:
-        st.target[Z_AXIS] = get_curent_value();
+        if(st.ref_mode == REF_ABSOLUTE) {
+          st.target[Z_AXIS] = get_curent_value();
+        } else {
+          st.target[Z_AXIS] += get_curent_value();
+        }
         break;
       case PARAM_FEEDRATE:
         st.feedrate = get_curent_value();

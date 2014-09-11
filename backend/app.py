@@ -5,7 +5,6 @@ import time
 import glob
 import json
 import argparse
-import copy
 import tempfile
 import webbrowser
 from wsgiref.simple_server import WSGIRequestHandler, make_server
@@ -33,12 +32,13 @@ class HackedWSGIRequestHandler(WSGIRequestHandler):
         return str(self.client_address[0])
 
 
-def run_with_callback(host, port):
+def run_with_callback():
     """ Start a wsgiref server instance with control over the main loop.
         This is a function that I derived from the bottle.py run()
     """
     handler = default_app()
-    server = make_server(host, port, handler, handler_class=HackedWSGIRequestHandler)
+    server = make_server(conf['network_host'], conf['network_port'], 
+                         handler, handler_class=HackedWSGIRequestHandler)
     server.timeout = 0.01
     server.quiet = True
     print "Persistent storage root is: " + conf['stordir']
@@ -46,14 +46,14 @@ def run_with_callback(host, port):
     print "Bottle server starting up ..."
     # print "Serial is set to %d bps" % BITSPERSECOND
     print "Point your browser to: "    
-    print "http://%s:%d/      (local)" % ('127.0.0.1', port)  
+    print "http://%s:%d/      (local)" % ('127.0.0.1', conf['network_port'])  
     print "Use Ctrl-C to quit."
     print "-----------------------------------------------------------------------------"    
     print
     lasersaur.connect()
     # open web-browser
     try:
-        webbrowser.open_new_tab('http://127.0.0.1:'+str(port))
+        webbrowser.open_new_tab('http://127.0.0.1:'+str(conf['network_port']))
     except webbrowser.Error:
         print "Cannot open Webbrowser, please do so manually."
     sys.stdout.flush()  # make sure everything gets flushed
@@ -271,8 +271,8 @@ def serial_handler(connect):
 
 @route('/status')
 def get_status():
-    status = copy.deepcopy(SerialManager.hardware_status())
-    status['serial_connected'] = SerialManager.is_connected()
+    status = lasersaur.status()  # this returns a copy
+    status['serial_connected'] = lasersaur.connected()
     status['lasaurapp_version'] = conf['version']
     return json.dumps(status)
 
@@ -438,7 +438,7 @@ if args.debug:
     if hasattr(sys, "_MEIPASS"):
         print "Data root is: " + sys._MEIPASS             
 
-run_with_callback('', conf['network_port'])
+run_with_callback()
 
     
 

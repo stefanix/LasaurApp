@@ -3,6 +3,7 @@ import os
 import sys
 import time
 import json
+import copy
 import threading
 import serial
 import serial.tools.list_ports
@@ -29,8 +30,8 @@ CMD_RASTER = "D"
 # CMD_SET_FEEDRATE = "E"
 # CMD_SET_INTENSITY = "F"
 
-# CMD_REF_RELATIVE = "G" 
-# CMD_REF_ABSOLUTE = "H"
+CMD_REF_RELATIVE = "G" 
+CMD_REF_ABSOLUTE = "H"
 
 CMD_HOMING = "I"
 
@@ -141,9 +142,12 @@ class SerialLoopClass(threading.Thread):
         threading.Thread.__init__(self)
         self.stop_processing = False
 
+        self.deamon = True  # kill thread when main thread exits
+
         # lock mechanism for chared data
         # see: http://effbot.org/zone/thread-synchronization.htm
         self.lock = threading.Lock()
+
 
 
     def reset_status(self):
@@ -198,12 +202,12 @@ class SerialLoopClass(threading.Thread):
                          'feedrate', 'intensity', 'duration', 'pixel_width']:
                 print symap[self._status[k]] + ' ' + k
         print  'x: ' + str(self._status['x'])
-        print  'x: ' + str(self._status['y'])
-        print  'x: ' + str(self._status['z'])
+        print  'y: ' + str(self._status['y'])
+        print  'z: ' + str(self._status['z'])
         print  'firmware_version: ' + str(self._status['firmware_version'])
         print  'x_target: ' + str(self._status['x_target'])
-        print  'x_target: ' + str(self._status['y_target'])
-        print  'x_target: ' + str(self._status['z_target'])
+        print  'y_target: ' + str(self._status['y_target'])
+        print  'z_target: ' + str(self._status['z_target'])
         print  'feedrate: ' + str(self._status['feedrate'])
         print  'intensity: ' + str(self._status['intensity'])
         print  'duration: ' + str(self._status['duration'])
@@ -230,9 +234,13 @@ class SerialLoopClass(threading.Thread):
 
     def run(self):
         """Main loop of the serial thread."""
+        last_status_request = 0
         while True:
             with self.lock:
                 self._process()
+                if time.time()-last_status_request > 0.5:
+                    self.request_status = True
+                    last_status_request = time.time()
             if self.stop_processing:
                 break
 
@@ -473,15 +481,16 @@ def connect(port=conf['serial_port'], baudrate=conf['baudrate']):
     if not SerialLoop:
         SerialLoop = SerialLoopClass()
 
-        # Create serial device with both read timeout set to 0.
-        # This results in the read() being non-blocking
+        # Create serial device with read timeout set to 100us.
+        # This results in the read() being almost non-blocking 
+        # without consuming the entire processor.
         # Write on the other hand uses a large timeout but should not be blocking
         # much because we ask it only to write TX_CHUNK_SIZE at a time.
         # BUG WARNING: the pyserial write function does not report how
         # many bytes were actually written if this is different from requested.
         # Work around: use a big enough timeout and a small enough chunk size.
         try:
-            SerialLoop.device = serial.Serial(port, baudrate, timeout=0, writeTimeout=0.1)
+            SerialLoop.device = serial.Serial(port, baudrate, timeout=0.0001, writeTimeout=0.1)
             # clear throat
             time.sleep(1.0) # allow some time to receive a prompt/welcome
             SerialLoop.device.flushInput()
@@ -563,9 +572,27 @@ def status():
     """Request status."""
     global SerialLoop
     with SerialLoop.lock:
-        SerialLoop.request_status = True
+        stats = copy.deepcopy(SerialLoop._status)
+    return stats
+
+
+def print_status():
+    global SerialLoop
+    with SerialLoop.lock:
         SerialLoop.print_status()
 
+
+def relative():
+    global SerialLoop
+    with SerialLoop.lock:
+        SerialLoop.send_command(CMD_REF_RELATIVE)
+
+    
+def absolute():
+    global SerialLoop
+    with SerialLoop.lock:
+        SerialLoop.send_command(CMD_REF_ABSOLUTE)
+    
 
 def homing():
     """Run homing cycle."""
@@ -669,6 +696,14 @@ def job(jobdict):
                     air_on()
                 if 'aux1_assist' in pass_ and pass_['aux1_assist'] == 'pass':
                     aux1_on()
+                # set absolute/relative
+                if 'relative' not in pass_ or not pass_['relative']:
+                    absolute()
+                    print "ABS"
+                else:
+                    relative()
+                    print "REL"
+                # loop through all paths of this pass
                 for path_index in pass_['paths']:
                     if path_index < len(paths):
                         path = paths[path_index]

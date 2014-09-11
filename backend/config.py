@@ -17,8 +17,9 @@ import sys
 
 conf = {
     'appname': 'lasaurapp',
-    'version': "14.01b",
-    'company_name': "com.nortd.labs",
+    'version': '14.01b',
+    'company_name': 'com.nortd.labs',
+    'network_host': '',                    # '' for all nics
     'network_port': 4444,
     'serial_port': '/dev/ttyACM0',
     'baudrate': 57600,
