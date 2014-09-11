@@ -8,7 +8,6 @@ import logging
 from .webcolors import hex_to_rgb, rgb_to_hex
 from .utilities import matrixMult, matrixApply, matrixApplyScale, vertexScale, parseFloats
 from .svg_tag_reader import SVGTagReader
-from config import config
 
 
 logging.basicConfig()

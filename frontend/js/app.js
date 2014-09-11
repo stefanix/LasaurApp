@@ -51,15 +51,14 @@ var progress_not_yet_done_flag = false;
 })(jQuery); 
 
 
-function send_gcode(gcode, success_msg, progress) {
-  // if (hardware_ready_state || gcode[0] == '!' || gcode[0] == '~') {
+function send_job(job, success_msg, progress) {
   if (true) {
-    if (typeof gcode === "string" && gcode != '') {
-      // $().uxmessage('notice', gcode, Infinity);
+    if ('vector' in job || 'raster' in job) {
+      // $().uxmessage('notice', JSON.stringify(job), Infinity);
       $.ajax({
         type: "POST",
-        url: "/gcode",
-        data: {'job_data':gcode},
+        url: "/job",
+        data: {'job_data':JSON.stringify(job)},
         // dataType: "json",
         success: function (data) {
           if (data == "__ok__") {
@@ -78,18 +77,83 @@ function send_gcode(gcode, success_msg, progress) {
           }
         },
         error: function (data) {
+          // alert(JSON.stringify(data))
           $().uxmessage('error', "Timeout. LasaurApp server down?");
+          if ("responseText" in data) {
+            $().uxmessage('error', data.responseText, Infinity);
+          }
         },
         complete: function (data) {
           // future use
         }
       });
     } else {
-      $().uxmessage('error', "No gcode.");
+      $().uxmessage('error', "No job data.");
     }
   } else {
     $().uxmessage('warning', "Not ready, request ignored.");
   }
+}
+// function send_gcode(gcode, success_msg, progress) {
+//   // if (hardware_ready_state || gcode[0] == '!' || gcode[0] == '~') {
+//   if (true) {
+//     if (typeof gcode === "string" && gcode != '') {
+//       // $().uxmessage('notice', gcode, Infinity);
+//       $.ajax({
+//         type: "POST",
+//         url: "/gcode",
+//         data: {'job_data':gcode},
+//         // dataType: "json",
+//         success: function (data) {
+//           if (data == "__ok__") {
+//             $().uxmessage('success', success_msg);
+//             if (progress = true) {
+//               // show progress bar, register live updates
+//               if ($("#progressbar").children().first().width() == 0) {
+//                 $("#progressbar").children().first().width('5%');
+//                 $("#progressbar").show();
+//                 progress_not_yet_done_flag = true;
+//                 setTimeout(update_progress, 2000);
+//               }
+//             }
+//           } else {
+//             $().uxmessage('error', "Backend error: " + data);
+//           }
+//         },
+//         error: function (data) {
+//           $().uxmessage('error', "Timeout. LasaurApp server down?");
+//         },
+//         complete: function (data) {
+//           // future use
+//         }
+//       });
+//     } else {
+//       $().uxmessage('error', "No gcode.");
+//     }
+//   } else {
+//     $().uxmessage('warning', "Not ready, request ignored.");
+//   }
+// }
+
+
+function send_relative_move(x, y, z, seekrate, success_msg) {
+  var job = {
+    "vector":{
+      "passes":[
+        {
+          "paths":[0],
+          "relative":true,
+          "seekrate":seekrate
+        }
+      ],
+      "paths":[
+        [
+          [[x,y,z]]
+        ]
+      ]
+    }
+  }
+  send_job(job, success_msg, false);
 }
 
 

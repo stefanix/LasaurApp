@@ -2,6 +2,7 @@
 import os
 import sys
 import time
+import json
 import threading
 import serial
 import serial.tools.list_ports
@@ -479,18 +480,17 @@ def connect(port=conf['serial_port'], baudrate=conf['baudrate']):
         # BUG WARNING: the pyserial write function does not report how
         # many bytes were actually written if this is different from requested.
         # Work around: use a big enough timeout and a small enough chunk size.
-        SerialLoop.device = serial.Serial(port, baudrate, timeout=0, writeTimeout=0.1)
-
-        if SerialLoop.device:
+        try:
+            SerialLoop.device = serial.Serial(port, baudrate, timeout=0, writeTimeout=0.1)
             # clear throat
             time.sleep(1.0) # allow some time to receive a prompt/welcome
             SerialLoop.device.flushInput()
             SerialLoop.device.flushOutput()
 
             SerialLoop.start()  # this calls run() in a thread
-        else:
+        except serial.SerialException:
             SerialLoop = None
-            print "ERROR: could not connect to serial port: %s" % (port)
+            print "ERROR: Cannot connect serial on port: %s" % (port)
     else:
         print "ERROR: disconnect first"
 
@@ -503,25 +503,20 @@ def connected():
 
 def close():
     global SerialLoop
-    def terminate_thread():
+    if SerialLoop:
+        if SerialLoop.device:
+            SerialLoop.device.flushOutput()
+            SerialLoop.device.flushInput()
+            ret = True
+        else:
+            ret = False
         if SerialLoop.is_alive():
             SerialLoop.stop_processing = True
             SerialLoop.join()
-
-    if SerialLoop and bool(SerialLoop.device):
-        try:
-            SerialLoop.device.flushOutput()
-            SerialLoop.device.flushInput()
-            terminate_thread()
-            SerialLoop = None
-        except:
-            terminate_thread()
-            SerialLoop = None
-        return True
     else:
-        terminate_thread()
-        SerialLoop = None
-        return False
+        ret = False
+    SerialLoop = None
+    return ret
 
 
 
@@ -607,23 +602,53 @@ def move(x, y, z=0.0):
 def job(jobdict):
     """Queue a job.
     A job dictionary can define vector and raster passes.
-    It can set the feedrate, intensity, and pierce time.
-    The job is a dictionary with the following keys:
-    { passes,
-        colors,
-        seekrate,     (optional)
-        feedrate,
-        intensity,
-        pierce_time,  (optional)
-        relative,     (optional)
-        air_assist,   (optional)
-      paths,
-      rasterpass,
-        seekrate,
-        feedrate,
-        intensity,
-      rasters,
+    Unlike gcode it's not procedural but declarative.
+    The job dict looks like this:
+    ###########################################################################
+    {
+        "vector":                          # optional
+        {
+            "passes":
+            [
+                {
+                    "paths": [0],          # paths by index
+                    "relative": True,      # optional, default: False
+                    "seekrate": 6000,      # optional, rate to first vertex
+                    "feedrate": 2000,      # optional, rate to other verteces
+                    "intensity": 100,      # optional, default: 0 (in percent)
+                    "pierce_time": 0,      # optional, default: 0
+                    "air_assist": "feed",   # optional (feed, pass, off), default: feed
+                    "aux1_assist": "off",  # optional (feed, pass, off), default: off
+                }
+            ],
+            "paths":
+            [                              # list of paths
+                [                          # list of polylines
+                    [                      # list of verteces
+                        [0,-10],           # list of coords
+                    ],
+                ],
+            ],
+            "colors": ["#FF0000"],
+        }
+        "raster":                          # optional
+        {
+            "passes":
+            [
+                {
+                    "image": [0]
+                    "seekrate": 6000,      # optional
+                    "feedrate": 3000,
+                    "intensity": 100,
+                },
+            ]
+            "images":
+            [
+                <rasterdata>,               # image data in base64
+            ]
+        }
     }
+    ###########################################################################
     """
 
     ### rasters
@@ -634,23 +659,71 @@ def job(jobdict):
     #     # TODO: queue raster
 
     ### vectors
-    if jobdict.has_key('passes') and jobdict.has_key('paths'):
-        for ppass in jobdict['passes']:
-            for color in ppass['colors']:
-                if jobdict['paths'].has_key(color):
-                    for path in jobdict['paths'][color]:
-                        if len(path) > 0:
-                            # first vertex -> seek
-                            self.feedrate(ppass['seekrate'])
-                            self.intensity(0.0)
-                            self.move(path[0][0], path[0][1], path[0][2])
-                            # remaining verteces -> feed
-                            if len(path) > 1:
-                                self.feedrate(ppass['feedrate'])
-                                self.intensity(ppass['intensity'])                                
-                                # TODO dwell according to pierce time
-                                for i in xrange(1, len(path)):
-                                    self.move(path[i][0], path[i][1], path[i][2])
+    if jobdict.has_key('vector'):
+        if jobdict['vector'].has_key('passes') and jobdict['vector'].has_key('paths'):
+            passes = jobdict['vector']['passes']
+            paths = jobdict['vector']['paths']
+            for pass_ in passes:
+                # turn on assists if set to 'pass'
+                if 'air_assist' in pass_ and pass_['air_assist'] == 'pass':
+                    air_on()
+                if 'aux1_assist' in pass_ and pass_['aux1_assist'] == 'pass':
+                    aux1_on()
+                for path_index in pass_['paths']:
+                    if path_index < len(paths):
+                        path = paths[path_index]
+                        for polyline in path:
+                            if len(polyline) > 0:
+                                # first vertex -> seek
+                                if 'seekrate' in pass_:
+                                    feedrate(pass_['seekrate'])
+                                else:
+                                    feedrate(conf['seekrate'])
+                                intensity(0.0)
+                                is_2d = len(polyline[0]) == 2
+                                if is_2d:
+                                    move(polyline[0][0], polyline[0][1])
+                                else:
+                                    move(polyline[0][0], polyline[0][1], polyline[0][2])
+                                # remaining verteces -> feed
+                                if len(polyline) > 1:
+                                    if 'feedrate' in pass_:
+                                        feedrate(pass_['feedrate'])
+                                    else:
+                                        feedrate(conf['feedrate'])
+                                    if 'intensity' in pass_:
+                                        intensity(pass_['intensity'])
+                                    # turn on assists if set to 'feed'
+                                    # also air_assist defaults to 'feed'                 
+                                    if 'air_assist' in pass_:
+                                        if pass_['air_assist'] == 'feed':
+                                            air_on()
+                                    else:
+                                        air_on()  # also default this behavior
+                                    if 'aux1_assist' in pass_ and pass_['aux1_assist'] == 'feed':
+                                        aux1_on()
+                                    # TODO dwell according to pierce time
+                                    if is_2d:
+                                        for i in xrange(1, len(polyline)):
+                                            move(polyline[i][0], polyline[i][1])
+                                    else:
+                                        for i in xrange(1, len(polyline)):
+                                            move(polyline[i][0], polyline[i][1], polyline[i][2])
+                                    # turn off assists if set to 'feed'
+                                    # also air_assist defaults to 'feed'                 
+                                    if 'air_assist' in pass_:
+                                        if pass_['air_assist'] == 'feed':
+                                            air_off()
+                                    else:
+                                        air_off()  # also default this behavior        
+                                    if 'aux1_assist' in pass_ and pass_['aux1_assist'] == 'feed':
+                                        aux1_off()
+                # turn off assists if set to 'pass'
+                if 'air_assist' in pass_ and pass_['air_assist'] == 'pass':
+                    air_off()
+                if 'aux1_assist' in pass_ and pass_['aux1_assist'] == 'pass':
+                    aux1_off()
+
 
 
 def pause():
@@ -759,3 +832,9 @@ def sel_offset_custom():
     global SerialLoop
     with SerialLoop.lock:
         SerialLoop.send_command(CMD_SEL_OFFSET_CUSTOM)
+
+
+
+def testjob():
+    j = json.load(open(os.path.join(conf['rootdir'], 'library', 'Lasersaur.lsa')))
+    job(j)

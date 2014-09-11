@@ -18,66 +18,7 @@ from filereaders import read_svg, read_dxf, read_ngc
 __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
 
 
-
-
-### overwrite conf with setings from userconf.py
-try:
-    import userconfig
-    conf.update(userconfig.conf)
-    print "Config: using userconf.py"
-except ImportError:
-    print "Config: using defaults, no userconf.py present"
-
-
-
-
-
-if os.name == 'nt': #sys.platform == 'win32': 
-    GUESS_PREFIX = "Arduino"   
-elif os.name == 'posix':
-    if sys.platform == "linux" or sys.platform == "linux2":
-        GUESS_PREFIX = "2341"  # match by arduino VID
-    else:
-        GUESS_PREFIX = "tty.usbmodem"    
-else:
-    GUESS_PREFIX = "no prefix"    
-
-
-def resources_dir():
-    """This is to be used with all relative file access.
-       _MEIPASS is a special location for data files when creating
-       standalone, single file python apps with pyInstaller.
-       Standalone is created by calling from 'other' directory:
-       python pyinstaller/pyinstaller.py --onefile app.spec
-    """
-    if hasattr(sys, "_MEIPASS"):
-        return sys._MEIPASS
-    else:
-        # root is one up from this file
-        return os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../'))
         
-        
-def storage_dir():
-    directory = ""
-    if sys.platform == 'darwin':
-        # from AppKit import NSSearchPathForDirectoriesInDomains
-        # # NSApplicationSupportDirectory = 14
-        # # NSUserDomainMask = 1
-        # # True for expanding the tilde into a fully qualified path
-        # appdata = path.join(NSSearchPathForDirectoriesInDomains(14, 1, True)[0], conf['appname'])
-        directory = os.path.join(os.path.expanduser('~'), 
-            'Library', 'Application Support', conf['company_name'], conf['appname'])
-    elif sys.platform == 'win32':
-        directory = os.path.join(os.path.expandvars('%APPDATA%'), conf['company_name'], conf['appname'])
-    else:
-        directory = os.path.join(os.path.expanduser('~'), "." + conf['appname'])
-        
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-        
-    return directory
-
-
 class HackedWSGIRequestHandler(WSGIRequestHandler):
     """ This is a heck to solve super slow request handling
     on the BeagleBone and RaspberryPi. The problem is WSGIRequestHandler
@@ -100,7 +41,7 @@ def run_with_callback(host, port):
     server = make_server(host, port, handler, handler_class=HackedWSGIRequestHandler)
     server.timeout = 0.01
     server.quiet = True
-    print "Persistent storage root is: " + storage_dir()
+    print "Persistent storage root is: " + conf['stordir']
     print "-----------------------------------------------------------------------------"
     print "Bottle server starting up ..."
     # print "Serial is set to %d bps" % BITSPERSECOND
@@ -130,26 +71,26 @@ def run_with_callback(host, port):
 
 @route('/css/:path#.+#')
 def static_css_handler(path):
-    return static_file(path, root=os.path.join(resources_dir(), 'frontend/css'))
+    return static_file(path, root=os.path.join(conf['rootdir'], 'frontend/css'))
     
 @route('/js/:path#.+#')
 def static_js_handler(path):
-    return static_file(path, root=os.path.join(resources_dir(), 'frontend/js'))
+    return static_file(path, root=os.path.join(conf['rootdir'], 'frontend/js'))
     
 @route('/img/:path#.+#')
 def static_img_handler(path):
-    return static_file(path, root=os.path.join(resources_dir(), 'frontend/img'))
+    return static_file(path, root=os.path.join(conf['rootdir'], 'frontend/img'))
 
 @route('/favicon.ico')
 def favicon_handler():
-    return static_file('favicon.ico', root=os.path.join(resources_dir(), 'frontend/img'))
+    return static_file('favicon.ico', root=os.path.join(conf['rootdir'], 'frontend/img'))
     
 
 ### LIBRARY
 
 @route('/library/get/:path#.+#')
 def static_library_handler(path):
-    return static_file(path, root=os.path.join(resources_dir(), 'library'), mimetype='text/plain')
+    return static_file(path, root=os.path.join(conf['rootdir'], 'library'), mimetype='text/plain')
     
 @route('/library/list')
 def library_list_handler():
@@ -157,7 +98,7 @@ def library_list_handler():
     file_list = []
     cwd_temp = os.getcwd()
     try:
-        os.chdir(os.path.join(resources_dir(), 'library'))
+        os.chdir(os.path.join(conf['rootdir'], 'library'))
         file_list = glob.glob('*')
     finally:
         os.chdir(cwd_temp)
@@ -177,7 +118,7 @@ def decode_filename(name):
 
 @route('/queue/get/:name#.+#')
 def static_queue_handler(name): 
-    return static_file(name, root=storage_dir(), mimetype='text/plain')
+    return static_file(name, root=conf['stordir'], mimetype='text/plain')
 
 
 @route('/queue/list')
@@ -188,7 +129,7 @@ def library_list_handler():
     files = []
     cwd_temp = os.getcwd()
     try:
-        os.chdir(storage_dir())
+        os.chdir(conf['stordir'])
         files = filter(os.path.isfile, glob.glob("*"))
         files.sort(key=lambda x: os.path.getmtime(x))
     finally:
@@ -201,7 +142,7 @@ def queue_save_handler():
     if 'job_name' in request.forms and 'job_data' in request.forms:
         name = request.forms.get('job_name')
         job_data = request.forms.get('job_data')
-        filename = os.path.abspath(os.path.join(storage_dir(), name.strip('/\\')))
+        filename = os.path.abspath(os.path.join(conf['stordir'], name.strip('/\\')))
         if os.path.exists(filename) or os.path.exists(filename+'.starred'):
             return "file_exists"
         try:
@@ -219,8 +160,8 @@ def queue_save_handler():
 def queue_rm_handler(name):
     # delete queue item, on success return '1'
     ret = '0'
-    filename = os.path.abspath(os.path.join(storage_dir(), name.strip('/\\')))
-    if filename.startswith(storage_dir()):
+    filename = os.path.abspath(os.path.join(conf['stordir'], name.strip('/\\')))
+    if filename.startswith(conf['stordir']):
         if os.path.exists(filename):
             try:
                 os.remove(filename);
@@ -237,14 +178,14 @@ def queue_clear_handler():
     files = []
     cwd_temp = os.getcwd()
     try:
-        os.chdir(storage_dir())
+        os.chdir(conf['stordir'])
         files = filter(os.path.isfile, glob.glob("*"))
         files.sort(key=lambda x: os.path.getmtime(x))
     finally:
         os.chdir(cwd_temp)
     for filename in files:
         if not filename.endswith('.starred'):
-            filename = os.path.join(storage_dir(), filename)
+            filename = os.path.join(conf['stordir'], filename)
             try:
                 os.remove(filename);
                 print "file deleted: " + filename
@@ -256,8 +197,8 @@ def queue_clear_handler():
 @route('/queue/star/:name')
 def queue_star_handler(name):
     ret = '0'
-    filename = os.path.abspath(os.path.join(storage_dir(), name.strip('/\\')))
-    if filename.startswith(storage_dir()):
+    filename = os.path.abspath(os.path.join(conf['stordir'], name.strip('/\\')))
+    if filename.startswith(conf['stordir']):
         if os.path.exists(filename):
             os.rename(filename, filename + '.starred')
             ret = '1'
@@ -266,8 +207,8 @@ def queue_star_handler(name):
 @route('/queue/unstar/:name')
 def queue_unstar_handler(name):
     ret = '0'
-    filename = os.path.abspath(os.path.join(storage_dir(), name.strip('/\\')))
-    if filename.startswith(storage_dir()):
+    filename = os.path.abspath(os.path.join(conf['stordir'], name.strip('/\\')))
+    if filename.startswith(conf['stordir']):
         if os.path.exists(filename + '.starred'):
             os.rename(filename + '.starred', filename)
             ret = '1'
@@ -280,7 +221,7 @@ def queue_unstar_handler(name):
 @route('/index.html')
 @route('/app.html')
 def default_handler():
-    return static_file('app.html', root=os.path.join(resources_dir(), 'frontend') )
+    return static_file('app.html', root=os.path.join(conf['rootdir'], 'frontend') )
 
 
 @route('/stash_download', method='POST')
@@ -416,9 +357,10 @@ def job_submit_handler():
     if not job_data:
         return "no job data"
 
+    print job_data
     jobdict = json.loads(job_data)
     lasersaur.job(jobdict)
-
+    print "JOB"
     return "__ok__"
         
 
@@ -476,18 +418,12 @@ def file_reader():
 argparser = argparse.ArgumentParser(description='Run LasaurApp.', prog='lasaurapp')
 argparser.add_argument('port', metavar='serial_port', nargs='?', default=False,
                     help='serial port to the Lasersaur')
-argparser.add_argument('-v', '--version', action='version', version='%(prog)s ' + conf['version'])
+argparser.add_argument('-v', '--version', action='version', version='%(prog)s ' + conf['version'],
                     default=False, help='bind to all network devices (default: bind to 127.0.0.1)')
 argparser.add_argument('-l', '--list', dest='list_serial_devices', action='store_true',
                     default=False, help='list all serial devices currently connected')
 argparser.add_argument('-d', '--debug', dest='debug', action='store_true',
                     default=False, help='print more verbose for debugging')
-argparser.add_argument('--beaglebone', dest='beaglebone', action='store_true',
-                    default=False, help='use this for running on beaglebone')
-argparser.add_argument('--raspberrypi', dest='raspberrypi', action='store_true',
-                    default=False, help='use this for running on Raspberry Pi')
-argparser.add_argument('-m', '--match', dest='match',
-                    default=GUESS_PREFIX, help='match serial device with this string')                                        
 args = argparser.parse_args()
 
 

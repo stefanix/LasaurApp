@@ -12,6 +12,7 @@
 #
 
 import os
+import sys
 
 
 conf = {
@@ -21,8 +22,14 @@ conf = {
     'network_port': 4444,
     'serial_port': '/dev/ttyACM0',
     'baudrate': 57600,
+    'rootdir': None,                       # defined further down (../)
+    'stordir': None,                       # defined further down
     'firmware': 'LasaurGrbl.hex',
     'tolerance': 0.08,
+    # 'intensity_minmax': [0,255],
+    'seekrate': 6000,
+    'feedrate': 2000,
+    'intensity': 0,
     'kerf': 0.3,
     'max_raster_size': [3000,3000],
     # 'target_size': [1220,610],
@@ -31,6 +38,42 @@ conf = {
 
 ### make some 'smart' default setting choices
 
+
+### rootdir
+# This is to be used with all relative file access.
+# _MEIPASS is a special location for data files when creating
+# standalone, single file python apps with pyInstaller.
+# Standalone is created by calling from 'other' directory:
+# python pyinstaller/pyinstaller.py --onefile app.spec
+if hasattr(sys, "_MEIPASS"):
+    conf['rootdir'] = sys._MEIPASS
+else:
+    # root is one up from this file
+    conf['rootdir'] = os.path.abspath(
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), '../'))
+#
+###
+
+
+### stordir
+# This is to be used to store queue files and similar
+if sys.platform == 'darwin':
+    directory = os.path.join(os.path.expanduser('~'), 
+                             'Library', 'Application Support', 
+                             conf['company_name'], conf['appname'])
+elif sys.platform == 'win32':
+    directory = os.path.join(os.path.expandvars('%APPDATA%'), 
+                             conf['company_name'], conf['appname'])
+else:
+    directory = os.path.join(os.path.expanduser('~'), "." + conf['appname'])
+if not os.path.exists(directory):
+    os.makedirs(directory)
+conf['stordir'] = directory
+#
+###
+
+
+
 def beaglebone():
     # check if running on BBB
     # also works on old Beaglebone if named 'lasersaur'
@@ -38,8 +81,8 @@ def beaglebone():
     # ('Linux', 'lasersaur', '3.8.13-bone20', 
     #  '#1 SMP Wed May 29 06:14:59 UTC 2013', 'armv7l')
     uname = os.uname()
-    return sys.platform == "linux2" 
-        and (uname[1] == 'lasersaur' or uname[2] == '3.8.13-bone20')
+    return (sys.platform == "linux2" 
+            and (uname[1] == 'lasersaur' or uname[2] == '3.8.13-bone20'))
 
 
 def raspberrypi():
