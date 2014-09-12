@@ -81,7 +81,7 @@ typedef struct {
 static state_t st;
 
 typedef struct {
-  uint32_t chars[PARAM_MAX_DATA_LENGTH];
+  uint8_t chars[PARAM_MAX_DATA_LENGTH];
   uint8_t count;
 } data_t;
 static data_t pdata;
@@ -444,10 +444,10 @@ inline double get_curent_value() {
   //// char1 = ((num&(127<<7))>>7)+128
   //// char2 = ((num&(127<<14))>>14)+128
   //// char3 = ((num&(127<<21))>>21)+128
-  return ((((pdata.chars[3]-128)*2097152 +  // 2097152 = 128*128*128
-            (pdata.chars[2]-128)*16384 +   //   16384 = 128*128
-            (pdata.chars[1]-128)*128 + 
-            (pdata.chars[0]-128))-134217728 ) / 1000.0);  // 134217728 = 2**27
+  return ((((pdata.chars[3]-128L)*2097152L +  // 2097152 = 128*128*128
+            (pdata.chars[2]-128L)*16384L +   //   16384 = 128*128
+            (pdata.chars[1]-128L)*128L + 
+            (pdata.chars[0]-128L))-134217728L ) / 1000.0);  // 134217728 = 2**27
 }
 
 
