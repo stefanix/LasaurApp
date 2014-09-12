@@ -214,37 +214,62 @@ inline void on_cmd(uint8_t command) {
                     st.feedrate, 0, 0 );
       break;
     case CMD_SET_OFFSET_TABLE: case CMD_SET_OFFSET_CUSTOM:
+      stepper_synchronize();
       // set offset to current position
-      cs = OFFSET_TABLE;
       if(command == CMD_SET_OFFSET_CUSTOM) {
         cs = OFFSET_CUSTOM;
+      } else {
+        cs = OFFSET_TABLE;
       }
-      st.offsets[3*cs+X_AXIS] = st.position[X_AXIS] + st.offsets[3*st.offselect+X_AXIS];
-      st.offsets[3*cs+Y_AXIS] = st.position[Y_AXIS] + st.offsets[3*st.offselect+Y_AXIS];
-      st.offsets[3*cs+Z_AXIS] = st.position[Z_AXIS] + st.offsets[3*st.offselect+Z_AXIS];
+      // st.offsets[3*cs+X_AXIS] = st.position[X_AXIS] + st.offsets[3*st.offselect+X_AXIS];
+      // st.offsets[3*cs+Y_AXIS] = st.position[Y_AXIS] + st.offsets[3*st.offselect+Y_AXIS];
+      // st.offsets[3*cs+Z_AXIS] = st.position[Z_AXIS] + st.offsets[3*st.offselect+Z_AXIS];
+      st.offsets[3*cs+X_AXIS] = stepper_get_position_x();
+      st.offsets[3*cs+Y_AXIS] = stepper_get_position_y();
+      st.offsets[3*cs+Z_AXIS] = stepper_get_position_z();
       st.target[X_AXIS] = 0.0;
       st.target[Y_AXIS] = 0.0;
-      st.target[Z_AXIS] = 0.0;   
+      st.target[Z_AXIS] = 0.0;
       break;
-    case CMD_DEF_OFFSET_TABLE: case CMD_DEF_OFFSET_CUSTOM:
-      // set offset to target
-      cs = OFFSET_TABLE;
-      if(CMD_SET_OFFSET_CUSTOM) {
-        cs = OFFSET_CUSTOM;
+    // case CMD_DEF_OFFSET_TABLE: case CMD_DEF_OFFSET_CUSTOM:
+    //   stepper_synchronize();
+    //   // set offset to target
+    //   if(command == CMD_SET_OFFSET_CUSTOM) {
+    //     cs = OFFSET_CUSTOM;
+    //   } else {
+    //     cs = OFFSET_TABLE;
+    //   }
+    //   // NOTE: st.target yields the new offset
+    //   st.offsets[3*cs+X_AXIS] = st.target[X_AXIS];
+    //   st.offsets[3*cs+Y_AXIS] = st.target[Y_AXIS];
+    //   st.offsets[3*cs+Z_AXIS] = st.target[Z_AXIS];
+    //   if(cs == st.offselect) {
+    //     st.target[X_AXIS] = stepper_get_position_x() - st.target[X_AXIS];
+    //     st.target[Y_AXIS] = stepper_get_position_y() - st.target[Y_AXIS];
+    //     st.target[Z_AXIS] = stepper_get_position_z() - st.target[Z_AXIS];
+    //   }
+    //   // Set target in ref to new coord system so subsequent moves are calculated correctly.
+    //   // st.target[X_AXIS] = (st.position[X_AXIS] + st.offsets[3*st.offselect+X_AXIS]) - st.offsets[3*cs+X_AXIS];
+    //   // st.target[Y_AXIS] = (st.position[Y_AXIS] + st.offsets[3*st.offselect+Y_AXIS]) - st.offsets[3*cs+Y_AXIS];
+    //   // st.target[Z_AXIS] = (st.position[Z_AXIS] + st.offsets[3*st.offselect+Z_AXIS]) - st.offsets[3*cs+Z_AXIS];
+    //   break;
+    case CMD_SEL_OFFSET_TABLE:
+      stepper_synchronize();
+      if(st.offselect != OFFSET_TABLE){
+        st.offselect = OFFSET_TABLE;
+        st.target[X_AXIS] = stepper_get_position_x() - st.offsets[3*OFFSET_TABLE+X_AXIS];
+        st.target[Y_AXIS] = stepper_get_position_y() - st.offsets[3*OFFSET_TABLE+Y_AXIS];
+        st.target[Z_AXIS] = stepper_get_position_z() - st.offsets[3*OFFSET_TABLE+Z_AXIS];
       }
-      st.offsets[3*cs+X_AXIS] = st.target[X_AXIS];
-      st.offsets[3*cs+Y_AXIS] = st.target[Y_AXIS];
-      st.offsets[3*cs+Z_AXIS] = st.target[Z_AXIS];
-      // Set target in ref to new coord system so subsequent moves are calculated correctly.
-      st.target[X_AXIS] = (st.position[X_AXIS] + st.offsets[3*st.offselect+X_AXIS]) - st.offsets[3*cs+X_AXIS];
-      st.target[Y_AXIS] = (st.position[Y_AXIS] + st.offsets[3*st.offselect+Y_AXIS]) - st.offsets[3*cs+Y_AXIS];
-      st.target[Z_AXIS] = (st.position[Z_AXIS] + st.offsets[3*st.offselect+Z_AXIS]) - st.offsets[3*cs+Z_AXIS];
-      break;
-    case CMD_SEL_OFFSET_TABLE: 
-      st.offselect = OFFSET_TABLE;
       break;
     case CMD_SEL_OFFSET_CUSTOM:
-      st.offselect = OFFSET_CUSTOM;
+      stepper_synchronize();
+      if(st.offselect != OFFSET_CUSTOM){
+        st.offselect = OFFSET_CUSTOM;
+        st.target[X_AXIS] = stepper_get_position_x() - st.offsets[3*OFFSET_CUSTOM+X_AXIS];
+        st.target[Y_AXIS] = stepper_get_position_y() - st.offsets[3*OFFSET_CUSTOM+Y_AXIS];
+        st.target[Z_AXIS] = stepper_get_position_z() - st.offsets[3*OFFSET_CUSTOM+Z_AXIS];
+      }
       break;
     case CMD_AIR_ENABLE:
       planner_control_air_assist_enable();
@@ -274,6 +299,7 @@ inline void on_cmd(uint8_t command) {
 
 
 inline void on_param(uint8_t parameter) {
+  double val;
   if(pdata.count == 4) {
     switch(parameter) {
       case PARAM_TARGET_X:
@@ -309,6 +335,57 @@ inline void on_param(uint8_t parameter) {
       case PARAM_PIXEL_WIDTH:
         st.pixel_width = get_curent_value();
         break;
+
+      case PARAM_OFFTABLE_X:
+        val = get_curent_value();
+        st.offsets[3*OFFSET_TABLE+X_AXIS] = val;
+        if(st.offselect == OFFSET_TABLE) {
+          stepper_synchronize();
+          st.target[X_AXIS] = stepper_get_position_x() - val;
+        }
+        break;
+      case PARAM_OFFTABLE_Y:
+        val = get_curent_value();
+        st.offsets[3*OFFSET_TABLE+Y_AXIS] = val;
+        if(st.offselect == OFFSET_TABLE) {
+          stepper_synchronize();
+          st.target[Y_AXIS] = stepper_get_position_y() - val;
+        }
+        break;
+      case PARAM_OFFTABLE_Z:
+        val = get_curent_value();
+        st.offsets[3*OFFSET_TABLE+Z_AXIS] = val;
+        if(st.offselect == OFFSET_TABLE) {
+          stepper_synchronize();
+          st.target[Z_AXIS] = stepper_get_position_z() - val;
+        }
+        break;
+
+      case PARAM_OFFCUSTOM_X:
+        val = get_curent_value();
+        st.offsets[3*OFFSET_CUSTOM+X_AXIS] = val;
+        if(st.offselect == OFFSET_CUSTOM) {
+          stepper_synchronize();
+          st.target[X_AXIS] = stepper_get_position_x() - val;
+        }
+        break;
+      case PARAM_OFFCUSTOM_Y:
+        val = get_curent_value();
+        st.offsets[3*OFFSET_CUSTOM+Y_AXIS] = val;
+        if(st.offselect == OFFSET_CUSTOM) {
+          stepper_synchronize();
+          st.target[Y_AXIS] = stepper_get_position_y() - val;
+        }
+        break;
+      case PARAM_OFFCUSTOM_Z:
+        val = get_curent_value();
+        st.offsets[3*OFFSET_CUSTOM+Z_AXIS] = val;
+        if(st.offselect == OFFSET_CUSTOM) {
+          stepper_synchronize();
+          st.target[Z_AXIS] = stepper_get_position_z() - val;
+        }
+        break;
+
       default:
         stepper_request_stop(STOPERROR_INVALID_PARAMETER);
     }

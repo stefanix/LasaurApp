@@ -37,8 +37,8 @@ CMD_HOMING = "I"
 
 CMD_SET_OFFSET_TABLE = "J"
 CMD_SET_OFFSET_CUSTOM = "K"
-CMD_DEF_OFFSET_TABLE = "L"
-CMD_DEF_OFFSET_CUSTOM = "M"
+# CMD_DEF_OFFSET_TABLE = "L"
+# CMD_DEF_OFFSET_CUSTOM = "M"
 CMD_SEL_OFFSET_TABLE = "N"
 CMD_SEL_OFFSET_CUSTOM = "O"
 
@@ -57,6 +57,12 @@ PARAM_FEEDRATE = "f"
 PARAM_INTENSITY = "s"
 PARAM_DURATION = "d"
 PARAM_PIXEL_WIDTH = "p"
+PARAM_OFFTABLE_X = "h"
+PARAM_OFFTABLE_Y = "i"
+PARAM_OFFTABLE_Z = "j"
+PARAM_OFFCUSTOM_X = "k"
+PARAM_OFFCUSTOM_Y = "l"
+PARAM_OFFCUSTOM_Z = "m"
 
 REQUEST_READY = '\x14'
 ################
@@ -294,7 +300,6 @@ class SerialLoopClass(threading.Thread):
                                 self.job_size = 0
                                 # not ready whenever in stop mode
                                 self._status['ready'] = False
-                                self.print_status()
 
                             elif 64 < ord(char) < 91:  # info flags
                                 # chr is in [A-Z], info flag
@@ -615,6 +620,17 @@ def intensity(val):
     with SerialLoop.lock:
         SerialLoop.send_param(PARAM_INTENSITY, val)
 
+def duration(val):
+    global SerialLoop
+    with SerialLoop.lock:
+        SerialLoop.send_param(PARAM_DURATION, val)
+
+def pixelwidth(val):
+    global SerialLoop
+    with SerialLoop.lock:
+        SerialLoop.send_param(PARAM_PIXEL_WIDTH, val)
+
+
 def move(x, y, z=0.0):
     global SerialLoop
     with SerialLoop.lock:
@@ -845,18 +861,18 @@ def set_offset_custom():
 def def_offset_table(x, y, z):
     global SerialLoop
     with SerialLoop.lock:
-        SerialLoop.send_param(PARAM_TARGET_X, x)
-        SerialLoop.send_param(PARAM_TARGET_Y, y)
-        SerialLoop.send_param(PARAM_TARGET_Z, z)
-        SerialLoop.send_command(CMD_DEF_OFFSET_TABLE)
+        # absolute()
+        SerialLoop.send_param(PARAM_OFFTABLE_X, x)
+        SerialLoop.send_param(PARAM_OFFTABLE_Y, y)
+        SerialLoop.send_param(PARAM_OFFTABLE_Z, z)
 
 def def_offset_custom(x, y, z):
     global SerialLoop
     with SerialLoop.lock:
-        SerialLoop.send_param(PARAM_TARGET_X, x)
-        SerialLoop.send_param(PARAM_TARGET_Y, y)
-        SerialLoop.send_param(PARAM_TARGET_Z, z)
-        SerialLoop.send_command(CMD_DEF_OFFSET_CUSTOM)
+        # absolute()
+        SerialLoop.send_param(PARAM_OFFCUSTOM_X, x)
+        SerialLoop.send_param(PARAM_OFFCUSTOM_Y, y)
+        SerialLoop.send_param(PARAM_OFFCUSTOM_Z, z)
 
 def sel_offset_table():
     global SerialLoop

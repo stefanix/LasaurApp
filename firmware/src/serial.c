@@ -135,11 +135,6 @@ inline void serial_write_number(double num) {
   serial_write(((numint&(127UL<<7))>>7)+128);
   serial_write(((numint&(127UL<<14))>>14)+128);
   serial_write(((numint&(127UL<<21))>>21)+128);
-  // uint32_t numint = lround(num*1000 + 134217728UL);
-  // serial_write((numint&127)+128);
-  // serial_write(((numint&(127UL<<7))>>7)+128);
-  // serial_write(((numint&(127UL<<14))>>14)+128);
-  // serial_write(((numint&(127UL<<21))>>21)+128);
 }
 
 

@@ -45,8 +45,8 @@
 
 #define CMD_SET_OFFSET_TABLE 'J'
 #define CMD_SET_OFFSET_CUSTOM 'K'
-#define CMD_DEF_OFFSET_TABLE 'L'
-#define CMD_DEF_OFFSET_CUSTOM 'M'
+// #define CMD_DEF_OFFSET_TABLE 'L'
+// #define CMD_DEF_OFFSET_CUSTOM 'M'
 #define CMD_SEL_OFFSET_TABLE 'N'
 #define CMD_SEL_OFFSET_CUSTOM 'O'
 
@@ -65,6 +65,12 @@
 #define PARAM_INTENSITY 's'
 #define PARAM_DURATION 'd'
 #define PARAM_PIXEL_WIDTH 'p'
+#define PARAM_OFFTABLE_X 'h'
+#define PARAM_OFFTABLE_Y 'i'
+#define PARAM_OFFTABLE_Z 'j'
+#define PARAM_OFFCUSTOM_X 'k'
+#define PARAM_OFFCUSTOM_Y 'l'
+#define PARAM_OFFCUSTOM_Z 'm'
 
 
 // status: error markers
