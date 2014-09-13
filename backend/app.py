@@ -11,6 +11,7 @@ from wsgiref.simple_server import WSGIRequestHandler, make_server
 from bottle import *
 from config import conf
 import lasersaur
+import status
 from filereaders import read_svg, read_dxf, read_ngc
 
 
@@ -36,11 +37,14 @@ def run_with_callback():
     """ Start a wsgiref server instance with control over the main loop.
         This is a function that I derived from the bottle.py run()
     """
+    # web server
     handler = default_app()
     server = make_server(conf['network_host'], conf['network_port'], 
                          handler, handler_class=HackedWSGIRequestHandler)
     server.timeout = 0.01
     server.quiet = True
+    # websocket server
+    status.init()
     print "Persistent storage root is: " + conf['stordir']
     print "-----------------------------------------------------------------------------"
     print "Bottle server starting up ..."
@@ -60,6 +64,7 @@ def run_with_callback():
     while 1:
         try:
             server.handle_request()
+            status.process()
         except KeyboardInterrupt:
             break
     print "\nShutting down..."
@@ -272,8 +277,6 @@ def serial_handler(connect):
 @route('/status')
 def get_status():
     status = lasersaur.status()  # this returns a copy
-    status['serial_connected'] = lasersaur.connected()
-    status['lasaurapp_version'] = conf['version']
     return json.dumps(status)
 
 

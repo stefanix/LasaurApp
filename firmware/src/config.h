@@ -23,17 +23,13 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-// Version number
-// (must not contain letters)
-#define LASAURGRBL_VERSION 1408
-
-#define NOT_GEARED
-
+#define VERSION 1409             // int or float
 #define BAUD_RATE 57600
 // #define DEBUG_IGNORE_SENSORS  // set for debugging
+// #define NOT_GEARED
 
 
-#ifndef NOT_GEARED
+#ifdef NOT_GEARED
   #define CONFIG_X_STEPS_PER_MM 32.80839895 //microsteps/mm (no integers, e.g. use 80.0 instead of 80)
   #define CONFIG_Y_STEPS_PER_MM 32.80839895 //microsteps/mm (no integers, e.g. use 80.0 instead of 80)
   #define CONFIG_Z_STEPS_PER_MM 32.80839895 //microsteps/mm (no integers, e.g. use 80.0 instead of 80)
@@ -50,10 +46,10 @@
 #define CONFIG_X_ORIGIN_OFFSET 5.0  // mm, x-offset of table origin from physical home
 #define CONFIG_Y_ORIGIN_OFFSET 5.0  // mm, y-offset of table origin from physical home
 #define CONFIG_Z_ORIGIN_OFFSET 0.0   // mm, z-offset of table origin from physical home
-#ifndef NOT_GEARED
-  #define CONFIG_INVERT_X_AXIS 1  // 0 is regular, 1 inverts the y direction
+#ifdef NOT_GEARED
+  #define CONFIG_INVERT_X_AXIS 0  // 0 is regular, 1 inverts the y direction
 #else
-  #define CONFIG_INVERT_X_AXIS 0
+  #define CONFIG_INVERT_X_AXIS 1
 #endif
 #define CONFIG_INVERT_Y_AXIS 1  // 0 is regular, 1 inverts the y direction
 #define CONFIG_INVERT_Z_AXIS 1  // 0 is regular, 1 inverts the y direction

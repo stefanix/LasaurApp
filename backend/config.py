@@ -21,6 +21,7 @@ conf = {
     'company_name': 'com.nortd.labs',
     'network_host': '',                    # '' for all nics
     'network_port': 4444,
+    'websocket_port': 4411,
     'serial_port': '/dev/ttyACM0',
     'baudrate': 57600,
     'rootdir': None,                       # defined further down (../)

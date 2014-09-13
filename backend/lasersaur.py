@@ -8,6 +8,7 @@ import threading
 import serial
 import serial.tools.list_ports
 from config import conf
+import statserver
 
 
 __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
@@ -15,9 +16,10 @@ __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
 
 
 ################ SENDING PROTOCOL
-CMD_STOP = '!'
-CMD_RESUME = '~'
-CMD_STATUS = '?'
+CMD_STOP = "!"
+CMD_RESUME = "~"
+CMD_STATUS = "?"
+CMD_SUPERSTATUS = "&"
 
 CMD_RASTER_DATA_START = '\x02'
 CMD_RASTER_DATA_END = '\x03'
@@ -69,6 +71,8 @@ REQUEST_READY = '\x14'
 
 
 ################ RECEIVING PROTOCOL
+STATUS_END = '\x17'
+
 # status: error flags
 ERROR_SERIAL_STOP_REQUEST = '!'
 ERROR_RX_BUFFER_OVERFLOW = '"'
@@ -158,8 +162,11 @@ class SerialLoopClass(threading.Thread):
 
     def reset_status(self):
         self._status = {
+            'lasaurapp_version': conf['version'],
+            'firmware_version': None,
             'ready': False,  # when the machine is not busy
             'paused': False,
+            'serial_connected': False,
 
             'buffer_overflow': False,
             'serial_stop_request': False,
@@ -181,7 +188,6 @@ class SerialLoopClass(threading.Thread):
             'x': 0.0,
             'y': 0.0,
             'z': 0.0,
-            'firmware_version': None,
             'x_target': 0.0,
             'y_target': 0.0,
             'z_target': 0.0,
@@ -189,6 +195,7 @@ class SerialLoopClass(threading.Thread):
             'intensity': 0.0,
             'duration': 0.0,
             'pixel_width': 0.0
+
 
             # removed
             # limit_hit
@@ -247,6 +254,7 @@ class SerialLoopClass(threading.Thread):
                 if time.time()-last_status_request > 0.5:
                     self.request_status = True
                     last_status_request = time.time()
+                    self._status['serial_connected'] = bool(self.device)
             if self.stop_processing:
                 break
 
@@ -355,6 +363,9 @@ class SerialLoopClass(threading.Thread):
                                     print "ERROR: invalid param"
                             elif char == INFO_HELLO:
                                 print "Controller says Hello!"
+                            elif char == STATUS_END:
+                                # status block complete -> send through status server
+                                statserver.send(json.dumbs(self._status))
                             else:
                                 print ord(char)
                                 print char
@@ -441,6 +452,9 @@ class SerialLoopClass(threading.Thread):
             # serial disconnected    
             self._status['ready'] = False
 
+        # flush stdout, so print shows up timely
+        sys.stdout.flush()
+
 
 
 
@@ -505,6 +519,9 @@ def connect(port=conf['serial_port'], baudrate=conf['baudrate']):
         except serial.SerialException:
             SerialLoop = None
             print "ERROR: Cannot connect serial on port: %s" % (port)
+
+        # start up status server
+        statserver.start()
     else:
         print "ERROR: disconnect first"
 
@@ -527,6 +544,8 @@ def close():
         if SerialLoop.is_alive():
             SerialLoop.stop_processing = True
             SerialLoop.join()
+        # stop status server
+        statserver.stop()
     else:
         ret = False
     SerialLoop = None
@@ -574,7 +593,7 @@ def percentage():
 
 
 def status():
-    """Request status."""
+    """Get status."""
     global SerialLoop
     with SerialLoop.lock:
         stats = copy.deepcopy(SerialLoop._status)

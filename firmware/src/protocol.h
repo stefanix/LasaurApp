@@ -24,6 +24,7 @@
 #define CMD_STOP '!'
 #define CMD_RESUME '~'
 #define CMD_STATUS '?'
+#define CMD_SUPERSTATUS '&'
 
 #define CMD_RASTER_DATA_START '\x02'
 #define CMD_RASTER_DATA_END '\x03'
@@ -74,6 +75,7 @@
 
 
 // status: error markers
+#define STATUS_END '\x17'
 #define STOPERROR_OK ' '
 
 #define STOPERROR_SERIAL_STOP_REQUEST '!'
@@ -133,8 +135,9 @@ void protocol_loop();
 void protocol_request_position_update();
 
 // Called to make protocol_idle report 
-// status the next time it runs.
+// (super)status the next time it runs.
 void protocol_request_status();
+void protocol_request_superstatus();
 
 // called whenever no new serial data
 void protocol_end_of_job_check();

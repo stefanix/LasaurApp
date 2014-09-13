@@ -89,6 +89,7 @@ static data_t pdata;
 // uint8_t line_checksum_ok_already;
 static volatile bool position_update_requested;  // make sure to update to stepper position on next occasion
 static volatile bool status_requested;           // when set protocol_idle will write status to serial
+static volatile bool superstatus_requested;      // extended status
 static bool machine_idle;                        // when no serial data and no blockes processing
 
 static void on_cmd(uint8_t command);
@@ -116,6 +117,7 @@ void protocol_init() {
   position_update_requested = false;
   // line_checksum_ok_already = false;
   status_requested = true;
+  superstatus_requested = true;
   machine_idle = true;
 }
 
@@ -399,6 +401,10 @@ void protocol_request_status() {
   status_requested = true;
 }
 
+void protocol_request_superstatus() {
+  superstatus_requested = true;
+}
+
 
 void protocol_end_of_job_check() {
   if(!planner_blocks_available()) {
@@ -433,7 +439,8 @@ void protocol_idle() {
     machine_idle = false;
   }
 
-  if (status_requested) {
+  if (status_requested || superstatus_requested) {
+    status_requested = false;
     // idle flag
     if (machine_idle) {
       serial_write(INFO_IDLE_YES);
@@ -469,37 +476,26 @@ void protocol_idle() {
     }
 
     // position
-    serial_write_number(stepper_get_position_x());
-    serial_write(STATUS_POS_X);
-    serial_write_number(stepper_get_position_y());
-    serial_write(STATUS_POS_Y);
-    serial_write_number(stepper_get_position_z());       
-    serial_write(STATUS_POS_Z);
-    // version
-    serial_write_number(LASAURGRBL_VERSION);       
-    serial_write(STATUS_VERSION);
+    serial_write_param(STATUS_POS_X, stepper_get_position_x());
+    serial_write_param(STATUS_POS_Y, stepper_get_position_y());
+    serial_write_param(STATUS_POS_Z, stepper_get_position_z());
 
-    // target (DEBUGGING)
-    serial_write_number(st.target[X_AXIS]);
-    serial_write(STATUS_TARGET_X);
-    serial_write_number(st.target[Y_AXIS]);
-    serial_write(STATUS_TARGET_Y);
-    serial_write_number(st.target[Z_AXIS]);       
-    serial_write(STATUS_TARGET_Z);
+    if (superstatus_requested) {
+      superstatus_requested = false;
+      // version
+      serial_write_param(STATUS_VERSION, VERSION);
 
-    serial_write_number(st.feedrate);       
-    serial_write(STATUS_FEEDRATE);
+      // target (DEBUGGING)
+      serial_write_param(STATUS_TARGET_X, st.target[X_AXIS]);
+      serial_write_param(STATUS_TARGET_Y, st.target[Y_AXIS]);
+      serial_write_param(STATUS_TARGET_Z, st.target[Z_AXIS]);
 
-    serial_write_number(st.intensity);       
-    serial_write(STATUS_INTENSITY);
-
-    serial_write_number(st.duration);       
-    serial_write(STATUS_DURATION);
-
-    serial_write_number(st.pixel_width);       
-    serial_write(STATUS_PIXEL_WIDTH);
-
-    status_requested = false;
+      serial_write_param(STATUS_FEEDRATE, st.feedrate);
+      serial_write_param(STATUS_INTENSITY, st.intensity);
+      serial_write_param(STATUS_DURATION, st.duration);
+      serial_write_param(STATUS_PIXEL_WIDTH, st.pixel_width);
+    }
+    serial_write(STATUS_END);
   }
 }
 
