@@ -365,7 +365,13 @@ class SerialLoopClass(threading.Thread):
                                 print "Controller says Hello!"
                             elif char == STATUS_END:
                                 # status block complete -> send through status server
-                                statserver.send(json.dumbs(self._status))
+                                if tenth_time:
+                                    statusjson = json.dumbs(self._status)
+                                    statserver.send(statusjson)
+                                    statserver.on_connected_message(statusjson)
+                                else:
+                                    statusdiff = 
+                                    statserver.send(json.dumbs(self._status))
                             else:
                                 print ord(char)
                                 print char

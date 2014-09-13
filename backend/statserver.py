@@ -4,27 +4,32 @@ import time
 import threading
 import logging
 from config import conf
-from websocket.server.SimpleWebSocketServer import WebSocket, SimpleWebSocketServer
+from websocket.SimpleWebSocketServer import WebSocket, SimpleWebSocketServer
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
 
-_server = None
-_serverthread = None
-_serverlock = threading.Lock()
-_stop_server = False
-_messagethread = None
-_messageglock = threading.Lock()
-_message = None
-_stop_messager = False
 
 
+class Server():
+    def __init__(self):
+        self.server = None
+        self.serverthread = None
+        self.serverlock = threading.Lock()
+        self.stop_server = False
+        self.messagethread = None
+        self.messageglock = threading.Lock()
+        self.message = None
+        self.message_on_connected = None
+        self.stop_messager = False
 
-class SimpleEcho(WebSocket):
+S = Server()
+
+
+class ClientSocket(WebSocket):
 
     def handleMessage(self):
         if self.data is None:
             self.data = ''
-        
         try:
             self.sendMessage(str(self.data))
         except Exception as n:
@@ -32,7 +37,10 @@ class SimpleEcho(WebSocket):
                  
     def handleConnected(self):
         print self.address, 'connected'
-        self.sendMessage()
+        with S.messageglock:
+            message_cache = S.message_on_connected
+        if message_cache:
+            self.sendMessage(message_cache)
 
     def handleClose(self):
         print self.address, 'closed'
@@ -40,44 +48,39 @@ class SimpleEcho(WebSocket):
 
 
 def start():
-    global _server, _serverthread, _serverlock, _stop_server, \
-           _message, _messagethread, _messageglock, _stop_messager
-
     ### server thread
-    _stop_server = False
-    _server = SimpleWebSocketServer(conf['network_host'], conf['websocket_port'], SimpleEcho)
+    S.stop_server = False
+    S.server = SimpleWebSocketServer(conf['network_host'], 
+                                    conf['websocket_port'], ClientSocket)
 
     def run_server():
-        global _server, _serverlock, _stop_server
         while True:
-            with _serverlock:
-                _server.process(timeout=0.01)
-                if _stop_server:
+            with S.serverlock:
+                S.server.process(timeout=0.01)
+                if S.stop_server:
                     break
             # sys.stdout.flush()
 
-    _serverthread = threading.Thread(target=run_server)
-    _serverthread.deamon = True  # kill thread when main thread exits
-    _serverthread.start()
+    S.serverthread = threading.Thread(target=run_server)
+    S.serverthread.deamon = True  # kill thread when main thread exits
+    S.serverthread.start()
     print "INFO: status server online on port %s" % (conf['websocket_port'])
 
     ### messager thread
-    _stop_messager = False
+    S.stop_messager = False
     def run_messager():
-        global _server, _serverlock, \
-               _message, _messagethread, _messageglock, _stop_messager
         message_cache = None
         while True:
-            with _messageglock:
-                if _stop_messager:
+            with S.messageglock:
+                if S.stop_messager:
                     break
-                if _message:
-                    message_cache = _message
-                    _message = None
+                if S.message:
+                    message_cache = S.message
+                    S.message = None
             if message_cache:
-                with _serverlock:
+                with S.serverlock:
                     # broadcast message
-                    for client in _server.connections.itervalues():
+                    for client in S.server.connections.itervalues():
                         try:
                             client.sendMessage(message_cache)
                         except Exception as n:
@@ -86,29 +89,26 @@ def start():
             time.sleep(0.01)
             # sys.stdout.flush()
 
-    _messagethread = threading.Thread(target=run_messager)
-    _messagethread.deamon = True  # kill thread when main thread exits
-    _messagethread.start()
+    S.messagethread = threading.Thread(target=run_messager)
+    S.messagethread.deamon = True  # kill thread when main thread exits
+    S.messagethread.start()
 
 
 
 def stop():
-    global _server, _serverthread, _serverlock, _stop_server, \
-           _messagethread, _messageglock, _stop_messager
-    
-    with _messageglock:
-        _stop_messager = True
-    _messagethread.join()
+    with S.messageglock:
+        S.stop_messager = True
+    S.messagethread.join()
     print "Status message thread stopped."
-    _messagethread = None
+    S.messagethread = None
 
-    with _serverlock:
-        _stop_server = True
-    _serverthread.join()
+    with S.serverlock:
+        S.stop_server = True
+    S.serverthread.join()
     print "Status server thread stopped."
-    _serverthread = None
-    _server.close()
-    _server = None
+    S.serverthread = None
+    S.server.close()
+    S.server = None
 
 
 
@@ -118,6 +118,11 @@ def send(msg):
     process to a different thread. Even the locking is optimized
     with some caching.
     """
-    global _message, _messageglock
-    with _messageglock:
-        _message = msg
+    with S.messageglock:
+        S.message = msg
+
+
+def on_connected_message(msg):
+    """Set message that will be send to a newly connected client"""
+    with S.messageglock:
+        S.message_on_connected = msg
