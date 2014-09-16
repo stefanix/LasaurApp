@@ -49,6 +49,7 @@ class ClientSocket(WebSocket):
 
 def start():
     ### server thread
+    print "INFO: starting status server on port %s" % (conf['websocket_port'])
     S.stop_server = False
     S.server = SimpleWebSocketServer(conf['network_host'], 
                                     conf['websocket_port'], ClientSocket)
@@ -64,7 +65,6 @@ def start():
     S.serverthread = threading.Thread(target=run_server)
     S.serverthread.deamon = True  # kill thread when main thread exits
     S.serverthread.start()
-    print "INFO: status server online on port %s" % (conf['websocket_port'])
 
     ### messager thread
     S.stop_messager = False

@@ -11,7 +11,6 @@ from wsgiref.simple_server import WSGIRequestHandler, make_server
 from bottle import *
 from config import conf
 import lasersaur
-import status
 from filereaders import read_svg, read_dxf, read_ngc
 
 
@@ -44,7 +43,6 @@ def run_with_callback():
     server.timeout = 0.01
     server.quiet = True
     # websocket server
-    status.init()
     print "Persistent storage root is: " + conf['stordir']
     print "-----------------------------------------------------------------------------"
     print "Bottle server starting up ..."
@@ -64,7 +62,6 @@ def run_with_callback():
     while 1:
         try:
             server.handle_request()
-            status.process()
         except KeyboardInterrupt:
             break
     print "\nShutting down..."

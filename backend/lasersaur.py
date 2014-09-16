@@ -139,6 +139,7 @@ class SerialLoopClass(threading.Thread):
         self.job_size = 0
 
         # status flags
+        self.idle = False
         self._status = {}
         self.reset_status()
 
@@ -162,35 +163,35 @@ class SerialLoopClass(threading.Thread):
 
     def reset_status(self):
         self._status = {
-            'lasaurapp_version': conf['version'],
-            'firmware_version': None,
-            'ready': False,  # when the machine is not busy
+            'appver':conf['version'],
+            'firmver': None,
+            'idle': False,
             'paused': False,
-            'serial_connected': False,
+            'serial': False,
 
-            'buffer_overflow': False,
-            'serial_stop_request': False,
-            'limit_x1': False,
-            'limit_x2': False,
-            'limit_y1': False,
-            'limit_y2': False,
-            'limit_z1': False,
-            'limit_z2': False,
-            'invalid_marker': False,
-            'invalid_data': False,
-            'invalid_command': False,
-            'invalid_parameter': False,
-            'transmission_error': False,
+            ### stop conditions
+            # indicated when key present
+            # possible keys are:
+            # x1, x2, y1, y2, z1, z2
+            # byrequest
+            # buffer
+            # marker
+            # data
+            # command
+            # parameter
+            # transmission
+            'stops': {},
 
-            'door_open': False,
-            'chiller_off': False,
+            ### info
+            # door
+            # chiller
+            'info': {},
 
-            'x': 0.0,
-            'y': 0.0,
-            'z': 0.0,
-            'x_target': 0.0,
-            'y_target': 0.0,
-            'z_target': 0.0,
+            # head position
+            'pos':[0.0, 0.0, 0.0],
+
+            ### debug
+            'pos_target': [0.0, 0.0, 0.0],
             'feedrate': 0.0,
             'intensity': 0.0,
             'duration': 0.0,
@@ -210,21 +211,22 @@ class SerialLoopClass(threading.Thread):
         keys = self._status.keys()
         keys.sort()
         for k in keys:
-            if k not in ['x', 'y', 'z', 'firmware_version',
-                         'x_target', 'y_target', 'z_target',
-                         'feedrate', 'intensity', 'duration', 'pixel_width']:
-                print symap[self._status[k]] + ' ' + k
-        print  'x: ' + str(self._status['x'])
-        print  'y: ' + str(self._status['y'])
-        print  'z: ' + str(self._status['z'])
-        print  'firmware_version: ' + str(self._status['firmware_version'])
-        print  'x_target: ' + str(self._status['x_target'])
-        print  'y_target: ' + str(self._status['y_target'])
-        print  'z_target: ' + str(self._status['z_target'])
-        print  'feedrate: ' + str(self._status['feedrate'])
-        print  'intensity: ' + str(self._status['intensity'])
-        print  'duration: ' + str(self._status['duration'])
-        print  'pixel_width: ' + str(self._status['pixel_width'])
+            if k not in ['firmver', 'feedrate', 'intensity', 'duration', 'pixel_width']:
+                if k == 'pos':
+                    print  'x: ' + str(self._status['pos'][0])
+                    print  'y: ' + str(self._status['pos'][1])
+                    print  'z: ' + str(self._status['pos'][2])
+                elif k == 'pos_target':
+                    print  'x_target: ' + str(self._status['pos_target'][0])
+                    print  'y_target: ' + str(self._status['pos_target'][1])
+                    print  'z_target: ' + str(self._status['pos_target'][2])
+                else:
+                    print symap[self._status[k]] + ' ' + k
+
+        print  'firmver: ' + str(self._status['firmver'])
+        print  "%smm/min %s% %ss %smm" % (str(self._status['feedrate']), 
+            str(self._status['intensity']), str(self._status['duration']), 
+            str(self._status['pixel_width']))
 
 
     def send_command(self, command):
@@ -254,7 +256,6 @@ class SerialLoopClass(threading.Thread):
                 if time.time()-last_status_request > 0.5:
                     self.request_status = True
                     last_status_request = time.time()
-                    self._status['serial_connected'] = bool(self.device)
             if self.stop_processing:
                 break
 
@@ -274,40 +275,47 @@ class SerialLoopClass(threading.Thread):
                             ## check for data request
                             if char == READY:
                                 self.nRequested = self.TX_CHUNK_SIZE
+                            elif char == STATUS_END:
+                                # status block complete -> send through status server
+                                self._status['idle'] = self.idle
+                                self._status['serial'] = bool(self.device)
+                                statusjson = json.dumps(self._status)
+                                statserver.send(statusjson)
+                                statserver.on_connected_message(statusjson)
                         elif ord(char) < 128:  ### markers
                             if 32 < ord(char) < 65: # stop error flags                            
                                 # chr is in [!-@], process flag
-                                if char == ERROR_SERIAL_STOP_REQUEST:
-                                    self._status['serial_stop_request'] = True
-                                elif char == ERROR_RX_BUFFER_OVERFLOW:
-                                    self._status['buffer_overflow'] = True
-                                elif char == ERROR_LIMIT_HIT_X1:
-                                    self._status['limit_x1'] = True
+                                if char == ERROR_LIMIT_HIT_X1:
+                                    self._status['stops']['x1'] = True
                                 elif char == ERROR_LIMIT_HIT_X2:
-                                    self._status['limit_x2'] = True
+                                    self._status['stops']['x2'] = True
                                 elif char == ERROR_LIMIT_HIT_Y1:
-                                    self._status['limit_y1'] = True
+                                    self._status['stops']['y1'] = True
                                 elif char == ERROR_LIMIT_HIT_Y2:
-                                    self._status['limit_y2'] = True
+                                    self._status['stops']['y2'] = True
                                 elif char == ERROR_LIMIT_HIT_Z1:
-                                    self._status['limit_z1'] = True
+                                    self._status['stops']['z1'] = True
                                 elif char == ERROR_LIMIT_HIT_Z2:
-                                    self._status['limit_z2'] = True
+                                    self._status['stops']['z2'] = True
+                                elif char == ERROR_SERIAL_STOP_REQUEST:
+                                    self._status['stops']['byrequest'] = True
+                                elif char == ERROR_RX_BUFFER_OVERFLOW:
+                                    self._status['stops']['buffer'] = True                                    
                                 elif char == ERROR_INVALID_MARKER:
-                                    self._status['invalid_marker'] = True
+                                    self._status['stops']['marker'] = True
                                 elif char == ERROR_INVALID_DATA:
-                                    self._status['invalid_data'] = True
+                                    self._status['stops']['data'] = True
                                 elif char == ERROR_INVALID_COMMAND:
-                                    self._status['invalid_command'] = True
+                                    self._status['stops']['command'] = True
                                 elif char == ERROR_INVALID_PARAMETER:
-                                    self._status['invalid_parameter'] = True
+                                    self._status['stops']['parameter'] = True
                                 elif char == ERROR_TRANSMISSION_ERROR:
-                                    self._status['transmission_error'] = True
+                                    self._status['stops']['transmission'] = True
                                 # in stop mode
                                 self.tx_buffer = ''
                                 self.job_size = 0
                                 # not ready whenever in stop mode
-                                self._status['ready'] = False
+                                self.idle = False
 
                             elif 64 < ord(char) < 91:  # info flags
                                 # chr is in [A-Z], info flag
@@ -316,17 +324,17 @@ class SerialLoopClass(threading.Thread):
                                     sys.stdout.flush()                                              
                                     # self._status['fec_correction'] = True
                                 elif char == INFO_IDLE_YES:
-                                    self._status['ready'] = True
+                                    self.idle = True
                                 elif char == INFO_IDLE_NO:
-                                    self._status['ready'] = False
+                                    self.idle = False
                                 elif char == INFO_DOOR_OPEN:
-                                    self._status['door_open'] = True
+                                    self._status['info']['door'] = True
                                 elif char == INFO_DOOR_CLOSED:
-                                    self._status['door_open'] = False
+                                    del self._status['info']['door']
                                 elif char == INFO_CHILLER_OFF:
-                                    self._status['chiller_off'] = True
+                                    self._status['info']['chiller'] = True
                                 elif char == INFO_CHILLER_ON:
-                                    self._status['chiller_off'] = False
+                                    del self._status['info']['chiller']
                                 else:
                                     print "ERROR: invalid flag"
                             elif 96 < ord(char) < 123:  # parameter
@@ -336,21 +344,21 @@ class SerialLoopClass(threading.Thread):
                                        + (ord(self.pdata_chars[1])-128)*128 
                                        + (ord(self.pdata_chars[0])-128) )- 134217728)/1000.0)
                                 if char == INFO_POS_X:
-                                    self._status['x'] = num
+                                    self._status['pos'][0] = num
                                 elif char == INFO_POS_Y:
-                                    self._status['y'] = num
+                                    self._status['pos'][1] = num
                                 elif char == INFO_POS_Z:
-                                    self._status['z'] = num
+                                    self._status['pos'][2] = num
                                 elif char == INFO_VERSION:
                                     num = 'v' + str(int(num)/100.0)
-                                    self._status['firmware_version'] = num
+                                    self._status['firmver'] = num
                                 # debugging
                                 elif char == INFO_TARGET_X:
-                                    self._status['x_target'] = num
+                                    self._status['pos_target'][0] = num
                                 elif char == INFO_TARGET_Y:
-                                    self._status['y_target'] = num
+                                    self._status['pos_target'][1] = num
                                 elif char == INFO_TARGET_Z:
-                                    self._status['z_target'] = num
+                                    self._status['pos_target'][2] = num
                                 elif char == INFO_FEEDRATE:
                                     self._status['feedrate'] = num
                                 elif char == INFO_INTENSITY:
@@ -363,15 +371,6 @@ class SerialLoopClass(threading.Thread):
                                     print "ERROR: invalid param"
                             elif char == INFO_HELLO:
                                 print "Controller says Hello!"
-                            elif char == STATUS_END:
-                                # status block complete -> send through status server
-                                if tenth_time:
-                                    statusjson = json.dumbs(self._status)
-                                    statserver.send(statusjson)
-                                    statserver.on_connected_message(statusjson)
-                                else:
-                                    statusdiff = 
-                                    statserver.send(json.dumbs(self._status))
                             else:
                                 print ord(char)
                                 print char
@@ -455,8 +454,8 @@ class SerialLoopClass(threading.Thread):
                 # Serial port appears closed => reset
                 self.close()     
         else:
-            # serial disconnected    
-            self._status['ready'] = False
+            # serial disconnected
+            self.idle = False
 
         # flush stdout, so print shows up timely
         sys.stdout.flush()
@@ -628,7 +627,7 @@ def homing():
     """Run homing cycle."""
     global SerialLoop
     with SerialLoop.lock:
-        if SerialLoop._status['ready']:
+        if SerialLoop.idle:
             SerialLoop.send_command(CMD_HOMING)
         else:
             print "WARN: ignoring homing command while job running"
@@ -698,6 +697,7 @@ def job(jobdict):
                 ],
             ],
             "colors": ["#FF0000"],
+            "noreturn": True,              # do not return to origin, default: False
         }
         "raster":                          # optional
         {
@@ -799,6 +799,11 @@ def job(jobdict):
                     air_off()
                 if 'aux1_assist' in pass_ and pass_['aux1_assist'] == 'pass':
                     aux1_off()
+            # return to origin
+            if jobdict['vector'].has_key('noreturn') and jobdict['vector']['noreturn']:
+                pass
+            else:
+                move(0, 0, 0)
 
 
 

@@ -39,44 +39,39 @@ $(document).ready(function(){
       y_phy = y;
     }
     /// contrain
-    if (!(isNaN(x_phy)) && x_phy != null) {  // allow for NaN, null
-      if (x_phy < 0) {
-        x_phy = 0;
-        $().uxmessage('warning', "x target constrained to work area");
-      } else if (x_phy > app_settings.work_area_dimensions[0]) {
-        x_phy = app_settings.work_area_dimensions[0];
-        $().uxmessage('warning', "x target constrained to work area");
+    if (x_phy < 0) {
+      x_phy = 0;
+      $().uxmessage('warning', "x target constrained to work area");
+    } else if (x_phy > app_settings.work_area_dimensions[0]) {
+      x_phy = app_settings.work_area_dimensions[0];
+      $().uxmessage('warning', "x target constrained to work area");
+    }
+    if (y_phy < 0) {
+      y_phy = 0;
+      $().uxmessage('warning', "y target constrained to work area");
+    } else if (y_phy > app_settings.work_area_dimensions[1]) {
+      y_phy = app_settings.work_area_dimensions[1];
+      $().uxmessage('warning', "y target constrained to work area");
+    }
+    var feedrate = parseFloat(DataHandler.mapConstrainFeedrate($("#feedrate_field" ).val()));
+
+    var job = {
+      "vector":{
+        "passes":[
+          {
+            "paths":[0],
+            "seekrate":feedrate
+          }
+        ],
+        "paths":[
+          [
+            [[x_phy,y_phy,0.0]]
+          ]
+        ],
+        "noreturn": true,
       }
     }
-    if (!(isNaN(y_phy)) && y_phy != null) {
-      if (y_phy < 0) {
-        y_phy = 0;
-        $().uxmessage('warning', "y target constrained to work area");
-      } else if (y_phy > app_settings.work_area_dimensions[1]) {
-        y_phy = app_settings.work_area_dimensions[1];
-        $().uxmessage('warning', "y target constrained to work area");
-      }
-    }
-    var g0_or_g1 = 'G0';
-    var air_assist_on = '';
-    var air_assist_off = '';
-    if($('#feed_btn').hasClass("active")){
-      g0_or_g1 = 'G1';
-      air_assist_on = 'M80\n';
-      air_assist_off = 'M81\n';
-    }
-    var feedrate = DataHandler.mapConstrainFeedrate($("#feedrate_field" ).val());
-    var intensity =  DataHandler.mapConstrainIntesity($( "#intensity_field" ).val());
-    var gcode = 'G90\n'+air_assist_on+'S'+ intensity + '\n' + g0_or_g1;
-    if (!(isNaN(x_phy)) && x_phy != null) {
-      gcode += 'X' + x_phy.toFixed(app_settings.num_digits);
-    }
-    if (!(isNaN(y_phy)) && y_phy != null) {
-      gcode += 'Y' + y_phy.toFixed(app_settings.num_digits)
-    }
-    gcode += 'F' + feedrate + '\nS0\n'+air_assist_off; 
-    // $().uxmessage('notice', gcode);
-    send_gcode(gcode, "Motion request sent.", false);    
+    send_job(job, "Motion request sent.", false);
   }
   
   function assemble_info_text(x,y) {
