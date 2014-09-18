@@ -357,10 +357,9 @@ def job_submit_handler():
     if not job_data:
         return "no job data"
 
-    print job_data
+    # print job_data
     jobdict = json.loads(job_data)
     lasersaur.job(jobdict)
-    print "JOB"
     return "__ok__"
         
 

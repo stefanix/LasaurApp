@@ -419,6 +419,10 @@ $(document).ready(function(){
             //     opacity: 1.0
             //   }, 600, function() {});
             // });
+            $("#head_position").animate({
+              left: Math.round(x),
+              top: Math.round(y),
+            }, 500, 'linear' );
           }
         }
         if (data.firmver && !firmware_version_reported) {

@@ -740,10 +740,8 @@ def job(jobdict):
                 # set absolute/relative
                 if 'relative' not in pass_ or not pass_['relative']:
                     absolute()
-                    print "ABS"
                 else:
                     relative()
-                    print "REL"
                 # loop through all paths of this pass
                 for path_index in pass_['paths']:
                     if path_index < len(paths):
