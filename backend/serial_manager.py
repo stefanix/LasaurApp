@@ -13,7 +13,8 @@ class SerialManagerClass:
         self.device = None
 
         self.rx_buffer = ""
-        self.tx_buffer = ""        
+        self.tx_buffer = ""
+        self.tx_index = 0
         self.remoteXON = True
 
         # TX_CHUNK_SIZE - this is the number of bytes to be 
@@ -23,7 +24,6 @@ class SerialManagerClass:
         self.nRequested = 0
         
         # used for calculating percentage done
-        self.job_size = 0
         self.job_active = False
 
         # status flags
@@ -116,9 +116,9 @@ class SerialManagerClass:
 
     def connect(self, port, baudrate):
         self.rx_buffer = ""
-        self.tx_buffer = ""        
+        self.tx_buffer = ""
+        self.tx_index = 0    
         self.remoteXON = True
-        self.job_size = 0
         self.reset_status()
                 
         # Create serial device with both read timeout set to 0.
@@ -178,7 +178,6 @@ class SerialManagerClass:
                 self.cancel_queue()
                 self.reset_status()
                 job_list.append('!')
-                self.job_size = 0
             else:
                 if line != '?':  # not ready unless just a ?-query
                     self.status['ready'] = False
@@ -202,24 +201,24 @@ class SerialManagerClass:
 
         gcode_processed = '\n'.join(job_list) + '\n'
         self.tx_buffer += gcode_processed
-        self.job_size += len(gcode_processed) + 1
         self.job_active = True
 
 
     def cancel_queue(self):
-        self.tx_buffer = ''
-        self.job_size = 0
+        self.tx_buffer = ""
+        self.tx_index = 0
         self.job_active = False
                   
 
     def is_queue_empty(self):
-        return len(self.tx_buffer) == 0
+        return self.tx_index >= len(tx_buffer)
         
     
     def get_queue_percentage_done(self):
-        if self.job_size == 0:
+        buflen = len(self.tx_buffer)
+        if buflen == 0:
             return ""
-        return str(100-100*len(self.tx_buffer)/self.job_size)
+        return str(100*self.tx_index/float(buflen))
 
 
     def set_pause(self, flag):
@@ -260,28 +259,28 @@ class SerialManagerClass:
                         self.process_status_line(line)
                 
                 ### sending
-                if self.tx_buffer:
+                if self.tx_index < len(self.tx_buffer):
                     if self.nRequested > 0:
                         try:
-                            actuallySent = self.device.write(self.tx_buffer[:self.nRequested])
+                            actuallySent = self.device.write(
+                                self.tx_buffer[self.tx_index:self.tx_index+self.nRequested])
                         except serial.SerialTimeoutException:
                             # skip, report
-                            actuallySent = self.nRequested  # pyserial does not report this sufficiently
+                            actuallySent = 0  # assume nothing has been sent
                             sys.stdout.write("\nsend_queue_as_ready: writeTimeoutError\n")
                             sys.stdout.flush()
-                        # sys.stdout.write(self.tx_buffer[:actuallySent])  # print w/ newline
-                        self.tx_buffer = self.tx_buffer[actuallySent:]
+                        self.tx_index += actuallySent
                         self.nRequested -= actuallySent
                         if self.nRequested <= 0:
                             self.last_request_ready = 0  # make sure to request ready
-                    elif self.tx_buffer[0] in ['!', '~']:  # send control chars no matter what
+                    elif self.tx_buffer[self.tx_index] in ['!', '~']:  # send control chars no matter what
                         try:
-                            actuallySent = self.device.write(self.tx_buffer[:1])
+                            actuallySent = self.device.write(self.tx_buffer[self.tx_index])
                         except serial.SerialTimeoutException:
-                            actuallySent = self.nRequested
+                            actuallySent = 0  # assume nothing has been sent
                             sys.stdout.write("\nsend_queue_as_ready: writeTimeoutError\n")
                             sys.stdout.flush()
-                        self.tx_buffer = self.tx_buffer[actuallySent:]
+                        self.tx_index += actuallySent
                     else:
                         if (time.time()-self.last_request_ready) > 2.0:
                             # ask to send a ready byte
@@ -302,7 +301,8 @@ class SerialManagerClass:
                     if self.job_active:
                         # print "\nG-code stream finished!"
                         # print "(LasaurGrbl may take some extra time to finalize)"
-                        self.job_size = 0
+                        self.tx_buffer = ""
+                        self.tx_index = 0
                         self.job_active = False
                         # ready whenever a job is done, including a status request via '?'
                         self.status['ready'] = True
