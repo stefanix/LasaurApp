@@ -699,7 +699,7 @@ def job(jobdict):
             [                              # list of paths
                 [                          # list of polylines
                     [                      # list of verteces
-                        [0,-10],           # list of coords
+                        [0,-10, 0],        # list of coords
                     ],
                 ],
             ],

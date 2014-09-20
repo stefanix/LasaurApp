@@ -1,10 +1,12 @@
 
 import sys
 import time
+import json
 import threading
 import logging
-from config import conf
 from websocket.SimpleWebSocketServer import WebSocket, SimpleWebSocketServer
+from config import conf
+import lasersaur
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
 
@@ -28,12 +30,29 @@ S = Server()
 class ClientSocket(WebSocket):
 
     def handleMessage(self):
-        if self.data is None:
-            self.data = ''
+        # if self.data is None:
+        #     self.data = ''
+        # try:
+        #     self.sendMessage(str(self.data))
+        # except Exception as n:
+        #     print n
+        print str(self.data)
         try:
-            self.sendMessage(str(self.data))
-        except Exception as n:
-            print n
+            msg = json.loads(str(self.data))
+        except ValueError:
+            msg = {}
+
+        print msg
+
+        if 'cmd_air_enable' in msg:
+            print "air"
+            lasersaur.air_on()
+
+        elif 'cmd_air_disable' in msg:
+            print "noair"
+            lasersaur.air_off()
+
+
                  
     def handleConnected(self):
         print self.address, 'connected'
