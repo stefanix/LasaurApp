@@ -5,6 +5,8 @@ import time
 import json
 import copy
 import threading
+import collections
+from itertools import islice
 import serial
 import serial.tools.list_ports
 from config import conf
@@ -125,7 +127,7 @@ class SerialLoopClass(threading.Thread):
     def __init__(self):
         self.device = None
 
-        self.tx_buffer = ""        
+        self.tx_buffer = collections.deque()
         self.remoteXON = True
 
         # TX_CHUNK_SIZE - this is the number of bytes to be 
@@ -230,7 +232,7 @@ class SerialLoopClass(threading.Thread):
 
 
     def send_command(self, command):
-        self.tx_buffer += command
+        self.tx_buffer.append(command)
         self.job_size += 1
 
 
@@ -242,7 +244,11 @@ class SerialLoopClass(threading.Thread):
         char1 = chr(((num&(127<<7))>>7)+128)
         char2 = chr(((num&(127<<14))>>14)+128)
         char3 = chr(((num&(127<<21))>>21)+128)
-        self.tx_buffer += char0 + char1 + char2 + char3 + param
+        self.tx_buffer.append(char0)
+        self.tx_buffer.append(char1)
+        self.tx_buffer.append(char2)
+        self.tx_buffer.append(char3)
+        self.tx_buffer.append(param)
         self.job_size += 5
 
 
@@ -312,7 +318,7 @@ class SerialLoopClass(threading.Thread):
                                 elif char == ERROR_TRANSMISSION_ERROR:
                                     self._status['stops']['transmission'] = True
                                 # in stop mode
-                                self.tx_buffer = ''
+                                self.tx_buffer.clear()
                                 self.job_size = 0
                                 # not ready whenever in stop mode
                                 self.idle = False
@@ -415,14 +421,15 @@ class SerialLoopClass(threading.Thread):
                 if self.tx_buffer:
                     if self.nRequested > 0:
                         try:
-                            actuallySent = self.device.write(self.tx_buffer[:self.nRequested])
+                            to_send = ''.join(islice(self.tx_buffer, 0, self.nRequested))
+                            actuallySent = self.device.write(to_send)
                         except serial.SerialTimeoutException:
                             # skip, report
-                            actuallySent = self.nRequested  # pyserial does not report this sufficiently
+                            actuallySent = 0  # assume nothing has been sent
                             sys.stdout.write("\n_process: writeTimeoutError\n")
                             sys.stdout.flush()
-                        # sys.stdout.write(self.tx_buffer[:actuallySent])  # print w/ newline
-                        self.tx_buffer = self.tx_buffer[actuallySent:]
+                        for i in range(actuallySent):
+                            self.tx_buffer.popleft()
                         self.nRequested -= actuallySent
                         if self.nRequested <= 0:
                             self.last_request_ready = 0  # make sure to request ready
@@ -808,7 +815,7 @@ def job(jobdict):
 def pause():
     global SerialLoop
     with SerialLoop.lock:
-        if len(SerialLoop.tx_buffer) == 0:
+        if not SerialLoop.tx_buffer:
             ret = False
         else:
             SerialLoop._status['paused'] = True
@@ -818,7 +825,7 @@ def pause():
 def unpause(flag):
     global SerialLoop
     with SerialLoop.lock:
-        if len(SerialLoop.tx_buffer) == 0:
+        if not SerialLoop.tx_buffer:
             ret = False
         else:
             SerialLoop._status['paused'] = False
@@ -830,7 +837,7 @@ def stop():
     """Force stop condition."""
     global SerialLoop
     with SerialLoop.lock:
-        SerialLoop.tx_buffer = ''
+        SerialLoop.tx_buffer.clear()
         SerialLoop.job_size = 0
         # SerialLoop.reset_status()
         SerialLoop.request_stop = True
