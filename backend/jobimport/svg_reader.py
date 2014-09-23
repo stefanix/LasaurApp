@@ -294,7 +294,7 @@ class SVGReader:
                 if node.has_key('lasertags'):
                     self.lasertags.extend(node['lasertags'])
                         
-                # 5. Raster Data [(x, y, pitch, data)]
+                # 5. Raster Data [(x, y, size, data)]
                 for raster in node['rasters']:
                     # pos to world coordinates and then to mm units
                     matrixApply(node['xformToWorld'], raster['pos'])

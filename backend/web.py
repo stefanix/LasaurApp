@@ -13,28 +13,29 @@ from config import conf
 import lasersaur
 import jobimport
 
+
 __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
 
 
-        
-class HackedWSGIRequestHandler(WSGIRequestHandler):
-    """ This is a heck to solve super slow request handling
-    on the BeagleBone and RaspberryPi. The problem is WSGIRequestHandler
-    which does a reverse lookup on every request calling gethostbyaddr.
-    For some reason this is super slow when connected to the LAN.
-    (adding the IP and name of the requester in the /etc/hosts file
-    solves the problem but obviously is not practical)
-    """
-    def address_string(self):
-        """Instead of calling getfqdn -> gethostbyaddr we ignore."""
-        # return "(a requester)"
-        return str(self.client_address[0])
 
-
-def run_with_callback():
+def run():
     """ Start a wsgiref server instance with control over the main loop.
         This is a function that I derived from the bottle.py run()
     """
+
+    class HackedWSGIRequestHandler(WSGIRequestHandler):
+        """ This is a heck to solve super slow request handling
+        on the BeagleBone and RaspberryPi. The problem is WSGIRequestHandler
+        which does a reverse lookup on every request calling gethostbyaddr.
+        For some reason this is super slow when connected to the LAN.
+        (adding the IP and name of the requester in the /etc/hosts file
+        solves the problem but obviously is not practical)
+        """
+        def address_string(self):
+            """Instead of calling getfqdn -> gethostbyaddr we ignore."""
+            # return "(a requester)"
+            return str(self.client_address[0])
+
     # web server
     handler = default_app()
     server = make_server(conf['network_host'], conf['network_port'], 
@@ -69,6 +70,7 @@ def run_with_callback():
         
 
 
+### STATIC FILES
 
 @route('/css/:path#.+#')
 def static_css_handler(path):
@@ -87,35 +89,133 @@ def favicon_handler():
     return static_file('favicon.ico', root=os.path.join(conf['rootdir'], 'frontend/img'))
     
 
-### LIBRARY
 
-@route('/library/get/:path#.+#')
-def static_library_handler(path):
-    return static_file(path, root=os.path.join(conf['rootdir'], 'library'), mimetype='text/plain')
-    
-@route('/library/list')
-def library_list_handler():
-    # return a json list of file names
-    file_list = []
-    cwd_temp = os.getcwd()
+### LOW-LEVEL CONTROL
+
+@route('/homing')
+def homing():
+    lasersaur.homing()
+
+@route('/feedrate/<val:float>')
+def feedrate(val):
+    lasersaur.feedrate(val)
+
+@route('/intensity/<val:float>')
+def intensity(val):
+    lasersaur.intensity(val)
+
+@route('/move/<x:float>/<y:float>/<z:float>')
+def move(x, y, z):
+    lasersaur.move(x, y, z)
+
+@route('/air_on')
+def air_on():
+    lasersaur.air_on()
+
+@route('/air_off')
+def air_off():
+    lasersaur.air_off()
+
+@route('/aux1_on')
+def aux1_on():
+    lasersaur.aux1_on()
+
+@route('/aux1_off')
+def aux1_off():
+    lasersaur.aux1_off()
+
+@route('/set_offset/<x:float>/<y:float>/<z:float>')
+def set_offset(x, y, z):
+    lasersaur.def_offset_custom(x, y, z)
+    lasersaur.sel_offset_custom()
+
+@route('/get_offset')
+def get_offset():
+    pass
+    # TODO: implement getting this from status
+
+@route('/clear_offset')
+def clear_offset():
+    lasersaur.sel_offset_table()
+
+
+
+### JOBS QUEUE
+
+def _add(job, name):
+    ret = {"ok": False}
+    if os.path.exists(name) or os.path.exists(name+'.starred'):
+        return "file_exists"
     try:
-        os.chdir(os.path.join(conf['rootdir'], 'library'))
-        file_list = glob.glob('*')
+        fp = open(name, 'w')
+        fp.write(job)
+        print "file saved: " + name
+        ret['ok'] = True
     finally:
-        os.chdir(cwd_temp)
-    return json.dumps(file_list)
+        fp.close()
+    return ret
+
+
+@route('/load', method='POST')
+def load():
+    """Load a lsa, svg, dxf, or gcode job.
+
+    Args:
+        (Args come in through the POST request.)
+        job: lsa, svg, dxf, or ngc string
+        name: name of the job (string)
+        type: 'lsa', 'svg', 'dxf', or 'ngc' (string)
+        optimize: flag whether to optimize (bool)
+    """
+    load_request = json.loads(request.forms.get('load_request'))
+    job = load_request.get('job')  # always a string
+    name = load_request.get'name')
+    type_ = load_request.get('type')
+    optimize = load_request.get('optimize')
+
+    # sanity check
+    if job is None or name is None or type_ is None or optimize is None:
+        raise ValueError
+
+    if type_ == 'lsa' and optimize:
+        job = json.loads(job)
+        if optimize and 'vector' in job and 'paths' in job['vector']:
+            pathoptimizer.optimize(job['vector']['paths'], conf['tolerance'])
+            job['vector']['optimized'] = conf['tolerance']
+    elif type_ == 'svg':
+        job = jobimport.read_svg(job, conf['workspace'], 
+                                 conf['tolerance'], optimize=optimize)
+    elif type_ == 'dxf':
+        job = jobimport.read_dxf(job, conf['tolerance'], optimize=optimize)
+    elif type_ == 'ngc':
+        job = jobimport.read_ngc(job, conf['tolerance'], optimize=optimize)
+    else:
+        print "ERROR: unsupported file type"
+
+    # finally add to queue
+    _add(json.dumps(job), name)
 
 
 
-### QUEUE
+def list():
+    """List all queue jobs by name."""
 
-def encode_filename(name):
-    str(time.time()) + '-' + base64.urlsafe_b64encode(name)
-    
-def decode_filename(name):
-    index = name.find('-')
-    return base64.urlsafe_b64decode(name[index+1:])
-    
+def get(jobname):
+    """Get a queue job in .lsa format."""
+
+def star(jobname):
+    """Star a job."""
+
+def unstar(jobname):
+    """Unstar a job."""
+
+def delete(jobname):
+    """Delete a job."""
+
+def clear():
+    """Clear job list."""
+
+
 
 @route('/queue/get/:name#.+#')
 def static_queue_handler(name): 
@@ -137,25 +237,7 @@ def library_list_handler():
         os.chdir(cwd_temp)
     return json.dumps(files)
     
-@route('/queue/save', method='POST')
-def queue_save_handler():
-    ret = '0'
-    if 'job_name' in request.forms and 'job_data' in request.forms:
-        name = request.forms.get('job_name')
-        job_data = request.forms.get('job_data')
-        filename = os.path.abspath(os.path.join(conf['stordir'], name.strip('/\\')))
-        if os.path.exists(filename) or os.path.exists(filename+'.starred'):
-            return "file_exists"
-        try:
-            fp = open(filename, 'w')
-            fp.write(job_data)
-            print "file saved: " + filename
-            ret = '1'
-        finally:
-            fp.close()
-    else:
-        print "error: save failed, invalid POST request"
-    return ret
+
 
 @route('/queue/rm/:name')
 def queue_rm_handler(name):
@@ -216,11 +298,96 @@ def queue_unstar_handler(name):
     return ret 
 
 
+def encode_filename(name):
+    str(time.time()) + '-' + base64.urlsafe_b64encode(name)
+    
+def decode_filename(name):
+    index = name.find('-')
+    return base64.urlsafe_b64decode(name[index+1:])
 
+
+
+
+
+### JOB EXECUTION
+
+def run(self, jobname):
+    """Send job from queue to the machine."""
+
+def progress(self):
+    """Get percentage of job done."""
+
+def pause(self):
+    """Pause a job gracefully."""
+def resume(self):
+    """Resume a paused job."""
+
+def stop(self):
+    """Halt machine immediately and purge job."""
+def unstop(self):
+    """Recover machine from stop mode."""
+
+
+### LIBRARY
+
+def list_library(self):
+    """List all library jobs by name."""
+
+def get_library(self, jobname):
+    """Get a library job in .lsa format."""
+
+def load_library(self, jobname):
+    """Load a library job into the queue."""
+
+
+@route('/library/get/:path#.+#')
+def static_library_handler(path):
+    return static_file(path, root=os.path.join(conf['rootdir'], 'library'), mimetype='text/plain')
+    
+@route('/library/list')
+def library_list_handler():
+    # return a json list of file names
+    file_list = []
+    cwd_temp = os.getcwd()
+    try:
+        os.chdir(os.path.join(conf['rootdir'], 'library'))
+        file_list = glob.glob('*')
+    finally:
+        os.chdir(cwd_temp)
+    return json.dumps(file_list)
+
+
+### MCU MANAGMENT
+
+def build(self, firmware_name=None):
+    """Build firmware from firmware/src files."""
+
+def flash(self, firmware_name=None):
+    """Flash firmware to MCU."""
+
+def reset(self):
+    """Reset MCU"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### ROOT
 
 @route('/')
-@route('/index.html')
-@route('/app.html')
 def default_handler():
     return static_file('app.html', root=os.path.join(conf['rootdir'], 'frontend') )
 
@@ -243,30 +410,6 @@ def download(filename, dlname):
     print "requesting: " + filename
     return static_file(filename, root=tempfile.gettempdir(), download=dlname)
   
-
-@route('/serial/:connect')
-def serial_handler(connect):
-    if connect == '1':
-        # print 'js is asking to connect serial'      
-        if not lasersaur.connected():
-            try:
-                lasersaur.connect()
-                return ret
-            except serial.SerialException:
-                print "Failed to connect to serial."    
-                return ""          
-    elif connect == '0':
-        # print 'js is asking to close serial'    
-        if lasersaur.connected():
-            if lasersaur.close(): return "1"
-            else: return ""  
-    elif connect == "2":
-        # print 'js is asking if serial connected'
-        if lasersaur.connected(): return "1"
-        else: return ""
-    else:
-        print 'ambigious connect request from js: ' + connect            
-        return ""
 
 
 
@@ -367,76 +510,36 @@ def queue_pct_done_handler():
     return lasersaur.percentage()
 
 
-@route('/file_reader', method='POST')
-def file_reader():
-    """Parse SVG/DXF/NGC string."""
-    filename = request.forms.get('filename')
-    filedata = request.forms.get('filedata')
-    dimensions = request.forms.get('dimensions')
-    try:
-        dimensions = json.loads(dimensions)
-    except TypeError:
-        dimensions = None
-    # print "dims", dimensions[0], ":", dimensions[1]
-
-
-    dpi_forced = None
-    try:
-        dpi_forced = float(request.forms.get('dpi'))
-    except:
-        pass
-
-    optimize = True
-    try:
-        optimize = bool(int(request.forms.get('optimize')))
-    except:
-        pass
-
-    if filename and filedata:
-        print "You uploaded %s (%d bytes)." % (filename, len(filedata))
-        if filename[-4:] in ['.dxf', '.DXF']: 
-            res = jobimport.read_dxf(filedata, conf['tolerance'], optimize)
-        elif filename[-4:] in ['.svg', '.SVG']: 
-            res = jobimport.read_svg(filedata, dimensions, conf['tolerance'], dpi_forced, optimize)
-        elif filename[-4:] in ['.ngc', '.NGC']:
-            res = jobimport.read_ngc(filedata, conf['tolerance'], optimize)
-        else:
-            print "error: unsupported file format"
-
-        # print boundarys
-        jsondata = json.dumps(res)
-        # print "returning %d items as %d bytes." % (len(res['boundarys']), len(jsondata))
-        return jsondata
-    return "You missed a field."
 
 
 
+if __name__ == "__main__":
 
-### Setup Argument Parser
-argparser = argparse.ArgumentParser(description='Run LasaurApp.', prog='lasaurapp')
-argparser.add_argument('port', metavar='serial_port', nargs='?', default=False,
-                    help='serial port to the Lasersaur')
-argparser.add_argument('-v', '--version', action='version', version='%(prog)s ' + conf['version'],
-                    default=False, help='bind to all network devices (default: bind to 127.0.0.1)')
-argparser.add_argument('-l', '--list', dest='list_serial_devices', action='store_true',
-                    default=False, help='list all serial devices currently connected')
-argparser.add_argument('-d', '--debug', dest='debug', action='store_true',
-                    default=False, help='print more verbose for debugging')
-args = argparser.parse_args()
-
-
-
-print "LasaurApp " + conf['version']
+    ### Setup Argument Parser
+    argparser = argparse.ArgumentParser(description='Run LasaurApp.', prog='lasaurapp')
+    argparser.add_argument('port', metavar='serial_port', nargs='?', default=False,
+                        help='serial port to the Lasersaur')
+    argparser.add_argument('-v', '--version', action='version', version='%(prog)s ' + conf['version'],
+                        default=False, help='bind to all network devices (default: bind to 127.0.0.1)')
+    argparser.add_argument('-l', '--list', dest='list_serial_devices', action='store_true',
+                        default=False, help='list all serial devices currently connected')
+    argparser.add_argument('-d', '--debug', dest='debug', action='store_true',
+                        default=False, help='print more verbose for debugging')
+    args = argparser.parse_args()
 
 
-    
-# run
-if args.debug:
-    debug(True)
-    if hasattr(sys, "_MEIPASS"):
-        print "Data root is: " + sys._MEIPASS             
 
-run_with_callback()
+    print "LasaurApp " + conf['version']
+
+
+        
+    # run
+    if args.debug:
+        debug(True)
+        if hasattr(sys, "_MEIPASS"):
+            print "Data root is: " + sys._MEIPASS             
+
+    run()
 
     
 

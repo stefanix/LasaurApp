@@ -197,7 +197,7 @@ class SerialLoopClass(threading.Thread):
             'feedrate': 0.0,
             'intensity': 0.0,
             'duration': 0.0,
-            'pixel_width': 0.0
+            'pixelwidth': 0.0
 
 
             # removed
@@ -213,7 +213,7 @@ class SerialLoopClass(threading.Thread):
         keys = self._status.keys()
         keys.sort()
         for k in keys:
-            if k not in ['firmver', 'feedrate', 'intensity', 'duration', 'pixel_width']:
+            if k not in ['firmver', 'feedrate', 'intensity', 'duration', 'pixelwidth']:
                 if k == 'pos':
                     print  'x: ' + str(self._status['pos'][0])
                     print  'y: ' + str(self._status['pos'][1])
@@ -228,7 +228,7 @@ class SerialLoopClass(threading.Thread):
         print  'firmver: ' + str(self._status['firmver'])
         print  "%smm/min %s% %ss %smm" % (str(self._status['feedrate']), 
             str(self._status['intensity']), str(self._status['duration']), 
-            str(self._status['pixel_width']))
+            str(self._status['pixelwidth']))
 
 
     def send_command(self, command):
@@ -372,7 +372,7 @@ class SerialLoopClass(threading.Thread):
                                 elif char == INFO_DURATION:
                                     self._status['duration'] = num
                                 elif char == INFO_PIXEL_WIDTH:
-                                    self._status['pixel_width'] = num
+                                    self._status['pixelwidth'] = num
                                 else:
                                     print "ERROR: invalid param"
                             elif char == INFO_HELLO:
@@ -703,8 +703,9 @@ def job(jobdict):
                     ],
                 ],
             ],
-            "colors": ["#FF0000"],
+            "colors": ["#FF0000"],         # color is matched to path by index
             "noreturn": True,              # do not return to origin, default: False
+            "optimized": 0.08              # optional, tolerance to which it was optimized, default: 0 (not optimized)
         }
         "raster":                          # optional
         {
@@ -719,7 +720,7 @@ def job(jobdict):
             ]
             "images":
             [
-                <rasterdata>,               # image data in base64
+                [pos, size, <data>],               # pos: [x,y], size: [w,h], data in base64
             ]
         }
     }
@@ -896,7 +897,6 @@ def set_offset_custom():
 def def_offset_table(x, y, z):
     global SerialLoop
     with SerialLoop.lock:
-        # absolute()
         SerialLoop.send_param(PARAM_OFFTABLE_X, x)
         SerialLoop.send_param(PARAM_OFFTABLE_Y, y)
         SerialLoop.send_param(PARAM_OFFTABLE_Z, z)
@@ -904,7 +904,6 @@ def def_offset_table(x, y, z):
 def def_offset_custom(x, y, z):
     global SerialLoop
     with SerialLoop.lock:
-        # absolute()
         SerialLoop.send_param(PARAM_OFFCUSTOM_X, x)
         SerialLoop.send_param(PARAM_OFFCUSTOM_Y, y)
         SerialLoop.send_param(PARAM_OFFCUSTOM_Z, z)

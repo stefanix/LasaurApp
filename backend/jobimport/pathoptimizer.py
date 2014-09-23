@@ -1,15 +1,14 @@
 """
-Optimizations of polylines (path) and sets of polylines (paths).
+Optimizations of paths.
 
-The format of a path is:
+The format of a path segment is:
 [[x1,y1],[x2,y2],...]
 
-The format of paths is:
-[path1, path2, ...] 
+The format of path is:
+[pathseg1, pathseg2, ...] 
 
-This module is typically used by calling the optimize_all function.
-It takes a boundarys object (paths by color dictionary) and does
-all the optimizations in-place.
+This module is typically used by calling the 'optimize' function.
+It takes a list of paths and optimizes in-place.
 """
 
 __author__ = 'Stefan Hechenberger <stefan@nortd.com>'
@@ -24,9 +23,9 @@ log = logging.getLogger("svg_reader")
 
 
 
-def connect_segments(paths, epsilon2):
+def connect_segments(path, epsilon2):
     """
-    Optimizes continuity of paths.
+    Optimizes continuity of path.
 
     This function joins path segments if either the next start point
     or end point is congruent with the current end point. In case of
@@ -34,38 +33,45 @@ def connect_segments(paths, epsilon2):
     """
     join_count = 0
     reverse_count = 0
-    nPaths = [paths[0]]  # prime with first path
-    for i in xrange(1,len(paths)):
-        path = paths[i]
-        lastpath = nPaths[-1]
+    newIdx = 0
+    for i in xrange(1,len(path)):
+        lastpath = path[newIdx]
+        pathseg = path[i]
         point = lastpath[-1]
-        startpoint = path[0]
-        endpoint = path[-1]
+        startpoint = pathseg[0]
+        endpoint = pathseg[-1]
 
+        # join into lastpath
         d2_start = (point[0]-startpoint[0])**2 + (point[1]-startpoint[1])**2
         if d2_start < epsilon2:
-            lastpath.extend(path[1:])
+            lastpath.extend(pathseg[1:])
             join_count += 1
             continue
 
+        # reverse-join into lastpath
         d2_end = (point[0]-endpoint[0])**2 + (point[1]-endpoint[1])**2
         if d2_end < epsilon2:
-            path.reverse()
-            lastpath.extend(path[1:])
+            pathseg.reverse()
+            lastpath.extend(pathseg[1:])
             join_count += 1
             reverse_count += 1
             continue
         
-        nPaths.append(path)
+        # add as is
+        path[newIdx] = pathseg
+        newIdx += 1
+
+    # remove exessive slots
+    for i in xrange(len(path)-newIdx):
+        path.pop()
 
     # report if excessive reverts
     if reverse_count > 100:
-        log.info("reverted many paths: " + str(reverse_count))
+        log.info("reverted many path segments: " + str(reverse_count))
     # report if excessive joins
     if join_count > 100:
-        log.info("joined many line segments: " + str(join_count))
+        log.info("joined many path segments: " + str(join_count))
 
-    return nPaths
 
 
 def d2(u,v): return (u[0]-v[0])**2 + (u[1]-v[1])**2
@@ -124,11 +130,11 @@ def simplifyDP(tol2, v, j, k, mk):
     return
 
 
-def simplify(path, tolerance2):
+def simplify(pathseg, tolerance2):
     """
     Douglas-Peucker polyline simplification.
 
-    path ... [[x1,y1],[x2,y2],...] polyline
+    pathseg     ... [[x1,y1],[x2,y2],...]
     tolerance2  ... approximation tolerance squared
     ===============================================
     Copyright 2002, softSurfer (www.softsurfer.com)
@@ -140,46 +146,46 @@ def simplify(path, tolerance2):
     http://softsurfer.com/Archive/algorithm_0205/algorithm_0205.htm
     """
     
-    n = len(path)
+    n = len(pathseg)
     if n == 0:
         return []
-    sPath = []
-    tPath = []                   # vertex buffer, points
+    sPathseg = []
+    tPathseg = []                   # vertex buffer, points
 
     # STAGE 1.  Vertex Reduction within tolerance of prior vertex cluster
-    tPath.append(path[0])        # start at the beginning
+    tPathseg.append(pathseg[0])        # start at the beginning
     k = 1
     pv = 0
     for i in xrange(1, n):
-        if d2(path[i], path[pv]) < tolerance2:
+        if d2(pathseg[i], pathseg[pv]) < tolerance2:
             continue
-        tPath.append(path[i])
+        tPathseg.append(pathseg[i])
         k += 1
         pv = i
     if pv < n-1:
-        tPath.append(path[n-1])  # finish at the end
+        tPathseg.append(pathseg[n-1])  # finish at the end
         k += 1
 
     # STAGE 2.  Douglas-Peucker polyline simplification
     mk = [None for i in xrange(k)]    # marker buffer, ints
     mk[0] = mk[k-1] = 1;              # mark the first and last vertices
-    simplifyDP(tolerance2, tPath, 0, k-1, mk)
+    simplifyDP(tolerance2, tPathseg, 0, k-1, mk)
 
     # copy marked vertices to the output simplified polyline
     for i in xrange(k):
         if mk[i]:
-            sPath.append(tPath[i])
-    return sPath
+            sPathseg.append(tPathseg[i])
+    return sPathseg
 
 
 
-def simplify_all(paths, tolerance2):
+def simplify_all(path, tolerance2):
     totalverts = 0
     optiverts = 0
-    for u in xrange(len(paths)):
-        totalverts += len(paths[u])
-        paths[u] = simplify(paths[u], tolerance2)
-        optiverts += len(paths[u])
+    for u in xrange(len(path)):
+        totalverts += len(path[u])
+        path[u] = simplify(path[u], tolerance2)
+        optiverts += len(path[u])
     # report polyline optimizations    
     difflength = totalverts - optiverts
     diffpct = (100*difflength/totalverts)
@@ -188,38 +194,46 @@ def simplify_all(paths, tolerance2):
 
 
 
-def sort_by_seektime(paths, start=[0.0, 0.0]):
-    paths_sorted = []
+def sort_by_seektime(path, start=[0.0, 0.0]):
+    path_unsorted = []
     tree = kdtree.Tree(2)
-    
-    # populate kdtree
-    # for path in paths:
-    for i in xrange(len(paths)):
-        tree.insert(paths[i][0], i)  # startpoint, data
-
-    # tree.insert( ((paths[i][0],i) for i in xrange(len(paths))) )
+    for i in xrange(len(path)):
+        # copy, so we can place the result in path
+        path_unsorted.append(path[i])
+        # populate kdtree
+        tree.insert(path[i][0], i+1)      # startpoint, data
+        tree.insert(path[i][-1], -(i+1))  # endpoint, -data
 
     # sort by proximity, greedy
     endpoint = start
-    for p in paths:
+    newIdx = 0
+    usedIdxs = {}
+    for p in path_unsorted:
         # print endpoint[0], endpoint[1]
         # i = tree.nearest(endpoint[0], endpoint[1])
         node, distsq = tree.nearest(endpoint, checkempty=True)
         i = node.data
         node.data = None
-        # print i
-        # i = tree.nearest(0.0, 0.0)
-        paths_sorted.append(paths[i])
-        endpoint = paths[i][-1]  # prime for next iteration
+        if i not in usedIdxs:
+            if i > 0:  # a path segment's startpoint is closest
+                i = (i-1)
+                path[newIdx] = path_unsorted[i]
+            else:      # a path segment's endpoint is closest
+                i = -(i-1)
+                path_unsorted[i].reverse()  # reverse, endpoint is closest
+                path[newIdx] = path_unsorted[i]
+            newIdx += 1
+            usedIdxs[i] = True
+            endpoint = path_unsorted[i][-1]  # prime for next iteration
 
-    return paths_sorted
 
 
 
-def optimize_all(boundarys, tolerance):
+
+def optimize(paths, tolerance):
     tolerance2 = tolerance**2
     epsilon2 = (0.1*tolerance)**2
-    for color in boundarys:
-        boundarys[color] = connect_segments(boundarys[color], epsilon2)
-        simplify_all(boundarys[color], tolerance2)
-        boundarys[color] = sort_by_seektime(boundarys[color])
+    for path in paths:
+        connect_segments(path, epsilon2)
+        simplify_all(path, tolerance2)
+        sort_by_seektime(path)
