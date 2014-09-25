@@ -27,19 +27,42 @@
 
 import os
 import time
+import urllib
+import urllib2
 import jobimport
 import jobimport.path_optimizers
 
 __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
 
 
+
+
 class Lasersaur(object):
-    def __init__(self, host="lasersaur.local", ip=4444):
+    def __init__(self, host="lasersaur.local", port=4444):
         """Create a Lasersaur client object."""
         self.conf = None
 
         # fetch config
         self.conf = self.config()
+
+        # urllib2: enable auth
+        password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
+        top_level_url = "http://%s:%s/" % (host, port)
+        password_mgr.add_password(None, top_level_url, username, password)
+        handler = urllib2.HTTPBasicAuthHandler(password_mgr)
+        opener = urllib2.build_opener(handler)
+        urllib2.install_opener(opener) # use auth for all urllib2.urlopen()
+
+    def _request(self, postdict=None, ret=False):
+        postdata = urllib.urlencode(postdict)
+        req = urllib2.Request(url, postdata)
+        response = urllib2.urlopen(req)
+        if response.code != 200:
+            print "RESPONSE: %s, %s" % (response.code, response.msg)
+            raise urllib2.HTTPError
+        if ret:
+            return json.loads(response.read())
+
 
     def config(self):
         """Get config from machine."""
@@ -54,26 +77,46 @@ class Lasersaur(object):
     ### LOW-LEVEL CONTROL
 
     def homing(self):
+        self._request('/homing')
 
     def feedrate(self, val):
+        self._request('/feedrate/%.2f' % val)
 
     def intensity(self, val):
+        self._request('/intensity/%.2f' % val)
+
+    def relative(self):
+        self._request('/relative')
+        
+    def absolute(self):
+        self._request('/absolute')
 
     def move(self, x, y, z=0.0):
+        self._request('/intensity/%.4f/%.4f/%.4f' % (x,y,z))
+
+    def pos(self):
+        return self._request('/pos', ret=True)
 
     def air_on(self):
+        self._request('/air_on')
 
     def air_off(self):
+        self._request('/air_off')
 
     def aux1_on(self):
+        self._request('/aux1_on')
 
     def aux1_off(self):
+        self._request('/aux1_off')
 
     def set_offset(self, x, y, z):
+        self._request('/set_offset/%.4f/%.4f/%.4f' % (x,y,z))
 
     def get_offset(self):
+        return self._request('/get_offset', ret=True)
 
     def clear_offset(self):
+        self._request('/clear_offset')
 
 
     ### JOBS QUEUE

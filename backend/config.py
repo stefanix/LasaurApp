@@ -35,6 +35,9 @@ conf = {
     'intensity': 0,
     'kerf': 0.3,
     'max_raster_size': [3000,3000],
+    'users': {
+        'laser': 'laser',
+    }
 }
 
 

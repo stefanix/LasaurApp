@@ -71,7 +71,7 @@ def start():
     print "INFO: starting status server on port %s" % (conf['websocket_port'])
     S.stop_server = False
     S.server = SimpleWebSocketServer(conf['network_host'], 
-                                    conf['websocket_port'], ClientSocket)
+                                     conf['websocket_port'], ClientSocket)
 
     def run_server():
         while True:
@@ -115,16 +115,22 @@ def start():
 
 
 def stop():
-    with S.messageglock:
-        S.stop_messager = True
-    S.messagethread.join()
-    print "Status message thread stopped."
+    if S.messagethread and S.messagethread.is_alive():
+        with S.messageglock:
+            S.stop_messager = True
+        S.messagethread.join()
+        print "Status message thread stopped."
+    else:
+        print "Status message thread was already stopped."
     S.messagethread = None
 
-    with S.serverlock:
-        S.stop_server = True
-    S.serverthread.join()
-    print "Status server thread stopped."
+    if S.serverthread and S.serverthread.is_alive():
+        with S.serverlock:
+            S.stop_server = True
+        S.serverthread.join()
+        print "Status server thread stopped."
+    else:
+        print "Status server thread was already stopped."
     S.serverthread = None
     S.server.close()
     S.server = None

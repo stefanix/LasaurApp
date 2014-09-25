@@ -7,8 +7,9 @@ import json
 import argparse
 import tempfile
 import webbrowser
-from wsgiref.simple_server import WSGIRequestHandler, make_server
-from bottle import *
+import wsgiref.simple_server
+# from bottle import *
+import bottle
 from config import conf
 import lasersaur
 import jobimport
@@ -18,71 +19,101 @@ __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
 
 
 
+def checkuser(user, pw):
+    return bool(user in conf['users'] and conf['users'][user] == pw)
+
+
 ### STATIC FILES
 
-@route('/css/:path#.+#')
+@bottle.route('/css/:path#.+#')
 def static_css_handler(path):
-    return static_file(path, root=os.path.join(conf['rootdir'], 'frontend/css'))
+    return bottle.static_file(path, root=os.path.join(conf['rootdir'], 'frontend/css'))
     
-@route('/js/:path#.+#')
+@bottle.route('/js/:path#.+#')
 def static_js_handler(path):
-    return static_file(path, root=os.path.join(conf['rootdir'], 'frontend/js'))
+    return bottle.static_file(path, root=os.path.join(conf['rootdir'], 'frontend/js'))
     
-@route('/img/:path#.+#')
+@bottle.route('/img/:path#.+#')
 def static_img_handler(path):
-    return static_file(path, root=os.path.join(conf['rootdir'], 'frontend/img'))
+    return bottle.static_file(path, root=os.path.join(conf['rootdir'], 'frontend/img'))
 
-@route('/favicon.ico')
+@bottle.route('/favicon.ico')
 def favicon_handler():
-    return static_file('favicon.ico', root=os.path.join(conf['rootdir'], 'frontend/img'))
+    return bottle.static_file('favicon.ico', root=os.path.join(conf['rootdir'], 'frontend/img'))
     
 
 
 ### LOW-LEVEL CONTROL
 
-@route('/homing')
+@bottle.route('/homing')
+@bottle.auth_basic(checkuser)
 def homing():
     lasersaur.homing()
 
-@route('/feedrate/<val:float>')
+@bottle.route('/feedrate/<val:float>')
+@bottle.auth_basic(checkuser)
 def feedrate(val):
-    lasersaur.feedrate(val)
+    args = json.loads(request.forms.get('args'))
+    lasersaur.feedrate(args['val'])
 
-@route('/intensity/<val:float>')
+@bottle.route('/intensity/<val:float>')
+@bottle.auth_basic(checkuser)
 def intensity(val):
     lasersaur.intensity(val)
 
-@route('/move/<x:float>/<y:float>/<z:float>')
+@bottle.route('/relative')
+@bottle.auth_basic(checkuser)
+def relative():
+    lasersaur.relative()
+
+@bottle.route('/absolute')
+@bottle.auth_basic(checkuser)
+def absolute():
+    lasersaur.absolute()
+
+@bottle.route('/move/<x:float>/<y:float>/<z:float>')
+@bottle.auth_basic(checkuser)
 def move(x, y, z):
     lasersaur.move(x, y, z)
 
-@route('/air_on')
+@bottle.route('/pos')
+@bottle.auth_basic(checkuser)
+def pos():
+    return json.dumps(lasersaur.status()['pos'])
+
+@bottle.route('/air_on')
+@bottle.auth_basic(checkuser)
 def air_on():
     lasersaur.air_on()
 
-@route('/air_off')
+@bottle.route('/air_off')
+@bottle.auth_basic(checkuser)
 def air_off():
     lasersaur.air_off()
 
-@route('/aux1_on')
+@bottle.route('/aux1_on')
+@bottle.auth_basic(checkuser)
 def aux1_on():
     lasersaur.aux1_on()
 
-@route('/aux1_off')
+@bottle.route('/aux1_off')
+@bottle.auth_basic(checkuser)
 def aux1_off():
     lasersaur.aux1_off()
 
-@route('/set_offset/<x:float>/<y:float>/<z:float>')
+@bottle.route('/set_offset/<x:float>/<y:float>/<z:float>')
+@bottle.auth_basic(checkuser)
 def set_offset(x, y, z):
     lasersaur.def_offset_custom(x, y, z)
     lasersaur.sel_offset_custom()
 
-@route('/get_offset')
+@bottle.route('/get_offset')
+@bottle.auth_basic(checkuser)
 def get_offset():
-    # TODO: implement getting this from status
     return json.dumps(lasersaur.status()['offcustom'])
 
-@route('/clear_offset')
+@bottle.route('/clear_offset')
+@bottle.auth_basic(checkuser)
 def clear_offset():
     lasersaur.sel_offset_table()
 
@@ -104,7 +135,7 @@ def _add(job, name):
     return ret
 
 
-@route('/load', method='POST')
+@bottle.route('/load', method='POST')
 def load():
     """Load a lsa, svg, dxf, or gcode job.
 
@@ -117,7 +148,7 @@ def load():
     """
     load_request = json.loads(request.forms.get('load_request'))
     job = load_request.get('job')  # always a string
-    name = load_request.get'name')
+    name = load_request.get('name')
     type_ = load_request.get('type')
     optimize = load_request.get('optimize')
 
@@ -165,12 +196,12 @@ def clear():
 
 
 
-@route('/queue/get/:name#.+#')
+@bottle.route('/queue/get/:name#.+#')
 def static_queue_handler(name): 
     return static_file(name, root=conf['stordir'], mimetype='text/plain')
 
 
-@route('/queue/list')
+@bottle.route('/queue/list')
 def library_list_handler():
     # base64.urlsafe_b64encode()
     # base64.urlsafe_b64decode()
@@ -187,7 +218,7 @@ def library_list_handler():
     
 
 
-@route('/queue/rm/:name')
+@bottle.route('/queue/rm/:name')
 def queue_rm_handler(name):
     # delete queue item, on success return '1'
     ret = '0'
@@ -202,7 +233,7 @@ def queue_rm_handler(name):
                 pass
     return ret 
 
-@route('/queue/clear')
+@bottle.route('/queue/clear')
 def queue_clear_handler():
     # delete all queue items, on success return '1'
     ret = '0'
@@ -225,7 +256,7 @@ def queue_clear_handler():
                 pass
     return ret
     
-@route('/queue/star/:name')
+@bottle.route('/queue/star/:name')
 def queue_star_handler(name):
     ret = '0'
     filename = os.path.abspath(os.path.join(conf['stordir'], name.strip('/\\')))
@@ -235,7 +266,7 @@ def queue_star_handler(name):
             ret = '1'
     return ret    
 
-@route('/queue/unstar/:name')
+@bottle.route('/queue/unstar/:name')
 def queue_unstar_handler(name):
     ret = '0'
     filename = os.path.abspath(os.path.join(conf['stordir'], name.strip('/\\')))
@@ -288,11 +319,11 @@ def load_library(self, jobname):
     """Load a library job into the queue."""
 
 
-@route('/library/get/:path#.+#')
+@bottle.route('/library/get/:path#.+#')
 def static_library_handler(path):
     return static_file(path, root=os.path.join(conf['rootdir'], 'library'), mimetype='text/plain')
     
-@route('/library/list')
+@bottle.route('/library/list')
 def library_list_handler():
     # return a json list of file names
     file_list = []
@@ -335,12 +366,12 @@ def reset(self):
 
 ### ROOT
 
-@route('/')
+@bottle.route('/')
 def default_handler():
-    return static_file('app.html', root=os.path.join(conf['rootdir'], 'frontend') )
+    return bottle.static_file('app.html', root=os.path.join(conf['rootdir'], 'frontend') )
 
 
-@route('/stash_download', method='POST')
+@bottle.route('/stash_download', method='POST')
 def stash_download():
     """Create a download file event from string."""
     filedata = request.forms.get('filedata')
@@ -353,7 +384,7 @@ def stash_download():
     print "file stashed: " + os.path.basename(filename)
     return os.path.basename(filename)
 
-@route('/download/:filename/:dlname')
+@bottle.route('/download/:filename/:dlname')
 def download(filename, dlname):
     print "requesting: " + filename
     return static_file(filename, root=tempfile.gettempdir(), download=dlname)
@@ -361,13 +392,13 @@ def download(filename, dlname):
 
 
 
-@route('/status')
+@bottle.route('/status')
 def get_status():
     status = lasersaur.status()  # this returns a copy
     return json.dumps(status)
 
 
-@route('/pause/:flag')
+@bottle.route('/pause/:flag')
 def set_pause(flag):
     # returns pause status
     if flag == '1':
@@ -385,8 +416,8 @@ def set_pause(flag):
 
 
 
-@route('/flash_firmware')
-@route('/flash_firmware/:firmware_file')
+@bottle.route('/flash_firmware')
+@bottle.route('/flash_firmware/:firmware_file')
 def flash_firmware_handler(firmware_file=None):
     # get serial port by url argument
     # e.g: /flash_firmware?port=COM3
@@ -415,7 +446,7 @@ def flash_firmware_handler(firmware_file=None):
         return ''.join(ret)
 
 
-@route('/build_firmware')
+@bottle.route('/build_firmware')
 def build_firmware_handler():
     ret = []
     buildname = "LasaurGrbl_from_src"
@@ -432,12 +463,12 @@ def build_firmware_handler():
     return ''.join(ret)
 
 
-@route('/reset_atmega')
+@bottle.route('/reset_atmega')
 def reset_atmega_handler():
     return lasersaur.reset()
 
 
-@route('/job', method='POST')
+@bottle.route('/job', method='POST')
 def job_submit_handler():
     """Submit a job in lsa format."""
     if not lasersaur.connected():
@@ -453,7 +484,7 @@ def job_submit_handler():
     return "__ok__"
         
 
-@route('/queue_pct_done')
+@bottle.route('/queue_pct_done')
 def queue_pct_done_handler():
     return lasersaur.percentage()
 
@@ -461,31 +492,30 @@ def queue_pct_done_handler():
 
 
 
-def start_server():
+def start_server(debug=False, browser=False):
     """ Start a wsgiref server instance with control over the main loop.
-        This is a function that I derived from the bottle.py run()
+        Derived from bottle.py's WSGIRefServer.run()
     """
+    class FixedHandler(wsgiref.simple_server.WSGIRequestHandler):
+        def address_string(self): # Prevent reverse DNS lookups please.
+            return self.client_address[0]
+        def log_request(*args, **kw):
+            if debug:
+                return wsgiref.simple_server.WSGIRequestHandler.log_request(*args, **kw)
 
-    class HackedWSGIRequestHandler(WSGIRequestHandler):
-        """ This is a heck to solve super slow request handling
-        on the BeagleBone and RaspberryPi. The problem is WSGIRequestHandler
-        which does a reverse lookup on every request calling gethostbyaddr.
-        For some reason this is super slow when connected to the LAN.
-        (adding the IP and name of the requester in the /etc/hosts file
-        solves the problem but obviously is not practical)
-        """
-        def address_string(self):
-            """Instead of calling getfqdn -> gethostbyaddr we ignore."""
-            # return "(a requester)"
-            return str(self.client_address[0])
-
-    # web server
-    handler = default_app()
-    server = make_server(conf['network_host'], conf['network_port'], 
-                         handler, handler_class=HackedWSGIRequestHandler)
+    server = wsgiref.simple_server. make_server(
+        conf['network_host'],
+        conf['network_port'], 
+        bottle.default_app(), 
+        wsgiref.simple_server.WSGIServer,
+        FixedHandler
+    )
     server.timeout = 0.01
-    server.quiet = True
-    # websocket server
+    server.quiet = not debug
+    if debug:
+        bottle.debug(True)
+    # server.serve_forever()
+
     print "Persistent storage root is: " + conf['stordir']
     print "-----------------------------------------------------------------------------"
     print "Bottle server starting up ..."
@@ -497,10 +527,11 @@ def start_server():
     print
     lasersaur.connect()
     # open web-browser
-    try:
-        webbrowser.open_new_tab('http://127.0.0.1:'+str(conf['network_port']))
-    except webbrowser.Error:
-        print "Cannot open Webbrowser, please do so manually."
+    if browser:
+        try:
+            webbrowser.open_new_tab('http://127.0.0.1:'+str(conf['network_port']))
+        except webbrowser.Error:
+            print "Cannot open Webbrowser, please do so manually."
     sys.stdout.flush()  # make sure everything gets flushed
     while 1:
         try:
@@ -509,7 +540,6 @@ def start_server():
             break
     print "\nShutting down..."
     lasersaur.close()
-
 
 
 
@@ -525,6 +555,8 @@ if __name__ == "__main__":
                         default=False, help='list all serial devices currently connected')
     argparser.add_argument('-d', '--debug', dest='debug', action='store_true',
                         default=False, help='print more verbose for debugging')
+    argparser.add_argument('-b', '--browser', dest='browser', action='store_true',
+                        default=False, help='launch interface in browser')
     args = argparser.parse_args()
 
 
@@ -535,11 +567,10 @@ if __name__ == "__main__":
         
     # run
     if args.debug:
-        debug(True)
         if hasattr(sys, "_MEIPASS"):
             print "Data root is: " + sys._MEIPASS             
 
-    start_server()
+    start_server(debug=args.debug, browser=args.browser)
 
     
 

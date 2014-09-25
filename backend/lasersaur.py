@@ -572,11 +572,11 @@ def close():
         if SerialLoop.is_alive():
             SerialLoop.stop_processing = True
             SerialLoop.join()
-        # stop status server
-        statserver.stop()
     else:
         ret = False
     SerialLoop = None
+    # stop status server
+    statserver.stop()
     return ret
 
 
@@ -634,18 +634,6 @@ def print_status():
         SerialLoop.print_status()
 
 
-def relative():
-    global SerialLoop
-    with SerialLoop.lock:
-        SerialLoop.send_command(CMD_REF_RELATIVE)
-
-    
-def absolute():
-    global SerialLoop
-    with SerialLoop.lock:
-        SerialLoop.send_command(CMD_REF_ABSOLUTE)
-    
-
 def homing():
     """Run homing cycle."""
     global SerialLoop
@@ -677,7 +665,17 @@ def pixelwidth(val):
     with SerialLoop.lock:
         SerialLoop.send_param(PARAM_PIXEL_WIDTH, val)
 
+def relative():
+    global SerialLoop
+    with SerialLoop.lock:
+        SerialLoop.send_command(CMD_REF_RELATIVE)
 
+    
+def absolute():
+    global SerialLoop
+    with SerialLoop.lock:
+        SerialLoop.send_command(CMD_REF_ABSOLUTE)
+    
 def move(x, y, z=0.0):
     global SerialLoop
     with SerialLoop.lock:
