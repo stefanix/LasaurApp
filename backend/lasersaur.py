@@ -110,13 +110,16 @@ INFO_VERSION = 'v'
 INFO_HELLO = '~'
 READY = '\x12'
 
-INFO_TARGET_X = 'a'
-INFO_TARGET_Y = 'b'
-INFO_TARGET_Z = 'c'
-INFO_FEEDRATE = 'f'
-INFO_INTENSITY = 's'
-INFO_DURATION = 'd'
-INFO_PIXEL_WIDTH = 'p'
+INFO_OFFCUSTOM_X = 'a'
+INFO_OFFCUSTOM_Y = 'b'
+INFO_OFFCUSTOM_Z = 'c'
+INFO_TARGET_X = 'd'
+INFO_TARGET_Y = 'e'
+INFO_TARGET_Z = 'f'
+INFO_FEEDRATE = 'g'
+INFO_INTENSITY = 'h'
+INFO_DURATION = 'i'
+INFO_PIXEL_WIDTH = 'j'
 ################
 
 
@@ -147,7 +150,7 @@ class SerialLoopClass(threading.Thread):
 
         self.request_stop = False
         self.request_resume = False
-        self.request_status = True  # cause an status request once connected
+        self.request_status = 2       # 0: no request, 1: normal request, 2: super request
 
         self.pdata_count = 0
         self.pdata_chars = [None, None, None, None]
@@ -192,7 +195,8 @@ class SerialLoopClass(threading.Thread):
             # head position
             'pos':[0.0, 0.0, 0.0],
 
-            ### debug
+            ### super
+            'offcustom': [0.0, 0.0, 0.0],
             'pos_target': [0.0, 0.0, 0.0],
             'feedrate': 0.0,
             'intensity': 0.0,
@@ -260,7 +264,10 @@ class SerialLoopClass(threading.Thread):
             with self.lock:
                 self._process()
                 if time.time()-last_status_request > 0.5:
-                    self.request_status = True
+                    if self.idle:
+                        self.request_status = 2  # idle -> super request
+                    else:
+                        self.request_status = 1  # processing -> normal request
                     last_status_request = time.time()
             if self.stop_processing:
                 break
@@ -358,7 +365,13 @@ class SerialLoopClass(threading.Thread):
                                 elif char == INFO_VERSION:
                                     num = 'v' + str(int(num)/100.0)
                                     self._status['firmver'] = num
-                                # debugging
+                                # super status
+                                elif char == INFO_OFFCUSTOM_X:
+                                    self._status['offcustom'][0] = num
+                                elif char == INFO_OFFCUSTOM_Y:
+                                    self._status['offcustom'][1] = num
+                                elif char == INFO_OFFCUSTOM_Z:
+                                    self._status['offcustom'][2] = num
                                 elif char == INFO_TARGET_X:
                                     self._status['pos_target'][0] = num
                                 elif char == INFO_TARGET_Y:
@@ -392,9 +405,12 @@ class SerialLoopClass(threading.Thread):
                 ### sending super commands (handled in serial rx interrupt)
                 if self.request_status:
                     try:
-                        self.device.write(CMD_STATUS)
+                        if self.request_status == 1:
+                            self.device.write(CMD_STATUS)
+                        elif self.request_status == 2:
+                            self.device.write(CMD_SUPERSTATUS)
                         self.device.flushOutput()
-                        self.request_status = False
+                        self.request_status = 0
                     except serial.SerialTimeoutException:
                         sys.stdout.write("\nsending status request: writeTimeoutError\n")
                         sys.stdout.flush()
@@ -413,7 +429,7 @@ class SerialLoopClass(threading.Thread):
                         self.request_resume = False
                         # update status
                         self.reset_status()
-                        self.request_status = True
+                        self.request_status = 2  # super request
                     except serial.SerialTimeoutException:
                         sys.stdout.write("\nsending resume request: writeTimeoutError\n")
                         sys.stdout.flush()

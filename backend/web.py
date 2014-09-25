@@ -18,58 +18,6 @@ __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
 
 
 
-def run():
-    """ Start a wsgiref server instance with control over the main loop.
-        This is a function that I derived from the bottle.py run()
-    """
-
-    class HackedWSGIRequestHandler(WSGIRequestHandler):
-        """ This is a heck to solve super slow request handling
-        on the BeagleBone and RaspberryPi. The problem is WSGIRequestHandler
-        which does a reverse lookup on every request calling gethostbyaddr.
-        For some reason this is super slow when connected to the LAN.
-        (adding the IP and name of the requester in the /etc/hosts file
-        solves the problem but obviously is not practical)
-        """
-        def address_string(self):
-            """Instead of calling getfqdn -> gethostbyaddr we ignore."""
-            # return "(a requester)"
-            return str(self.client_address[0])
-
-    # web server
-    handler = default_app()
-    server = make_server(conf['network_host'], conf['network_port'], 
-                         handler, handler_class=HackedWSGIRequestHandler)
-    server.timeout = 0.01
-    server.quiet = True
-    # websocket server
-    print "Persistent storage root is: " + conf['stordir']
-    print "-----------------------------------------------------------------------------"
-    print "Bottle server starting up ..."
-    # print "Serial is set to %d bps" % BITSPERSECOND
-    print "Point your browser to: "    
-    print "http://%s:%d/      (local)" % ('127.0.0.1', conf['network_port'])  
-    print "Use Ctrl-C to quit."
-    print "-----------------------------------------------------------------------------"    
-    print
-    lasersaur.connect()
-    # open web-browser
-    try:
-        webbrowser.open_new_tab('http://127.0.0.1:'+str(conf['network_port']))
-    except webbrowser.Error:
-        print "Cannot open Webbrowser, please do so manually."
-    sys.stdout.flush()  # make sure everything gets flushed
-    while 1:
-        try:
-            server.handle_request()
-        except KeyboardInterrupt:
-            break
-    print "\nShutting down..."
-    lasersaur.close()
-
-        
-
-
 ### STATIC FILES
 
 @route('/css/:path#.+#')
@@ -131,8 +79,8 @@ def set_offset(x, y, z):
 
 @route('/get_offset')
 def get_offset():
-    pass
     # TODO: implement getting this from status
+    return json.dumps(lasersaur.status()['offcustom'])
 
 @route('/clear_offset')
 def clear_offset():
@@ -513,6 +461,58 @@ def queue_pct_done_handler():
 
 
 
+def start_server():
+    """ Start a wsgiref server instance with control over the main loop.
+        This is a function that I derived from the bottle.py run()
+    """
+
+    class HackedWSGIRequestHandler(WSGIRequestHandler):
+        """ This is a heck to solve super slow request handling
+        on the BeagleBone and RaspberryPi. The problem is WSGIRequestHandler
+        which does a reverse lookup on every request calling gethostbyaddr.
+        For some reason this is super slow when connected to the LAN.
+        (adding the IP and name of the requester in the /etc/hosts file
+        solves the problem but obviously is not practical)
+        """
+        def address_string(self):
+            """Instead of calling getfqdn -> gethostbyaddr we ignore."""
+            # return "(a requester)"
+            return str(self.client_address[0])
+
+    # web server
+    handler = default_app()
+    server = make_server(conf['network_host'], conf['network_port'], 
+                         handler, handler_class=HackedWSGIRequestHandler)
+    server.timeout = 0.01
+    server.quiet = True
+    # websocket server
+    print "Persistent storage root is: " + conf['stordir']
+    print "-----------------------------------------------------------------------------"
+    print "Bottle server starting up ..."
+    # print "Serial is set to %d bps" % BITSPERSECOND
+    print "Point your browser to: "    
+    print "http://%s:%d/      (local)" % ('127.0.0.1', conf['network_port'])  
+    print "Use Ctrl-C to quit."
+    print "-----------------------------------------------------------------------------"    
+    print
+    lasersaur.connect()
+    # open web-browser
+    try:
+        webbrowser.open_new_tab('http://127.0.0.1:'+str(conf['network_port']))
+    except webbrowser.Error:
+        print "Cannot open Webbrowser, please do so manually."
+    sys.stdout.flush()  # make sure everything gets flushed
+    while 1:
+        try:
+            server.handle_request()
+        except KeyboardInterrupt:
+            break
+    print "\nShutting down..."
+    lasersaur.close()
+
+
+
+
 if __name__ == "__main__":
 
     ### Setup Argument Parser
@@ -539,7 +539,7 @@ if __name__ == "__main__":
         if hasattr(sys, "_MEIPASS"):
             print "Data root is: " + sys._MEIPASS             
 
-    run()
+    start_server()
 
     
 

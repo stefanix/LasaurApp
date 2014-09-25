@@ -112,14 +112,17 @@
 
 #define INFO_HELLO '~'
 
-// status: debufgging
-#define STATUS_TARGET_X 'a'
-#define STATUS_TARGET_Y 'b'
-#define STATUS_TARGET_Z 'c'
-#define STATUS_FEEDRATE 'f'
-#define STATUS_INTENSITY 's'
-#define STATUS_DURATION 'd'
-#define STATUS_PIXEL_WIDTH 'p'
+// super status:
+#define STATUS_OFFCUSTOM_X 'a'
+#define STATUS_OFFCUSTOM_Y 'b'
+#define STATUS_OFFCUSTOM_Z 'c'
+#define STATUS_TARGET_X 'd'
+#define STATUS_TARGET_Y 'e'
+#define STATUS_TARGET_Z 'f'
+#define STATUS_FEEDRATE 'g'
+#define STATUS_INTENSITY 'h'
+#define STATUS_DURATION 'i'
+#define STATUS_PIXEL_WIDTH 'j'
 
 
 

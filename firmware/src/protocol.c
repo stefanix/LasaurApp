@@ -485,7 +485,12 @@ void protocol_idle() {
       // version
       serial_write_param(STATUS_VERSION, VERSION);
 
-      // target (DEBUGGING)
+      // custom offset
+      serial_write_param(STATUS_OFFCUSTOM_X, st.offsets[3*OFFSET_CUSTOM+X_AXIS]);
+      serial_write_param(STATUS_OFFCUSTOM_Y, st.offsets[3*OFFSET_CUSTOM+Y_AXIS]);
+      serial_write_param(STATUS_OFFCUSTOM_Z, st.offsets[3*OFFSET_CUSTOM+Z_AXIS]);      
+
+      // target
       serial_write_param(STATUS_TARGET_X, st.target[X_AXIS]);
       serial_write_param(STATUS_TARGET_Y, st.target[Y_AXIS]);
       serial_write_param(STATUS_TARGET_Z, st.target[Z_AXIS]);
