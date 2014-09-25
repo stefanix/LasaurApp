@@ -53,7 +53,8 @@ class Lasersaur(object):
         opener = urllib2.build_opener(handler)
         urllib2.install_opener(opener) # use auth for all urllib2.urlopen()
 
-    def _request(self, postdict=None, ret=False):
+    def _request(self, url, postdict=None, ret=False):
+        # TODO: url encode 
         postdata = urllib.urlencode(postdict)
         req = urllib2.Request(url, postdata)
         response = urllib2.urlopen(req)
@@ -66,12 +67,16 @@ class Lasersaur(object):
 
     def config(self):
         """Get config from machine."""
+        return self._request('/config', ret=True)
 
     def status(self):
         """Get status report of machine."""
+        return self._request('/status', ret=True)
 
     def ready(self):
         """Get ready status, specifically."""
+        status = self._request('/status', ret=True)
+        return status['idle']
 
 
     ### LOW-LEVEL CONTROL
@@ -223,40 +228,54 @@ class Lasersaur(object):
 
     def list(self):
         """List all queue jobs by name."""
+        return self._request('/list', ret=True)
 
     def get(self, jobname):
         """Get a queue job in .lsa format."""
+        return self._request('/get', ret=True)
 
     def star(self, jobname):
         """Star a job."""
+        self._request('/star/%s' % jobname)
 
     def unstar(self, jobname):
         """Unstar a job."""
+        self._request('/unstar/%s' % jobname)
 
     def delete(self, jobname):
         """Delete a job."""
+        self._request('/delete/%s' % jobname)
 
     def clear(self):
         """Clear job list."""
+        self._request('/clear')
 
 
     ### JOB EXECUTION
 
     def run(self, jobname):
         """Send job from queue to the machine."""
+        self._request('/run/%s' % jobname)
 
     def progress(self):
         """Get percentage of job done."""
+        return self._request('/progress', ret=True)
 
     def pause(self):
         """Pause a job gracefully."""
+        self._request('/pause')
+
     def resume(self):
         """Resume a paused job."""
+        self._request('/unpause')
 
     def stop(self):
         """Halt machine immediately and purge job."""
+        self._request('/stop')
+
     def unstop(self):
         """Recover machine from stop mode."""
+        self._request('/unstop')
 
 
     ### LIBRARY

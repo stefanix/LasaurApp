@@ -4,6 +4,7 @@ import os
 import time
 import glob
 import json
+import copy
 import argparse
 import tempfile
 import webbrowser
@@ -20,7 +21,17 @@ __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
 
 
 def checkuser(user, pw):
+    """Check login credentials, used by auth_basic decorator."""
     return bool(user in conf['users'] and conf['users'][user] == pw)
+
+def checkserial(func):
+    """Decorator to call function only when machine connected."""
+    def _decorator(*args, **kwargs):
+            if lasersaur.connected():
+                return func(*args, **kwargs)
+            else:
+                bottle.abort(400, "No machine.")
+    return _decorator
 
 
 ### STATIC FILES
@@ -42,80 +53,106 @@ def favicon_handler():
     return bottle.static_file('favicon.ico', root=os.path.join(conf['rootdir'], 'frontend/img'))
     
 
+### STATE
+
+@bottle.route('/config')
+@bottle.auth_basic(checkuser)
+def config():
+    confcopy = copy.deepcopy(conf)
+    del confcopy['users']
+    return json.dumps(confcopy)
+
+@bottle.route('/status')
+@bottle.auth_basic(checkuser)
+@checkserial
+def status():
+    return json.dumps(lasersaur.status())
+
 
 ### LOW-LEVEL CONTROL
 
 @bottle.route('/homing')
 @bottle.auth_basic(checkuser)
+@checkserial
 def homing():
     lasersaur.homing()
 
 @bottle.route('/feedrate/<val:float>')
 @bottle.auth_basic(checkuser)
+@checkserial
 def feedrate(val):
-    args = json.loads(request.forms.get('args'))
-    lasersaur.feedrate(args['val'])
+    lasersaur.feedrate(val)
 
 @bottle.route('/intensity/<val:float>')
 @bottle.auth_basic(checkuser)
+@checkserial
 def intensity(val):
     lasersaur.intensity(val)
 
 @bottle.route('/relative')
 @bottle.auth_basic(checkuser)
+@checkserial
 def relative():
     lasersaur.relative()
 
 @bottle.route('/absolute')
 @bottle.auth_basic(checkuser)
+@checkserial
 def absolute():
     lasersaur.absolute()
 
 @bottle.route('/move/<x:float>/<y:float>/<z:float>')
 @bottle.auth_basic(checkuser)
+@checkserial
 def move(x, y, z):
-    if lasersaur.connected():
-        lasersaur.move(x, y, z)
+    lasersaur.move(x, y, z)
 
 @bottle.route('/pos')
 @bottle.auth_basic(checkuser)
+@checkserial
 def pos():
-    if lasersaur.connected():
-        return json.dumps(lasersaur.status()['pos'])
+    return json.dumps(lasersaur.status()['pos'])
 
 @bottle.route('/air_on')
 @bottle.auth_basic(checkuser)
+@checkserial
 def air_on():
     lasersaur.air_on()
 
 @bottle.route('/air_off')
 @bottle.auth_basic(checkuser)
+@checkserial
 def air_off():
     lasersaur.air_off()
 
 @bottle.route('/aux1_on')
 @bottle.auth_basic(checkuser)
+@checkserial
 def aux1_on():
     lasersaur.aux1_on()
 
 @bottle.route('/aux1_off')
 @bottle.auth_basic(checkuser)
+@checkserial
 def aux1_off():
     lasersaur.aux1_off()
 
 @bottle.route('/set_offset/<x:float>/<y:float>/<z:float>')
 @bottle.auth_basic(checkuser)
+@checkserial
 def set_offset(x, y, z):
     lasersaur.def_offset_custom(x, y, z)
     lasersaur.sel_offset_custom()
 
 @bottle.route('/get_offset')
 @bottle.auth_basic(checkuser)
+@checkserial
 def get_offset():
     return json.dumps(lasersaur.status()['offcustom'])
 
 @bottle.route('/clear_offset')
 @bottle.auth_basic(checkuser)
+@checkserial
 def clear_offset():
     lasersaur.sel_offset_table()
 
@@ -123,21 +160,48 @@ def clear_offset():
 
 ### JOBS QUEUE
 
+def _get_sorted():
+    files = []
+    cwd_temp = os.getcwd()
+    try:
+        os.chdir(conf['stordir'])
+        files = filter(os.path.isfile, glob.glob("*"))
+        files.sort(key=lambda x: os.path.getmtime(x))
+    finally:
+        os.chdir(cwd_temp)
+    return files
+
+def _clear(limit=None):
+    files = _get_sorted()
+    if type(limit) is not int and not None:
+        raise ValueError
+    for filename in files:
+        if type(limit) is int and limit <= 0:
+            break
+        if not filename.endswith('.starred'):
+            filename = os.path.join(conf['stordir'], filename)
+            os.remove(filename);
+            print "file deleted: " + filename
+            if type(limit) is int:
+                limit -= 1
+
 def _add(job, name):
-    ret = {"ok": False}
+    # delete excessive job files
+    num_to_del = (len(_get_sorted()) +1) - conf['max_jobs_in_list']  
+    _clear(num_to_del):
+    # add
     if os.path.exists(name) or os.path.exists(name+'.starred'):
-        return "file_exists"
+        bottle.abort(400, "File name exists.")
     try:
         fp = open(name, 'w')
         fp.write(job)
         print "file saved: " + name
-        ret['ok'] = True
     finally:
         fp.close()
-    return ret
 
 
 @bottle.route('/load', method='POST')
+@bottle.auth_basic(checkuser)
 def load():
     """Load a lsa, svg, dxf, or gcode job.
 
@@ -158,6 +222,10 @@ def load():
     if job is None or name is None or type_ is None or optimize is None:
         raise ValueError
 
+    # check file name available
+    if os.path.exists(name) or os.path.exists(name+'.starred'):
+        bottle.abort(400, "File name exists.")
+
     if type_ == 'lsa' and optimize:
         job = json.loads(job)
         if optimize and 'vector' in job and 'paths' in job['vector']:
@@ -177,114 +245,63 @@ def load():
     _add(json.dumps(job), name)
 
 
-
+@bottle.route('/list')
+@bottle.auth_basic(checkuser)
 def list():
     """List all queue jobs by name."""
+    files = _get_sorted()
+    return json.dumps(files)
 
+
+@bottle.route('/get/<jobname>')
+@bottle.auth_basic(checkuser)
 def get(jobname):
     """Get a queue job in .lsa format."""
+    return static_file(jobname, root=conf['stordir'], mimetype='text/plain')
 
+
+@bottle.route('/star/<jobname>')
+@bottle.auth_basic(checkuser)
 def star(jobname):
     """Star a job."""
+    filename = os.path.join(conf['stordir'], jobname.strip('/\\'))
+    if os.path.exists(filename):
+        os.rename(filename, filename + '.starred')
+    else:
+        bottle.abort(400, "No such file.")
 
+
+@bottle.route('/unstar/<jobname>')
+@bottle.auth_basic(checkuser)
 def unstar(jobname):
     """Unstar a job."""
+    filename = os.path.join(conf['stordir'], name.strip('/\\'))
+    if os.path.exists(filename + '.starred'):
+        os.rename(filename + '.starred', filename)
+    else:
+        bottle.abort(400, "No such file.")
 
+
+@bottle.route('/delete/<jobname>')
+@bottle.auth_basic(checkuser)
 def delete(jobname):
     """Delete a job."""
+    filename = os.path.join(conf['stordir'], jobname.strip('/\\'))
+    if os.path.exists(filename):
+        try:
+            os.remove(filename);
+            print "file deleted: " + filename
+        finally:
+            pass
+    else:
+        bottle.abort(400, "No such file.")
 
+
+@bottle.route('/clear')
+@bottle.auth_basic(checkuser)
 def clear():
     """Clear job list."""
-
-
-
-@bottle.route('/queue/get/:name#.+#')
-def static_queue_handler(name): 
-    return static_file(name, root=conf['stordir'], mimetype='text/plain')
-
-
-@bottle.route('/queue/list')
-def library_list_handler():
-    # base64.urlsafe_b64encode()
-    # base64.urlsafe_b64decode()
-    # return a json list of file names
-    files = []
-    cwd_temp = os.getcwd()
-    try:
-        os.chdir(conf['stordir'])
-        files = filter(os.path.isfile, glob.glob("*"))
-        files.sort(key=lambda x: os.path.getmtime(x))
-    finally:
-        os.chdir(cwd_temp)
-    return json.dumps(files)
-    
-
-
-@bottle.route('/queue/rm/:name')
-def queue_rm_handler(name):
-    # delete queue item, on success return '1'
-    ret = '0'
-    filename = os.path.abspath(os.path.join(conf['stordir'], name.strip('/\\')))
-    if filename.startswith(conf['stordir']):
-        if os.path.exists(filename):
-            try:
-                os.remove(filename);
-                print "file deleted: " + filename
-                ret = '1'
-            finally:
-                pass
-    return ret 
-
-@bottle.route('/queue/clear')
-def queue_clear_handler():
-    # delete all queue items, on success return '1'
-    ret = '0'
-    files = []
-    cwd_temp = os.getcwd()
-    try:
-        os.chdir(conf['stordir'])
-        files = filter(os.path.isfile, glob.glob("*"))
-        files.sort(key=lambda x: os.path.getmtime(x))
-    finally:
-        os.chdir(cwd_temp)
-    for filename in files:
-        if not filename.endswith('.starred'):
-            filename = os.path.join(conf['stordir'], filename)
-            try:
-                os.remove(filename);
-                print "file deleted: " + filename
-                ret = '1'
-            finally:
-                pass
-    return ret
-    
-@bottle.route('/queue/star/:name')
-def queue_star_handler(name):
-    ret = '0'
-    filename = os.path.abspath(os.path.join(conf['stordir'], name.strip('/\\')))
-    if filename.startswith(conf['stordir']):
-        if os.path.exists(filename):
-            os.rename(filename, filename + '.starred')
-            ret = '1'
-    return ret    
-
-@bottle.route('/queue/unstar/:name')
-def queue_unstar_handler(name):
-    ret = '0'
-    filename = os.path.abspath(os.path.join(conf['stordir'], name.strip('/\\')))
-    if filename.startswith(conf['stordir']):
-        if os.path.exists(filename + '.starred'):
-            os.rename(filename + '.starred', filename)
-            ret = '1'
-    return ret 
-
-
-def encode_filename(name):
-    str(time.time()) + '-' + base64.urlsafe_b64encode(name)
-    
-def decode_filename(name):
-    index = name.find('-')
-    return base64.urlsafe_b64decode(name[index+1:])
+    _clear()
 
 
 
@@ -292,19 +309,33 @@ def decode_filename(name):
 
 ### JOB EXECUTION
 
+@bottle.route('/run')
+@bottle.auth_basic(checkuser)
 def run(self, jobname):
     """Send job from queue to the machine."""
 
+@bottle.route('/progress')
+@bottle.auth_basic(checkuser)
 def progress(self):
     """Get percentage of job done."""
 
+@bottle.route('/pause')
+@bottle.auth_basic(checkuser)
 def pause(self):
     """Pause a job gracefully."""
-def resume(self):
+
+@bottle.route('/unpause')
+@bottle.auth_basic(checkuser)
+def unpause(self):
     """Resume a paused job."""
 
+@bottle.route('/stop')
+@bottle.auth_basic(checkuser)
 def stop(self):
     """Halt machine immediately and purge job."""
+
+@bottle.route('/unstop')
+@bottle.auth_basic(checkuser)
 def unstop(self):
     """Recover machine from stop mode."""
 
@@ -391,13 +422,6 @@ def download(filename, dlname):
     print "requesting: " + filename
     return static_file(filename, root=tempfile.gettempdir(), download=dlname)
   
-
-
-
-@bottle.route('/status')
-def get_status():
-    status = lasersaur.status()  # this returns a copy
-    return json.dumps(status)
 
 
 @bottle.route('/pause/:flag')
