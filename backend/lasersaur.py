@@ -282,7 +282,7 @@ class SerialLoopClass(threading.Thread):
                 if len(chars) > 0:
                     ## process chars
                     for char in chars:
-                        # sys.stdout.write(char)
+                        # sys.stdout.write('('+char+','+str(ord(char))+')')
                         # sys.stdout.flush()
                         if ord(char) < 32:  ### flow
                             ## check for data request
@@ -539,8 +539,12 @@ def connect(port=conf['serial_port'], baudrate=conf['baudrate']):
         try:
             SerialLoop.device = serial.Serial(port, baudrate, timeout=0.0001, writeTimeout=0.1)
             # clear throat
-            time.sleep(1.0) # allow some time to receive a prompt/welcome
+            # Toggle DTR to reset Arduino
+            SerialLoop.device.setDTR(False)
+            time.sleep(1)
             SerialLoop.device.flushInput()
+            SerialLoop.device.setDTR(True)
+            # for good measure
             SerialLoop.device.flushOutput()
 
             SerialLoop.start()  # this calls run() in a thread

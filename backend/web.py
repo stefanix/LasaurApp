@@ -74,12 +74,14 @@ def absolute():
 @bottle.route('/move/<x:float>/<y:float>/<z:float>')
 @bottle.auth_basic(checkuser)
 def move(x, y, z):
-    lasersaur.move(x, y, z)
+    if lasersaur.connected():
+        lasersaur.move(x, y, z)
 
 @bottle.route('/pos')
 @bottle.auth_basic(checkuser)
 def pos():
-    return json.dumps(lasersaur.status()['pos'])
+    if lasersaur.connected():
+        return json.dumps(lasersaur.status()['pos'])
 
 @bottle.route('/air_on')
 @bottle.auth_basic(checkuser)
