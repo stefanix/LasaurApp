@@ -188,7 +188,7 @@ def _clear(limit=None):
 def _add(job, name):
     # delete excessive job files
     num_to_del = (len(_get_sorted()) +1) - conf['max_jobs_in_list']  
-    _clear(num_to_del):
+    _clear(num_to_del)
     # add
     if os.path.exists(name) or os.path.exists(name+'.starred'):
         bottle.abort(400, "File name exists.")
@@ -323,6 +323,19 @@ def progress(self):
 @bottle.auth_basic(checkuser)
 def pause(self):
     """Pause a job gracefully."""
+    # returns pause status
+    if flag == '1':
+        if lasersaur.pause():
+            print "pausing ..."
+            return '1'
+        else:
+            return '0'
+    elif flag == '0':
+        print "resuming ..."
+        if lasersaur.unpause():
+            return '1'
+        else:
+            return '0'
 
 @bottle.route('/unpause')
 @bottle.auth_basic(checkuser)
@@ -334,31 +347,17 @@ def unpause(self):
 def stop(self):
     """Halt machine immediately and purge job."""
 
-@bottle.route('/unstop')
-@bottle.auth_basic(checkuser)
 def unstop(self):
     """Recover machine from stop mode."""
 
 
+
 ### LIBRARY
 
+@bottle.route('/list_library')
+@bottle.auth_basic(checkuser)
 def list_library(self):
     """List all library jobs by name."""
-
-def get_library(self, jobname):
-    """Get a library job in .lsa format."""
-
-def load_library(self, jobname):
-    """Load a library job into the queue."""
-
-
-@bottle.route('/library/get/:path#.+#')
-def static_library_handler(path):
-    return static_file(path, root=os.path.join(conf['rootdir'], 'library'), mimetype='text/plain')
-    
-@bottle.route('/library/list')
-def library_list_handler():
-    # return a json list of file names
     file_list = []
     cwd_temp = os.getcwd()
     try:
@@ -369,16 +368,38 @@ def library_list_handler():
     return json.dumps(file_list)
 
 
+@bottle.route('/get_library')
+@bottle.auth_basic(checkuser)
+def get_library(self, jobname):
+    """Get a library job in .lsa format."""
+    return static_file(jobname, root=os.path.join(conf['rootdir'], 'library'), mimetype='text/plain')
+
+
+
+
+
 ### MCU MANAGMENT
 
+@bottle.route('/build')
+@bottle.auth_basic(checkuser)
 def build(self, firmware_name=None):
     """Build firmware from firmware/src files."""
 
+@bottle.route('/flash')
+@bottle.auth_basic(checkuser)
 def flash(self, firmware_name=None):
     """Flash firmware to MCU."""
 
+@bottle.route('/reset')
+@bottle.auth_basic(checkuser)
 def reset(self):
     """Reset MCU"""
+    connected = lasersaur.connected()
+    if connected:
+        lasersaur.close()
+    lasersaur.reset()
+    if connected:
+        lasersaur.connect()
 
 
 
@@ -423,22 +444,6 @@ def download(filename, dlname):
     return static_file(filename, root=tempfile.gettempdir(), download=dlname)
   
 
-
-@bottle.route('/pause/:flag')
-def set_pause(flag):
-    # returns pause status
-    if flag == '1':
-        if lasersaur.pause():
-            print "pausing ..."
-            return '1'
-        else:
-            return '0'
-    elif flag == '0':
-        print "resuming ..."
-        if lasersaur.unpause(False):
-            return '1'
-        else:
-            return '0'
 
 
 
@@ -489,9 +494,6 @@ def build_firmware_handler():
     return ''.join(ret)
 
 
-@bottle.route('/reset_atmega')
-def reset_atmega_handler():
-    return lasersaur.reset()
 
 
 @bottle.route('/job', method='POST')

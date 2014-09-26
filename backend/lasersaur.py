@@ -610,7 +610,6 @@ def build(firmware_name="LasaurGrbl"):
 def reset():
     import flash
     flash.reset_atmega()
-    return '1'
 
 
 def percentage():
@@ -834,22 +833,13 @@ def job(jobdict):
 def pause():
     global SerialLoop
     with SerialLoop.lock:
-        if not SerialLoop.tx_buffer:
-            ret = False
-        else:
+        if SerialLoop.tx_buffer:
             SerialLoop._status['paused'] = True
-            ret = True
-    return ret
 
-def unpause(flag):
+def unpause():
     global SerialLoop
     with SerialLoop.lock:
-        if not SerialLoop.tx_buffer:
-            ret = False
-        else:
-            SerialLoop._status['paused'] = False
-            ret = False
-    return ret
+        SerialLoop._status['paused'] = False
 
 
 def stop():

@@ -208,7 +208,7 @@ class Lasersaur(object):
         """Create and load a job from list of polylines.
         boundary looks like this:
         [ [[x,y,z], ...], [[x,y,z], ...], ... ]
-        And can be 2D or 3D.
+        and can be 2D or 3D.
         """
         job = {
             "vector":{
