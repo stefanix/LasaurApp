@@ -237,7 +237,7 @@ class SVGTagReader:
                 vals[3] = int(vals[3])
             # colors, strip leading column
             for ii in range(5,11):
-                vals[ii] = vals[ii][1:]
+                vals[ii] = vals[ii][1:].lower
             matches[i] = vals
         # store in the following format
         # [(12, 2550, '', 100, '%', '#fff000', '#ababab', '#ccc999', '', '', '')]

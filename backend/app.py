@@ -8,11 +8,16 @@ from bottle import *
 from serial_manager import SerialManager
 from flash import flash_upload, reset_atmega
 from build import build_firmware
-from filereaders import read_svg, read_dxf, read_ngc
+from filereaders import read_svg, read_dxf, read_ngc, read_lsa
+try:
+    import pydevd
+    pydevd.settrace('localhost', stdoutToServer=True, stderrToServer=True)
+except:
+    print 'Not debugging.'
 
-
+# Default parameters 
 APPNAME = "lasaurapp"
-VERSION = "13.06b"
+VERSION = "14.01"
 COMPANY_NAME = "com.nortd.labs"
 SERIAL_PORT = None
 BITSPERSECOND = 57600
@@ -92,6 +97,7 @@ def run_with_callback(host, port):
     server.timeout = 0.01
     server.quiet = True
     print "Persistent storage root is: " + storage_dir()
+    print "File resource root is: " + resources_dir()
     print "-----------------------------------------------------------------------------"
     print "Bottle server starting up ..."
     print "Serial is set to %d bps" % BITSPERSECOND
@@ -126,18 +132,6 @@ def run_with_callback(host, port):
             break
     print "\nShutting down..."
     SerialManager.close()
-
-        
-
-
-@route('/longtest')
-def longtest_handler():
-    fp = open("longtest.ngc")
-    for line in fp:
-        SerialManager.queue_gcode_line(line)
-    return "Longtest queued."
-    
-
 
 @route('/css/:path#.+#')
 def static_css_handler(path):
@@ -496,10 +490,13 @@ def file_reader():
             res = read_dxf(filedata, TOLERANCE, optimize)
         elif filename[-4:] in ['.svg', '.SVG']: 
             res = read_svg(filedata, dimensions, TOLERANCE, dpi_forced, optimize)
-        elif filename[-4:] in ['.ngc', '.NGC']:
+        elif filename[-4:] in ['.lsa', '.LSA']:
+            res = read_lsa(filedata, TOLERANCE, optimize)
+        elif filename[-4:] in ['.ngc', '.NGC'] or filename[-3:] in ['.nc','.NC','.gc', '.GC']:
             res = read_ngc(filedata, TOLERANCE, optimize)
         else:
             print "error: unsupported file format"
+            return "error: unsupported file format"
 
         # print boundarys
         jsondata = json.dumps(res)

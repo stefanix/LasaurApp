@@ -1,4 +1,24 @@
 
+LasaurAppCommunity
+==================
+
+This is a fork of the official "LasaurApp" repository.  It contains community-provided changes to the lasersaur (http://lasersaur.com) app.  It is in no way "official" and it should only be used by people willing to experiment and suffer potential problems as a result.
+
+If you wish to discuss this fork, please join the lasaurappcommunity Google Group (<lasaurappcommunity@googlegroups.com>).
+
+You can eMail our moderator, Steve Baker at <steve@sjbaker.org>
+
+Our code repostiory is on GIThub:
+
+ https://github.com/RenaissanceMiniatures/LasaurApp
+
+Discussions of the official version of LasaurApp and the Lasersaur laser cutter should take place in the lasersaur Google Group (<lasersaur@googlegroups.com>) - this group is SOLELY for software designers/developers, etc.
+
+  -- Steve
+
+
+
+----------------------------------------------------------------------------------------------
 LasaurApp
 =========
 

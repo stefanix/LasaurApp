@@ -41,3 +41,27 @@ def read_ngc(ngc_string, tolerance, optimize=True):
         optimize_all(parse_results['boundarys'], tolerance)
     return parse_results
 
+def read_lsa(lsa_string, tolerance, optimize=True):
+    res = {}
+    xmax = 0
+    ymax = 0
+    try:
+        lsa = ast.literal_eval(lsa_string)
+    except Exception as e:
+        lsa = {'passes':[],'paths_by_color':[]}
+        
+    boundarys = lsa['paths_by_color']
+    for color in boundarys:
+        for path in boundarys[color]:
+            for point in path:
+                xmax = xmax if xmax > point[0] else point[0]
+                ymax = ymax if ymax > point[1] else point[1]
+
+    res['boundarys'] = boundarys
+    res['bbox'] = [xmax,ymax]
+    if len(lsa['passes'])>0:
+        res['lasertags'] = lsa['passes']
+
+    print "Done!"
+    return res;
+
