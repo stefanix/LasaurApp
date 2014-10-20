@@ -190,10 +190,11 @@ def _add(job, name):
     num_to_del = (len(_get_sorted()) +1) - conf['max_jobs_in_list']  
     _clear(num_to_del)
     # add
-    if os.path.exists(name) or os.path.exists(name+'.starred'):
+    namepath = os.path.join(conf['stordir'], name)
+    if os.path.exists(namepath) or os.path.exists(namepath+'.starred'):
         bottle.abort(400, "File name exists.")
     try:
-        fp = open(name, 'w')
+        fp = open(namepath, 'w')
         fp.write(job)
         print "file saved: " + name
     finally:
@@ -275,7 +276,7 @@ def star(jobname):
 @bottle.auth_basic(checkuser)
 def unstar(jobname):
     """Unstar a job."""
-    filename = os.path.join(conf['stordir'], name.strip('/\\'))
+    filename = os.path.join(conf['stordir'], jobname.strip('/\\'))
     if os.path.exists(filename + '.starred'):
         os.rename(filename + '.starred', filename)
     else:
@@ -313,11 +314,13 @@ def clear():
 @bottle.auth_basic(checkuser)
 def run(self, jobname):
     """Send job from queue to the machine."""
+    # TODO
 
 @bottle.route('/progress')
 @bottle.auth_basic(checkuser)
 def progress(self):
     """Get percentage of job done."""
+    # TODO
 
 @bottle.route('/pause')
 @bottle.auth_basic(checkuser)
@@ -341,14 +344,17 @@ def pause(self):
 @bottle.auth_basic(checkuser)
 def unpause(self):
     """Resume a paused job."""
+    # TODO
 
 @bottle.route('/stop')
 @bottle.auth_basic(checkuser)
 def stop(self):
     """Halt machine immediately and purge job."""
+    # TODO
 
 def unstop(self):
     """Recover machine from stop mode."""
+    # TODO
 
 
 
@@ -356,7 +362,7 @@ def unstop(self):
 
 @bottle.route('/list_library')
 @bottle.auth_basic(checkuser)
-def list_library(self):
+def list_library():
     """List all library jobs by name."""
     file_list = []
     cwd_temp = os.getcwd()
@@ -368,12 +374,27 @@ def list_library(self):
     return json.dumps(file_list)
 
 
-@bottle.route('/get_library')
+@bottle.route('/get_library/<jobname>')
 @bottle.auth_basic(checkuser)
-def get_library(self, jobname):
+def get_library(jobname):
     """Get a library job in .lsa format."""
-    return static_file(jobname, root=os.path.join(conf['rootdir'], 'library'), mimetype='text/plain')
+    return bottle.static_file(jobname, root=os.path.join(conf['rootdir'], 'library'), mimetype='text/plain')
 
+
+@bottle.route('/load_library/<jobname>')
+@bottle.auth_basic(checkuser)
+def load_library(jobname):
+    """Load a library job into the queue."""
+    jobpath = os.path.join(conf['rootdir'], 'library', jobname)
+    if not os.path.exists(jobpath):
+        bottle.abort(400, "No such file.")
+    try:
+        fp = open(jobpath)
+        job = fp.read()
+        _add(job, jobname)
+        print "file queued: " + jobname
+    finally:
+        fp.close()
 
 
 
@@ -384,11 +405,13 @@ def get_library(self, jobname):
 @bottle.auth_basic(checkuser)
 def build(self, firmware_name=None):
     """Build firmware from firmware/src files."""
+    # TODO
 
 @bottle.route('/flash')
 @bottle.auth_basic(checkuser)
 def flash(self, firmware_name=None):
     """Flash firmware to MCU."""
+    # TODO
 
 @bottle.route('/reset')
 @bottle.auth_basic(checkuser)

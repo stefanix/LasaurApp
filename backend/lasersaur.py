@@ -565,7 +565,6 @@ def connect(port=conf['serial_port'], baudrate=conf['baudrate']):
                 if time.time() - start > 2:
                     print "ERROR: Cannot get 'hello' from controller"
                     raise serial.SerialException
-                    return
                 char = SerialLoop.device.read(1)
                 if char == INFO_HELLO:
                     print "Controller says Hello!"

@@ -282,12 +282,15 @@ class Lasersaur(object):
 
     def list_library(self):
         """List all library jobs by name."""
+        return self._request('/list_library', ret=True)
 
     def get_library(self, jobname):
         """Get a library job in .lsa format."""
+        return self._request('/get_library/'+jobname, ret=True)
 
     def load_library(self, jobname):
         """Load a library job into the queue."""
+        self._request('/load_library/'+jobname)
 
 
     ### MCU MANAGMENT
