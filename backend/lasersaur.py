@@ -397,8 +397,8 @@ class SerialLoopClass(threading.Thread):
                                     self._status['pixelwidth'] = num
                                 else:
                                     print "ERROR: invalid param"
-                            elif char == INFO_HELLO:
-                                print "Controller says Hello!"
+                            # elif char == INFO_HELLO:
+                                # print "Controller says Hello!"
                             else:
                                 print ord(char)
                                 print char
@@ -554,11 +554,23 @@ def connect(port=conf['serial_port'], baudrate=conf['baudrate']):
             # clear throat
             # Toggle DTR to reset Arduino
             SerialLoop.device.setDTR(False)
-            time.sleep(0.5)
-            SerialLoop.device.setDTR(True)
             time.sleep(1)
-            # SerialLoop.device.flushInput()
-            # SerialLoop.device.flushOutput()
+            SerialLoop.device.flushInput()
+            SerialLoop.device.setDTR(True)
+            # for good measure
+            SerialLoop.device.flushOutput()
+
+            start = time.time()
+            while True:
+                if time.time() - start > 2:
+                    print "ERROR: Cannot get 'hello' from controller"
+                    raise serial.SerialException
+                    return
+                char = SerialLoop.device.read(1)
+                if char == INFO_HELLO:
+                    print "Controller says Hello!"
+                    break
+
             SerialLoop.start()  # this calls run() in a thread
         except serial.SerialException:
             SerialLoop = None
