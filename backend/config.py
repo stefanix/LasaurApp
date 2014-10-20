@@ -40,6 +40,8 @@ conf = {
     'users': {
         'laser': 'laser',
     },
+
+    'usb_reset_hack': False,
 }
 
 

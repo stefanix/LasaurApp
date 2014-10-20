@@ -583,6 +583,8 @@ if __name__ == "__main__":
                         default=False, help='list all serial devices currently connected')
     argparser.add_argument('-d', '--debug', dest='debug', action='store_true',
                         default=False, help='print more verbose for debugging')
+    argparser.add_argument('-u', '--usbhack', dest='usbhack', action='store_true',
+                        default=False, help='use usb reset hack (advanced)')
     argparser.add_argument('-b', '--browser', dest='browser', action='store_true',
                         default=False, help='launch interface in browser')
     args = argparser.parse_args()
@@ -590,13 +592,14 @@ if __name__ == "__main__":
 
 
     print "LasaurApp " + conf['version']
+    conf['usb_reset_hack'] = args.usbhack
 
-
-        
     # run
     if args.debug:
         if hasattr(sys, "_MEIPASS"):
-            print "Data root is: " + sys._MEIPASS             
+            print "Data root is: " + sys._MEIPASS
+
+
 
     start_server(debug=args.debug, browser=args.browser)
 

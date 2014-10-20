@@ -181,7 +181,7 @@ def reset_atmega():
         print "ERROR: forced reset only possible on beaglebone and raspberrypi"
 
 
-def _usb_reset_hack():
+def usb_reset_hack():
     # Hack to reset usb (possibly linux-only), read flash with avrdude
     # This solves a problem on my dev machine where the serial connection
     # fails after replugging the usb arduino. It seems strictly related
