@@ -26,6 +26,7 @@ conf = {
     'baudrate': 57600,
     'rootdir': None,                       # defined further down (../)
     'stordir': None,                       # defined further down
+    'hardware': None,                      # defined further down
     'firmware': 'LasaurGrbl.hex',
     'tolerance': 0.08,
     'workspace': [1220,610,0],
@@ -38,7 +39,7 @@ conf = {
     'max_jobs_in_list': 20,
     'users': {
         'laser': 'laser',
-    }
+    },
 }
 
 
@@ -80,26 +81,30 @@ conf['stordir'] = directory
 
 
 
-def beaglebone():
-    # check if running on BBB
-    # also works on old Beaglebone if named 'lasersaur'
-    # os.uname() on BBB:
-    # ('Linux', 'lasersaur', '3.8.13-bone20', 
-    #  '#1 SMP Wed May 29 06:14:59 UTC 2013', 'armv7l')
-    uname = os.uname()
-    return (sys.platform == "linux2" 
-            and (uname[1] == 'lasersaur' or uname[2] == '3.8.13-bone20'))
+### auto-check hardware
+#
+conf['hardware'] = 'standard'
+### check if running on BBB
+# also works on old Beaglebone if named 'lasersaur'
+# os.uname() on BBB:
+# ('Linux', 'lasersaur', '3.8.13-bone20', 
+#  '#1 SMP Wed May 29 06:14:59 UTC 2013', 'armv7l')
+uname = os.uname()
+if (sys.platform == "linux2" 
+        and (uname[1] == 'lasersaur' or uname[2] == '3.8.13-bone20')):
+    conf['hardware'] = 'beaglebone'
+### check if running on RaspberryPi
+try:
+    import RPi.GPIO
+    conf['hardware'] = 'raspberrypi'
+except ImportError:
+    pass
+#
+###
 
 
-def raspberrypi():
-    try:
-        import RPi.GPIO
-        return True
-    except ImportError:
-        return False
 
-
-if beaglebone():
+if conf['hardware'] == 'beaglebone':
     conf['serial_port'] = '/dev/ttyO1'
     # if running as root
     if os.geteuid() == 0:
@@ -181,7 +186,7 @@ if beaglebone():
     fw.close()
     print "Stepper driver configure pin is: " + str(ret)
 
-elif raspberrypi():
+elif conf['hardware'] == 'raspberrypi':
     conf['serial_port'] = '/dev/ttyAMA0'
     # if running as root
     if os.geteuid() == 0:

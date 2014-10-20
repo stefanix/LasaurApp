@@ -139,6 +139,7 @@ class SerialLoopClass(threading.Thread):
         self.RX_CHUNK_SIZE = 256
         self.nRequested = 0
         self.last_request_ready = 0
+        self.saidhello = False
         
         # used for calculating percentage done
         self.job_size = 0
@@ -279,11 +280,19 @@ class SerialLoopClass(threading.Thread):
             try:
                 ### receiving
                 chars = self.device.read(self.RX_CHUNK_SIZE)
+                # # discard until machine says hello
+                # if not self.saidhello:
+                #     hellopos = chars.find(INFO_HELLO)
+                #     if hellopos == -1:  # still no hello
+                #         chars = ''  # discard
+                #     else:  # now got hello
+                #         self.saidhello = True
+                #         chars = chars[hellopos:]
                 if len(chars) > 0:
                     ## process chars
                     for char in chars:
-                        # sys.stdout.write('('+char+','+str(ord(char))+')')
-                        # sys.stdout.flush()
+                        sys.stdout.write('('+char+','+str(ord(char))+')')
+                        sys.stdout.flush()
                         if ord(char) < 32:  ### flow
                             ## check for data request
                             if char == READY:
@@ -537,16 +546,52 @@ def connect(port=conf['serial_port'], baudrate=conf['baudrate']):
         # many bytes were actually written if this is different from requested.
         # Work around: use a big enough timeout and a small enough chunk size.
         try:
-            SerialLoop.device = serial.Serial(port, baudrate, timeout=0.0001, writeTimeout=0.1)
+            # connect
+            SerialLoop.device = _serial_connect(port, baudrate)
             # clear throat
-            # Toggle DTR to reset Arduino
-            SerialLoop.device.setDTR(False)
-            time.sleep(1)
-            SerialLoop.device.flushInput()
-            SerialLoop.device.setDTR(True)
-            # for good measure
-            SerialLoop.device.flushOutput()
+            # # Toggle DTR to reset Arduino
+            # SerialLoop.device.setDTR(False)
+            # time.sleep(0.5)
+            # SerialLoop.device.setDTR(True)
+            # time.sleep(0.5)
+            # SerialLoop.device.flushInput()
+            # SerialLoop.device.flushOutput()
 
+            start = time.time()
+            no_usb_reset_yet = True
+            while True:
+                if time.time() - start > 1:  # do this loop for 1s max
+                    # after 1s trying to get the hello byte reset usb, reconnect
+                    SerialLoop.device.close()
+                    if conf['hardware'] == 'standard' and no_usb_reset_yet:
+                        print "Not geting any hello from controller, trying a usb reset."
+                        import flash
+                        if flash._usb_reset_hack() != 0:
+                            print "ERROR: usb reset (wrong port specified?)"
+                            return
+                        else:
+                            SerialLoop.device = _serial_connect(port, baudrate)
+                            start = time.time()  # try some more
+                            no_usb_reset_yet = False
+                    else:
+                        print "ERROR: Cannot get 'hello' from controller"
+                        return
+
+                char = SerialLoop.device.read(1)
+                sys.stdout.write(char)
+                if char == INFO_HELLO:
+                    char = SerialLoop.device.read(8)
+                    SerialLoop.device.flushInput()
+                    SerialLoop.device.flushOutput()
+                    time.sleep(0.5)
+                    char = SerialLoop.device.read(8)
+                    SerialLoop.device.flushInput()
+                    SerialLoop.device.flushOutput()
+                    print "->Controller says Hello!"
+                    break
+                # else:
+                    # sys.stdout.write('.')
+            time.sleep(0.5)
             SerialLoop.start()  # this calls run() in a thread
         except serial.SerialException:
             SerialLoop = None
@@ -557,6 +602,11 @@ def connect(port=conf['serial_port'], baudrate=conf['baudrate']):
     else:
         print "ERROR: disconnect first"
 
+
+def _serial_connect(port, baudrate):
+    ret = serial.Serial(port, baudrate, timeout=0.0001, writeTimeout=0.1)  
+    time.sleep(1)
+    return ret
 
 
 def connected():
@@ -570,6 +620,7 @@ def close():
         if SerialLoop.device:
             SerialLoop.device.flushOutput()
             SerialLoop.device.flushInput()
+            SerialLoop.device.close()
             ret = True
         else:
             ret = False

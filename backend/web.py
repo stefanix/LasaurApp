@@ -392,7 +392,7 @@ def flash(self, firmware_name=None):
 
 @bottle.route('/reset')
 @bottle.auth_basic(checkuser)
-def reset(self):
+def reset():
     """Reset MCU"""
     connected = lasersaur.connected()
     if connected:

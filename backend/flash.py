@@ -4,7 +4,7 @@
 # Open Source by the terms of the Gnu Public License (GPL3) or higher.
 
 import os, sys, time, subprocess
-import config
+from config import conf
 
 
 thislocation = os.path.dirname(os.path.realpath(__file__))
@@ -20,7 +20,7 @@ def flash_upload(serial_port=serial_port, resources_dir=resources_dir, firmware_
         print "ERROR: invalid firmware path"
         return
 
-    if not (config.beaglebone() or config.raspberrypi()):
+    if not (conf['hardware'] == 'beaglebone' or conf['hardware'] == 'raspberrypi'):
         DEVICE = "atmega328p"
         CLOCK = "16000000"
         PROGRAMMER = "arduino"
@@ -52,7 +52,7 @@ def flash_upload(serial_port=serial_port, resources_dir=resources_dir, firmware_
         # fuse setting taken over from Makefile for reference
         #os.system('%(dude)s -U hfuse:w:0xd2:m -U lfuse:w:0xff:m' % {'dude':AVRDUDEAPP})
     
-    elif config.beaglebone() or config.raspberrypi():
+    elif conf['hardware'] == 'beaglebone' or conf['hardware'] == 'raspberrypi':
         # Make sure you have avrdude installed:
         # beaglebone:
         # opkg install libreadline5_5.2-r8.9_armv4.ipk
@@ -74,7 +74,7 @@ def flash_upload(serial_port=serial_port, resources_dir=resources_dir, firmware_
 
         ### Trigger the atmega328's reset pin to invoke bootloader
 
-        if config.beaglebone():
+        if conf['hardware'] == 'beaglebone':
             print "Flashing from BeagleBone ..."
             # The reset pin is connected to GPIO2_7 (2*32+7 = 71).
             # Setting it to low triggers a reset.
@@ -113,7 +113,7 @@ def flash_upload(serial_port=serial_port, resources_dir=resources_dir, firmware_
             fwb.flush()
             fwb.close()
             time.sleep(0.1)
-        elif config.raspberrypi():
+        elif conf['hardware'] == 'raspberrypi':
             print "Flashing from Raspberry Pi ..."
             import thread
             import RPi.GPIO as GPIO
@@ -140,7 +140,7 @@ def flash_upload(serial_port=serial_port, resources_dir=resources_dir, firmware_
 
 def reset_atmega():
     print "Resetting Atmega ..."
-    if config.beaglebone():
+    if conf['hardware'] == 'beaglebone':
         try:
             fw = file("/sys/class/gpio/export", "w")
             fw.write("%d" % (71))
@@ -169,7 +169,7 @@ def reset_atmega():
         fwb.write("1")
         fwb.flush()
         fwb.close()
-    elif config.raspberrypi():
+    elif conf['hardware'] == 'raspberrypi':
         import RPi.GPIO as GPIO
         GPIO.setmode(GPIO.BCM)  # use chip pin number
         pinReset = 2
@@ -179,3 +179,13 @@ def reset_atmega():
         GPIO.output(pinReset, GPIO.HIGH)
     else:
         print "ERROR: forced reset only possible on beaglebone and raspberrypi"
+
+
+def _usb_reset_hack():
+    # Hack to reset usb (possibly linux-only), read flash with avrdude
+    # This solves a problem on my dev machine where the serial connection
+    # fails after replugging the usb arduino. It seems strictly related
+    # to the USB stack on the Linux dev machine (possibly also on OSX or Win).
+    # Note: This should be irrelevant on the Lasersaur/BBB.
+    command = "avrdude -p atmega328p -P "+conf['serial_port']+" -c arduino -U flash:r:flash.bin:r -q -q"
+    return subprocess.call(command, shell=True) 
