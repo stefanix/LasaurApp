@@ -713,7 +713,7 @@ def move(x, y, z=0.0):
 
 
 def job(jobdict):
-    """Queue a job.
+    """Queue an .lsa job.
     A job dictionary can define vector and raster passes.
     Unlike gcode it's not procedural but declarative.
     The job dict looks like this:

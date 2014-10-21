@@ -171,6 +171,17 @@ def _get_sorted():
         os.chdir(cwd_temp)
     return files
 
+def _get(path, jobname):
+    jobpath = os.path.join(path, jobname)
+    if not os.path.exists(jobpath):
+        bottle.abort(400, "No such file.")
+    try:
+        fp = open(jobpath)
+        job = fp.read()
+    finally:
+        fp.close()
+    return job
+
 def _clear(limit=None):
     files = _get_sorted()
     if type(limit) is not int and not None:
@@ -310,51 +321,55 @@ def clear():
 
 ### JOB EXECUTION
 
-@bottle.route('/run')
+@bottle.route('/run/<jobname>')
 @bottle.auth_basic(checkuser)
-def run(self, jobname):
+@checkserial
+def run(jobname):
     """Send job from queue to the machine."""
-    # TODO
+    job = _get(conf['stordir'], jobname.strip('/\\'))
+    if not status()['idle']:
+        bottle.abort(400, "Machine not ready.")
+    lasersaur.job(job)
+
 
 @bottle.route('/progress')
 @bottle.auth_basic(checkuser)
-def progress(self):
-    """Get percentage of job done."""
-    # TODO
+@checkserial
+def progress():
+    """Get percentage of job done, 0-100, -1 if none active."""
+    return lasersaur.percentage()
+
 
 @bottle.route('/pause')
 @bottle.auth_basic(checkuser)
-def pause(self):
+@checkserial
+def pause():
     """Pause a job gracefully."""
-    # returns pause status
-    if flag == '1':
-        if lasersaur.pause():
-            print "pausing ..."
-            return '1'
-        else:
-            return '0'
-    elif flag == '0':
-        print "resuming ..."
-        if lasersaur.unpause():
-            return '1'
-        else:
-            return '0'
+    lasersaur.pause()
+
 
 @bottle.route('/unpause')
 @bottle.auth_basic(checkuser)
-def unpause(self):
+@checkserial
+def unpause():
     """Resume a paused job."""
-    # TODO
+    lasersaur.unpause()
+
 
 @bottle.route('/stop')
 @bottle.auth_basic(checkuser)
-def stop(self):
+@checkserial
+def stop():
     """Halt machine immediately and purge job."""
-    # TODO
+    lasersaur.stop()
 
-def unstop(self):
+
+@bottle.route('/unstop')
+@bottle.auth_basic(checkuser)
+@checkserial
+def unstop():
     """Recover machine from stop mode."""
-    # TODO
+    lasersaur.unstop()
 
 
 
@@ -385,16 +400,8 @@ def get_library(jobname):
 @bottle.auth_basic(checkuser)
 def load_library(jobname):
     """Load a library job into the queue."""
-    jobpath = os.path.join(conf['rootdir'], 'library', jobname)
-    if not os.path.exists(jobpath):
-        bottle.abort(400, "No such file.")
-    try:
-        fp = open(jobpath)
-        job = fp.read()
-        _add(job, jobname)
-        print "file queued: " + jobname
-    finally:
-        fp.close()
+    job = _get(os.path.join(conf['rootdir'], 'library'), jobname)
+    _add(job, jobname)
 
 
 
