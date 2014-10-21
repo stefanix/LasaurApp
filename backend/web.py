@@ -5,11 +5,10 @@ import time
 import glob
 import json
 import copy
-import argparse
 import tempfile
+import threading
 import webbrowser
 import wsgiref.simple_server
-# from bottle import *
 import bottle
 from config import conf
 import lasersaur
@@ -548,9 +547,40 @@ def queue_pct_done_handler():
 
 
 
-def start_server(debug=False, browser=False):
-    """ Start a wsgiref server instance with control over the main loop.
-        Derived from bottle.py's WSGIRefServer.run()
+
+
+
+class Server(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+        self.server = None
+        self.lock = threading.Lock()
+        self.stop_server = False
+
+    def run(self):
+        while 1:
+            try:
+                with self.lock:
+                    if self.stop_server:
+                        break
+                self.server.handle_request()
+            except KeyboardInterrupt:
+                break
+        print "\nShutting down..."
+        lasersaur.close()
+
+    def stop(self):
+        with self.lock:
+            self.stop_server = True
+        self.join()
+
+S = Server()
+
+
+def start(threaded=True, browser=False, debug=False):
+    """ Start a bottle web server.
+        Derived from WSGIRefServer.run() 
+        to have control over the main loop.
     """
     class FixedHandler(wsgiref.simple_server.WSGIRequestHandler):
         def address_string(self): # Prevent reverse DNS lookups please.
@@ -559,19 +589,17 @@ def start_server(debug=False, browser=False):
             if debug:
                 return wsgiref.simple_server.WSGIRequestHandler.log_request(*args, **kw)
 
-    server = wsgiref.simple_server. make_server(
+    S.server = wsgiref.simple_server.make_server(
         conf['network_host'],
         conf['network_port'], 
         bottle.default_app(), 
         wsgiref.simple_server.WSGIServer,
         FixedHandler
     )
-    server.timeout = 0.01
-    server.quiet = not debug
+    S.server.timeout = 0.01
+    S.server.quiet = not debug
     if debug:
         bottle.debug(True)
-    # server.serve_forever()
-
     print "Persistent storage root is: " + conf['stordir']
     print "-----------------------------------------------------------------------------"
     print "Bottle server starting up ..."
@@ -599,47 +627,39 @@ def start_server(debug=False, browser=False):
         except webbrowser.Error:
             print "Cannot open Webbrowser, please do so manually."
     sys.stdout.flush()  # make sure everything gets flushed
-    while 1:
-        try:
-            server.handle_request()
-        except KeyboardInterrupt:
-            break
-    print "\nShutting down..."
-    lasersaur.close()
+    # start server
+    if threaded:
+        print "INFO: Starting web server thread."
+        S.start()
+    else:
+        print "INFO: Entering main loop."
+        S.run()
+
+
+
+def stop():
+    global S
+    S.stop()
+    # recreate server to unbind 
+    # and allow restarting
+    del S
+    S = Server()
 
 
 
 if __name__ == "__main__":
-
-    ### Setup Argument Parser
-    argparser = argparse.ArgumentParser(description='Run LasaurApp.', prog='lasaurapp')
-    argparser.add_argument('port', metavar='serial_port', nargs='?', default=False,
-                        help='serial port to the Lasersaur')
-    argparser.add_argument('-v', '--version', action='version', version='%(prog)s ' + conf['version'],
-                        default=False, help='bind to all network devices (default: bind to 127.0.0.1)')
-    argparser.add_argument('-l', '--list', dest='list_serial_devices', action='store_true',
-                        default=False, help='list all serial devices currently connected')
-    argparser.add_argument('-d', '--debug', dest='debug', action='store_true',
-                        default=False, help='print more verbose for debugging')
-    argparser.add_argument('-u', '--usbhack', dest='usbhack', action='store_true',
-                        default=False, help='use usb reset hack (advanced)')
-    argparser.add_argument('-b', '--browser', dest='browser', action='store_true',
-                        default=False, help='launch interface in browser')
-    args = argparser.parse_args()
+    start(threaded=True, browser=False, debug=False)
+    while 1:  # wait until keyboard interrupt
+        try:
+            time.sleep(0.1)
+        except KeyboardInterrupt:
+            break
+    stop()
+    print "END of LasaurApp"
 
 
 
-    print "LasaurApp " + conf['version']
-    conf['usb_reset_hack'] = args.usbhack
 
-    # run
-    if args.debug:
-        if hasattr(sys, "_MEIPASS"):
-            print "Data root is: " + sys._MEIPASS
-
-
-
-    start_server(debug=args.debug, browser=args.browser)
 
     
 
