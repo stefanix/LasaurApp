@@ -27,6 +27,11 @@ argparser.add_argument('-u', '--usbhack', dest='usbhack', action='store_true',
                     default=False, help='use usb reset hack (advanced)')
 argparser.add_argument('-b', '--browser', dest='browser', action='store_true',
                     default=False, help='launch interface in browser')
+# for backwards compatibility
+argparser.add_argument('-p', '--public', dest='host_on_all_interfaces', action='store_true',
+                       default=False, help='dummy, for backwards compatibility')
+argparser.add_argument('--beaglebone', dest='beaglebone', action='store_true',
+                       default=False, help='dummy, for backwards compatibility')
 args = argparser.parse_args()
 
 

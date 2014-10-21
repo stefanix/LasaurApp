@@ -22,7 +22,7 @@ conf = {
     'network_host': '',                    # '' for all nics
     'network_port': 4444,
     'websocket_port': 4411,
-    'serial_port': '/dev/ttyACM0',
+    'serial_port': '/dev/ttyACM0',         # set to '' for auto (req. firmware)
     'baudrate': 57600,
     'rootdir': None,                       # defined further down (../)
     'stordir': None,                       # defined further down
@@ -46,6 +46,16 @@ conf = {
 
 
 ### make some 'smart' default setting choices
+
+
+### serial port
+#
+if conf['serial_port'] == '':
+    import lasersaur
+    conf['serial_port'] = lasersaur.find_controller()
+    reload(lasersaur)  # so port defaults are correct
+#
+###
 
 
 ### rootdir

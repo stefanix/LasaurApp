@@ -33,24 +33,55 @@ def checkserial(func):
     return _decorator
 
 
+
+
 ### STATIC FILES
+
+@bottle.route('/')
+def default_handler():
+    return bottle.static_file('app.html', root=os.path.join(conf['rootdir'], 'frontend') )
+
 
 @bottle.route('/css/:path#.+#')
 def static_css_handler(path):
-    return bottle.static_file(path, root=os.path.join(conf['rootdir'], 'frontend/css'))
+    return bottle.static_file(path, root=os.path.join(conf['rootdir'], 'frontend', 'css'))
     
 @bottle.route('/js/:path#.+#')
 def static_js_handler(path):
-    return bottle.static_file(path, root=os.path.join(conf['rootdir'], 'frontend/js'))
+    return bottle.static_file(path, root=os.path.join(conf['rootdir'], 'frontend', 'js'))
     
 @bottle.route('/img/:path#.+#')
 def static_img_handler(path):
-    return bottle.static_file(path, root=os.path.join(conf['rootdir'], 'frontend/img'))
+    return bottle.static_file(path, root=os.path.join(conf['rootdir'], 'frontend', 'img'))
 
 @bottle.route('/favicon.ico')
 def favicon_handler():
-    return bottle.static_file('favicon.ico', root=os.path.join(conf['rootdir'], 'frontend/img'))
-    
+    return bottle.static_file('favicon.ico', root=os.path.join(conf['rootdir'], 'frontend', 'img'))
+
+
+@bottle.route('/temp', method='POST')
+@bottle.auth_basic(checkuser)
+def temp():
+    """Create temp file for downloading."""
+    filedata = request.forms.get('filedata')
+    fp = tempfile.NamedTemporaryFile(mode='w', delete=False)
+    filename = fp.name
+    with fp:
+        fp.write(filedata)
+        fp.close()
+    print filedata
+    print "file stashed: " + os.path.basename(filename)
+    return os.path.basename(filename)
+
+
+@bottle.route('/download/<filename>/<dlname>')
+@bottle.auth_basic(checkuser)
+def download(filename, dlname):
+    print "requesting: " + filename
+    return static_file(filename, root=tempfile.gettempdir(), download=dlname)
+
+
+
 
 ### STATE
 
@@ -66,6 +97,8 @@ def config():
 @checkserial
 def status():
     return json.dumps(lasersaur.status())
+
+
 
 
 ### LOW-LEVEL CONTROL
@@ -154,6 +187,7 @@ def get_offset():
 @checkserial
 def clear_offset():
     lasersaur.sel_offset_table()
+
 
 
 
@@ -317,7 +351,6 @@ def clear():
 
 
 
-
 ### JOB EXECUTION
 
 @bottle.route('/run/<jobname>')
@@ -442,112 +475,8 @@ def reset():
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-### ROOT
-
-@bottle.route('/')
-def default_handler():
-    return bottle.static_file('app.html', root=os.path.join(conf['rootdir'], 'frontend') )
-
-
-@bottle.route('/stash_download', method='POST')
-def stash_download():
-    """Create a download file event from string."""
-    filedata = request.forms.get('filedata')
-    fp = tempfile.NamedTemporaryFile(mode='w', delete=False)
-    filename = fp.name
-    with fp:
-        fp.write(filedata)
-        fp.close()
-    print filedata
-    print "file stashed: " + os.path.basename(filename)
-    return os.path.basename(filename)
-
-@bottle.route('/download/:filename/:dlname')
-def download(filename, dlname):
-    print "requesting: " + filename
-    return static_file(filename, root=tempfile.gettempdir(), download=dlname)
-  
-
-
-
-
-@bottle.route('/flash_firmware')
-@bottle.route('/flash_firmware/:firmware_file')
-def flash_firmware_handler(firmware_file=None):
-    return_code = lasersaur.flash(firmware_file=firmware_file)
-    ret = []
-    # ret.append('Using com port: %s<br>' % (SERIAL_PORT))
-    ret.append('Using firmware: %s<br>' % (firmware_file))    
-    if return_code == 0:
-        print "SUCCESS: Arduino appears to be flashed."
-        ret.append('<h2>Successfully Flashed!</h2><br>')
-        ret.append('<a href="/">return</a>')
-        return ''.join(ret)
-    else:
-        print "ERROR: Failed to flash Arduino."
-        ret.append('<h2>Flashing Failed!</h2>. ')
-        ret.append('Most likely LasaurApp could not find the right serial port.')
-        return ''.join(ret)
-
-
-@bottle.route('/build_firmware')
-def build_firmware_handler():
-    ret = []
-    buildname = "LasaurGrbl_from_src"
-    return_code = lasersaur.build(firmware_name=buildname)
-    if return_code != 0:
-        print ret
-        ret.append('<h2>FAIL: build error!</h2>')
-        ret.append('Syntax error maybe? Try builing in the terminal.')
-        ret.append('<br><a href="/">return</a><br><br>')
-    else:
-        print "SUCCESS: firmware built."
-        ret.append('<h2>SUCCESS: new firmware built!</h2>')
-        ret.append('<br><a href="/flash_firmware/'+buildname+'.hex">Flash Now!</a><br><br>')
-    return ''.join(ret)
-
-
-
-
-@bottle.route('/job', method='POST')
-def job_submit_handler():
-    """Submit a job in lsa format."""
-    if not lasersaur.connected():
-        return "serial disconnected"
-
-    job_data = request.forms.get('job_data')
-    if not job_data:
-        return "no job data"
-
-    # print job_data
-    jobdict = json.loads(job_data)
-    lasersaur.job(jobdict)
-    return "__ok__"
-        
-
-@bottle.route('/queue_pct_done')
-def queue_pct_done_handler():
-    return lasersaur.percentage()
-
-
-
-
-
-
+###############################################################################
+###############################################################################
 
 
 class Server(threading.Thread):

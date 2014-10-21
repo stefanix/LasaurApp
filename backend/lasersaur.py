@@ -129,7 +129,7 @@ class SerialLoopClass(threading.Thread):
 
     def __init__(self):
         threading.Thread.__init__(self)
-        
+
         self.device = None
 
         self.tx_buffer = collections.deque()
