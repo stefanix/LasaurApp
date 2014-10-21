@@ -413,21 +413,10 @@ def load_library(jobname):
 @bottle.auth_basic(checkuser)
 def build(self, firmware_name=None):
     """Build firmware from firmware/src files."""
-    ret = []
     buildname = "LasaurGrbl_from_src"
     return_code = lasersaur.build(firmware_name=buildname)
     if return_code != 0:
-        print ret
-        ret.append('<h2>FAIL: build error!</h2>')
-        ret.append('Syntax error maybe? Try builing in the terminal for stack trace.')
-        ret.append('To build in terminal, go to LasaurApp/backend (via SSH),')
-        ret.append('open a Python REPL, type "import lasersaur" and "lasersaur.build()"')
-        ret.append('<br><a href="/">return</a><br><br>')
-    else:
-        print "SUCCESS: firmware built."
-        ret.append('<h2>SUCCESS: new firmware built!</h2>')
-        ret.append('<br><a href="/flash/'+buildname+'.hex">Flash Now!</a><br><br>')
-    return ''.join(ret)
+        bottle.abort(400, "Build failed.")
 
 
 @bottle.route('/flash')
@@ -436,19 +425,8 @@ def build(self, firmware_name=None):
 def flash(self, firmware=None):
     """Flash firmware to MCU."""
     return_code = lasersaur.flash(firmware_file=firmware)
-    ret = []
-    if firmware:
-        ret.append('Using firmware: %s<br>' % (firmware))    
-    if return_code == 0:
-        print "SUCCESS: Arduino appears to be flashed."
-        ret.append('<h2>Successfully Flashed!</h2><br>')
-        ret.append('<a href="/">return</a>')
-        return ''.join(ret)
-    else:
-        print "ERROR: Failed to flash Arduino."
-        ret.append('<h2>Flashing Failed!</h2>. ')
-        ret.append('Most likely LasaurApp could not find the right serial port.')
-        return ''.join(ret)
+    if return_code != 0:
+        bottle.abort(400, "Flashing failed.")
 
 
 @bottle.route('/reset')

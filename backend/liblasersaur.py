@@ -27,10 +27,13 @@
 
 import os
 import time
+import json
 import urllib
 import urllib2
+
 import jobimport
 import jobimport.path_optimizers
+# from config import conf
 
 __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
 
@@ -40,11 +43,12 @@ __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
 class Lasersaur(object):
     def __init__(self, host="lasersaur.local", port=4444):
         """Create a Lasersaur client object."""
-        self.conf = None
+        self.host = host
+        self.port = port
 
-        # fetch config
-        self.conf = self.config()
-
+        username = 'laser'
+        password = 'laser'
+ 
         # urllib2: enable auth
         password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
         top_level_url = "http://%s:%s/" % (host, port)
@@ -53,16 +57,29 @@ class Lasersaur(object):
         opener = urllib2.build_opener(handler)
         urllib2.install_opener(opener) # use auth for all urllib2.urlopen()
 
+        self.conf = None
+        # fetch config
+        self.conf = self.config()
+
     def _request(self, url, postdict=None, ret=False):
-        # TODO: url encode 
-        postdata = urllib.urlencode(postdict)
+        # TODO: url encode
+        url = "http://%s:%s%s" % (self.host, self.port, url)
+
+        if postdict:
+            postdata = urllib.urlencode(postdict)
+        else:
+            postdata = None
         req = urllib2.Request(url, postdata)
-        response = urllib2.urlopen(req)
-        if response.code != 200:
-            print "RESPONSE: %s, %s" % (response.code, response.msg)
-            raise urllib2.HTTPError
+        try:
+            response = urllib2.urlopen(req)
+        except urllib2.HTTPError as e:
+            nomachine = "No machine."
+            if e.code == 400 and nomachine in e.read():
+                print "ERROR: %s" % nomachine
+            raise e
         if ret:
             return json.loads(response.read())
+                
 
 
     def config(self):
