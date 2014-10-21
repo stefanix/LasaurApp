@@ -409,16 +409,47 @@ def load_library(jobname):
 ### MCU MANAGMENT
 
 @bottle.route('/build')
+@bottle.route('/build/<firmware>')
 @bottle.auth_basic(checkuser)
 def build(self, firmware_name=None):
     """Build firmware from firmware/src files."""
-    # TODO
+    ret = []
+    buildname = "LasaurGrbl_from_src"
+    return_code = lasersaur.build(firmware_name=buildname)
+    if return_code != 0:
+        print ret
+        ret.append('<h2>FAIL: build error!</h2>')
+        ret.append('Syntax error maybe? Try builing in the terminal for stack trace.')
+        ret.append('To build in terminal, go to LasaurApp/backend (via SSH),')
+        ret.append('open a Python REPL, type "import lasersaur" and "lasersaur.build()"')
+        ret.append('<br><a href="/">return</a><br><br>')
+    else:
+        print "SUCCESS: firmware built."
+        ret.append('<h2>SUCCESS: new firmware built!</h2>')
+        ret.append('<br><a href="/flash/'+buildname+'.hex">Flash Now!</a><br><br>')
+    return ''.join(ret)
+
 
 @bottle.route('/flash')
+@bottle.route('/flash/<firmware>')
 @bottle.auth_basic(checkuser)
-def flash(self, firmware_name=None):
+def flash(self, firmware=None):
     """Flash firmware to MCU."""
-    # TODO
+    return_code = lasersaur.flash(firmware_file=firmware)
+    ret = []
+    if firmware:
+        ret.append('Using firmware: %s<br>' % (firmware))    
+    if return_code == 0:
+        print "SUCCESS: Arduino appears to be flashed."
+        ret.append('<h2>Successfully Flashed!</h2><br>')
+        ret.append('<a href="/">return</a>')
+        return ''.join(ret)
+    else:
+        print "ERROR: Failed to flash Arduino."
+        ret.append('<h2>Flashing Failed!</h2>. ')
+        ret.append('Most likely LasaurApp could not find the right serial port.')
+        return ''.join(ret)
+
 
 @bottle.route('/reset')
 @bottle.auth_basic(checkuser)
@@ -480,13 +511,7 @@ def download(filename, dlname):
 @bottle.route('/flash_firmware')
 @bottle.route('/flash_firmware/:firmware_file')
 def flash_firmware_handler(firmware_file=None):
-    # get serial port by url argument
-    # e.g: /flash_firmware?port=COM3
-    serial_port = request.GET.get('port')
-    if not (serial_port and (serial_port[:3] == "COM" or serial_port[:4] == "tty.")):
-        serial_port = None
-    return_code = lasersaur.flash(serial_port=serial_port, firmware_file=firmware_file)
-
+    return_code = lasersaur.flash(firmware_file=firmware_file)
     ret = []
     # ret.append('Using com port: %s<br>' % (SERIAL_PORT))
     ret.append('Using firmware: %s<br>' % (firmware_file))    
@@ -497,13 +522,8 @@ def flash_firmware_handler(firmware_file=None):
         return ''.join(ret)
     else:
         print "ERROR: Failed to flash Arduino."
-        ret.append('<h2>Flashing Failed!</h2> Check terminal window for possible errors. ')
+        ret.append('<h2>Flashing Failed!</h2>. ')
         ret.append('Most likely LasaurApp could not find the right serial port.')
-        ret.append('<br><a href="/flash_firmware/'+firmware_file+'">try again</a> or <a href="/">return</a><br><br>')
-        if os.name != 'posix':
-            ret. append('If you know the COM ports the Arduino is connected to you can specifically select it here:')
-            for i in range(1,13):
-                ret. append('<br><a href="/flash_firmware?port=COM%s">COM%s</a>' % (i, i))
         return ''.join(ret)
 
 
@@ -584,6 +604,16 @@ def start_server(debug=False, browser=False):
     print "-----------------------------------------------------------------------------"    
     print
     lasersaur.connect()
+    if not lasersaur.connected():
+        print "---------------"
+        print "HOW TO configure the SERIAL PORT:"
+        print "in LasaurApp/backend/ create a configuration file" 
+        print "userconfig.py, and add something like:"
+        print "conf = {"
+        print "    'serial_port': 'COM3'," 
+        print "}"
+        print "Any settings in this conf dictionary will overwrite config.py"
+        print "---------------"
     # open web-browser
     if browser:
         try:

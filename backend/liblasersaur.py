@@ -297,11 +297,20 @@ class Lasersaur(object):
 
     def build(self, firmware_name=None):
         """Build firmware from firmware/src files."""
+        if firmware_name:
+            self._request('/build')
+        else:
+            self._request('/build/'+firmware_name)
 
     def flash(self, firmware_name=None):
         """Flash firmware to MCU."""
+        if firmware_name:
+            self._request('/flash')
+        else:
+            self._request('/flash/'+firmware_name)
 
     def reset(self):
         """Reset MCU"""
+        self._request('/reset')
 
 
