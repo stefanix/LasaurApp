@@ -133,10 +133,6 @@ void protocol_init();
 // Processes serial rx buffer and queues commands for stepper interrupt.
 void protocol_loop();
 
-// Update to stepper position when steppers have been stopped.
-// Called from the stepper code that executes the stop.
-void protocol_request_position_update();
-
 // Called to make protocol_idle report 
 // (super)status the next time it runs.
 void protocol_request_status();

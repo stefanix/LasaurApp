@@ -218,7 +218,6 @@ ISR(TIMER1_COMPA_vect) {
     stepper_go_idle(); 
     planner_reset_block_buffer();
     planner_request_position_update();
-    protocol_request_position_update();
     busy = false;
     return;
   }

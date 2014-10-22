@@ -186,6 +186,7 @@ def get_offset():
 @bottle.auth_basic(checkuser)
 @checkserial
 def clear_offset():
+    lasersaur.def_offset_custom(0,0,0)
     lasersaur.sel_offset_table()
 
 

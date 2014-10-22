@@ -146,7 +146,6 @@
 #define Y_AXIS 1
 #define Z_AXIS 2
 
-
 #define clear_vector(a) memset(a, 0, sizeof(a))
 #define clear_vector_double(a) memset(a, 0.0, sizeof(a))
 #define max(a,b) (((a) > (b)) ? (a) : (b))
