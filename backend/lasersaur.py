@@ -244,9 +244,9 @@ class SerialLoopClass(threading.Thread):
 
 
     def send_param(self, param, val):
-        # num to be [-134217.728, 134217.727]
+        # num to be [-134217.728, 134217.727], [-2**27, 2**27-1]
         # three decimals are retained
-        num = int(round((val*1000)+(2**27)))
+        num = int(round(((val+134217.728)*1000)))
         char0 = chr((num&127)+128)
         char1 = chr(((num&(127<<7))>>7)+128)
         char2 = chr(((num&(127<<14))>>14)+128)
@@ -363,14 +363,18 @@ class SerialLoopClass(threading.Thread):
                                     print "ERROR: invalid flag"
                             elif 96 < ord(char) < 123:  # parameter
                                 # char is in [a-z], process parameter
-                                num = ((((ord(self.pdata_chars[3])-128)*2097152 
-                                       + (ord(self.pdata_chars[2])-128)*16384 
-                                       + (ord(self.pdata_chars[1])-128)*128 
+                                num = ((((ord(self.pdata_chars[3])-128)*2097152
+                                       + (ord(self.pdata_chars[2])-128)*16384
+                                       + (ord(self.pdata_chars[1])-128)*128
                                        + (ord(self.pdata_chars[0])-128) )- 134217728)/1000.0)
                                 if char == INFO_POS_X:
                                     self._status['pos'][0] = num
+                                    print num
+                                    print "rawx: %s %s %s %s" % (ord(self.pdata_chars[0]), ord(self.pdata_chars[1]), ord(self.pdata_chars[2]), ord(self.pdata_chars[3]))
                                 elif char == INFO_POS_Y:
                                     self._status['pos'][1] = num
+                                    # print num
+                                    # print "rawy: %s %s %s %s" % (ord(self.pdata_chars[0]), ord(self.pdata_chars[1]), ord(self.pdata_chars[2]), ord(self.pdata_chars[3]))
                                 elif char == INFO_POS_Z:
                                     self._status['pos'][2] = num
                                 elif char == INFO_VERSION:

@@ -187,9 +187,9 @@ double stepper_get_position_z() {
 }
 void stepper_set_position(double x, double y, double z) {
   stepper_synchronize();  // wait until processing is done
-  stepper_position[X_AXIS] = floor(x*CONFIG_X_STEPS_PER_MM + 0.5);
-  stepper_position[Y_AXIS] = floor(y*CONFIG_Y_STEPS_PER_MM + 0.5);
-  stepper_position[Z_AXIS] = floor(z*CONFIG_Z_STEPS_PER_MM + 0.5);  
+  stepper_position[X_AXIS] = lround(x*CONFIG_X_STEPS_PER_MM);
+  stepper_position[Y_AXIS] = lround(y*CONFIG_Y_STEPS_PER_MM);
+  stepper_position[Z_AXIS] = lround(z*CONFIG_Z_STEPS_PER_MM);  
 }
 
 

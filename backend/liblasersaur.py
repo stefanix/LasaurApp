@@ -114,7 +114,7 @@ class Lasersaur(object):
         self._request('/absolute')
 
     def move(self, x, y, z=0.0):
-        self._request('/intensity/%.4f/%.4f/%.4f' % (x,y,z))
+        self._request('/move/%.4f/%.4f/%.4f' % (x,y,z))
 
     def pos(self):
         return self._request('/pos', ret=True)
@@ -217,7 +217,7 @@ class Lasersaur(object):
 
         load_request = {"job": job, "name":name, "type": type_, "optimize": optimize}
         load_request = json.dumps(load_request)
-        # upload
+        # TODO: upload
 
 
 
