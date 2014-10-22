@@ -369,12 +369,8 @@ class SerialLoopClass(threading.Thread):
                                        + (ord(self.pdata_chars[0])-128) )- 134217728)/1000.0)
                                 if char == INFO_POS_X:
                                     self._status['pos'][0] = num
-                                    print num
-                                    print "rawx: %s %s %s %s" % (ord(self.pdata_chars[0]), ord(self.pdata_chars[1]), ord(self.pdata_chars[2]), ord(self.pdata_chars[3]))
                                 elif char == INFO_POS_Y:
                                     self._status['pos'][1] = num
-                                    # print num
-                                    # print "rawy: %s %s %s %s" % (ord(self.pdata_chars[0]), ord(self.pdata_chars[1]), ord(self.pdata_chars[2]), ord(self.pdata_chars[3]))
                                 elif char == INFO_POS_Z:
                                     self._status['pos'][2] = num
                                 elif char == INFO_VERSION:
