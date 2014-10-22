@@ -32,7 +32,7 @@ import liblasersaur
 # assertDictContainsSubset(a, b)
 
 
-DEC = 1
+DEC = 3
 
 # match these to src/config.h
 X_STEPS_PER_MM = 88.88888888
@@ -119,16 +119,16 @@ class TestWebJobs(unittest.TestCase):
         self.assertAlmostEqual(off[2], 4, DEC)
         # pos after offset change
         pos = self.laser.pos()
-        self.assertAlmostEqual(pos[0], stepX(11.123), DEC)
-        self.assertAlmostEqual(pos[1], stepY(11.123), DEC)
-        self.assertAlmostEqual(pos[2], stepZ(11.123), DEC)
+        self.assertAlmostEqual(pos[0], stepX(11.123, 4), DEC)
+        self.assertAlmostEqual(pos[1], stepY(11.123, 4), DEC)
+        self.assertAlmostEqual(pos[2], stepZ(11.123, 4), DEC)
         # move with offset
         self.laser.move(16.543,16.543,16.543)
         time.sleep(1)
         pos = self.laser.pos()
-        self.assertAlmostEqual(pos[0], stepX(16.543), DEC)
-        self.assertAlmostEqual(pos[1], stepY(16.543), DEC)
-        self.assertAlmostEqual(pos[2], stepZ(16.543), DEC) 
+        self.assertAlmostEqual(pos[0], stepX(16.543, 4), DEC)
+        self.assertAlmostEqual(pos[1], stepY(16.543, 4), DEC)
+        self.assertAlmostEqual(pos[2], stepZ(16.543, 4), DEC) 
         # clear offset
         self.laser.clear_offset()
         time.sleep(0.6)
@@ -146,13 +146,13 @@ class TestWebJobs(unittest.TestCase):
 
 
 
-def stepX(val):
+def stepX(val, off1=0, off2=X_ORIGIN_OFFSET):
     # round val to discreet pos a stepper can be in
-    return (round((val-X_ORIGIN_OFFSET)*X_STEPS_PER_MM)/X_STEPS_PER_MM)+X_ORIGIN_OFFSET
-def stepY(val):
-    return (round((val-Y_ORIGIN_OFFSET)*Y_STEPS_PER_MM)/Y_STEPS_PER_MM)+Y_ORIGIN_OFFSET
-def stepZ(val):
-    return (round((val-Z_ORIGIN_OFFSET)*Z_STEPS_PER_MM)/Z_STEPS_PER_MM)+Z_ORIGIN_OFFSET
+    return (round((val+off1+off2)*X_STEPS_PER_MM)/X_STEPS_PER_MM)-off1-off2
+def stepY(val, off1=0, off2=Y_ORIGIN_OFFSET):
+    return (round((val+off1+off2)*Y_STEPS_PER_MM)/Y_STEPS_PER_MM)-off1-off2
+def stepZ(val, off1=0, off2=Z_ORIGIN_OFFSET):
+    return (round((val+off1+off2)*Z_STEPS_PER_MM)/Z_STEPS_PER_MM)-off1-off2
 
 
 def setUpModule():
