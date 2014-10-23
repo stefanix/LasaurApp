@@ -32,6 +32,7 @@ import liblasersaur
 # assertDictContainsSubset(a, b)
 
 
+# the num of decimals, match firmware protocol
 DEC = 3
 
 # match these to src/config.h
@@ -43,13 +44,20 @@ Y_ORIGIN_OFFSET = 5.0
 Z_ORIGIN_OFFSET = 0.0
 
 
-class TestWebJobs(unittest.TestCase):
+class TestLowLevel(unittest.TestCase):
 
-    def setUp(self):
-        self.laser = liblasersaur.Lasersaur("127.0.0.1")
+    @classmethod
+    def setUpClass(cls):
+        cls.laser = liblasersaur.Lasersaur("127.0.0.1")
 
-    def tearDown(self):
-        pass
+    # @classmethod
+    # def tearDownClass(cls):
+    #     pass
+
+    # def setUp(self):
+    #     self.laser = liblasersaur.Lasersaur("127.0.0.1")
+    # def tearDown(self):
+    #     pass
 
     def test_config(self):
         # test if we can get a sound config dict
@@ -142,8 +150,75 @@ class TestWebJobs(unittest.TestCase):
         self.assertAlmostEqual(pos[1], stepY(20.543), DEC)
         self.assertAlmostEqual(pos[2], stepZ(20.543), DEC)
 
-        # self.laser.clear_offset()
 
+
+class TestJobsQueue(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.laser = liblasersaur.Lasersaur("127.0.0.1")
+
+    @classmethod
+    def tearDownClass(cls):
+        pass
+
+    def test_queue_library(self):
+        # empty job queue
+        self.laser.clear()
+        jobs = self.laser.list('unstarred')
+        self.assertIsInstance(jobs, list)
+        self.assertListEqual(jobs, [])
+        starred = self.laser.list('starred')
+        self.assertIsInstance(starred, list)
+        for job in starred:
+            print job + "<++++++++++++++"
+            self.laser.unstar(job)
+        self.laser.clear()
+        jobs = self.laser.list()
+        self.assertIsInstance(jobs, list)
+        self.assertListEqual(jobs, [])
+        #library
+        lib = self.laser.list_library()
+        self.assertIsInstance(lib, list)
+        self.assertIn('Lasersaur.lsa', lib)
+        job = self.laser.get_library('Lasersaur.lsa')
+        self.assertIsInstance(job, dict)
+        self.laser.load_library('Lasersaur.lsa')
+        # queue
+        jobs = self.laser.list()
+        self.assertIsInstance(jobs, list)
+        self.assertIn('Lasersaur.lsa', jobs)
+        # get
+        job = self.laser.get('Lasersaur.lsa')
+        self.assertIsInstance(job, dict)
+        # list, starring
+        jobs = self.laser.list('starred')
+        self.assertIsInstance(jobs, list)
+        self.assertListEqual(jobs, [])
+        self.laser.star('Lasersaur.lsa')
+        jobs = self.laser.list('starred')
+        self.assertIsInstance(jobs, list)
+        self.assertIn('Lasersaur.lsa', jobs)
+        jobs = self.laser.list('unstarred')
+        self.assertIsInstance(jobs, list)
+        self.assertListEqual(jobs, [])
+        self.laser.unstar('Lasersaur.lsa')
+        jobs = self.laser.list('starred')
+        self.assertIsInstance(jobs, list)
+        self.assertListEqual(jobs, [])
+        jobs = self.laser.list('unstarred')
+        self.assertIsInstance(jobs, list)
+        self.assertIn('Lasersaur.lsa', jobs)
+        jobs = self.laser.list()
+        self.assertIsInstance(jobs, list)
+        self.assertIn('Lasersaur.lsa', jobs)
+        #del
+        self.laser.delete('Lasersaur.lsa')
+        jobs = self.laser.list()
+        self.assertIsInstance(jobs, list)
+        self.assertListEqual(jobs, [])
+        #TODO: constant job nums on add
+        #TODO: delete of starred file
 
 
 def stepX(val, off1=0, off2=X_ORIGIN_OFFSET):
@@ -167,4 +242,8 @@ def tearDownModule():
 
 if __name__ == '__main__':
     unittest.main()
-yY
+
+    # for partial test run like this:
+    # python test.py Class
+    # E.g:
+    # python test.py TestJobsQueue

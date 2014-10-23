@@ -38,6 +38,8 @@ import jobimport.path_optimizers
 __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
 
 
+USERNAME = "laser"
+PASSWORD = "laser"
 
 
 class Lasersaur(object):
@@ -45,20 +47,15 @@ class Lasersaur(object):
         """Create a Lasersaur client object."""
         self.host = host
         self.port = port
-
-        username = 'laser'
-        password = 'laser'
- 
         # urllib2: enable auth
         password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
         top_level_url = "http://%s:%s/" % (host, port)
-        password_mgr.add_password(None, top_level_url, username, password)
+        password_mgr.add_password(None, top_level_url, USERNAME, PASSWORD)
         handler = urllib2.HTTPBasicAuthHandler(password_mgr)
         opener = urllib2.build_opener(handler)
         urllib2.install_opener(opener) # use auth for all urllib2.urlopen()
-
-        self.conf = None
         # fetch config
+        self.conf = None
         self.conf = self.config()
 
     def _request(self, url, postdict=None, ret=False):
@@ -243,13 +240,19 @@ class Lasersaur(object):
         }
         self.load(json.dumps(job))
 
-    def list(self):
+    def list(self, kind=None):
         """List all queue jobs by name."""
-        return self._request('/list', ret=True)
+        if kind is None:
+            jobs = self._request('/list', ret=True)
+        elif kind == 'starred':
+            jobs = self._request('/list/starred', ret=True)
+        elif kind == 'unstarred':
+            jobs = self._request('/list/unstarred', ret=True)
+        return jobs
 
     def get(self, jobname):
         """Get a queue job in .lsa format."""
-        return self._request('/get', ret=True)
+        return self._request('/get/%s' % jobname, ret=True)
 
     def star(self, jobname):
         """Star a job."""
@@ -266,6 +269,21 @@ class Lasersaur(object):
     def clear(self):
         """Clear job list."""
         self._request('/clear')
+
+
+    ### LIBRARY
+
+    def list_library(self):
+        """List all library jobs by name."""
+        return self._request('/list_library', ret=True)
+
+    def get_library(self, jobname):
+        """Get a library job in .lsa format."""
+        return self._request('/get_library/'+jobname, ret=True)
+
+    def load_library(self, jobname):
+        """Load a library job into the queue."""
+        self._request('/load_library/'+jobname)
 
 
     ### JOB EXECUTION
@@ -293,21 +311,6 @@ class Lasersaur(object):
     def unstop(self):
         """Recover machine from stop mode."""
         self._request('/unstop')
-
-
-    ### LIBRARY
-
-    def list_library(self):
-        """List all library jobs by name."""
-        return self._request('/list_library', ret=True)
-
-    def get_library(self, jobname):
-        """Get a library job in .lsa format."""
-        return self._request('/get_library/'+jobname, ret=True)
-
-    def load_library(self, jobname):
-        """Load a library job into the queue."""
-        self._request('/load_library/'+jobname)
 
 
     ### MCU MANAGMENT

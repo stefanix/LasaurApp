@@ -194,56 +194,52 @@ def clear_offset():
 
 ### JOBS QUEUE
 
-def _get_sorted():
+def _get_sorted(globpattern):
     files = []
     cwd_temp = os.getcwd()
     try:
         os.chdir(conf['stordir'])
-        files = filter(os.path.isfile, glob.glob("*"))
+        files = filter(os.path.isfile, glob.glob(globpattern))
         files.sort(key=lambda x: os.path.getmtime(x))
     finally:
         os.chdir(cwd_temp)
     return files
 
-def _get(path, jobname):
-    jobpath = os.path.join(path, jobname)
-    if not os.path.exists(jobpath):
+def _get(jobpath):
+    if os.path.exists(jobpath):
+        pass
+    elif os.path.exists(jobpath + '.starred'):
+        jobpath = jobpath + '.starred'
+    else:
         bottle.abort(400, "No such file.")
-    try:
-        fp = open(jobpath)
+    with open(jobpath) as fp:
         job = fp.read()
-    finally:
-        fp.close()
     return job
 
 def _clear(limit=None):
-    files = _get_sorted()
-    if type(limit) is not int and not None:
+    files = _get_sorted('*.lsa')
+    if type(limit) is not int and limit is not None:
         raise ValueError
     for filename in files:
         if type(limit) is int and limit <= 0:
             break
-        if not filename.endswith('.starred'):
-            filename = os.path.join(conf['stordir'], filename)
-            os.remove(filename);
-            print "file deleted: " + filename
-            if type(limit) is int:
-                limit -= 1
+        filename = os.path.join(conf['stordir'], filename)
+        os.remove(filename);
+        print "file deleted: " + filename
+        if type(limit) is int:
+            limit -= 1
 
 def _add(job, name):
     # delete excessive job files
-    num_to_del = (len(_get_sorted()) +1) - conf['max_jobs_in_list']  
+    num_to_del = (len(_get_sorted('*.lsa')) +1) - conf['max_jobs_in_list']  
     _clear(num_to_del)
     # add
     namepath = os.path.join(conf['stordir'], name)
     if os.path.exists(namepath) or os.path.exists(namepath+'.starred'):
         bottle.abort(400, "File name exists.")
-    try:
-        fp = open(namepath, 'w')
+    with open(namepath, 'w') as fp:
         fp.write(job)
         print "file saved: " + name
-    finally:
-        fp.close()
 
 
 @bottle.route('/load', method='POST')
@@ -292,10 +288,22 @@ def load():
 
 
 @bottle.route('/list')
+@bottle.route('/list/<kind>')
 @bottle.auth_basic(checkuser)
-def list():
+def list(kind=None):
     """List all queue jobs by name."""
-    files = _get_sorted()
+    if kind is None:
+        files = _get_sorted('*.lsa*')
+    elif kind == 'starred':
+        files = _get_sorted('*.lsa.starred')
+        print files
+        for i in range(len(files)):
+            if files[i].endswith('.starred'):
+                files[i] = files[i][:-8]
+    elif kind == 'unstarred':
+        files = _get_sorted('*.lsa')
+    else:
+        bottle.abort(400, "Invalid kind.")
     return json.dumps(files)
 
 
@@ -303,7 +311,14 @@ def list():
 @bottle.auth_basic(checkuser)
 def get(jobname):
     """Get a queue job in .lsa format."""
-    return static_file(jobname, root=conf['stordir'], mimetype='text/plain')
+    filename = os.path.join(conf['stordir'], jobname.strip('/\\'))
+    if os.path.exists(filename):
+        pass
+    elif os.path.exists(filename + '.starred'):
+        filename = filename + '.starred'
+    else:
+        bottle.abort(400, "No such file.")
+    return bottle.static_file(jobname, root=conf['stordir'], mimetype='text/plain')
 
 
 @bottle.route('/star/<jobname>')
@@ -334,13 +349,13 @@ def delete(jobname):
     """Delete a job."""
     filename = os.path.join(conf['stordir'], jobname.strip('/\\'))
     if os.path.exists(filename):
-        try:
-            os.remove(filename);
-            print "file deleted: " + filename
-        finally:
-            pass
+        pass
+    elif os.path.exists(filename + '.starred'):
+        filename = filename + '.starred'
     else:
         bottle.abort(400, "No such file.")
+    os.remove(filename);
+    print "file deleted: " + filename
 
 
 @bottle.route('/clear')
@@ -351,6 +366,37 @@ def clear():
 
 
 
+### LIBRARY
+
+@bottle.route('/list_library')
+@bottle.auth_basic(checkuser)
+def list_library():
+    """List all library jobs by name."""
+    file_list = []
+    cwd_temp = os.getcwd()
+    try:
+        os.chdir(os.path.join(conf['rootdir'], 'library'))
+        file_list = glob.glob('*.lsa')
+    finally:
+        os.chdir(cwd_temp)
+    return json.dumps(file_list)
+
+
+@bottle.route('/get_library/<jobname>')
+@bottle.auth_basic(checkuser)
+def get_library(jobname):
+    """Get a library job in .lsa format."""
+    return bottle.static_file(jobname, root=os.path.join(conf['rootdir'], 'library'), mimetype='text/plain')
+
+
+@bottle.route('/load_library/<jobname>')
+@bottle.auth_basic(checkuser)
+def load_library(jobname):
+    """Load a library job into the queue."""
+    job = _get(os.path.join(conf['rootdir'], 'library', jobname))
+    _add(job, jobname)
+
+
 
 ### JOB EXECUTION
 
@@ -359,7 +405,7 @@ def clear():
 @checkserial
 def run(jobname):
     """Send job from queue to the machine."""
-    job = _get(conf['stordir'], jobname.strip('/\\'))
+    job = _get(os.path.join(conf['stordir'], jobname.strip('/\\')))
     if not status()['idle']:
         bottle.abort(400, "Machine not ready.")
     lasersaur.job(job)
@@ -403,38 +449,6 @@ def stop():
 def unstop():
     """Recover machine from stop mode."""
     lasersaur.unstop()
-
-
-
-### LIBRARY
-
-@bottle.route('/list_library')
-@bottle.auth_basic(checkuser)
-def list_library():
-    """List all library jobs by name."""
-    file_list = []
-    cwd_temp = os.getcwd()
-    try:
-        os.chdir(os.path.join(conf['rootdir'], 'library'))
-        file_list = glob.glob('*')
-    finally:
-        os.chdir(cwd_temp)
-    return json.dumps(file_list)
-
-
-@bottle.route('/get_library/<jobname>')
-@bottle.auth_basic(checkuser)
-def get_library(jobname):
-    """Get a library job in .lsa format."""
-    return bottle.static_file(jobname, root=os.path.join(conf['rootdir'], 'library'), mimetype='text/plain')
-
-
-@bottle.route('/load_library/<jobname>')
-@bottle.auth_basic(checkuser)
-def load_library(jobname):
-    """Load a library job into the queue."""
-    job = _get(os.path.join(conf['rootdir'], 'library'), jobname)
-    _add(job, jobname)
 
 
 
