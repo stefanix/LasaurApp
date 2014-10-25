@@ -211,7 +211,7 @@ class SerialManagerClass:
                   
 
     def is_queue_empty(self):
-        return self.tx_index >= len(tx_buffer)
+        return self.tx_index >= len(self.tx_buffer)
         
     
     def get_queue_percentage_done(self):
