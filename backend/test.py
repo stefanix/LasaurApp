@@ -171,7 +171,6 @@ class TestJobsQueue(unittest.TestCase):
         starred = self.laser.list('starred')
         self.assertIsInstance(starred, list)
         for job in starred:
-            print job + "<++++++++++++++"
             self.laser.unstar(job)
         self.laser.clear()
         jobs = self.laser.list()
