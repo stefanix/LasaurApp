@@ -69,7 +69,7 @@ function populate_job_library() {
       $.get("/library/get/" + name, function(jobdata) {
         load_into_job_widget(name, jobdata);
       });
-      return false;
+      return true;
     });   
   });
   // .success(function() { alert("second success"); })
