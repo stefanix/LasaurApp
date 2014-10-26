@@ -29,7 +29,7 @@ def read_svg(svg_string, workspace, tolerance, forced_dpi=None, optimize=True):
         # format: {'#ff0000': [[[x,y], [x,y], ...], [], ..], '#0000ff':[]}
         colors = []
         paths = []
-        for k,v in res['boundarys']:
+        for k,v in res['boundarys'].iteritems():
             colors.append(k)
             paths.append(v)
         if optimize:

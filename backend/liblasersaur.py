@@ -140,81 +140,74 @@ class Lasersaur(object):
 
     ### JOBS QUEUE
 
-    def load(self, job, name=None, locally=True, optimize=True):
+    def load(self, job, name=None, convert=True, optimize=True):
         """Loads a job from string or file.
         'job' can be: lsa (native), svg, dxf, or gcode
-        'name' can be omitted and defaults a unique string.
-        'locally' flag for converting/optimizing locally
+        'name' can be omitted and defaults to a unique string.
+        'convert' flag for converting/optimizing locally
         'optimize' flag for optimizing path tolerances at all
         """
-        type_ = None
-
         if len(job) < 256 and os.path.exists(job):
             # job is a file
             name_ = os.path.basename(job)
-            job = open(job).read()
+            with open(job) as fp:
+                job = fp.read()
             # set name from filename if not specified
             base, ext = os.path.splitext(name_)
             if not name:
                 name = base+'-'+str(int(time.time()))
-            # se type_ from file extension
-            # if len(ext) > 2:
-            #     type_ = ext[1:]
         # job is already in string format
         if not name:
             # use a default name
             name = "job-"+str(int(time.time()))
         # figure out type
-        if not type_:
-            jobheader = job[:256].lstrip()
-            if jobheader and jobheader[0] == '{':
-                type_ = 'lsa'
-            elif '<?xml' in jobheader and '<svg' in jobheader:
-                type_ = 'svg'
-            elif 'SECTION' in jobheader and 'HEADER' in jobheader:
-                type_ = 'dxf'
-            elif 'G0' in jobheader or 'G1' in jobheader or \
-                 'G00' in jobheader or 'G01' in jobheader or \
-                 'g0' in jobheader or 'g1' in jobheader or \
-                 'g00' in jobheader or 'g01' in jobheader:
-                type_ = 'ngc'
-
-
-        if locally:
-            if type_ == 'lsa':
-                if optimize:
-                    job = json.loads(job)
-                    if 'vector' in job and 'paths' in job['vector']:
-                        jobimport.pathoptimizer.optimize(
-                            job['vector']['paths'], self.conf['tolerance'])
-                        job['vector']['optimized'] = self.conf['tolerance']
-                    job = json.dumps(job)
-                    optimize = False  # optimization done
+        jobheader = job[:256].lstrip()
+        if jobheader and jobheader[0] == '{':
+            type_ = 'lsa'
+        elif '<?xml' in jobheader and '<svg' in jobheader:
+            type_ = 'svg'
+        elif 'SECTION' in jobheader and 'HEADER' in jobheader:
+            type_ = 'dxf'
+        elif 'G0' in jobheader or 'G1' in jobheader or \
+             'G00' in jobheader or 'G01' in jobheader or \
+             'g0' in jobheader or 'g1' in jobheader or \
+             'g00' in jobheader or 'g01' in jobheader:
+            type_ = 'ngc'
+        else:
+            print "ERROR: Cannot figure out file type."
+            raise TypeError
+        # now we have:
+        # job, name, type_
+        if convert:
+            if type_ == 'lsa' and optimize:
+                job = json.loads(job)
+                if 'vector' in job and 'paths' in job['vector']:
+                    jobimport.pathoptimizer.optimize(
+                        job['vector']['paths'], self.conf['tolerance'])
+                    job['vector']['optimized'] = self.conf['tolerance']
+                job = json.dumps(job)
             elif type_ == 'svg':
                 job = jobimport.read_svg(job, self.conf['workspace'],
                                          self.conf['tolerance'], optimize=optimize)
                 job = json.dumps(job)
-                type_ = 'lsa'         # conversion done
-                if optimize:
-                    optimize = False  # optimization done
             elif type_ == 'dxf':
                 job = jobimport.read_dxf(job, self.conf['tolerance'], optimize=optimize)
                 job = json.dumps(job)
-                type_ = 'lsa'         # conversion done
-                if optimize:
-                    optimize = False  # optimization done
             elif type_ == 'ngc':
                 job = jobimport.read_ngc(job, self.conf['tolerance'], optimize=optimize)
                 job = json.dumps(job)
-                type_ = 'lsa'         # conversion done
-                if optimize:
-                    optimize = False  # optimization done
             else:
                 print "ERROR: file type not recognized"
-
+                raise TypeError
+            # acknowledge convertion and optimization
+            type_ = 'lsa'
+            if optimize:
+                optimize = False
+        # assemble request data
         load_request = {"job": job, "name":name, "type": type_, "optimize": optimize}
         load_request = json.dumps(load_request)
-        # TODO: upload
+        # upload
+        self._request('/load', postdict={'load_request':load_request})
 
 
 

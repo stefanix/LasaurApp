@@ -214,17 +214,21 @@ def sort_by_seektime(path, start=[0.0, 0.0]):
         node, distsq = tree.nearest(endpoint, checkempty=True)
         i = node.data
         node.data = None
+        if i > 0:  # a path segment's startpoint is closest
+            i = i-1
+            rev = False
+        else:      # a path segment's endpoint is closest
+            i = -i-1
+            rev = True
         if i not in usedIdxs:
-            if i > 0:  # a path segment's startpoint is closest
-                i = (i-1)
-                path[newIdx] = path_unsorted[i]
-            else:      # a path segment's endpoint is closest
-                i = -(i-1)
+            if rev:      # a path segment's endpoint is closest
                 path_unsorted[i].reverse()  # reverse, endpoint is closest
                 path[newIdx] = path_unsorted[i]
+            else:  # a path segment's startpoint is closest
+                path[newIdx] = path_unsorted[i]
+            endpoint = path[newIdx][-1]  # prime for next iteration
             newIdx += 1
             usedIdxs[i] = True
-            endpoint = path_unsorted[i][-1]  # prime for next iteration
 
 
 

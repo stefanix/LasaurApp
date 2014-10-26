@@ -1,3 +1,5 @@
+
+import os
 import time
 import random
 import unittest
@@ -42,6 +44,8 @@ Z_STEPS_PER_MM = 33.33333333
 X_ORIGIN_OFFSET = 5.0
 Y_ORIGIN_OFFSET = 5.0
 Z_ORIGIN_OFFSET = 0.0
+
+thislocation = os.path.dirname(os.path.realpath(__file__))
 
 
 class TestLowLevel(unittest.TestCase):
@@ -152,7 +156,19 @@ class TestLowLevel(unittest.TestCase):
 
 
 
-class TestJobsQueue(unittest.TestCase):
+def stepX(val, off1=0, off2=X_ORIGIN_OFFSET):
+    # round val to discreet pos a stepper can be in
+    return (round((val+off1+off2)*X_STEPS_PER_MM)/X_STEPS_PER_MM)-off1-off2
+def stepY(val, off1=0, off2=Y_ORIGIN_OFFSET):
+    return (round((val+off1+off2)*Y_STEPS_PER_MM)/Y_STEPS_PER_MM)-off1-off2
+def stepZ(val, off1=0, off2=Z_ORIGIN_OFFSET):
+    return (round((val+off1+off2)*Z_STEPS_PER_MM)/Z_STEPS_PER_MM)-off1-off2
+
+
+
+
+
+class TestQueue(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -220,13 +236,25 @@ class TestJobsQueue(unittest.TestCase):
         #TODO: delete of starred file
 
 
-def stepX(val, off1=0, off2=X_ORIGIN_OFFSET):
-    # round val to discreet pos a stepper can be in
-    return (round((val+off1+off2)*X_STEPS_PER_MM)/X_STEPS_PER_MM)-off1-off2
-def stepY(val, off1=0, off2=Y_ORIGIN_OFFSET):
-    return (round((val+off1+off2)*Y_STEPS_PER_MM)/Y_STEPS_PER_MM)-off1-off2
-def stepZ(val, off1=0, off2=Z_ORIGIN_OFFSET):
-    return (round((val+off1+off2)*Z_STEPS_PER_MM)/Z_STEPS_PER_MM)-off1-off2
+
+class TestJobs(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.laser = liblasersaur.Lasersaur("127.0.0.1")
+
+    @classmethod
+    def tearDownClass(cls):
+        pass
+
+
+    def testLoad(self):
+        # jobname = self.laser.load(os.path.join(thislocation,'test_svgs','full-bed.svg'))
+        jobname = self.laser.load(os.path.join(thislocation,'test_svgs','Lasersaur.lsa'))
+        # self.assertIn(jobname, self.laser.list())
+        # self.laser.run(jobname) 
+        self.laser.run(self.laser.list()[-1]) 
+
 
 
 def setUpModule():
@@ -245,4 +273,4 @@ if __name__ == '__main__':
     # for partial test run like this:
     # python test.py Class
     # E.g:
-    # python test.py TestJobsQueue
+    # python test.py TestQueue

@@ -18,6 +18,8 @@ import jobimport
 __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
 
 
+bottle.BaseRequest.MEMFILE_MAX = 1024*1024*20 # max 20Mb files
+
 
 def checkuser(user, pw):
     """Check login credentials, used by auth_basic decorator."""
@@ -206,6 +208,7 @@ def _get_sorted(globpattern):
     return files
 
 def _get(jobpath):
+    # get job as sting
     if os.path.exists(jobpath):
         pass
     elif os.path.exists(jobpath + '.starred'):
@@ -230,6 +233,7 @@ def _clear(limit=None):
             limit -= 1
 
 def _add(job, name):
+    # add job (lsa string)
     # delete excessive job files
     num_to_del = (len(_get_sorted('*.lsa')) +1) - conf['max_jobs_in_list']  
     _clear(num_to_del)
@@ -254,7 +258,7 @@ def load():
         type: 'lsa', 'svg', 'dxf', or 'ngc' (string)
         optimize: flag whether to optimize (bool)
     """
-    load_request = json.loads(request.forms.get('load_request'))
+    load_request = json.loads(bottle.request.forms.get('load_request'))
     job = load_request.get('job')  # always a string
     name = load_request.get('name')
     type_ = load_request.get('type')
@@ -262,29 +266,48 @@ def load():
 
     # sanity check
     if job is None or name is None or type_ is None or optimize is None:
-        raise ValueError
+        bottle.abort(400, "Invalid request data.")
+
+    # name fix, TODO: think about this
+    namend = name[-4:]
+    if namend == '.lsa':
+        pass
+    elif namend == '.svg' or  namend == '.dxf' or namend == '.ngc' \
+      or namend == '.SVG' or  namend == '.DXF' or namend == '.NGC' \
+      or namend == '.LSA':
+        name = name[:-4] + '.lsa'
+    else:
+        name = name + '.lsa'
 
     # check file name available
     if os.path.exists(name) or os.path.exists(name+'.starred'):
         bottle.abort(400, "File name exists.")
 
-    if type_ == 'lsa' and optimize:
-        job = json.loads(job)
-        if optimize and 'vector' in job and 'paths' in job['vector']:
-            pathoptimizer.optimize(job['vector']['paths'], conf['tolerance'])
-            job['vector']['optimized'] = conf['tolerance']
+    if type_ == 'lsa':
+        if optimize:
+            job = json.loads(job)
+            if optimize and 'vector' in job and 'paths' in job['vector']:
+                pathoptimizer.optimize(job['vector']['paths'], conf['tolerance'])
+                job['vector']['optimized'] = conf['tolerance']
+            _add(json.dumps(job), name)
+        else:
+            _add(job, name)
     elif type_ == 'svg':
         job = jobimport.read_svg(job, conf['workspace'], 
                                  conf['tolerance'], optimize=optimize)
+        _add(json.dumps(job), name)
     elif type_ == 'dxf':
         job = jobimport.read_dxf(job, conf['tolerance'], optimize=optimize)
+        _add(json.dumps(job), name)
     elif type_ == 'ngc':
         job = jobimport.read_ngc(job, conf['tolerance'], optimize=optimize)
+        _add(json.dumps(job), name)
     else:
         print "ERROR: unsupported file type"
+        bottle.abort(400, "Invalid file type.")
 
-    # finally add to queue
-    _add(json.dumps(job), name)
+    return name
+    
 
 
 @bottle.route('/list')
@@ -406,9 +429,9 @@ def load_library(jobname):
 def run(jobname):
     """Send job from queue to the machine."""
     job = _get(os.path.join(conf['stordir'], jobname.strip('/\\')))
-    if not status()['idle']:
+    if not lasersaur.status()['idle']:
         bottle.abort(400, "Machine not ready.")
-    lasersaur.job(job)
+    lasersaur.job(json.loads(job))
 
 
 @bottle.route('/progress')
