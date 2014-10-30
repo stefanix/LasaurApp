@@ -47,9 +47,9 @@
 #define CONFIG_Y_ORIGIN_OFFSET 5.0  // mm, y-offset of table origin from physical home
 #define CONFIG_Z_ORIGIN_OFFSET 0.0   // mm, z-offset of table origin from physical home
 #ifdef NOT_GEARED
-  #define CONFIG_INVERT_X_AXIS 0  // 0 is regular, 1 inverts the y direction
+  #define CONFIG_INVERT_X_AXIS 1  // 0 is regular, 1 inverts the y direction
 #else
-  #define CONFIG_INVERT_X_AXIS 1
+  #define CONFIG_INVERT_X_AXIS 0
 #endif
 #define CONFIG_INVERT_Y_AXIS 1  // 0 is regular, 1 inverts the y direction
 #define CONFIG_INVERT_Z_AXIS 1  // 0 is regular, 1 inverts the y direction
@@ -97,7 +97,7 @@
 
 // figure out INVERT_MASK
 // careful! direction pins hardcoded here
-// (1<<X_DIRECTION_BIT) | (1<<Y_DIRECTION_BIT) | (1<<Y_DIRECTION_BIT)
+// (1<<X_DIRECTION_BIT) | (1<<Y_DIRECTION_BIT) | (1<<Z_DIRECTION_BIT)
 #if CONFIG_INVERT_X_AXIS && CONFIG_INVERT_Y_AXIS && CONFIG_INVERT_Z_AXIS
   #define INVERT_MASK 56U
 #elif CONFIG_INVERT_X_AXIS && CONFIG_INVERT_Y_AXIS
