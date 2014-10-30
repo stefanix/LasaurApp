@@ -369,9 +369,9 @@ void protocol_idle() {
     status_requested = false;
     // idle flag
     if (machine_idle) {
-      serial_write(INFO_IDLE_YES);
+      serial_write(INFO_READY_YES);
     } else {
-      serial_write(INFO_IDLE_NO);
+      serial_write(INFO_READY_NO);
     }
 
     // Handle STOPERROR conditions

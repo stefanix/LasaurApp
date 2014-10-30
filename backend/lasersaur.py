@@ -93,8 +93,8 @@ ERROR_INVALID_PARAMETER ='>'
 ERROR_TRANSMISSION_ERROR ='='
 
 # status: info flags
-INFO_IDLE_YES = 'A'
-INFO_IDLE_NO = 'B'
+INFO_READY_YES = 'A'
+INFO_READY_NO = 'B'
 INFO_DOOR_OPEN = 'C'
 INFO_DOOR_CLOSED = 'D'
 INFO_CHILLER_OFF = 'E'
@@ -147,7 +147,7 @@ class SerialLoopClass(threading.Thread):
         self.job_size = 0
 
         # status flags
-        self.idle = False
+        self.ready = False
         self._status = {}
         self.reset_status()
 
@@ -173,7 +173,7 @@ class SerialLoopClass(threading.Thread):
         self._status = {
             'appver':conf['version'],
             'firmver': None,
-            'idle': False,
+            'ready': False,
             'paused': False,
             'serial': False,
 
@@ -181,7 +181,7 @@ class SerialLoopClass(threading.Thread):
             # indicated when key present
             # possible keys are:
             # x1, x2, y1, y2, z1, z2
-            # byrequest
+            # requested
             # buffer
             # marker
             # data
@@ -199,8 +199,8 @@ class SerialLoopClass(threading.Thread):
             'pos':[0.0, 0.0, 0.0],
 
             ### super
-            'offcustom': [0.0, 0.0, 0.0],
-            'pos_target': [0.0, 0.0, 0.0],
+            'offset': [0.0, 0.0, 0.0],
+            # 'pos_target': [0.0, 0.0, 0.0],
             'feedrate': 0.0,
             'intensity': 0.0,
             'duration': 0.0,
@@ -225,10 +225,10 @@ class SerialLoopClass(threading.Thread):
                     print  'x: ' + str(self._status['pos'][0])
                     print  'y: ' + str(self._status['pos'][1])
                     print  'z: ' + str(self._status['pos'][2])
-                elif k == 'pos_target':
-                    print  'x_target: ' + str(self._status['pos_target'][0])
-                    print  'y_target: ' + str(self._status['pos_target'][1])
-                    print  'z_target: ' + str(self._status['pos_target'][2])
+                # elif k == 'pos_target':
+                #     print  'x_target: ' + str(self._status['pos_target'][0])
+                #     print  'y_target: ' + str(self._status['pos_target'][1])
+                #     print  'z_target: ' + str(self._status['pos_target'][2])
                 else:
                     print symap[self._status[k]] + ' ' + k
 
@@ -267,8 +267,8 @@ class SerialLoopClass(threading.Thread):
             with self.lock:
                 self._process()
                 if time.time()-last_status_request > 0.5:
-                    if self.idle:
-                        self.request_status = 2  # idle -> super request
+                    if self.ready:
+                        self.request_status = 2  # ready -> super request
                     else:
                         self.request_status = 1  # processing -> normal request
                     last_status_request = time.time()
@@ -301,7 +301,7 @@ class SerialLoopClass(threading.Thread):
                                 self.nRequested = self.TX_CHUNK_SIZE
                             elif char == STATUS_END:
                                 # status block complete -> send through status server
-                                self._status['idle'] = self.idle
+                                self._status['ready'] = self.ready
                                 self._status['serial'] = bool(self.device)
                                 statusjson = json.dumps(self._status)
                                 statserver.send(statusjson)
@@ -322,7 +322,7 @@ class SerialLoopClass(threading.Thread):
                                 elif char == ERROR_LIMIT_HIT_Z2:
                                     self._status['stops']['z2'] = True
                                 elif char == ERROR_SERIAL_STOP_REQUEST:
-                                    self._status['stops']['byrequest'] = True
+                                    self._status['stops']['requested'] = True
                                 elif char == ERROR_RX_BUFFER_OVERFLOW:
                                     self._status['stops']['buffer'] = True                                    
                                 elif char == ERROR_INVALID_MARKER:
@@ -339,7 +339,7 @@ class SerialLoopClass(threading.Thread):
                                 self.tx_buffer.clear()
                                 self.job_size = 0
                                 # not ready whenever in stop mode
-                                self.idle = False
+                                self.ready = False
 
                             elif 64 < ord(char) < 91:  # info flags
                                 # chr is in [A-Z], info flag
@@ -347,10 +347,10 @@ class SerialLoopClass(threading.Thread):
                                     sys.stdout.write("\nFEC Correction!\n")
                                     sys.stdout.flush()                                              
                                     # self._status['fec_correction'] = True
-                                elif char == INFO_IDLE_YES:
-                                    self.idle = True
-                                elif char == INFO_IDLE_NO:
-                                    self.idle = False
+                                elif char == INFO_READY_YES:
+                                    self.ready = True
+                                elif char == INFO_READY_NO:
+                                    self.ready = False
                                 elif char == INFO_DOOR_OPEN:
                                     self._status['info']['door'] = True
                                 elif char == INFO_DOOR_CLOSED:
@@ -378,17 +378,17 @@ class SerialLoopClass(threading.Thread):
                                     self._status['firmver'] = num
                                 # super status
                                 elif char == INFO_OFFCUSTOM_X:
-                                    self._status['offcustom'][0] = num
+                                    self._status['offset'][0] = num
                                 elif char == INFO_OFFCUSTOM_Y:
-                                    self._status['offcustom'][1] = num
+                                    self._status['offset'][1] = num
                                 elif char == INFO_OFFCUSTOM_Z:
-                                    self._status['offcustom'][2] = num
-                                elif char == INFO_TARGET_X:
-                                    self._status['pos_target'][0] = num
-                                elif char == INFO_TARGET_Y:
-                                    self._status['pos_target'][1] = num
-                                elif char == INFO_TARGET_Z:
-                                    self._status['pos_target'][2] = num
+                                    self._status['offset'][2] = num
+                                # elif char == INFO_TARGET_X:
+                                #     self._status['pos_target'][0] = num
+                                # elif char == INFO_TARGET_Y:
+                                #     self._status['pos_target'][1] = num
+                                # elif char == INFO_TARGET_Z:
+                                #     self._status['pos_target'][2] = num
                                 elif char == INFO_FEEDRATE:
                                     self._status['feedrate'] = num
                                 elif char == INFO_INTENSITY:
@@ -489,7 +489,7 @@ class SerialLoopClass(threading.Thread):
                 self.close()     
         else:
             # serial disconnected
-            self.idle = False
+            self.ready = False
 
         # flush stdout, so print shows up timely
         sys.stdout.flush()
@@ -665,7 +665,7 @@ def homing():
     """Run homing cycle."""
     global SerialLoop
     with SerialLoop.lock:
-        if SerialLoop.idle:
+        if SerialLoop.ready:
             SerialLoop.send_command(CMD_HOMING)
         else:
             print "WARN: ignoring homing command while job running"

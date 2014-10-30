@@ -96,8 +96,8 @@
 
 
 // status: info markers
-#define INFO_IDLE_YES 'A'
-#define INFO_IDLE_NO 'B'
+#define INFO_READY_YES 'A'
+#define INFO_READY_NO 'B'
 #define INFO_DOOR_OPEN 'C'
 #define INFO_DOOR_CLOSED 'D'
 #define INFO_CHILLER_OFF 'E'

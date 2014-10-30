@@ -84,8 +84,7 @@ def download(filename, dlname):
 
 
 
-
-### STATE
+### LOW-LEVEL
 
 @bottle.route('/config')
 @bottle.auth_basic(checkuser)
@@ -99,11 +98,6 @@ def config():
 @checkserial
 def status():
     return json.dumps(lasersaur.status())
-
-
-
-
-### LOW-LEVEL CONTROL
 
 @bottle.route('/homing')
 @bottle.auth_basic(checkuser)
@@ -141,12 +135,6 @@ def absolute():
 def move(x, y, z):
     lasersaur.move(x, y, z)
 
-@bottle.route('/pos')
-@bottle.auth_basic(checkuser)
-@checkserial
-def pos():
-    return json.dumps(lasersaur.status()['pos'])
-
 @bottle.route('/air_on')
 @bottle.auth_basic(checkuser)
 @checkserial
@@ -171,18 +159,12 @@ def aux1_on():
 def aux1_off():
     lasersaur.aux1_off()
 
-@bottle.route('/set_offset/<x:float>/<y:float>/<z:float>')
+@bottle.route('/offset/<x:float>/<y:float>/<z:float>')
 @bottle.auth_basic(checkuser)
 @checkserial
-def set_offset(x, y, z):
+def offset(x, y, z):
     lasersaur.def_offset_custom(x, y, z)
     lasersaur.sel_offset_custom()
-
-@bottle.route('/get_offset')
-@bottle.auth_basic(checkuser)
-@checkserial
-def get_offset():
-    return json.dumps(lasersaur.status()['offcustom'])
 
 @bottle.route('/clear_offset')
 @bottle.auth_basic(checkuser)

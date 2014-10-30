@@ -79,21 +79,36 @@ class Lasersaur(object):
                 
 
 
+    ### LOW-LEVEL
+
     def config(self):
         """Get config from machine."""
         return self._request('/config', ret=True)
 
     def status(self):
-        """Get status report of machine."""
+        """Get status report of machine.
+        {
+            'ready': False,
+            'pos':[0.0, 0.0, 0.0],
+            'stops': {},        # x1, x2, y1, y2, z1, z2
+                                # requested, buffer, marker, data, command, parameter, transmission
+            'info': {},         # door, chiller
+
+            ### super
+            'firmver': 15.00,
+            'offset': [0.0, 0.0, 0.0],
+            'feedrate': 0.0,
+            'intensity': 0.0,
+            'duration': 0.0,
+            'pixelwidth': 0.0,
+            
+            ### backend
+            "appver": 15.00,
+            'paused': False,
+            'serial': False
+        }
+        """
         return self._request('/status', ret=True)
-
-    def ready(self):
-        """Get ready status, specifically."""
-        status = self._request('/status', ret=True)
-        return status['idle']
-
-
-    ### LOW-LEVEL CONTROL
 
     def homing(self):
         self._request('/homing')
@@ -113,9 +128,6 @@ class Lasersaur(object):
     def move(self, x, y, z=0.0):
         self._request('/move/%.4f/%.4f/%.4f' % (x,y,z))
 
-    def pos(self):
-        return self._request('/pos', ret=True)
-
     def air_on(self):
         self._request('/air_on')
 
@@ -128,11 +140,8 @@ class Lasersaur(object):
     def aux1_off(self):
         self._request('/aux1_off')
 
-    def set_offset(self, x, y, z):
-        self._request('/set_offset/%.4f/%.4f/%.4f' % (x,y,z))
-
-    def get_offset(self):
-        return self._request('/get_offset', ret=True)
+    def offset(self, x, y, z=0.0):
+        self._request('/offset/%.4f/%.4f/%.4f' % (x,y,z))
 
     def clear_offset(self):
         self._request('/clear_offset')
@@ -281,9 +290,12 @@ class Lasersaur(object):
 
     ### JOB EXECUTION
 
-    def run(self, jobname):
+    def run(self, jobname, async=True):
         """Send job from queue to the machine."""
         self._request('/run/%s' % jobname)
+        if not async:
+            while not self.ready(cache=0):
+                time.sleep(1)
 
     def progress(self):
         """Get percentage of job done."""
