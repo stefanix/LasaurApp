@@ -100,6 +100,7 @@ INFO_DOOR_CLOSED = 'D'
 INFO_CHILLER_OFF = 'E'
 INFO_CHILLER_ON = 'F'
 INFO_FEC_CORRECTION = 'G'
+INFO_BUFFER_UNDERRUN = 'H'
 
 # status: info params
 INFO_POS_X = 'x'
@@ -359,6 +360,9 @@ class SerialLoopClass(threading.Thread):
                                     self._status['info']['chiller'] = True
                                 elif char == INFO_CHILLER_ON:
                                     del self._status['info']['chiller']
+                                elif char == INFO_BUFFER_UNDERRUN:
+                                    sys.stdout.write("INFO: Firmware rx buffer empty.\n")
+                                    sys.stdout.flush()  
                                 else:
                                     print "ERROR: invalid flag"
                             elif 96 < ord(char) < 123:  # parameter
@@ -738,7 +742,7 @@ def job(jobdict):
                     "feedrate": 2000,      # optional, rate to other verteces
                     "intensity": 100,      # optional, default: 0 (in percent)
                     "pierce_time": 0,      # optional, default: 0
-                    "air_assist": "feed",   # optional (feed, pass, off), default: feed
+                    "air_assist": "pass",   # optional (feed, pass, off), default: pass
                     "aux1_assist": "off",  # optional (feed, pass, off), default: off
                 }
             ],
@@ -788,8 +792,11 @@ def job(jobdict):
             paths = jobdict['vector']['paths']
             for pass_ in passes:
                 # turn on assists if set to 'pass'
-                if 'air_assist' in pass_ and pass_['air_assist'] == 'pass':
-                    air_on()
+                if 'air_assist' in pass_:
+                    if pass_['air_assist'] == 'pass':
+                        air_on()
+                else:
+                    air_on()    # also default this behavior
                 if 'aux1_assist' in pass_ and pass_['aux1_assist'] == 'pass':
                     aux1_on()
                 # set absolute/relative
@@ -843,13 +850,14 @@ def job(jobdict):
                                     if 'air_assist' in pass_:
                                         if pass_['air_assist'] == 'feed':
                                             air_off()
-                                    else:
-                                        air_off()  # also default this behavior        
                                     if 'aux1_assist' in pass_ and pass_['aux1_assist'] == 'feed':
                                         aux1_off()
                 # turn off assists if set to 'pass'
-                if 'air_assist' in pass_ and pass_['air_assist'] == 'pass':
-                    air_off()
+                if 'air_assist' in pass_:
+                    if pass_['air_assist'] == 'pass':
+                        air_off()
+                else:
+                    air_off()  # also default this behavior
                 if 'aux1_assist' in pass_ and pass_['aux1_assist'] == 'pass':
                     aux1_off()
             # return to origin
@@ -959,5 +967,9 @@ def sel_offset_custom():
 
 
 def testjob():
-    j = json.load(open(os.path.join(conf['rootdir'], 'library', 'Lasersaur.lsa')))
+    j = json.load(open(os.path.join(conf['rootdir'], 'backend', 'testjobs', 'Lasersaur.lsa')))
+    job(j)
+
+def torturejob():
+    j = json.load(open(os.path.join(conf['rootdir'], 'backend', 'testjobs', 'k4.lsa')))
     job(j)

@@ -96,6 +96,7 @@ static data_t pdata;
 static volatile bool status_requested;           // when set protocol_idle will write status to serial
 static volatile bool superstatus_requested;      // extended status
 static bool machine_idle;                        // when no serial data and no blockes processing
+static bool rx_buffer_underrun;                  // when the rx serial buffer runs empty
 
 static void on_cmd(uint8_t command);
 static void on_param(uint8_t parameter);
@@ -122,6 +123,7 @@ void protocol_init() {
   status_requested = true;
   superstatus_requested = true;
   machine_idle = true;
+  rx_buffer_underrun = false;
 }
 
 
@@ -341,6 +343,11 @@ void protocol_end_of_job_check() {
 }
 
 
+void protocol_mark_underrun() {
+  rx_buffer_underrun = true;
+}
+
+
 void protocol_idle() {
   // Continuously called in protocol_loop
   // Also called when the protocol loop is blocked by
@@ -372,6 +379,11 @@ void protocol_idle() {
       serial_write(INFO_READY_YES);
     } else {
       serial_write(INFO_READY_NO);
+    }
+
+    if (rx_buffer_underrun) {
+      serial_write(INFO_BUFFER_UNDERRUN);
+      rx_buffer_underrun = false;
     }
 
     // Handle STOPERROR conditions

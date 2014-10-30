@@ -103,6 +103,7 @@
 #define INFO_CHILLER_OFF 'E'
 #define INFO_CHILLER_ON 'F'
 #define INFO_FEC_CORRECTION 'G'
+#define INFO_BUFFER_UNDERRUN 'H'
 
 // status:  info params
 #define STATUS_POS_X 'x'
@@ -140,6 +141,9 @@ void protocol_request_superstatus();
 
 // called whenever no new serial data
 void protocol_end_of_job_check();
+
+// called when rx serial buffer empty
+void protocol_mark_underrun();
 
 // called whenever protocol loop is waiting
 void protocol_idle();
