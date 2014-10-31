@@ -973,3 +973,13 @@ def testjob():
 def torturejob():
     j = json.load(open(os.path.join(conf['rootdir'], 'backend', 'testjobs', 'k4.lsa')))
     job(j)
+
+
+if __name__ == "__main__":
+    # run like this to profile: python -m cProfile lasersaur.py
+    connect()
+    testjob()
+    while not status()['ready']:
+        time.sleep(1)
+        sys.stdout.write('.')
+    close()
