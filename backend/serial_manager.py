@@ -128,7 +128,7 @@ class SerialManagerClass:
         # BUG WARNING: the pyserial write function does not report how
         # many bytes were actually written if this is different from requested.
         # Work around: use a big enough timeout and a small enough chunk size.
-        self.device = serial.Serial(port, baudrate, timeout=0, writeTimeout=1)
+        self.device = serial.Serial(port, baudrate, timeout=0.001, writeTimeout=1)
 
 
     def close(self):
@@ -265,8 +265,8 @@ class SerialManagerClass:
                             t_prewrite = time.time()
                             actuallySent = self.device.write(
                                 self.tx_buffer[self.tx_index:self.tx_index+self.nRequested])
-                            if time.time()-t_prewrite > 0.0005:
-                                sys.stdout.write("WARN: write delay\n")
+                            if time.time()-t_prewrite > 0.005:
+                                sys.stdout.write("WARN: write delay 1\n")
                                 sys.stdout.flush()
                         except serial.SerialTimeoutException:
                             # skip, report
@@ -279,7 +279,11 @@ class SerialManagerClass:
                             self.last_request_ready = 0  # make sure to request ready
                     elif self.tx_buffer[self.tx_index] in ['!', '~']:  # send control chars no matter what
                         try:
+                            t_prewrite = time.time()
                             actuallySent = self.device.write(self.tx_buffer[self.tx_index])
+                            if time.time()-t_prewrite > 0.005:
+                                sys.stdout.write("WARN: write delay 2\n")
+                                sys.stdout.flush()
                         except serial.SerialTimeoutException:
                             actuallySent = 0  # assume nothing has been sent
                             sys.stdout.write("\nsend_queue_as_ready: writeTimeoutError\n")
@@ -292,7 +296,11 @@ class SerialManagerClass:
                             # only ask once (and after a big time out)
                             # print "=========================== REQUEST READY"
                             try:
+                                t_prewrite = time.time()
                                 actuallySent = self.device.write(self.request_ready_char)
+                                if time.time()-t_prewrite > 0.005:
+                                    sys.stdout.write("WARN: write delay 3\n")
+                                    sys.stdout.flush()
                             except serial.SerialTimeoutException:
                                 # skip, report
                                 actuallySent = self.nRequested  # pyserial does not report this sufficiently
