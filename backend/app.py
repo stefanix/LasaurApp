@@ -82,7 +82,7 @@ class HackedWSGIRequestHandler(WSGIRequestHandler):
         # return "(a requester)"
         return str(self.client_address[0])
 
-     def log_request(*args, **kw):
+    def log_request(*args, **kw):
         # if debug:
             # return wsgiref.simple_server.WSGIRequestHandler.log_request(*args, **kw)
         pass
