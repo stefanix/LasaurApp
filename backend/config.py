@@ -24,7 +24,7 @@ conf = {
     'websocket_port': 4411,
     'serial_port': '/dev/ttyACM0',         # set to '' for auto (req. firmware)
     # 'baudrate': 57600,
-    'baudrate': 28800,
+    'baudrate': 19200,
     'rootdir': None,                       # defined further down (../)
     'stordir': None,                       # defined further down
     'hardware': None,                      # defined further down
