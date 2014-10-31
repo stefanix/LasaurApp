@@ -128,7 +128,7 @@ def run_with_callback(host, port):
         try:
             SerialManager.send_queue_as_ready()
             server.handle_request()
-            time.sleep(0.0005)
+            time.sleep(0.0004)
         except KeyboardInterrupt:
             break
     print "\nShutting down..."
