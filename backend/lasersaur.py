@@ -269,7 +269,7 @@ class SerialLoopClass(threading.Thread):
         while True:
             with self.lock:
                 self._process()
-                if time.time()-last_status_request > 1.5:
+                if time.time()-last_status_request > 0.5:
                     if self.ready:
                         self.request_status = 2  # ready -> super request
                     else:
@@ -559,7 +559,7 @@ def connect(port=conf['serial_port'], baudrate=conf['baudrate'], server=False):
                 import flash
                 flash.usb_reset_hack()
             # connect
-            SerialLoop.device = serial.Serial(port, baudrate, timeout=0.0001, writeTimeout=0.1)
+            SerialLoop.device = serial.Serial(port, baudrate, timeout=0.001, writeTimeout=0.1)
             if conf['hardware'] == 'standard':
                 # clear throat
                 # Toggle DTR to reset Arduino
