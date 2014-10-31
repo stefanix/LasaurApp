@@ -265,7 +265,7 @@ class SerialManagerClass:
                             t_prewrite = time.time()
                             actuallySent = self.device.write(
                                 self.tx_buffer[self.tx_index:self.tx_index+self.nRequested])
-                            if time.time()-t_prewrite > 0.005:
+                            if time.time()-t_prewrite > 0.0005:
                                 sys.stdout.write("WARN: write delay\n")
                                 sys.stdout.flush()
                         except serial.SerialTimeoutException:
