@@ -65,7 +65,7 @@ volatile uint8_t tx_buffer_tail = 0;
 *************************************************/
 #define CHAR_READY '\x12'
 #define CHAR_REQUEST_READY '\x14'
-#define RX_CHUNK_SIZE 64
+#define RX_CHUNK_SIZE 16
 volatile uint8_t send_ready_flag = 0;
 volatile uint8_t request_ready_flag = 0;
 

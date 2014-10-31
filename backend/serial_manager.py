@@ -19,8 +19,8 @@ class SerialManagerClass:
 
         # TX_CHUNK_SIZE - this is the number of bytes to be 
         # written to the device in one go. It needs to match the device.
-        self.TX_CHUNK_SIZE = 64
-        self.RX_CHUNK_SIZE = 256
+        self.TX_CHUNK_SIZE = 16
+        self.RX_CHUNK_SIZE = 16
         self.nRequested = 0
         
         # used for calculating percentage done
@@ -128,7 +128,7 @@ class SerialManagerClass:
         # BUG WARNING: the pyserial write function does not report how
         # many bytes were actually written if this is different from requested.
         # Work around: use a big enough timeout and a small enough chunk size.
-        self.device = serial.Serial(port, baudrate, timeout=0, writeTimeout=0.1)
+        self.device = serial.Serial(port, baudrate, timeout=0, writeTimeout=1)
 
 
     def close(self):
@@ -262,8 +262,12 @@ class SerialManagerClass:
                 if self.tx_index < len(self.tx_buffer):
                     if self.nRequested > 0:
                         try:
+                            t_prewrite = time.time()
                             actuallySent = self.device.write(
                                 self.tx_buffer[self.tx_index:self.tx_index+self.nRequested])
+                            if time.time()-t_prewrite > 0.005:
+                                sys.stdout.write("WARN: write delay\n")
+                                sys.stdout.flush()
                         except serial.SerialTimeoutException:
                             # skip, report
                             actuallySent = 0  # assume nothing has been sent
