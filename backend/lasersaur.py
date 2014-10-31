@@ -138,8 +138,8 @@ class SerialLoopClass(threading.Thread):
 
         # TX_CHUNK_SIZE - this is the number of bytes to be 
         # written to the device in one go. It needs to match the device.
-        self.TX_CHUNK_SIZE = 64
-        self.RX_CHUNK_SIZE = 256
+        self.TX_CHUNK_SIZE = 16
+        self.RX_CHUNK_SIZE = 16
         self.nRequested = 0
         self.last_request_ready = 0
         self.saidhello = False
@@ -559,7 +559,7 @@ def connect(port=conf['serial_port'], baudrate=conf['baudrate'], server=False):
                 import flash
                 flash.usb_reset_hack()
             # connect
-            SerialLoop.device = serial.Serial(port, baudrate, timeout=0.01, writeTimeout=0.1)
+            SerialLoop.device = serial.Serial(port, baudrate, timeout=0.005, writeTimeout=0.1)
             if conf['hardware'] == 'standard':
                 # clear throat
                 # Toggle DTR to reset Arduino
