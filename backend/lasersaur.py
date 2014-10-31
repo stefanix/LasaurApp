@@ -458,7 +458,7 @@ class SerialLoopClass(threading.Thread):
                             to_send = ''.join(islice(self.tx_buffer, 0, self.nRequested))
                             t_prewrite = time.time()
                             actuallySent = self.device.write(to_send)
-                            if t_write = time.time() > 0.001:
+                            if time.time() - t_prewrite > 0.001:
                                 sys.stdout.write("WARN: write delay\n")
                                 sys.stdout.flush()
                         except serial.SerialTimeoutException:
