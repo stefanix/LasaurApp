@@ -559,7 +559,7 @@ def connect(port=conf['serial_port'], baudrate=conf['baudrate'], server=False):
                 import flash
                 flash.usb_reset_hack()
             # connect
-            SerialLoop.device = serial.Serial(port, baudrate, timeout=0.001, writeTimeout=0.1)
+            SerialLoop.device = serial.Serial(port, baudrate, timeout=0.01, writeTimeout=0.1)
             if conf['hardware'] == 'standard':
                 # clear throat
                 # Toggle DTR to reset Arduino
