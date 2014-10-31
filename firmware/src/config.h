@@ -24,7 +24,8 @@
 #include <stdbool.h>
 
 #define VERSION 1500             // int or float
-#define BAUD_RATE 57600
+// #define BAUD_RATE 57600
+#define BAUD_RATE 28800
 // #define DEBUG_IGNORE_SENSORS  // set for debugging
 // #define NOT_GEARED
 
