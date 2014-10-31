@@ -456,7 +456,11 @@ class SerialLoopClass(threading.Thread):
                     if self.nRequested > 0:
                         try:
                             to_send = ''.join(islice(self.tx_buffer, 0, self.nRequested))
+                            t_prewrite = time.time()
                             actuallySent = self.device.write(to_send)
+                            if t_write = time.time() > 0.001:
+                                sys.stdout.write("WARN: write delay\n")
+                                sys.stdout.flush()
                         except serial.SerialTimeoutException:
                             # skip, report
                             actuallySent = 0  # assume nothing has been sent
@@ -559,7 +563,7 @@ def connect(port=conf['serial_port'], baudrate=conf['baudrate'], server=False):
                 import flash
                 flash.usb_reset_hack()
             # connect
-            SerialLoop.device = serial.Serial(port, baudrate, timeout=0.005, writeTimeout=0.1)
+            SerialLoop.device = serial.Serial(port, baudrate, timeout=0, writeTimeout=1)
             if conf['hardware'] == 'standard':
                 # clear throat
                 # Toggle DTR to reset Arduino
