@@ -259,7 +259,7 @@ class SerialManagerClass:
                         self.process_status_line(line)
                 else:
                     if self.nRequested == 0:
-                        time.sleep(0.01)  # no rx/tx, rest a bit
+                        time.sleep(0.001)  # no rx/tx, rest a bit
                 
                 ### sending
                 if self.tx_index < len(self.tx_buffer):
@@ -293,7 +293,6 @@ class SerialManagerClass:
                             sys.stdout.flush()
                         self.tx_index += actuallySent
                     else:
-                        time.sleep(0.01)  # no tx, rest a bit
                         if (time.time()-self.last_request_ready) > 2.0:
                             # ask to send a ready byte
                             # only ask for this when sending is on hold
