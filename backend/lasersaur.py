@@ -275,6 +275,7 @@ class SerialLoopClass(threading.Thread):
                     else:
                         self.request_status = 1  # processing -> normal request
                     last_status_request = time.time()
+            time.sleep(0.01)
             if self.stop_processing:
                 break
 
