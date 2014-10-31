@@ -558,7 +558,7 @@ def start(threaded=True, browser=False, debug=False):
     print "Use Ctrl-C to quit."
     print "-----------------------------------------------------------------------------"    
     print
-    lasersaur.connect()
+    lasersaur.connect(server=True)  # also start websocket stat server
     if not lasersaur.connected():
         print "---------------"
         print "HOW TO configure the SERIAL PORT:"

@@ -168,6 +168,8 @@ class SerialLoopClass(threading.Thread):
         # see: http://effbot.org/zone/thread-synchronization.htm
         self.lock = threading.Lock()
 
+        self.server_enabled = False
+
 
 
     def reset_status(self):
@@ -304,9 +306,10 @@ class SerialLoopClass(threading.Thread):
                                 # status block complete -> send through status server
                                 self._status['ready'] = self.ready
                                 self._status['serial'] = bool(self.device)
-                                statusjson = json.dumps(self._status)
-                                statserver.send(statusjson)
-                                statserver.on_connected_message(statusjson)
+                                if self.server_enabled:
+                                    statusjson = json.dumps(self._status)
+                                    statserver.send(statusjson)
+                                    statserver.on_connected_message(statusjson)
                         elif ord(char) < 128:  ### markers
                             if 32 < ord(char) < 65: # stop error flags                            
                                 # chr is in [!-@], process flag
@@ -538,7 +541,7 @@ def find_controller(baudrate=conf['baudrate']):
 
     
 
-def connect(port=conf['serial_port'], baudrate=conf['baudrate']):
+def connect(port=conf['serial_port'], baudrate=conf['baudrate'], server=False):
     global SerialLoop
     if not SerialLoop:
         SerialLoop = SerialLoopClass()
@@ -583,12 +586,16 @@ def connect(port=conf['serial_port'], baudrate=conf['baudrate']):
                     break
 
             SerialLoop.start()  # this calls run() in a thread
+
+            # start up status server
+            SerialLoop.server_enabled = server
+            if SerialLoop.server_enabled:
+                statserver.start()
+
         except serial.SerialException:
             SerialLoop = None
             print "ERROR: Cannot connect serial on port: %s" % (port)
 
-        # start up status server
-        statserver.start()
     else:
         print "ERROR: disconnect first"
 
@@ -610,11 +617,12 @@ def close():
         if SerialLoop.is_alive():
             SerialLoop.stop_processing = True
             SerialLoop.join()
+        # stop status server
+        if SerialLoop.server_enabled:
+            statserver.stop()
     else:
         ret = False
     SerialLoop = None
-    # stop status server
-    statserver.stop()
     return ret
 
 
@@ -978,8 +986,9 @@ def torturejob():
 if __name__ == "__main__":
     # run like this to profile: python -m cProfile lasersaur.py
     connect()
-    testjob()
-    while not status()['ready']:
-        time.sleep(1)
-        sys.stdout.write('.')
-    close()
+    if connected():
+        testjob()
+        while not status()['ready']:
+            time.sleep(1)
+            sys.stdout.write('.')
+        close()
