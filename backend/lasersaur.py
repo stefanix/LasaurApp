@@ -269,7 +269,7 @@ class SerialLoopClass(threading.Thread):
         while True:
             with self.lock:
                 self._process()
-                if time.time()-last_status_request > 0.5:
+                if time.time()-last_status_request > 1.5:
                     if self.ready:
                         self.request_status = 2  # ready -> super request
                     else:
@@ -988,6 +988,7 @@ if __name__ == "__main__":
     connect()
     if connected():
         testjob()
+        time.sleep(0.5)
         while not status()['ready']:
             time.sleep(1)
             sys.stdout.write('.')
