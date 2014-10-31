@@ -82,6 +82,11 @@ class HackedWSGIRequestHandler(WSGIRequestHandler):
         # return "(a requester)"
         return str(self.client_address[0])
 
+     def log_request(*args, **kw):
+        # if debug:
+            # return wsgiref.simple_server.WSGIRequestHandler.log_request(*args, **kw)
+        pass
+
 
 def run_with_callback(host, port):
     """ Start a wsgiref server instance with control over the main loop.
@@ -118,6 +123,7 @@ def run_with_callback(host, port):
     except webbrowser.Error:
         print "Cannot open Webbrowser, please do so manually."
     sys.stdout.flush()  # make sure everything gets flushed
+    server.timeout = 0
     while 1:
         try:
             SerialManager.send_queue_as_ready()
