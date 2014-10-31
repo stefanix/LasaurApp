@@ -257,6 +257,9 @@ class SerialManagerClass:
                             line = self.rx_buffer[:posNewline]
                             self.rx_buffer = self.rx_buffer[posNewline+1:]
                         self.process_status_line(line)
+                else:
+                    if self.nRequested == 0:
+                        time.sleep(0.001)  # no rx/tx, rest a bit
                 
                 ### sending
                 if self.tx_index < len(self.tx_buffer):
