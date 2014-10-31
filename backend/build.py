@@ -92,3 +92,8 @@ def build_firmware(source_dir, firmware_dir, firmware_name):
 
     return 0
 
+
+if __name__ == "__main__":
+    firm_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'firmware'))
+    src_dir = os.path.join(firm_dir, 'src')
+    build_firmware(src_dir, firm_dir, 'LasaurGrbl')
