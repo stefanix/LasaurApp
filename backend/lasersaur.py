@@ -238,56 +238,57 @@ class SerialLoopClass(threading.Thread):
 
 
     def _process(self):
-        if self.device and not self._paused:
-            try:
-                ### receiving
-                for char in self.device.read(self.RX_CHUNK_SIZE):
-                    self._process_char(char)
-               
-                ### sending super commands (handled in serial rx interrupt)
-                if self.request_status == 1:
-                    self._send_char(CMD_STATUS)
-                    self.request_status = 0
-                elif self.request_status == 2:
-                    self._send_char(CMD_SUPERSTATUS)
-                    self.request_status = 0
+        if self.device
+            if not self._paused:
+                try:
+                    ### receiving
+                    for char in self.device.read(self.RX_CHUNK_SIZE):
+                        self._process_char(char)
+                   
+                    ### sending super commands (handled in serial rx interrupt)
+                    if self.request_status == 1:
+                        self._send_char(CMD_STATUS)
+                        self.request_status = 0
+                    elif self.request_status == 2:
+                        self._send_char(CMD_SUPERSTATUS)
+                        self.request_status = 0
 
-                if self.request_stop:
-                    self._send_char(CMD_STOP)
-                    self.request_stop = False
+                    if self.request_stop:
+                        self._send_char(CMD_STOP)
+                        self.request_stop = False
 
-                if self.request_resume:
-                    self._send_char(CMD_RESUME)
-                    self.request_resume = False
-                    self.reset_status()
-                    self.request_status = 2  # super request
+                    if self.request_resume:
+                        self._send_char(CMD_RESUME)
+                        self.request_resume = False
+                        self.reset_status()
+                        self.request_status = 2  # super request
 
-                ### sending from buffer
-                if self.tx_buffer and self.xon_active:
-                    try:
-                        to_send = ''.join(islice(self.tx_buffer, 0, self.TX_CHUNK_SIZE))
-                        t_prewrite = time.time()
-                        actuallySent = self.device.write(to_send)
-                        if time.time() - t_prewrite > 0.01:
-                            print "WARN: write delay"
-                    except serial.SerialTimeoutException:
-                        actuallySent = 0  # assume nothing has been sent
-                        print "ERROR: writeTimeoutError 2"
-                    for i in range(actuallySent):
-                        self.tx_buffer.popleft()
-                else:
-                    if self.job_size:  # job finished sending
-                        self.job_size = 0
-            except OSError:
-                print "ERROR: serial got disconnected 1."
-                self.stop_processing = True
-                self._status['serial'] = False
-                self._status['ready'] = False
-            except ValueError:
-                print "ERROR: serial got disconnected 2."
-                self.stop_processing = True
-                self._status['serial'] = False
-                self._status['ready']  = False    
+                    ### sending from buffer
+                    if self.tx_buffer and self.xon_active:
+                        try:
+                            to_send = ''.join(islice(self.tx_buffer, 0, self.TX_CHUNK_SIZE))
+                            t_prewrite = time.time()
+                            actuallySent = self.device.write(to_send)
+                            if time.time() - t_prewrite > 0.01:
+                                print "WARN: write delay"
+                        except serial.SerialTimeoutException:
+                            actuallySent = 0  # assume nothing has been sent
+                            print "ERROR: writeTimeoutError 2"
+                        for i in range(actuallySent):
+                            self.tx_buffer.popleft()
+                    else:
+                        if self.job_size:  # job finished sending
+                            self.job_size = 0
+                except OSError:
+                    print "ERROR: serial got disconnected 1."
+                    self.stop_processing = True
+                    self._status['serial'] = False
+                    self._status['ready'] = False
+                except ValueError:
+                    print "ERROR: serial got disconnected 2."
+                    self.stop_processing = True
+                    self._status['serial'] = False
+                    self._status['ready']  = False    
         else:
             print "ERROR: serial got disconnected 3."
             self.stop_processing = True
