@@ -25,8 +25,8 @@
 #define CMD_RESUME '\x02'
 #define CMD_STATUS '\x03'
 #define CMD_SUPERSTATUS '\x04'
-#define SERIAL_REQUEST_READY '\x05'
-#define SERIAL_READY '\x06'
+#define SERIAL_XON '\x05'
+#define SERIAL_XOFF '\x06'
 #define CMD_RASTER_DATA_START '\x07'
 #define CMD_RASTER_DATA_END '\x08'
 #define STATUS_END '\x09'
@@ -38,27 +38,22 @@
 #define CMD_DWELL 'C'
 #define CMD_RASTER 'D'
 
-// #define CMD_SET_FEEDRATE 'E'
-// #define CMD_SET_INTENSITY 'F'
+#define CMD_REF_RELATIVE 'E' 
+#define CMD_REF_ABSOLUTE 'F'
 
-#define CMD_REF_RELATIVE 'G' 
-#define CMD_REF_ABSOLUTE 'H'
+#define CMD_HOMING 'G'
 
-#define CMD_HOMING 'I'
+#define CMD_SET_OFFSET_TABLE 'H'
+#define CMD_SET_OFFSET_CUSTOM 'I'
+#define CMD_SEL_OFFSET_TABLE 'J'
+#define CMD_SEL_OFFSET_CUSTOM 'K'
 
-#define CMD_SET_OFFSET_TABLE 'J'
-#define CMD_SET_OFFSET_CUSTOM 'K'
-// #define CMD_DEF_OFFSET_TABLE 'L'
-// #define CMD_DEF_OFFSET_CUSTOM 'M'
-#define CMD_SEL_OFFSET_TABLE 'N'
-#define CMD_SEL_OFFSET_CUSTOM 'O'
-
-#define CMD_AIR_ENABLE 'P'
-#define CMD_AIR_DISABLE 'Q'
-#define CMD_AUX1_ENABLE 'R'
-#define CMD_AUX1_DISABLE 'S'
-#define CMD_AUX2_ENABLE 'T'
-#define CMD_AUX2_DISABLE 'U'
+#define CMD_AIR_ENABLE 'L'
+#define CMD_AIR_DISABLE 'M'
+#define CMD_AUX1_ENABLE 'N'
+#define CMD_AUX1_DISABLE 'O'
+#define CMD_AUX2_ENABLE 'P'
+#define CMD_AUX2_DISABLE 'Q'
 
 
 #define PARAM_TARGET_X 'x'
@@ -98,13 +93,9 @@
 
 // status: info markers
 #define INFO_READY_YES 'A'
-#define INFO_READY_NO 'B'
-#define INFO_DOOR_OPEN 'C'
-#define INFO_DOOR_CLOSED 'D'
-#define INFO_CHILLER_OFF 'E'
-#define INFO_CHILLER_ON 'F'
-#define INFO_FEC_CORRECTION 'G'
-#define INFO_BUFFER_UNDERRUN 'H'
+#define INFO_DOOR_OPEN 'B'
+#define INFO_CHILLER_OFF 'C'
+#define INFO_BUFFER_UNDERRUN 'D'
 
 // status:  info params
 #define STATUS_POS_X 'x'

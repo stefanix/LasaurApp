@@ -411,7 +411,7 @@ def load_library(jobname):
 def run(jobname):
     """Send job from queue to the machine."""
     job = _get(os.path.join(conf['stordir'], jobname.strip('/\\')))
-    if not lasersaur.status()['idle']:
+    if not lasersaur.status()['ready']:
         bottle.abort(400, "Machine not ready.")
     lasersaur.job(json.loads(job))
 

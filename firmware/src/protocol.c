@@ -377,13 +377,18 @@ void protocol_idle() {
     // idle flag
     if (machine_idle) {
       serial_write(INFO_READY_YES);
-    } else {
-      serial_write(INFO_READY_NO);
     }
 
     if (rx_buffer_underrun) {
       serial_write(INFO_BUFFER_UNDERRUN);
       rx_buffer_underrun = false;
+    }
+
+    if (SENSE_DOOR_OPEN) {
+      serial_write(INFO_DOOR_OPEN);
+    }
+    if (SENSE_CHILLER_OFF) {
+      serial_write(INFO_CHILLER_OFF);
     }
 
     // Handle STOPERROR conditions

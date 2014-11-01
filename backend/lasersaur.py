@@ -22,8 +22,8 @@ CMD_STOP = '\x01'
 CMD_RESUME = '\x02'
 CMD_STATUS = "\x03"
 CMD_SUPERSTATUS = "\x04"
-SERIAL_REQUEST_READY = '\x05'
-SERIAL_READY = '\x06'
+SERIAL_XON = '\x05'
+SERIAL_XOFF = '\x06'
 CMD_RASTER_DATA_START = '\x07'
 CMD_RASTER_DATA_END = '\x08'
 STATUS_END = '\x09'
@@ -33,27 +33,22 @@ CMD_LINE = "B"
 CMD_DWELL = "C"
 CMD_RASTER = "D"
 
-# CMD_SET_FEEDRATE = "E"
-# CMD_SET_INTENSITY = "F"
+CMD_REF_RELATIVE = "E" 
+CMD_REF_ABSOLUTE = "F"
 
-CMD_REF_RELATIVE = "G" 
-CMD_REF_ABSOLUTE = "H"
+CMD_HOMING = "G"
 
-CMD_HOMING = "I"
+CMD_SET_OFFSET_TABLE = "H"
+CMD_SET_OFFSET_CUSTOM = "I"
+CMD_SEL_OFFSET_TABLE = "J"
+CMD_SEL_OFFSET_CUSTOM = "K"
 
-CMD_SET_OFFSET_TABLE = "J"
-CMD_SET_OFFSET_CUSTOM = "K"
-# CMD_DEF_OFFSET_TABLE = "L"
-# CMD_DEF_OFFSET_CUSTOM = "M"
-CMD_SEL_OFFSET_TABLE = "N"
-CMD_SEL_OFFSET_CUSTOM = "O"
-
-CMD_AIR_ENABLE = "P"
-CMD_AIR_DISABLE = "Q"
-CMD_AUX1_ENABLE = "R"
-CMD_AUX1_DISABLE = "S"
-CMD_AUX2_ENABLE = "T"
-CMD_AUX2_DISABLE = "U"
+CMD_AIR_ENABLE = "L"
+CMD_AIR_DISABLE = "M"
+CMD_AUX1_ENABLE = "N"
+CMD_AUX1_DISABLE = "O"
+CMD_AUX2_ENABLE = "P"
+CMD_AUX2_DISABLE = "Q"
 
 
 PARAM_TARGET_X = "x"
@@ -94,13 +89,9 @@ ERROR_TRANSMISSION_ERROR ='='
 
 # status: info flags
 INFO_READY_YES = 'A'
-INFO_READY_NO = 'B'
-INFO_DOOR_OPEN = 'C'
-INFO_DOOR_CLOSED = 'D'
-INFO_CHILLER_OFF = 'E'
-INFO_CHILLER_ON = 'F'
-INFO_FEC_CORRECTION = 'G'
-INFO_BUFFER_UNDERRUN = 'H'
+INFO_DOOR_OPEN = 'B'
+INFO_CHILLER_OFF = 'C'
+INFO_BUFFER_UNDERRUN = 'D'
 
 # status: info params
 INFO_POS_X = 'x'
@@ -131,25 +122,23 @@ class SerialLoopClass(threading.Thread):
         threading.Thread.__init__(self)
 
         self.device = None
-
         self.tx_buffer = collections.deque()
-        self.remoteXON = True
 
         # TX_CHUNK_SIZE - this is the number of bytes to be 
         # written to the device in one go. It needs to match the device.
         self.TX_CHUNK_SIZE = 16
         self.RX_CHUNK_SIZE = 16
-        self.nRequested = 0
-        self.last_request_ready = 0
-        self.saidhello = False
+        self.xon_active = False
         
         # used for calculating percentage done
         self.job_size = 0
 
         # status flags
-        self.ready = False
         self._status = {}
+        self._s = {}
         self.reset_status()
+        self._paused = False
+        self._ready = False
 
         self.request_stop = False
         self.request_resume = False
@@ -178,6 +167,7 @@ class SerialLoopClass(threading.Thread):
             'ready': False,
             'paused': False,
             'serial': False,
+            'pos':[0.0, 0.0, 0.0],
 
             ### stop conditions
             # indicated when key present
@@ -192,13 +182,9 @@ class SerialLoopClass(threading.Thread):
             # transmission
             'stops': {},
 
-            ### info
             # door
             # chiller
-            'info': {},
-
-            # head position
-            'pos':[0.0, 0.0, 0.0],
+            'info':{},
 
             ### super
             'offset': [0.0, 0.0, 0.0],
@@ -206,38 +192,9 @@ class SerialLoopClass(threading.Thread):
             'feedrate': 0.0,
             'intensity': 0.0,
             'duration': 0.0,
-            'pixelwidth': 0.0
-
-
-            # removed
-            # limit_hit
-            # 'bad_number_format_error': False,
-            # 'expected_command_letter_error': False,
-            # 'unsupported_statement_error': False,            
+            'pixelwidth': 0.0         
         }
-
-
-    def print_status(self):
-        symap = {False:'[ ]', True:'[x]' }
-        keys = self._status.keys()
-        keys.sort()
-        for k in keys:
-            if k not in ['firmver', 'feedrate', 'intensity', 'duration', 'pixelwidth']:
-                if k == 'pos':
-                    print  'x: ' + str(self._status['pos'][0])
-                    print  'y: ' + str(self._status['pos'][1])
-                    print  'z: ' + str(self._status['pos'][2])
-                # elif k == 'pos_target':
-                #     print  'x_target: ' + str(self._status['pos_target'][0])
-                #     print  'y_target: ' + str(self._status['pos_target'][1])
-                #     print  'z_target: ' + str(self._status['pos_target'][2])
-                else:
-                    print symap[self._status[k]] + ' ' + k
-
-        print  'firmver: ' + str(self._status['firmver'])
-        print  "%smm/min %s% %ss %smm" % (str(self._status['feedrate']), 
-            str(self._status['intensity']), str(self._status['duration']), 
-            str(self._status['pixelwidth']))
+        self._s = copy.deepcopy(self._status)
 
 
     def send_command(self, command):
@@ -266,247 +223,204 @@ class SerialLoopClass(threading.Thread):
         """Main loop of the serial thread."""
         last_status_request = 0
         while True:
+            if self.stop_processing:
+                break
             with self.lock:
                 self._process()
                 if time.time()-last_status_request > 0.5:
-                    if self.ready:
+                    if self._ready:
                         self.request_status = 2  # ready -> super request
                     else:
                         self.request_status = 1  # processing -> normal request
                     last_status_request = time.time()
             time.sleep(0.01)
-            if self.stop_processing:
-                break
 
-    
+
+
     def _process(self):
-        """Continuously call this to keep processing queue."""    
-        if self.device and not self._status['paused']:
+        if self.device and not self._paused:
             try:
                 ### receiving
-                chars = self.device.read(self.RX_CHUNK_SIZE)
-                # # discard until machine says hello
-                # if not self.saidhello:
-                #     hellopos = chars.find(INFO_HELLO)
-                #     if hellopos == -1:  # still no hello
-                #         chars = ''  # discard
-                #     else:  # now got hello
-                #         self.saidhello = True
-                #         chars = chars[hellopos:]
-                if len(chars) > 0:
-                    ## process chars
-                    for char in chars:
-                        # sys.stdout.write('('+char+','+str(ord(char))+')')
-                        # sys.stdout.flush()
-                        if ord(char) < 32:  ### flow
-                            ## check for data request
-                            if char == SERIAL_READY:
-                                self.nRequested = self.TX_CHUNK_SIZE
-                            elif char == STATUS_END:
-                                # status block complete -> send through status server
-                                self._status['ready'] = self.ready
-                                self._status['serial'] = bool(self.device)
-                                if self.server_enabled:
-                                    statusjson = json.dumps(self._status)
-                                    statserver.send(statusjson)
-                                    statserver.on_connected_message(statusjson)
-                        elif ord(char) < 128:  ### markers
-                            if 32 < ord(char) < 65: # stop error flags                            
-                                # chr is in [!-@], process flag
-                                if char == ERROR_LIMIT_HIT_X1:
-                                    self._status['stops']['x1'] = True
-                                elif char == ERROR_LIMIT_HIT_X2:
-                                    self._status['stops']['x2'] = True
-                                elif char == ERROR_LIMIT_HIT_Y1:
-                                    self._status['stops']['y1'] = True
-                                elif char == ERROR_LIMIT_HIT_Y2:
-                                    self._status['stops']['y2'] = True
-                                elif char == ERROR_LIMIT_HIT_Z1:
-                                    self._status['stops']['z1'] = True
-                                elif char == ERROR_LIMIT_HIT_Z2:
-                                    self._status['stops']['z2'] = True
-                                elif char == ERROR_SERIAL_STOP_REQUEST:
-                                    self._status['stops']['requested'] = True
-                                elif char == ERROR_RX_BUFFER_OVERFLOW:
-                                    self._status['stops']['buffer'] = True                                    
-                                elif char == ERROR_INVALID_MARKER:
-                                    self._status['stops']['marker'] = True
-                                elif char == ERROR_INVALID_DATA:
-                                    self._status['stops']['data'] = True
-                                elif char == ERROR_INVALID_COMMAND:
-                                    self._status['stops']['command'] = True
-                                elif char == ERROR_INVALID_PARAMETER:
-                                    self._status['stops']['parameter'] = True
-                                elif char == ERROR_TRANSMISSION_ERROR:
-                                    self._status['stops']['transmission'] = True
-                                # in stop mode
-                                self.tx_buffer.clear()
-                                self.job_size = 0
-                                # not ready whenever in stop mode
-                                self.ready = False
-
-                            elif 64 < ord(char) < 91:  # info flags
-                                # chr is in [A-Z], info flag
-                                if char == INFO_FEC_CORRECTION:
-                                    sys.stdout.write("\nFEC Correction!\n")
-                                    sys.stdout.flush()                                              
-                                    # self._status['fec_correction'] = True
-                                elif char == INFO_READY_YES:
-                                    self.ready = True
-                                elif char == INFO_READY_NO:
-                                    self.ready = False
-                                elif char == INFO_DOOR_OPEN:
-                                    self._status['info']['door'] = True
-                                elif char == INFO_DOOR_CLOSED:
-                                    del self._status['info']['door']
-                                elif char == INFO_CHILLER_OFF:
-                                    self._status['info']['chiller'] = True
-                                elif char == INFO_CHILLER_ON:
-                                    del self._status['info']['chiller']
-                                elif char == INFO_BUFFER_UNDERRUN:
-                                    sys.stdout.write("INFO: Firmware rx buffer empty.\n")
-                                    sys.stdout.flush()  
-                                else:
-                                    print "ERROR: invalid flag"
-                            elif 96 < ord(char) < 123:  # parameter
-                                # char is in [a-z], process parameter
-                                num = ((((ord(self.pdata_chars[3])-128)*2097152
-                                       + (ord(self.pdata_chars[2])-128)*16384
-                                       + (ord(self.pdata_chars[1])-128)*128
-                                       + (ord(self.pdata_chars[0])-128) )- 134217728)/1000.0)
-                                if char == INFO_POS_X:
-                                    self._status['pos'][0] = num
-                                elif char == INFO_POS_Y:
-                                    self._status['pos'][1] = num
-                                elif char == INFO_POS_Z:
-                                    self._status['pos'][2] = num
-                                elif char == INFO_VERSION:
-                                    num = 'v' + str(int(num)/100.0)
-                                    self._status['firmver'] = num
-                                # super status
-                                elif char == INFO_OFFCUSTOM_X:
-                                    self._status['offset'][0] = num
-                                elif char == INFO_OFFCUSTOM_Y:
-                                    self._status['offset'][1] = num
-                                elif char == INFO_OFFCUSTOM_Z:
-                                    self._status['offset'][2] = num
-                                # elif char == INFO_TARGET_X:
-                                #     self._status['pos_target'][0] = num
-                                # elif char == INFO_TARGET_Y:
-                                #     self._status['pos_target'][1] = num
-                                # elif char == INFO_TARGET_Z:
-                                #     self._status['pos_target'][2] = num
-                                elif char == INFO_FEEDRATE:
-                                    self._status['feedrate'] = num
-                                elif char == INFO_INTENSITY:
-                                    self._status['intensity'] = num
-                                elif char == INFO_DURATION:
-                                    self._status['duration'] = num
-                                elif char == INFO_PIXEL_WIDTH:
-                                    self._status['pixelwidth'] = num
-                                else:
-                                    print "ERROR: invalid param"
-                            # elif char == INFO_HELLO:
-                                # print "Controller says Hello!"
-                            else:
-                                print ord(char)
-                                print char
-                                print "ERROR: invalid marker"
-                            self.pdata_count = 0
-                        else:  ### data
-                            # char is in [128,255]
-                            if self.pdata_count < 4:
-                                self.pdata_chars[self.pdata_count] = char
-                                self.pdata_count += 1
-                            else:
-                                print "ERROR: invalid data"                
+                for char in self.device.read(self.RX_CHUNK_SIZE):
+                    self._process_char(char)
+               
                 ### sending super commands (handled in serial rx interrupt)
-                if self.request_status:
-                    try:
-                        if self.request_status == 1:
-                            self.device.write(CMD_STATUS)
-                        elif self.request_status == 2:
-                            self.device.write(CMD_SUPERSTATUS)
-                        self.device.flushOutput()
-                        self.request_status = 0
-                    except serial.SerialTimeoutException:
-                        sys.stdout.write("\nsending status request: writeTimeoutError\n")
-                        sys.stdout.flush()
+                if self.request_status == 1:
+                    self._send_char(CMD_STATUS)
+                    self.request_status = 0
+                elif self.request_status == 2:
+                    self._send_char(CMD_SUPERSTATUS)
+                    self.request_status = 0
+
                 if self.request_stop:
-                    try:
-                        self.device.write(CMD_STOP)
-                        self.device.flushOutput()
-                        self.request_stop = False
-                    except serial.SerialTimeoutException:
-                        sys.stdout.write("\nsending stop request: writeTimeoutError\n")
-                        sys.stdout.flush()
+                    self._send_char(CMD_STOP)
+                    self.request_stop = False
+
                 if self.request_resume:
-                    try:
-                        self.device.write(CMD_RESUME)
-                        self.device.flushOutput()
-                        self.request_resume = False
-                        # update status
-                        self.reset_status()
-                        self.request_status = 2  # super request
-                    except serial.SerialTimeoutException:
-                        sys.stdout.write("\nsending resume request: writeTimeoutError\n")
-                        sys.stdout.flush()
+                    self._send_char(CMD_RESUME)
+                    self.request_resume = False
+                    self.reset_status()
+                    self.request_status = 2  # super request
+
                 ### sending from buffer
-                if self.tx_buffer:
-                    if self.nRequested > 0:
-                        try:
-                            to_send = ''.join(islice(self.tx_buffer, 0, self.nRequested))
-                            t_prewrite = time.time()
-                            actuallySent = self.device.write(to_send)
-                            if time.time() - t_prewrite > 0.005:
-                                sys.stdout.write("WARN: write delay\n")
-                                sys.stdout.flush()
-                        except serial.SerialTimeoutException:
-                            # skip, report
-                            actuallySent = 0  # assume nothing has been sent
-                            sys.stdout.write("\n_process: writeTimeoutError\n")
-                            sys.stdout.flush()
-                        for i in range(actuallySent):
-                            self.tx_buffer.popleft()
-                        self.nRequested -= actuallySent
-                        if self.nRequested <= 0:
-                            self.last_request_ready = 0  # make sure to request ready
-                    else:
-                        if (time.time()-self.last_request_ready) > 2.0:
-                            # ask to send a ready byte
-                            # only ask for this when sending is on hold
-                            # only ask once (and after a big time out)
-                            # print "=========================== REQUEST READY"
-                            try:
-                                actuallySent = self.device.write(SERIAL_REQUEST_READY)
-                            except serial.SerialTimeoutException:
-                                # skip, report
-                                actuallySent = self.nRequested  # pyserial does not report this sufficiently
-                                sys.stdout.write("\n_process: writeTimeoutError, on ready request\n")
-                                sys.stdout.flush()
-                            if actuallySent == 1:
-                                self.last_request_ready = time.time()
-                         
+                if self.tx_buffer and self.xon_active:
+                    try:
+                        to_send = ''.join(islice(self.tx_buffer, 0, self.TX_CHUNK_SIZE))
+                        t_prewrite = time.time()
+                        actuallySent = self.device.write(to_send)
+                        if time.time() - t_prewrite > 0.01:
+                            print "WARN: write delay"
+                    except serial.SerialTimeoutException:
+                        actuallySent = 0  # assume nothing has been sent
+                        print "ERROR: writeTimeoutError 2"
+                    for i in range(actuallySent):
+                        self.tx_buffer.popleft()
                 else:
-                    if self.job_size:
-                        # print "\nstream finished!"
-                        # print "(firmware may take some extra time to finalize)"
+                    if self.job_size:  # job finished sending
                         self.job_size = 0
             except OSError:
-                # Serial port appears closed => reset
-                self.close()
+                print "ERROR: serial got disconnected 1."
+                self.stop_processing = True
+                self._status['serial'] = False
+                self._status['ready'] = False
             except ValueError:
-                # Serial port appears closed => reset
-                self.close()     
+                print "ERROR: serial got disconnected 2."
+                self.stop_processing = True
+                self._status['serial'] = False
+                self._status['ready']  = False    
         else:
-            # serial disconnected
-            self.ready = False
+            print "ERROR: serial got disconnected 3."
+            self.stop_processing = True
+            self._status['serial'] = False
+            self._status['ready']  = False
 
         # flush stdout, so print shows up timely
         sys.stdout.flush()
 
 
 
+    def _send_char(self, char):
+        try:
+            self.device.write(char)
+            self.device.flushOutput()
+        except serial.SerialTimeoutException:
+            print "ERROR: writeTimeoutError 1"
+
+
+
+    def _process_char(self, char):
+        # sys.stdout.write('('+char+','+str(ord(char))+')')
+        if ord(char) < 32:  ### flow
+            if char == SERIAL_XON:
+                self.xon_active = True
+            elif char == SERIAL_XOFF:
+                self.xon_active = False
+            elif char == STATUS_END:
+                # status frame complete, compile status
+                self._status, self._s = self._s, self._status
+                self._status['ready'] = self._ready
+                self._status['paused'] = self._paused
+                self._status['serial'] = bool(self.device)
+                self._s['stops'].clear()
+                self._s['info'].clear()
+                # send through status server
+                if self.server_enabled:
+                    statusjson = json.dumps(self._status)
+                    statserver.send(statusjson)
+                    statserver.on_connected_message(statusjson)
+        elif 31 < ord(char) < 65:  ### stop error markers
+            # chr is in [!-@], process flag
+            if char == ERROR_LIMIT_HIT_X1:
+                self._s['stops']['x1'] = True
+            elif char == ERROR_LIMIT_HIT_X2:
+                self._s['stops']['x2'] = True
+            elif char == ERROR_LIMIT_HIT_Y1:
+                self._s['stops']['y1'] = True
+            elif char == ERROR_LIMIT_HIT_Y2:
+                self._s['stops']['y2'] = True
+            elif char == ERROR_LIMIT_HIT_Z1:
+                self._s['stops']['z1'] = True
+            elif char == ERROR_LIMIT_HIT_Z2:
+                self._s['stops']['z2'] = True
+            elif char == ERROR_SERIAL_STOP_REQUEST:
+                self._s['stops']['requested'] = True
+            elif char == ERROR_RX_BUFFER_OVERFLOW:
+                self._s['stops']['buffer'] = True                                    
+            elif char == ERROR_INVALID_MARKER:
+                self._s['stops']['marker'] = True
+            elif char == ERROR_INVALID_DATA:
+                self._s['stops']['data'] = True
+            elif char == ERROR_INVALID_COMMAND:
+                self._s['stops']['command'] = True
+            elif char == ERROR_INVALID_PARAMETER:
+                self._s['stops']['parameter'] = True
+            elif char == ERROR_TRANSMISSION_ERROR:
+                self._s['stops']['transmission'] = True
+            else:
+                print "ERROR: invalid stop error marker"
+            # in stop mode
+            self.tx_buffer.clear()
+            self.job_size = 0
+            self._ready = False
+
+        elif 64 < ord(char) < 91:  # info flags
+            # chr is in [A-Z], info flag
+            if char == INFO_READY_YES:
+                self._ready = True
+            elif char == INFO_DOOR_OPEN:
+                self._s['info']['door'] = True
+            elif char == INFO_CHILLER_OFF:
+                self._s['info']['chiller'] = True
+            elif char == INFO_BUFFER_UNDERRUN:
+                if not self._ready:
+                    print "INFO: Firmware rx buffer empty."
+            else:
+                print "ERROR: invalid info flag"
+                sys.stdout.write('('+char+','+str(ord(char))+')')
+        elif 96 < ord(char) < 123:  # parameter
+            # char is in [a-z], process parameter
+            num = ((((ord(self.pdata_chars[3])-128)*2097152
+                   + (ord(self.pdata_chars[2])-128)*16384
+                   + (ord(self.pdata_chars[1])-128)*128
+                   + (ord(self.pdata_chars[0])-128) )- 134217728)/1000.0)
+            self.pdata_count = 0
+            if char == INFO_POS_X:
+                self._s['pos'][0] = num
+            elif char == INFO_POS_Y:
+                self._s['pos'][1] = num
+            elif char == INFO_POS_Z:
+                self._s['pos'][2] = num
+            elif char == INFO_VERSION:
+                num = 'v' + str(int(num)/100.0)
+                self._s['firmver'] = num
+            # super status
+            elif char == INFO_OFFCUSTOM_X:
+                self._s['offset'][0] = num
+            elif char == INFO_OFFCUSTOM_Y:
+                self._s['offset'][1] = num
+            elif char == INFO_OFFCUSTOM_Z:
+                self._s['offset'][2] = num
+            elif char == INFO_FEEDRATE:
+                self._s['feedrate'] = num
+            elif char == INFO_INTENSITY:
+                self._s['intensity'] = num
+            elif char == INFO_DURATION:
+                self._s['duration'] = num
+            elif char == INFO_PIXEL_WIDTH:
+                self._s['pixelwidth'] = num
+            else:
+                print "ERROR: invalid param"
+        elif ord(char) > 127:  ### data
+            # char is in [128,255]
+            if self.pdata_count < 4:
+                self.pdata_chars[self.pdata_count] = char
+                self.pdata_count += 1
+            else:
+                print "ERROR: invalid data" 
+        else:
+            print ord(char)
+            print char
+            print "ERROR: invalid marker"
 
 
 
@@ -677,12 +591,6 @@ def status():
     return stats
 
 
-def print_status():
-    global SerialLoop
-    with SerialLoop.lock:
-        SerialLoop.print_status()
-
-
 def homing():
     """Run homing cycle."""
     global SerialLoop
@@ -691,7 +599,6 @@ def homing():
             SerialLoop.send_command(CMD_HOMING)
         else:
             print "WARN: ignoring homing command while job running"
-
 
 
 def feedrate(val):
@@ -884,12 +791,12 @@ def pause():
     global SerialLoop
     with SerialLoop.lock:
         if SerialLoop.tx_buffer:
-            SerialLoop._status['paused'] = True
+            SerialLoop._paused = True
 
 def unpause():
     global SerialLoop
     with SerialLoop.lock:
-        SerialLoop._status['paused'] = False
+        SerialLoop._paused = False
 
 
 def stop():
@@ -898,7 +805,6 @@ def stop():
     with SerialLoop.lock:
         SerialLoop.tx_buffer.clear()
         SerialLoop.job_size = 0
-        # SerialLoop.reset_status()
         SerialLoop.request_stop = True
 
 

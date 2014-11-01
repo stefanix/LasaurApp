@@ -5,8 +5,8 @@
     [
       {
         "paths":[0],
-        "feedrate":2000,
-        "intensity":50
+        "feedrate":2200,
+        "intensity":53
       }
     ],
     "paths":

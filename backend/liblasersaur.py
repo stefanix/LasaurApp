@@ -88,24 +88,22 @@ class Lasersaur(object):
     def status(self):
         """Get status report of machine.
         {
+            "appver": 15.00,
+            'firmver': 15.00,
             'ready': False,
+            'paused': False,
+            'serial': False
             'pos':[0.0, 0.0, 0.0],
             'stops': {},        # x1, x2, y1, y2, z1, z2
                                 # requested, buffer, marker, data, command, parameter, transmission
             'info': {},         # door, chiller
 
             ### super
-            'firmver': 15.00,
             'offset': [0.0, 0.0, 0.0],
             'feedrate': 0.0,
             'intensity': 0.0,
             'duration': 0.0,
             'pixelwidth': 0.0,
-            
-            ### backend
-            "appver": 15.00,
-            'paused': False,
-            'serial': False
         }
         """
         return self._request('/status', ret=True)

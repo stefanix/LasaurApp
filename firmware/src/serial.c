@@ -44,6 +44,7 @@
 * buffer read:  if(!empty) {return buf[tail]}    *
 *************************************************/
 #define RX_BUFFER_SIZE 255
+#define RX_BUFFER_LIMIT 65  // when to send a XOFF
 #define TX_BUFFER_SIZE 128
 uint8_t rx_buffer[RX_BUFFER_SIZE];
 volatile uint8_t rx_buffer_head = 0;
@@ -64,8 +65,8 @@ volatile uint8_t tx_buffer_tail = 0;
 * and apon receiving it send the next chunk.     *
 *************************************************/
 #define RX_CHUNK_SIZE 16
-volatile uint8_t send_ready_flag = 0;
-volatile uint8_t request_ready_flag = 0;
+volatile uint8_t send_xoff_flag = 0;
+volatile uint8_t send_xon_flag = 0;
 
 bool raster_mode = false;
 
@@ -95,14 +96,8 @@ void serial_init() {
 	  
 	// defaults to 8-bit, no parity, 1 stop bit
 	
-  // printPgmString(PSTR("# LasaurGrbl " LASAURGRBL_VERSION));
-  // printPgmString(PSTR("\n"));
-  // serial_write(INFO_IDLE_YES);
-  // serial_write(INFO_IDLE_NO);
-  // serial_write(INFO_IDLE_YES);
-  // serial_write(INFO_IDLE_NO);
-  // serial_write(INFO_IDLE_YES);
   serial_write(INFO_HELLO);
+  serial_write(SERIAL_XON);
 }
 
 
@@ -141,9 +136,12 @@ inline void serial_write_param(uint8_t param, double val) {
 SIGNAL(USART_UDRE_vect) {
   uint8_t tail = tx_buffer_tail;  // optimize for volatile
   
-  if (send_ready_flag) {    // request another chunk of data
-    UDR0 = SERIAL_READY;
-    send_ready_flag = 0;
+  if (send_xoff_flag) {
+    UDR0 = SERIAL_XOFF;
+    send_xoff_flag = 0;
+  } else if (send_xon_flag) {
+    UDR0 = SERIAL_XON;
+    send_xon_flag = 0;
   } else {                    // Send a byte from the buffer 
     UDR0 = tx_buffer[tail];
     if (++tail == TX_BUFFER_SIZE) {tail = 0;}  // increment
@@ -160,12 +158,9 @@ inline uint8_t serial_read() {
   uint8_t data = rx_buffer[rx_buffer_tail];
   if (++rx_buffer_tail == RX_BUFFER_SIZE) {rx_buffer_tail = 0;}  // increment
   ATOMIC_BLOCK(ATOMIC_FORCEON) {
-    if (rx_buffer_open_slots == RX_CHUNK_SIZE) {  // enough slots opening up
-      if (request_ready_flag) {
-        send_ready_flag = 1;
-        UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt  
-        request_ready_flag = 0;
-      }
+    if (rx_buffer_open_slots == RX_BUFFER_LIMIT) {  // enough slots opening up
+      send_xon_flag = 1;
+      UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt  
     }    
     rx_buffer_open_slots++;
   }
@@ -186,14 +181,6 @@ SIGNAL(USART_RX_vect) {
       protocol_request_status();
     } else if (data == CMD_SUPERSTATUS) {
       protocol_request_superstatus();
-    } else if (data == SERIAL_REQUEST_READY) {
-      if (rx_buffer_open_slots > RX_CHUNK_SIZE) {
-        send_ready_flag = 1;
-        UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt 
-      } else {
-        // send ready when enough slots open up
-        request_ready_flag = 1;
-      }
     } else {
       stepper_request_stop(STOPERROR_INVALID_MARKER);
     }
@@ -201,7 +188,10 @@ SIGNAL(USART_RX_vect) {
     uint8_t head = rx_buffer_head;  // optimize for volatile    
     uint8_t next_head = head + 1;
     if (next_head == RX_BUFFER_SIZE) {next_head = 0;}
-
+    if (rx_buffer_open_slots == RX_BUFFER_LIMIT) {
+      send_xoff_flag = 1;
+      UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt
+    }
     if (next_head == rx_buffer_tail) {
       // buffer is full, other side sent too much data
       stepper_request_stop(STOPERROR_RX_BUFFER_OVERFLOW);
@@ -226,6 +216,7 @@ uint8_t serial_protocol_read() {
   }
   // wait, buffer empty
   while (rx_buffer_tail == rx_buffer_head) {
+    protocol_mark_underrun();
     sleep_mode();
     protocol_end_of_job_check();
     protocol_idle();
@@ -242,6 +233,7 @@ uint8_t serial_protocol_read() {
     }
     // wait, buffer empty
     while (rx_buffer_tail == rx_buffer_head) {
+      protocol_mark_underrun();
       sleep_mode();
       protocol_end_of_job_check();
       protocol_idle();
@@ -273,6 +265,7 @@ uint8_t serial_raster_read() {
     if (rx_buffer_tail == rx_buffer_head) {
       // oops, no raster data, sending side is flaking
       // rastering too fast or serial transmission too slow
+      protocol_mark_underrun();
       return 0;
     } else {
       uint8_t data = serial_read();
