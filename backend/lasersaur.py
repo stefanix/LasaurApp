@@ -238,7 +238,7 @@ class SerialLoopClass(threading.Thread):
 
 
     def _process(self):
-        if self.device
+        if self.device:
             if not self._paused:
                 try:
                     ### receiving
