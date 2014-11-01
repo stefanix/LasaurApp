@@ -63,8 +63,6 @@ volatile uint8_t tx_buffer_tail = 0;
 * Thereafter it can again request a ready byte   *
 * and apon receiving it send the next chunk.     *
 *************************************************/
-#define CHAR_READY '\x12'
-#define CHAR_REQUEST_READY '\x14'
 #define RX_CHUNK_SIZE 16
 volatile uint8_t send_ready_flag = 0;
 volatile uint8_t request_ready_flag = 0;
@@ -144,7 +142,7 @@ SIGNAL(USART_UDRE_vect) {
   uint8_t tail = tx_buffer_tail;  // optimize for volatile
   
   if (send_ready_flag) {    // request another chunk of data
-    UDR0 = CHAR_READY;
+    UDR0 = SERIAL_READY;
     send_ready_flag = 0;
   } else {                    // Send a byte from the buffer 
     UDR0 = tx_buffer[tail];
@@ -177,23 +175,27 @@ inline uint8_t serial_read() {
 // rx interrupt, called whenever a new byte is in UDR0
 SIGNAL(USART_RX_vect) {
   uint8_t data = UDR0;
-  if (data == CMD_STOP) {
-    // special stop character, bypass buffer
-    stepper_request_stop(STOPERROR_SERIAL_STOP_REQUEST);
-  } else if (data == CMD_RESUME) {
-    // special resume character, bypass buffer
-    stepper_stop_resume();
-  } else if (data == CMD_STATUS) {
-    protocol_request_status();
-  } else if (data == CMD_SUPERSTATUS) {
-    protocol_request_superstatus();
-  } else if (data == CHAR_REQUEST_READY) {
-    if (rx_buffer_open_slots > RX_CHUNK_SIZE) {
-      send_ready_flag = 1;
-      UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt 
+  if (data < 32) {  // handle controls chars
+    if (data == CMD_STOP) {
+      // special stop character, bypass buffer
+      stepper_request_stop(STOPERROR_SERIAL_STOP_REQUEST);
+    } else if (data == CMD_RESUME) {
+      // special resume character, bypass buffer
+      stepper_stop_resume();
+    } else if (data == CMD_STATUS) {
+      protocol_request_status();
+    } else if (data == CMD_SUPERSTATUS) {
+      protocol_request_superstatus();
+    } else if (data == SERIAL_REQUEST_READY) {
+      if (rx_buffer_open_slots > RX_CHUNK_SIZE) {
+        send_ready_flag = 1;
+        UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt 
+      } else {
+        // send ready when enough slots open up
+        request_ready_flag = 1;
+      }
     } else {
-      // send ready when enough slots open up
-      request_ready_flag = 1;
+      stepper_request_stop(STOPERROR_INVALID_MARKER);
     }
   } else {
     uint8_t head = rx_buffer_head;  // optimize for volatile    

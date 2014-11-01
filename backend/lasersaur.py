@@ -18,13 +18,15 @@ __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
 
 
 ################ SENDING PROTOCOL
-CMD_STOP = "!"
-CMD_RESUME = "~"
-CMD_STATUS = "?"
-CMD_SUPERSTATUS = "&"
-
-CMD_RASTER_DATA_START = '\x02'
-CMD_RASTER_DATA_END = '\x03'
+CMD_STOP = '\x01'
+CMD_RESUME = '\x02'
+CMD_STATUS = "\x03"
+CMD_SUPERSTATUS = "\x04"
+SERIAL_REQUEST_READY = '\x05'
+SERIAL_READY = '\x06'
+CMD_RASTER_DATA_START = '\x07'
+CMD_RASTER_DATA_END = '\x08'
+STATUS_END = '\x09'
 
 CMD_NONE = "A"
 CMD_LINE = "B"
@@ -68,12 +70,10 @@ PARAM_OFFCUSTOM_X = "k"
 PARAM_OFFCUSTOM_Y = "l"
 PARAM_OFFCUSTOM_Z = "m"
 
-REQUEST_READY = '\x14'
 ################
 
 
 ################ RECEIVING PROTOCOL
-STATUS_END = '\x17'
 
 # status: error flags
 ERROR_SERIAL_STOP_REQUEST = '!'
@@ -109,7 +109,6 @@ INFO_POS_Z = 'z'
 INFO_VERSION = 'v'
 
 INFO_HELLO = '~'
-READY = '\x12'
 
 INFO_OFFCUSTOM_X = 'a'
 INFO_OFFCUSTOM_Y = 'b'
@@ -301,7 +300,7 @@ class SerialLoopClass(threading.Thread):
                         # sys.stdout.flush()
                         if ord(char) < 32:  ### flow
                             ## check for data request
-                            if char == READY:
+                            if char == SERIAL_READY:
                                 self.nRequested = self.TX_CHUNK_SIZE
                             elif char == STATUS_END:
                                 # status block complete -> send through status server
@@ -479,7 +478,7 @@ class SerialLoopClass(threading.Thread):
                             # only ask once (and after a big time out)
                             # print "=========================== REQUEST READY"
                             try:
-                                actuallySent = self.device.write(REQUEST_READY)
+                                actuallySent = self.device.write(SERIAL_REQUEST_READY)
                             except serial.SerialTimeoutException:
                                 # skip, report
                                 actuallySent = self.nRequested  # pyserial does not report this sufficiently

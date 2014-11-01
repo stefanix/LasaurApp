@@ -21,13 +21,15 @@
 
 
 // commands, handled in serial.c
-#define CMD_STOP '!'
-#define CMD_RESUME '~'
-#define CMD_STATUS '?'
-#define CMD_SUPERSTATUS '&'
-
-#define CMD_RASTER_DATA_START '\x02'
-#define CMD_RASTER_DATA_END '\x03'
+#define CMD_STOP '\x01'
+#define CMD_RESUME '\x02'
+#define CMD_STATUS '\x03'
+#define CMD_SUPERSTATUS '\x04'
+#define SERIAL_REQUEST_READY '\x05'
+#define SERIAL_READY '\x06'
+#define CMD_RASTER_DATA_START '\x07'
+#define CMD_RASTER_DATA_END '\x08'
+#define STATUS_END '\x09'
 
 
 // commands, handled in protocol.c
@@ -75,7 +77,6 @@
 
 
 // status: error markers
-#define STATUS_END '\x17'
 #define STOPERROR_OK ' '
 
 #define STOPERROR_SERIAL_STOP_REQUEST '!'
