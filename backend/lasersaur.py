@@ -596,7 +596,7 @@ def homing():
     """Run homing cycle."""
     global SerialLoop
     with SerialLoop.lock:
-        if SerialLoop.ready or status()['stops']:
+        if SerialLoop._ready or status()['stops']:
             SerialLoop.send_command(CMD_HOMING)
         else:
             print "WARN: ignoring homing command while job running"
