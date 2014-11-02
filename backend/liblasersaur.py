@@ -33,7 +33,7 @@ import urllib2
 
 import jobimport
 import jobimport.path_optimizers
-# from config import conf
+from config import conf
 
 __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
 
@@ -55,8 +55,8 @@ class Lasersaur(object):
         opener = urllib2.build_opener(handler)
         urllib2.install_opener(opener) # use auth for all urllib2.urlopen()
         # fetch config
-        self.conf = None
-        self.conf = self.config()
+        # conf = None
+        # conf = config()
 
     def _request(self, url, postdict=None, ret=False):
         # TODO: url encode
@@ -178,18 +178,18 @@ class Lasersaur(object):
                 job = json.loads(job)
                 if 'vector' in job and 'paths' in job['vector']:
                     jobimport.pathoptimizer.optimize(
-                        job['vector']['paths'], self.conf['tolerance'])
-                    job['vector']['optimized'] = self.conf['tolerance']
+                        job['vector']['paths'], conf['tolerance'])
+                    job['vector']['optimized'] = conf['tolerance']
                 job = json.dumps(job)
             elif type_ == 'svg':
-                job = jobimport.read_svg(job, self.conf['workspace'],
-                                         self.conf['tolerance'], optimize=optimize)
+                job = jobimport.read_svg(job, conf['workspace'],
+                                         conf['tolerance'], optimize=optimize)
                 job = json.dumps(job)
             elif type_ == 'dxf':
-                job = jobimport.read_dxf(job, self.conf['tolerance'], optimize=optimize)
+                job = jobimport.read_dxf(job, conf['tolerance'], optimize=optimize)
                 job = json.dumps(job)
             elif type_ == 'ngc':
-                job = jobimport.read_ngc(job, self.conf['tolerance'], optimize=optimize)
+                job = jobimport.read_ngc(job, conf['tolerance'], optimize=optimize)
                 job = json.dumps(job)
             else:
                 print "ERROR: file type not recognized"

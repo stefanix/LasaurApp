@@ -884,14 +884,19 @@ def sel_offset_custom():
         SerialLoop.send_command(CMD_SEL_OFFSET_CUSTOM)
 
 
-
-def testjob():
-    j = json.load(open(os.path.join(conf['rootdir'], 'backend', 'testjobs', 'Lasersaur.lsa')))
+def testjob(jobname="Lasersaur", feedrate=2000, intensity=10):
+    j = json.load(open(os.path.join(conf['rootdir'], 'backend', 'testjobs', jobname+'.lsa')))
+    if "vector" in j:
+        j['vector']['passes'] = [{
+            "paths":[0],
+            "feedrate":feedrate,
+            "intensity":intensity }]
+    
     job(j)
 
 def torturejob():
-    j = json.load(open(os.path.join(conf['rootdir'], 'backend', 'testjobs', 'k4.lsa')))
-    job(j)
+    testjob('k4', 4000)
+
 
 
 if __name__ == "__main__":
