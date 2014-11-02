@@ -1,15 +1,39 @@
-"""
-File Reader Module
-"""
+
+import json
+
+from config import conf
+from svg_reader import SVGReader
+from dxf_reader import DXFReader
+from ngc_reader import NGCReader
+import pathoptimizer
 
 
 __author__ = 'Stefan Hechenberger <stefan@nortd.com>'
 
 
-from svg_reader import SVGReader
-from dxf_reader import DXFReader
-from ngc_reader import NGCReader
-import pathoptimizer
+
+def convert(job, optimize=True):
+    type_ = get_type(job)
+    if type_ == 'lsa' and optimize:
+        job = json.loads(job)
+        if 'vector' in job and 'paths' in job['vector']:
+            pathoptimizer.optimize(
+                job['vector']['paths'], conf['tolerance'])
+            job['vector']['optimized'] = conf['tolerance']
+        job = json.dumps(job)
+    elif type_ == 'svg':
+        job = read_svg(job, conf['workspace'],
+                       conf['tolerance'], optimize=optimize)
+        job = json.dumps(job)
+    elif type_ == 'dxf':
+        job = read_dxf(job, conf['tolerance'], optimize=optimize)
+        job = json.dumps(job)
+    elif type_ == 'ngc':
+        job = read_ngc(job, conf['tolerance'], optimize=optimize)
+        job = json.dumps(job)
+    else:
+        print "ERROR: file type not recognized"
+        raise TypeError
 
 
 def read_svg(svg_string, workspace, tolerance, forced_dpi=None, optimize=True):
@@ -137,3 +161,23 @@ def read_ngc(ngc_string, tolerance, optimize=False):
             vec['optimized'] = tolerance
     return job
 
+
+def get_type(job):
+    """Figure out file type from job string."""
+    # figure out type
+    jobheader = job[:256].lstrip()
+    if jobheader and jobheader[0] == '{':
+        type_ = 'lsa'
+    elif '<?xml' in jobheader and '<svg' in jobheader:
+        type_ = 'svg'
+    elif 'SECTION' in jobheader and 'HEADER' in jobheader:
+        type_ = 'dxf'
+    elif 'G0' in jobheader or 'G1' in jobheader or \
+         'G00' in jobheader or 'G01' in jobheader or \
+         'g0' in jobheader or 'g1' in jobheader or \
+         'g00' in jobheader or 'g01' in jobheader:
+        type_ = 'ngc'
+    else:
+        print "ERROR: Cannot figure out file type."
+        raise TypeError
+    return type_

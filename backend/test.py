@@ -54,15 +54,16 @@ class TestLowLevel(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # start web interface
-        web.start(threaded=True, debug=False)
-        time.sleep(0.5)
+        # web.start(threaded=True, debug=False)
+        # time.sleep(0.5)
         # conf liblasersaur
         cls.laser = liblasersaur.Lasersaur("127.0.0.1")
 
     @classmethod
     def tearDownClass(cls):
         # stop web interface
-        web.stop()
+        # web.stop()
+        pass
 
     # def setUp(self):
     #     self.laser = liblasersaur.Lasersaur("127.0.0.1")
@@ -179,15 +180,16 @@ class TestQueue(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # start web interface
-        web.start(threaded=True, debug=False)
-        time.sleep(0.5)
+        # web.start(threaded=True, debug=False)
+        # time.sleep(0.5)
         # conf liblasersaur
         cls.laser = liblasersaur.Lasersaur("127.0.0.1")
 
     @classmethod
     def tearDownClass(cls):
         # stop web interface
-        web.stop()
+        # web.stop()
+        pass
 
     def test_queue_library(self):
         # empty job queue
@@ -206,40 +208,40 @@ class TestQueue(unittest.TestCase):
         #library
         lib = self.laser.list_library()
         self.assertIsInstance(lib, list)
-        self.assertIn('Lasersaur.lsa', lib)
-        job = self.laser.get_library('Lasersaur.lsa')
+        self.assertIn('Lasersaur', lib)
+        job = self.laser.get_library('Lasersaur')
         self.assertIsInstance(job, dict)
-        self.laser.load_library('Lasersaur.lsa')
+        self.laser.load_library('Lasersaur')
         # queue
         jobs = self.laser.list()
         self.assertIsInstance(jobs, list)
-        self.assertIn('Lasersaur.lsa', jobs)
+        self.assertIn('Lasersaur', jobs)
         # get
-        job = self.laser.get('Lasersaur.lsa')
+        job = self.laser.get('Lasersaur')
         self.assertIsInstance(job, dict)
         # list, starring
         jobs = self.laser.list('starred')
         self.assertIsInstance(jobs, list)
         self.assertListEqual(jobs, [])
-        self.laser.star('Lasersaur.lsa')
+        self.laser.star('Lasersaur')
         jobs = self.laser.list('starred')
         self.assertIsInstance(jobs, list)
-        self.assertIn('Lasersaur.lsa', jobs)
+        self.assertIn('Lasersaur', jobs)
         jobs = self.laser.list('unstarred')
         self.assertIsInstance(jobs, list)
         self.assertListEqual(jobs, [])
-        self.laser.unstar('Lasersaur.lsa')
+        self.laser.unstar('Lasersaur')
         jobs = self.laser.list('starred')
         self.assertIsInstance(jobs, list)
         self.assertListEqual(jobs, [])
         jobs = self.laser.list('unstarred')
         self.assertIsInstance(jobs, list)
-        self.assertIn('Lasersaur.lsa', jobs)
+        self.assertIn('Lasersaur', jobs)
         jobs = self.laser.list()
         self.assertIsInstance(jobs, list)
-        self.assertIn('Lasersaur.lsa', jobs)
+        self.assertIn('Lasersaur', jobs)
         #del
-        self.laser.delete('Lasersaur.lsa')
+        self.laser.delete('Lasersaur')
         jobs = self.laser.list()
         self.assertIsInstance(jobs, list)
         self.assertListEqual(jobs, [])
@@ -248,68 +250,68 @@ class TestQueue(unittest.TestCase):
 
 
 
-class TestJobs(unittest.TestCase):
+# class TestJobs(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        # start web interface
-        web.start(threaded=True, debug=False)
-        time.sleep(0.5)
-        # conf liblasersaur
-        cls.laser = liblasersaur.Lasersaur("127.0.0.1")
+#     @classmethod
+#     def setUpClass(cls):
+#         # start web interface
+#         web.start(threaded=True, debug=False)
+#         time.sleep(0.5)
+#         # conf liblasersaur
+#         cls.laser = liblasersaur.Lasersaur("127.0.0.1")
 
-    @classmethod
-    def tearDownClass(cls):
-        # stop web interface
-        web.stop()
+#     @classmethod
+#     def tearDownClass(cls):
+#         # stop web interface
+#         web.stop()
 
-    def testLoad(self):
-        # jobname = self.laser.load(os.path.join(thislocation,'test_svgs','full-bed.svg'))
-        # jobname = self.laser.load(os.path.join(thislocation,'test_svgs','Lasersaur.lsa'))
-        # self.assertIn(jobname, self.laser.list())
-        # self.laser.run(jobname) 
-        jobs = self.laser.list()
-        # self.laser.run(jobs[-1], async=False)
-        self.laser.run(jobs[-1])
+#     def testLoad(self):
+#         # jobname = self.laser.load(os.path.join(thislocation,'test_svgs','full-bed.svg'))
+#         # jobname = self.laser.load(os.path.join(thislocation,'test_svgs','Lasersaur.lsa'))
+#         # self.assertIn(jobname, self.laser.list())
+#         # self.laser.run(jobname) 
+#         jobs = self.laser.list()
+#         # self.laser.run(jobs[-1], async=False)
+#         self.laser.run(jobs[-1])
 
-        s = self.laser.status()
-        while not s['idle']:
-            print s['pos']
-            time.sleep(1)
-            s = self.laser.status()
-        print s['pos']
-
-
-
-
-class TestSerial(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        lasersaur.connect()
-        time.sleep(0.3)
-
-    @classmethod
-    def tearDownClass(cls):
-        time.sleep(20)
-        lasersaur.close()
-
-    def testJob(self):
-        jobfile = os.path.join(thislocation,'test_svgs','Lasersaur.lsa')
-        with open(jobfile) as fp:
-            job = fp.read()
-        lasersaur.job(json.loads(job))
+#         s = self.laser.status()
+#         while not s['ready']:
+#             print s['pos']
+#             time.sleep(1)
+#             s = self.laser.status()
+#         print s['pos']
 
 
 
-# def setUpModule():
-#     # start web interface
-#     web.start(threaded=True, debug=False)
-#     time.sleep(0.5)
 
-# def tearDownModule():
-#     # stop web interface
-#     web.stop()
+# class TestSerial(unittest.TestCase):
+
+#     @classmethod
+#     def setUpClass(cls):
+#         lasersaur.connect()
+#         time.sleep(0.3)
+
+#     @classmethod
+#     def tearDownClass(cls):
+#         time.sleep(20)
+#         lasersaur.close()
+
+#     def testJob(self):
+#         jobfile = os.path.join(thislocation,'test_svgs','Lasersaur.lsa')
+#         with open(jobfile) as fp:
+#             job = fp.read()
+#         lasersaur.job(json.loads(job))
+
+
+
+def setUpModule():
+    # start web interface
+    web.start(threaded=True, debug=False)
+    time.sleep(0.5)
+
+def tearDownModule():
+    # stop web interface
+    web.stop()
 
 
 if __name__ == '__main__':

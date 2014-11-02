@@ -178,28 +178,54 @@ def clear_offset():
 
 ### JOBS QUEUE
 
-def _get_sorted(globpattern):
+def _get_sorted(globpattern, library=False):
     files = []
     cwd_temp = os.getcwd()
     try:
-        os.chdir(conf['stordir'])
-        files = filter(os.path.isfile, glob.glob(globpattern))
-        files.sort(key=lambda x: os.path.getmtime(x))
+        if library:
+            os.chdir(os.path.join(conf['rootdir'], 'library'))
+            files = filter(os.path.isfile, glob.glob(globpattern))
+            files.sort()
+        else:
+            os.chdir(conf['stordir'])
+            files = filter(os.path.isfile, glob.glob(globpattern))
+            files.sort(key=lambda x: os.path.getmtime(x))
     finally:
         os.chdir(cwd_temp)
     return files
 
-def _get(jobpath):
+def _get(jobname, library=False):
     # get job as sting
-    if os.path.exists(jobpath):
-        pass
-    elif os.path.exists(jobpath + '.starred'):
-        jobpath = jobpath + '.starred'
+    if library:
+        jobpath = os.path.join(conf['rootdir'], 'library', jobname.strip('/\\'))
+    else:
+        jobpath = os.path.join(conf['stordir'], jobname.strip('/\\'))
+    if os.path.exists(jobpath+'.lsa'):
+        jobpath = jobpath+'.lsa'
+    elif os.path.exists(jobpath + '.lsa.starred'):
+        jobpath = jobpath + '.lsa.starred'
     else:
         bottle.abort(400, "No such file.")
     with open(jobpath) as fp:
         job = fp.read()
     return job
+
+def _get_path(jobname, library=False):
+    if library:
+        jobpath = os.path.join(conf['rootdir'], 'library', jobname.strip('/\\'))
+    else:
+        jobpath = os.path.join(conf['stordir'], jobname.strip('/\\'))
+    if os.path.exists(jobpath+'.lsa'):
+        return jobpath+'.lsa'
+    elif os.path.exists(jobpath+'.lsa.starred'):
+        return jobpath+'.lsa.starred'
+    else:
+        bottle.abort(400, "No such file.")
+
+def _exists(jobname):
+    namepath = os.path.join(conf['stordir'], jobname.strip('/\\'))
+    if os.path.exists(namepath+'.lsa') or os.path.exists(namepath+'.lsa.starred'):
+        bottle.abort(400, "File name exists.")
 
 def _clear(limit=None):
     files = _get_sorted('*.lsa')
@@ -220,12 +246,12 @@ def _add(job, name):
     num_to_del = (len(_get_sorted('*.lsa')) +1) - conf['max_jobs_in_list']  
     _clear(num_to_del)
     # add
-    namepath = os.path.join(conf['stordir'], name)
-    if os.path.exists(namepath) or os.path.exists(namepath+'.starred'):
+    namepath = os.path.join(conf['stordir'], name.strip('/\\')+'.lsa')
+    if os.path.exists(namepath):
         bottle.abort(400, "File name exists.")
     with open(namepath, 'w') as fp:
         fp.write(job)
-        print "file saved: " + name
+        print "file saved: " + namepath
 
 
 @bottle.route('/load', method='POST')
@@ -237,56 +263,36 @@ def load():
         (Args come in through the POST request.)
         job: lsa, svg, dxf, or ngc string
         name: name of the job (string)
-        type: 'lsa', 'svg', 'dxf', or 'ngc' (string)
         optimize: flag whether to optimize (bool)
     """
     load_request = json.loads(bottle.request.forms.get('load_request'))
     job = load_request.get('job')  # always a string
     name = load_request.get('name')
-    type_ = load_request.get('type')
     optimize = load_request.get('optimize')
-
     # sanity check
-    if job is None or name is None or type_ is None or optimize is None:
+    if job is None or name is None or optimize is None:
         bottle.abort(400, "Invalid request data.")
+    # check file name available
+    if _exists(name):
+        bottle.abort(400, "File name exists.")
+    # convert
+    try:
+        job = jobimport.convert(job, optimize)
+    except TypeError:
+        bottle.abort(400, "Invalid file type.")
 
     # name fix, TODO: think about this
-    namend = name[-4:]
-    if namend == '.lsa':
-        pass
-    elif namend == '.svg' or  namend == '.dxf' or namend == '.ngc' \
-      or namend == '.SVG' or  namend == '.DXF' or namend == '.NGC' \
-      or namend == '.LSA':
-        name = name[:-4] + '.lsa'
-    else:
-        name = name + '.lsa'
+    # namend = name[-4:]
+    # if namend == '.lsa':
+    #     pass
+    # elif namend == '.svg' or  namend == '.dxf' or namend == '.ngc' \
+    #   or namend == '.SVG' or  namend == '.DXF' or namend == '.NGC' \
+    #   or namend == '.LSA':
+    #     name = name[:-4] + '.lsa'
+    # else:
+    #     name = name + '.lsa'
 
-    # check file name available
-    if os.path.exists(name) or os.path.exists(name+'.starred'):
-        bottle.abort(400, "File name exists.")
-
-    if type_ == 'lsa':
-        if optimize:
-            job = json.loads(job)
-            if optimize and 'vector' in job and 'paths' in job['vector']:
-                pathoptimizer.optimize(job['vector']['paths'], conf['tolerance'])
-                job['vector']['optimized'] = conf['tolerance']
-            _add(json.dumps(job), name)
-        else:
-            _add(job, name)
-    elif type_ == 'svg':
-        job = jobimport.read_svg(job, conf['workspace'], 
-                                 conf['tolerance'], optimize=optimize)
-        _add(json.dumps(job), name)
-    elif type_ == 'dxf':
-        job = jobimport.read_dxf(job, conf['tolerance'], optimize=optimize)
-        _add(json.dumps(job), name)
-    elif type_ == 'ngc':
-        job = jobimport.read_ngc(job, conf['tolerance'], optimize=optimize)
-        _add(json.dumps(job), name)
-    else:
-        print "ERROR: unsupported file type"
-        bottle.abort(400, "Invalid file type.")
+    _add(json.dumps(job), name)
 
     return name
     
@@ -302,13 +308,16 @@ def list(kind=None):
     elif kind == 'starred':
         files = _get_sorted('*.lsa.starred')
         print files
-        for i in range(len(files)):
-            if files[i].endswith('.starred'):
-                files[i] = files[i][:-8]
     elif kind == 'unstarred':
         files = _get_sorted('*.lsa')
     else:
         bottle.abort(400, "Invalid kind.")
+    # remove ext
+    for i in range(len(files)):
+        if files[i].endswith('.lsa'):
+            files[i] = files[i][:-4]
+        elif files[i].endswith('.lsa.starred'):
+            files[i] = files[i][:-12]
     return json.dumps(files)
 
 
@@ -316,23 +325,17 @@ def list(kind=None):
 @bottle.auth_basic(checkuser)
 def get(jobname):
     """Get a queue job in .lsa format."""
-    filename = os.path.join(conf['stordir'], jobname.strip('/\\'))
-    if os.path.exists(filename):
-        pass
-    elif os.path.exists(filename + '.starred'):
-        filename = filename + '.starred'
-    else:
-        bottle.abort(400, "No such file.")
-    return bottle.static_file(jobname, root=conf['stordir'], mimetype='text/plain')
+    base, name = os.path.split(_get_path(jobname))
+    return bottle.static_file(name, root=base, mimetype='text/plain')
 
 
 @bottle.route('/star/<jobname>')
 @bottle.auth_basic(checkuser)
 def star(jobname):
     """Star a job."""
-    filename = os.path.join(conf['stordir'], jobname.strip('/\\'))
-    if os.path.exists(filename):
-        os.rename(filename, filename + '.starred')
+    jobpath = _get_path(jobname)
+    if jobpath.endswith('.lsa'):
+        os.rename(jobpath, jobpath + '.starred')
     else:
         bottle.abort(400, "No such file.")
 
@@ -341,9 +344,9 @@ def star(jobname):
 @bottle.auth_basic(checkuser)
 def unstar(jobname):
     """Unstar a job."""
-    filename = os.path.join(conf['stordir'], jobname.strip('/\\'))
-    if os.path.exists(filename + '.starred'):
-        os.rename(filename + '.starred', filename)
+    jobpath = _get_path(jobname)
+    if jobpath.endswith('.starred'):
+        os.rename(jobpath, jobpath[:-8])
     else:
         bottle.abort(400, "No such file.")
 
@@ -352,15 +355,9 @@ def unstar(jobname):
 @bottle.auth_basic(checkuser)
 def delete(jobname):
     """Delete a job."""
-    filename = os.path.join(conf['stordir'], jobname.strip('/\\'))
-    if os.path.exists(filename):
-        pass
-    elif os.path.exists(filename + '.starred'):
-        filename = filename + '.starred'
-    else:
-        bottle.abort(400, "No such file.")
-    os.remove(filename);
-    print "file deleted: " + filename
+    jobpath = _get_path(jobname)
+    os.remove(jobpath)
+    print "INFO: file deleted: " + jobpath
 
 
 @bottle.route('/clear')
@@ -377,28 +374,27 @@ def clear():
 @bottle.auth_basic(checkuser)
 def list_library():
     """List all library jobs by name."""
-    file_list = []
-    cwd_temp = os.getcwd()
-    try:
-        os.chdir(os.path.join(conf['rootdir'], 'library'))
-        file_list = glob.glob('*.lsa')
-    finally:
-        os.chdir(cwd_temp)
-    return json.dumps(file_list)
+    files = _get_sorted('*.lsa', library=True)
+    # remove ext
+    for i in range(len(files)):
+        if files[i].endswith('.lsa'):
+            files[i] = files[i][:-4]
+    return json.dumps(files)
 
 
 @bottle.route('/get_library/<jobname>')
 @bottle.auth_basic(checkuser)
 def get_library(jobname):
     """Get a library job in .lsa format."""
-    return bottle.static_file(jobname, root=os.path.join(conf['rootdir'], 'library'), mimetype='text/plain')
+    base, name = os.path.split(_get_path(jobname, library=True))
+    return bottle.static_file(name, root=base, mimetype='text/plain')
 
 
 @bottle.route('/load_library/<jobname>')
 @bottle.auth_basic(checkuser)
 def load_library(jobname):
     """Load a library job into the queue."""
-    job = _get(os.path.join(conf['rootdir'], 'library', jobname))
+    job = _get(jobname, library=True)
     _add(job, jobname)
 
 
@@ -410,7 +406,7 @@ def load_library(jobname):
 @checkserial
 def run(jobname):
     """Send job from queue to the machine."""
-    job = _get(os.path.join(conf['stordir'], jobname.strip('/\\')))
+    job = _get(jobname)
     if not lasersaur.status()['ready']:
         bottle.abort(400, "Machine not ready.")
     lasersaur.job(json.loads(job))

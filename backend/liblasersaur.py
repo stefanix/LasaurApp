@@ -145,14 +145,17 @@ class Lasersaur(object):
         self._request('/clear_offset')
 
 
+
+
     ### JOBS QUEUE
 
-    def load(self, job, name=None, convert=True, optimize=True):
+    def load(self, job, name=None, convert=True, optimize=True, tofile=False):
         """Loads a job from string or file.
         'job' can be: lsa (native), svg, dxf, or gcode
         'name' can be omitted and defaults to a unique string.
         'convert' flag for converting/optimizing locally
         'optimize' flag for optimizing path tolerances at all
+        'tofile' instead of uploading, write to file (converted)
         """
         if len(job) < 256 and os.path.exists(job):
             # job is a file
@@ -167,25 +170,10 @@ class Lasersaur(object):
         if not name:
             # use a default name
             name = "job-"+str(int(time.time()))
-        # figure out type
-        jobheader = job[:256].lstrip()
-        if jobheader and jobheader[0] == '{':
-            type_ = 'lsa'
-        elif '<?xml' in jobheader and '<svg' in jobheader:
-            type_ = 'svg'
-        elif 'SECTION' in jobheader and 'HEADER' in jobheader:
-            type_ = 'dxf'
-        elif 'G0' in jobheader or 'G1' in jobheader or \
-             'G00' in jobheader or 'G01' in jobheader or \
-             'g0' in jobheader or 'g1' in jobheader or \
-             'g00' in jobheader or 'g01' in jobheader:
-            type_ = 'ngc'
-        else:
-            print "ERROR: Cannot figure out file type."
-            raise TypeError
         # now we have:
-        # job, name, type_
-        if convert:
+        # job, name
+        if convert or tofile:
+            type_ = jobimport.get_type(job)
             if type_ == 'lsa' and optimize:
                 job = json.loads(job)
                 if 'vector' in job and 'paths' in job['vector']:
@@ -206,15 +194,19 @@ class Lasersaur(object):
             else:
                 print "ERROR: file type not recognized"
                 raise TypeError
-            # acknowledge convertion and optimization
-            type_ = 'lsa'
             if optimize:
                 optimize = False
-        # assemble request data
-        load_request = {"job": job, "name":name, "type": type_, "optimize": optimize}
-        load_request = json.dumps(load_request)
-        # upload
-        self._request('/load', postdict={'load_request':load_request})
+        if tofile:
+            outfile = "%s.lsa" % (name)
+            with open(outfile,'w') as fp:
+                fp.write(job)
+            print "INFO: written to %s" % outfile
+        else:
+            # assemble request data
+            load_request = {"job": job, "name":name, "optimize": optimize}
+            load_request = json.dumps(load_request)
+            # upload
+            self._request('/load', postdict={'load_request':load_request})
 
 
 
@@ -267,7 +259,7 @@ class Lasersaur(object):
         self._request('/delete/%s' % jobname)
 
     def clear(self):
-        """Clear job list."""
+        """Clear job list (does not delete starred jobs)."""
         self._request('/clear')
 
 
