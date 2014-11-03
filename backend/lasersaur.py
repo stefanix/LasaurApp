@@ -270,7 +270,7 @@ class SerialLoopClass(threading.Thread):
                             t_prewrite = time.time()
                             actuallySent = self.device.write(to_send)
                             if time.time() - t_prewrite > 0.01:
-                                print "WARN: write delay"
+                                print "WARN: write delay 1"
                         except serial.SerialTimeoutException:
                             actuallySent = 0  # assume nothing has been sent
                             print "ERROR: writeTimeoutError 2"
@@ -302,7 +302,10 @@ class SerialLoopClass(threading.Thread):
 
     def _send_char(self, char):
         try:
+            t_prewrite = time.time()
             self.device.write(char)
+            if time.time() - t_prewrite > 0.01:
+                print "WARN: write delay 2"
             self.device.flushOutput()
         except serial.SerialTimeoutException:
             print "ERROR: writeTimeoutError 1"
@@ -478,7 +481,7 @@ def connect(port=conf['serial_port'], baudrate=conf['baudrate'], server=False):
                 import flash
                 flash.usb_reset_hack()
             # connect
-            SerialLoop.device = serial.Serial(port, baudrate, timeout=0, writeTimeout=1)
+            SerialLoop.device = serial.Serial(port, baudrate, timeout=0, writeTimeout=4)
             if conf['hardware'] == 'standard':
                 # clear throat
                 # Toggle DTR to reset Arduino
