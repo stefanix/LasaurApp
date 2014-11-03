@@ -28,6 +28,7 @@
 import os
 import time
 import json
+import base64
 import urllib
 import urllib2
 
@@ -227,6 +228,39 @@ class Lasersaur(object):
                 ],
                 "paths":[
                     path
+                ]
+            }
+        }
+        self.load(json.dumps(job))
+
+    def load_image(self, image, pos, size, feedrate=6000, intensity=50):
+        """Create and load a raster engraving job.
+
+        Args;
+            image: image file path to PNG image
+            pos: (x,y), position of top-left corner
+            size: (width, height), dimensions of output
+            feedrate: raster speed
+            intensity: raster intensity
+        """
+        with open(image,'rb') as fp:
+            img = fp.read()
+        img_b64 = base64.encodestring(img).decode("utf8")
+        job = {
+            "raster":{
+                "passes":[
+                    {
+                        "images": [0]
+                        "feedrate": feedrate,
+                        "intensity": intensity,
+                    },
+                ]
+                "images":[
+                    {
+                        "pos": pos,
+                        "size": size, 
+                        "data": img_b64]
+                    }
                 ]
             }
         }

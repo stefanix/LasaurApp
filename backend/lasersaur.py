@@ -641,6 +641,14 @@ def move(x, y, z=0.0):
         SerialLoop.send_param(PARAM_TARGET_Z, z)
         SerialLoop.send_command(CMD_LINE)
 
+def rastermove(x, y, z=0.0):
+    global SerialLoop
+    with SerialLoop.lock:
+        SerialLoop.send_param(PARAM_TARGET_X, x)
+        SerialLoop.send_param(PARAM_TARGET_Y, y)
+        SerialLoop.send_param(PARAM_TARGET_Z, z)
+        SerialLoop.send_command(CMD_RASTER)
+
 
 
 
@@ -662,7 +670,7 @@ def job(jobdict):
                     "feedrate": 2000,      # optional, rate to other verteces
                     "intensity": 100,      # optional, default: 0 (in percent)
                     "pierce_time": 0,      # optional, default: 0
-                    "air_assist": "pass",   # optional (feed, pass, off), default: pass
+                    "air_assist": "pass",  # optional (feed, pass, off), default: pass
                     "aux1_assist": "off",  # optional (feed, pass, off), default: off
                 }
             ],
@@ -683,27 +691,110 @@ def job(jobdict):
             "passes":
             [
                 {
-                    "image": [0]
+                    "images": [0]
                     "seekrate": 6000,      # optional
                     "feedrate": 3000,
                     "intensity": 100,
+                    "air_assist": "pass",  # optional (feed, pass, off), default: pass
+                    "aux1_assist": "off",  # optional (feed, pass, off), default: off
                 },
             ]
             "images":
             [
                 [pos, size, <data>],               # pos: [x,y], size: [w,h], data in base64
+                {
+                    "pos": (100,50),
+                    "size": (320,240),
+                    "data": <data in base64>
+                }
             ]
         }
     }
     ###########################################################################
     """
 
-    ### rasters
-    # if jobdict.has_key('rasterpass') and jobdict.has_key('rasters'):
-    #     rseekrate = jobdict['rasterpass']['seekrate']
-    #     rfeedrate = jobdict['rasterpass']['feedrate']
-    #     rintensity = jobdict['rasterpass']['intensity']
-    #     # TODO: queue raster
+    if not jobdict.has_key('raster') and not jobdict.has_key('vector'):
+        print "ERROR: invalid job"
+        return
+
+    # ### rasters
+    # if jobdict.has_key('raster'):
+    #     if jobdict['raster'].has_key('passes') and jobdict['raster'].has_key('images'):
+    #         passes = jobdict['raster']['passes']
+    #         images = jobdict['raster']['images']
+    #         for pass_ in passes:
+    #             # turn on assists if set to 'pass'
+    #             if 'air_assist' in pass_:
+    #                 if pass_['air_assist'] == 'pass':
+    #                     air_on()
+    #             else:
+    #                 air_on()    # also default this behavior
+    #             if 'aux1_assist' in pass_ and pass_['aux1_assist'] == 'pass':
+    #                 aux1_on()
+    #             absolute()
+    #             # loop through all images of this pass
+    #             for img_index in pass_['images']:
+    #                 if img_index < len(images):
+    #                     img = images[img_index]
+    #                     pos = img["pos"]
+    #                     size = img["size"]
+    #                     data = img["data"]
+    #                     posx = pos[0]
+    #                     posy = pos[1]
+    #                     # calc leadin/out
+    #                     leadinpos = posx - conf['raster_leadin']
+    #                     if leadinpos < 0:
+    #                         leadinpos = 0
+    #                     posright = posx + size[0]
+    #                     leadoutpos = posright + conf['raster_leadin']
+    #                     if leadoutpos > conf['workspace'][0]:
+    #                         leadoutpos = conf['workspace'][0]
+
+    #                     ### go through lines ############### TODO!!!!
+    #                         # move to start
+    #                         if 'seekrate' in pass_:
+    #                             feedrate(pass_['seekrate'])
+    #                         else:
+    #                             feedrate(conf['seekrate'])
+    #                         move(leadinpos, posy)
+    #                         # assists
+    #                         if 'air_assist' in pass_ and pass_['air_assist'] == 'feed':
+    #                             air_on()
+    #                         else:
+    #                             air_on()  # also default this behavior
+    #                         if 'aux1_assist' in pass_ and pass_['aux1_assist'] == 'feed':
+    #                             aux1_on()
+    #                         # lead-in
+    #                         if 'feedrate' in pass_:
+    #                             feedrate(pass_['feedrate'])
+    #                         else:
+    #                             feedrate(conf['feedrate'])     
+    #                         move(posx, posy)
+    #                         rastermove(posright, posy)
+    #                         move(leadoutpos, posy)
+    #                         # assists
+    #                         if 'air_assist' in pass_ and pass_['air_assist'] == 'feed':
+    #                             air_off()
+    #                         else:
+    #                             air_off()  # also default this behavior
+    #                         if 'aux1_assist' in pass_ and pass_['aux1_assist'] == 'feed':
+    #                             aux1_off()
+
+
+    #             # turn off assists if set to 'pass'
+    #             if 'air_assist' in pass_:
+    #                 if pass_['air_assist'] == 'pass':
+    #                     air_off()
+    #             else:
+    #                 air_off()  # also default this behavior
+    #             if 'aux1_assist' in pass_ and pass_['aux1_assist'] == 'pass':
+    #                 aux1_off()
+
+
+
+
+
+
 
     ### vectors
     if jobdict.has_key('vector'):
@@ -751,11 +842,8 @@ def job(jobdict):
                                         intensity(pass_['intensity'])
                                     # turn on assists if set to 'feed'
                                     # also air_assist defaults to 'feed'                 
-                                    if 'air_assist' in pass_:
-                                        if pass_['air_assist'] == 'feed':
-                                            air_on()
-                                    else:
-                                        air_on()  # also default this behavior
+                                    if 'air_assist' in pass_ and pass_['air_assist'] == 'feed':
+                                        air_on()
                                     if 'aux1_assist' in pass_ and pass_['aux1_assist'] == 'feed':
                                         aux1_on()
                                     # TODO dwell according to pierce time
@@ -766,10 +854,8 @@ def job(jobdict):
                                         for i in xrange(1, len(polyline)):
                                             move(polyline[i][0], polyline[i][1], polyline[i][2])
                                     # turn off assists if set to 'feed'
-                                    # also air_assist defaults to 'feed'                 
-                                    if 'air_assist' in pass_:
-                                        if pass_['air_assist'] == 'feed':
-                                            air_off()
+                                    if 'air_assist' in pass_ and pass_['air_assist'] == 'feed':
+                                        air_off()
                                     if 'aux1_assist' in pass_ and pass_['aux1_assist'] == 'feed':
                                         aux1_off()
                 # turn off assists if set to 'pass'
@@ -780,11 +866,13 @@ def job(jobdict):
                     air_off()  # also default this behavior
                 if 'aux1_assist' in pass_ and pass_['aux1_assist'] == 'pass':
                     aux1_off()
-            # return to origin
-            if jobdict['vector'].has_key('noreturn') and jobdict['vector']['noreturn']:
-                pass
-            else:
-                move(0, 0, 0)
+
+    # return to origin
+    feedrate(conf['seekrate'])
+    if jobdict['vector'].has_key('noreturn') and jobdict['vector']['noreturn']:
+        pass
+    else:
+        move(0, 0, 0)
 
 
 

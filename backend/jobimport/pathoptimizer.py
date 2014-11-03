@@ -186,11 +186,12 @@ def simplify_all(path, tolerance2):
         totalverts += len(path[u])
         path[u] = simplify(path[u], tolerance2)
         optiverts += len(path[u])
-    # report polyline optimizations    
-    difflength = totalverts - optiverts
-    diffpct = (100*difflength/totalverts)
-    if diffpct > 10:  # if diff more than 10%
-        log.info("polylines optimized by " + str(int(diffpct)) + '%')
+    if totalverts > 0:
+        # report polyline optimizations    
+        difflength = totalverts - optiverts
+        diffpct = (100*difflength/totalverts)
+        if diffpct > 10:  # if diff more than 10%
+            log.info("INFO: polylines optimized by " + str(int(diffpct)) + '%')
 
 
 

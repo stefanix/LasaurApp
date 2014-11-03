@@ -43,6 +43,7 @@ conf = {
     },
 
     'usb_reset_hack': False,
+    'raster_leadin': 40,
 }
 
 
