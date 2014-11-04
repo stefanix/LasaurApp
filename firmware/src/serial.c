@@ -65,10 +65,10 @@ volatile uint8_t tx_buffer_tail = 0;
 * and apon receiving it send the next chunk.     *
 *************************************************/
 #define RX_CHUNK_SIZE 16
-volatile uint8_t send_xoff_flag = 0;
-volatile uint8_t send_xon_flag = 0;
+volatile bool send_xoff_flag = 0;
+volatile bool send_xon_flag = 0;
 
-bool raster_mode = false;
+volatile bool raster_mode = false;
 
 uint8_t serial_read();
 
@@ -95,9 +95,6 @@ void serial_init() {
   UCSR0B |= 1<<RXCIE0;
 	  
 	// defaults to 8-bit, no parity, 1 stop bit
-	
-  serial_write(INFO_HELLO);
-  serial_write(SERIAL_XON);
 }
 
 
@@ -110,6 +107,7 @@ void serial_write(uint8_t data) {
     // wait, if buffer is full
     while (next_head == tx_buffer_tail) {
       // sleep_mode();
+      // protocol_idle();  // don't call, may turn recursive
     }
 
     // Store data and advance head
@@ -138,10 +136,10 @@ SIGNAL(USART_UDRE_vect) {
   
   if (send_xoff_flag) {
     UDR0 = SERIAL_XOFF;
-    send_xoff_flag = 0;
+    send_xoff_flag = false;
   } else if (send_xon_flag) {
     UDR0 = SERIAL_XON;
-    send_xon_flag = 0;
+    send_xon_flag = false;
   } else {                    // Send a byte from the buffer 
     UDR0 = tx_buffer[tail];
     if (++tail == TX_BUFFER_SIZE) {tail = 0;}  // increment
@@ -159,7 +157,7 @@ inline uint8_t serial_read() {
   if (++rx_buffer_tail == RX_BUFFER_SIZE) {rx_buffer_tail = 0;}  // increment
   ATOMIC_BLOCK(ATOMIC_FORCEON) {
     if (rx_buffer_open_slots == RX_BUFFER_LIMIT) {  // enough slots opening up
-      send_xon_flag = 1;
+      send_xon_flag = true;
       UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt  
     }    
     rx_buffer_open_slots++;
@@ -189,7 +187,7 @@ SIGNAL(USART_RX_vect) {
     uint8_t next_head = head + 1;
     if (next_head == RX_BUFFER_SIZE) {next_head = 0;}
     if (rx_buffer_open_slots == RX_BUFFER_LIMIT) {
-      send_xoff_flag = 1;
+      send_xoff_flag = true;
       UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt
     }
     if (next_head == rx_buffer_tail) {
@@ -211,14 +209,13 @@ uint8_t serial_protocol_read() {
     // In this mode the serial inerrupt provides data
     // in the rx_buffer which get directly consumed
     // by the stepper interrupt.
-    sleep_mode();  // sleep a tiny bit
+    // sleep_mode();  // sleep a tiny bit
     protocol_idle();
   }
   // wait, buffer empty
   while (rx_buffer_tail == rx_buffer_head) {
+    // sleep_mode();
     protocol_mark_underrun();
-    sleep_mode();
-    protocol_end_of_job_check();
     protocol_idle();
   }
   // we have non-raster data
@@ -228,14 +225,13 @@ uint8_t serial_protocol_read() {
     // comsume the byte, return next non-raster byte
     // wait, raster mode
     while (raster_mode) {
-      sleep_mode();
+      // sleep_mode();
       protocol_idle();
     }
     // wait, buffer empty
     while (rx_buffer_tail == rx_buffer_head) {
+      // sleep_mode();
       protocol_mark_underrun();
-      sleep_mode();
-      protocol_end_of_job_check();
       protocol_idle();
     }
     // back to normal mode
@@ -284,8 +280,8 @@ uint8_t serial_raster_read() {
 }
 
 
-uint8_t serial_available() {
-  return RX_BUFFER_SIZE - rx_buffer_open_slots;
+uint8_t serial_data_available() {
+  return rx_buffer_tail != rx_buffer_head;
 }
 
 

@@ -109,9 +109,9 @@
 #define STATUS_OFFCUSTOM_X 'a'
 #define STATUS_OFFCUSTOM_Y 'b'
 #define STATUS_OFFCUSTOM_Z 'c'
-#define STATUS_TARGET_X 'd'
-#define STATUS_TARGET_Y 'e'
-#define STATUS_TARGET_Z 'f'
+// #define STATUS_TARGET_X 'd'
+// #define STATUS_TARGET_Y 'e'
+// #define STATUS_TARGET_Z 'f'
 #define STATUS_FEEDRATE 'g'
 #define STATUS_INTENSITY 'h'
 #define STATUS_DURATION 'i'
@@ -130,9 +130,6 @@ void protocol_loop();
 // (super)status the next time it runs.
 void protocol_request_status();
 void protocol_request_superstatus();
-
-// called whenever no new serial data
-void protocol_end_of_job_check();
 
 // called when rx serial buffer empty
 void protocol_mark_underrun();

@@ -68,14 +68,14 @@ static int32_t counter_x,       // Counter variables for the bresenham line trac
                counter_y,
                counter_z;
 static uint32_t step_events_completed; // The number of step events executed in the current block
-static volatile uint8_t busy;  // true whe stepper ISR is in already running
+static volatile bool busy;  // true whe stepper ISR is in already running
 
 // Variables used by the trapezoid generation
 static uint32_t cycles_per_step_event;        // The number of machine cycles between each step event
 static uint32_t acceleration_tick_counter;    // The cycles since last acceleration_tick.
                                               // Used to generate ticks at a steady pace without allocating a separate timer.
 static uint32_t adjusted_rate;                // The current rate of step_events according to the speed profile
-static bool processing_flag;                  // indicates if blocks are being processed
+static volatile bool processing_flag;         // indicates if blocks are being processed
 static volatile bool stop_requested;          // when set to true stepper interrupt will go idle on next entry
 static volatile uint8_t stop_status;          // yields the reason for a stop request
 
@@ -121,20 +121,12 @@ void stepper_init() {
   
   // start in the idle state
   // The stepper interrupt gets started when blocks are being added.
-  stepper_go_idle();  
-}
-
-
-// block until all command blocks are executed
-void stepper_synchronize() {
-  while(processing_flag) { 
-    // sleep_mode();
-  }
+  stepper_stop_processing();  
 }
 
 
 // start processing command blocks
-void stepper_wake_up() {
+void stepper_start_processing() {
   if (!processing_flag) {
     processing_flag = true;
     // Initialize stepper output bits
@@ -144,9 +136,8 @@ void stepper_wake_up() {
   }
 }
 
-
 // stop processing command blocks
-void stepper_go_idle() {
+void stepper_stop_processing() {
   processing_flag = false;
   current_block = NULL;
   // Disable stepper driver interrupt
@@ -154,10 +145,17 @@ void stepper_go_idle() {
   control_laser_intensity(0);
 }
 
+// is the stepper interrupt processing
+void stepper_processing() {
+  return processing_flag;
+}
+
 // stop event handling
 void stepper_request_stop(uint8_t status) {
-  stop_status = status;
-  stop_requested = true;
+  if (!stop_requested) {  // prevent retriggering
+    stop_status = status;
+    stop_requested = true;
+  }
 }
 
 uint8_t stepper_stop_status() {
@@ -186,7 +184,6 @@ double stepper_get_position_z() {
   return stepper_position[Z_AXIS]/CONFIG_Z_STEPS_PER_MM;
 }
 void stepper_set_position(double x, double y, double z) {
-  stepper_synchronize();  // wait until processing is done
   stepper_position[X_AXIS] = lround(x*CONFIG_X_STEPS_PER_MM);
   stepper_position[Y_AXIS] = lround(y*CONFIG_Y_STEPS_PER_MM);
   stepper_position[Z_AXIS] = lround(z*CONFIG_Z_STEPS_PER_MM);  
@@ -214,10 +211,12 @@ ISR(TIMER1_COMPA_vect) {
   if (busy) { return; } // The busy-flag is used to avoid reentering this interrupt
   busy = true;
   if (stop_requested) {
-    // go idle and absorb any blocks
-    stepper_go_idle(); 
+    // go idle
+    stepper_stop_processing();
+    // absorb blocks
+    // Make sure to do this again from the protocol loop
+    // because it could still be adding blocks after this call.
     planner_reset_block_buffer();
-    planner_request_position_update();
     busy = false;
     return;
   }
@@ -267,7 +266,7 @@ ISR(TIMER1_COMPA_vect) {
     current_block = planner_get_current_block();
     // if still no block command, go idle, disable interrupt
     if (current_block == NULL) {
-      stepper_go_idle();
+      stepper_stop_processing();
       busy = false;
       return;       
     }      
@@ -594,8 +593,7 @@ static void leave_limit_switch(bool x, bool y, bool z) {
   homing_cycle(x, y, z, true, 10000);
 }
 
-void stepper_homing_cycle() {
-  stepper_synchronize();  
+void stepper_homing_cycle() {  
   // home the x and y axis
   approach_limit_switch(true, true, false);
   leave_limit_switch(true, true, false);

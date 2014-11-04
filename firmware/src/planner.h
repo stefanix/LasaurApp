@@ -101,8 +101,5 @@ void planner_reset_block_buffer();
 // Reset the position vector
 void planner_set_position(double x, double y, double z);
 
-// update to stepper position when steppers have been stopped
-// called from the stepper code that executes the stop
-void planner_request_position_update();
 
 #endif

@@ -1,71 +1,64 @@
 
-Lasersaur - Open Source Laser cutter
--------------------------------------
+Lasersaur Firmware - Open Source Laser cutter
+=============================================
 
-This is the firmware we use for the Lasersaur. It's a slightly modified version of grbl. It's what runs on an Arduino Uno and takes g-code files to controls the stepper motors accordingly.
+This is the firmware of the [Lasersaur](http://www.lasersaur.com). It originated from Grbl and has become a laser-cutter specific firmware with source simplicity as a central goal. Typically it runs on the Atmega of the Lasersaur's Driveboard but it is also compatible with any Arduino Uno.
 
-How to get this firmware onto an Arduino Uno? There is a python script that will do the trick. Edit the "flash.py" and follow the instruction in it. You will need a USB cable and the Arduino IDE.
-
-For more information see the [Lasersaur Software Setup Guide](http://labs.nortd.com/lasersaur/manual/software_setup).
+For more information see the [Lasersaur Manual](http://www.lasersaur.com/manual/lasaurapp).
 
 **DISCLAIMER:** Please be aware that operating a DIY laser cutter can be dangerous and requires full awareness of the risks involved. You build the machine and you will have to make sure it is safe. The instructions of the Lasersaur project and related software come without any warranty or guarantees whatsoever. All information is provided as-is and without claims to mechanical or electrical fitness, safety, or usefulness. You are fully responsible for doing your own evaluations and making sure your system does not burn, blind, or electrocute people.
 
 
-Grbl - An embedded g-code interpreter and motion-controller for the Arduino/AVR328 microcontroller
---------------
 
-For more information [on Grbl](https://github.com/simen/grbl)
+General Control Flow
+====================
 
-
-TODO
-------
-- g55 wrong offset
-- homing cycle cannot recover out of bounds when limit already triggering
-
-mbed merger notes
-------------------
-- removed
-  - inverse mode
-  - plane selection, G17, G18, G19
-  - arc support, G2, G3
-  - M112, use M2 instead
-
-- laser intensity, 255 or 1.0
-- trunc() function in gcode parser
-- NEXT_ACTION_STOP, newer code
-- direction_bits to be uint8_t
-- nominal_laser_intensity to be uint8_t
-- rate_delta to be int32
-- SystemCoreClock/4 to be F_CPU
-- out_bits to be uint8_t
-- static volatile int busy; no need
-- stepper_init
-- stepper_synchronize
-- stepper_wake_up
-- stepper_go_idle
-- bit masking
-
-TODO: dwell, cancel, coordinate systems
-      proportional laser intensity
-      check for: limits, door, power (vrel), chiller
+The main processing loop is the **protocol_loop()**. It is launched from main.c after all the initialization. 
 
 
-Coordinate Systems
-------------------
-
-- use G10 L20 P1 to make the current position the origin in the G54 coordinate system, P2 for the G55 coord system
-- select coord system with G54, G55, G56
-- usage scenario:
-  - use G10 L20 P1 in homing cycle to set the physical home position, associated with G54
-  - use G10 L2 P2 X10 Y10 to set a standard offset from the home, associated with the G55 coords
-  - use G10 L20 P3 (or G10 L2 P3 X__ Y1__) to set a temporary origin, associated with G56
-  
-stop, pause, resume
---------------------
-stop on: power, chiller, limit, \03 control char
-stop resume on: \02 control char
-pause on: door, resume on door close
+protocol_loop()
+---------------
+The main task is to read one character from the serial buffer and process it. Once it makes sense of the input it assembles commands and delegates them to the **planner** (e.g. planner_line).
 
 
+The protocol loop can get interrupted by four interrupt handlers: 
+
+- stepper interrupt
+- stepper reset interrupt
+- serial rx interrupt
+- serial tx interrupt.
+
+It can also blocked by five conditions:
+
+- serial rx buffer empty
+- serial tx buffer full
+- raster transmission in progress
+- block buffer full
+- synchonizing, waiting for all blocks to be processed
+
+While being blocked (and every time a character is received) the **protocol_idle()** function is called. This means the protocol loop can always write a status report. The only exception is during a full serial tx buffer. In this case it prevents a recursive regression by simply waiting for the buffer to open up first.
 
 
+planner
+-------
+The planner takes commands, optimizes them, and puts them in the **block_buffer**. From there they get consumed by the stepper interrupt.
+
+
+stepper interrupt
+-----------------
+The stepper interrupt is a timed interrupt that gets activated as soon as items are placed into the **block_buffer**. It processes and pulses the output hardware (stepper motors, I/O) accordingly, block by block. This interrupt controls its own invocation interval according to the timing it needs to properly control the motors.
+
+The periodic interrupt calls stop when all the blocks in the buffer have been consumed. It also stops when a stop condition occures. Stop conditions are exclusively invoked by **stepper_request_stop(...)** so the interrupt can terminate itself. On the next invocation the interrupt will then purge the block buffer and disable the interrupt. The stop flag stays set until the stepper_stop_resume() is called (by serial command). 
+
+Stop requests are invoked by:
+
+- stepper interrupt
+- serial rx interrupt
+- protocol loop
+
+The first effect of a stop is the periodic stepper interrupt deactivates itself. Any other effects are handled by the protocol loop. Specifically it needs to:
+
+- ignore incoming serial data
+- reset serial buffer
+- reset block buffer
+- update planner pos from current stepper pos

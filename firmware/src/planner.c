@@ -36,7 +36,6 @@ static volatile uint8_t block_buffer_head;       // index of the next block to b
 static volatile uint8_t block_buffer_tail;       // index of the block to process now
 
 static int32_t position[3];             // The current position of the tool in absolute steps
-static volatile bool position_update_requested;  // make sure to update to stepper position on next occasion
 static double previous_unit_vec[3];     // Unit vector of previous path line segment
 static double previous_nominal_speed;   // Nominal speed of previous path line segment
 
@@ -60,7 +59,6 @@ void planner_init() {
   planner_set_position( CONFIG_X_ORIGIN_OFFSET, 
                         CONFIG_Y_ORIGIN_OFFSET, 
                         CONFIG_Z_ORIGIN_OFFSET );  
-  position_update_requested = false;
   clear_vector_double(previous_unit_vec);
   previous_nominal_speed = 0.0;
 }
@@ -82,12 +80,6 @@ void planner_line(double x, double y, double z, double feed_rate, uint8_t nomina
     // good! We are well ahead of the robot. Rest here until buffer has room.
     // sleep_mode();
     protocol_idle();
-  }
-  
-  // handle position update after a stop
-  if (position_update_requested) {
-    planner_set_position(stepper_get_position_x(), stepper_get_position_y(), stepper_get_position_z());
-    position_update_requested = false;
   }
   
   // prepare to set up new block
@@ -200,7 +192,7 @@ void planner_line(double x, double y, double z, double feed_rate, uint8_t nomina
   planner_recalculate();
 
   // make sure the stepper interrupt is processing
-  stepper_wake_up();
+  stepper_start_processing();
 }
 
 
@@ -208,7 +200,10 @@ void planner_dwell(double seconds, uint8_t nominal_laser_intensity) {
 // // Execute dwell in seconds. Maximum time delay is > 18 hours, more than enough for any application.
 // void mc_dwell(double seconds) {
 //    uint16_t i = floor(seconds);
-//    stepper_synchronize();
+//    while(stepper_processing()) { 
+//      // sleep_mode();
+//      protocol_idle();
+//    }
 //    _delay_ms(floor(1000*(seconds-i))); // Delay millisecond remainder
 //    while (i > 0) {
 //      _delay_ms(1000); // Delay one second
@@ -237,7 +232,7 @@ void planner_command(uint8_t type) {
   block_buffer_head = next_buffer_head;
 
   // make sure the stepper interrupt is processing  
-  stepper_wake_up();
+  stepper_start_processing();
 }
 
 
@@ -272,10 +267,6 @@ void planner_set_position(double x, double y, double z) {
   position[Z_AXIS] = lround(z*CONFIG_Z_STEPS_PER_MM);    
   previous_nominal_speed = 0.0; // resets planner junction speeds
   clear_vector_double(previous_unit_vec);
-}
-
-void planner_request_position_update() {
-  position_update_requested = true;
 }
 
 

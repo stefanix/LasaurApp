@@ -34,14 +34,12 @@
 // Initialize and start the stepper motor subsystem
 void stepper_init();
 
-// Block until all buffered steps are executed
-void stepper_synchronize();
-             
 // Start stepper interrupt and execute the blocks in queue.
-void stepper_wake_up();
-
+void stepper_start_processing();
 // make the stepper subsystem fall asleep
-void stepper_go_idle();
+void stepper_stop_processing();
+// is the stepper interrupt processing
+void stepper_processing();
 
 // stop (error) functions
 void stepper_request_stop(uint8_t status);
@@ -54,6 +52,8 @@ void stepper_stop_resume();
 double stepper_get_position_x();
 double stepper_get_position_y();
 double stepper_get_position_z();
+// set stepper internal position
+// never call this while processing blocks, sync first
 void stepper_set_position(double x, double y, double z);
 
 // perform the homing cycle

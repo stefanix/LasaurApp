@@ -95,7 +95,6 @@ static data_t pdata;
 // uint8_t line_checksum_ok_already;
 static volatile bool status_requested;           // when set protocol_idle will write status to serial
 static volatile bool superstatus_requested;      // extended status
-static bool machine_idle;                        // when no serial data and no blockes processing
 static bool rx_buffer_underrun;                  // when the rx serial buffer runs empty
 
 static void on_cmd(uint8_t command);
@@ -122,8 +121,10 @@ void protocol_init() {
   // line_checksum_ok_already = false;
   status_requested = true;
   superstatus_requested = true;
-  machine_idle = true;
   rx_buffer_underrun = false;
+
+  serial_write(INFO_HELLO);
+  serial_write(SERIAL_XON);
 }
 
 
@@ -132,7 +133,8 @@ void protocol_loop() {
   while(true) {
     chr = serial_protocol_read();  // blocks until there is data
     if (stepper_stop_requested()) {
-      protocol_request_status();
+      // when stop, ignore serial chars
+      protocol_idle();
     } else {
       if(chr < 128) {  /////////////////////////////// marker
         if(chr > 64 && chr < 91) {  ///////// command
@@ -153,9 +155,8 @@ void protocol_loop() {
           stepper_request_stop(STOPERROR_INVALID_DATA);
         }
       }
+      protocol_idle();
     }
-
-    protocol_idle();
   }
 }
 
@@ -191,6 +192,10 @@ inline void on_cmd(uint8_t command) {
       st.ref_mode = REF_ABSOLUTE;
       break;
     case CMD_HOMING:
+      while(stepper_processing()) { 
+        // sleep_mode();
+        protocol_idle();
+      }
       stepper_homing_cycle();
       // now that we are at the physical home
       // zero all the position vectors
@@ -205,7 +210,10 @@ inline void on_cmd(uint8_t command) {
                     st.feedrate, 0, 0 );
       break;
     case CMD_SET_OFFSET_TABLE: case CMD_SET_OFFSET_CUSTOM:
-      stepper_synchronize();
+      while(stepper_processing()) { 
+        // sleep_mode();
+        protocol_idle();
+      }
       // set offset to current position
       if(command == CMD_SET_OFFSET_CUSTOM) {
         cs = OFFSET_CUSTOM;
@@ -334,15 +342,6 @@ void protocol_request_superstatus() {
 }
 
 
-void protocol_end_of_job_check() {
-  if(!planner_blocks_available()) {
-    // probably end of job
-    // (can also be the serial is super slow)
-    machine_idle = true;
-  }
-}
-
-
 void protocol_mark_underrun() {
   rx_buffer_underrun = true;
 }
@@ -354,9 +353,17 @@ void protocol_idle() {
   // one of the following conditions:
   // - serial reading
   //   - in raster mode
-  //   - serial buffer empty
+  //   - serial rx buffer empty
+  // - serial writing
+  //   - serial tx buffer full
   // - planing actions (line, command)
   //   - block buffer full
+  // - synchonizing
+  //   - while waiting for all blocks to process
+  //
+  // NOTE: Beware of recursively calling this function.
+  //       For example calling it during serial write waits
+  //       may cause a recursive regression.
 
 
   // if (planner_blocks_available()) {
@@ -367,16 +374,22 @@ void protocol_idle() {
   //   ASSIST_PORT &= ~(1 << AIR_ASSIST_BIT);
   // }
 
-
-  if (planner_blocks_available()) {
-    machine_idle = false;
+  if (stepper_stop_requested()) {
+      // TODO: make sure from the time triggered to time handled in protocol loop nothing weird happens
+      // WARN: this is contioously call during a stop condition
+      // TODO: reset serial rx buffer
+      planner_reset_block_buffer();
+      planner_set_position(stepper_get_position_x(), stepper_get_position_y(), stepper_get_position_z());      
+      pdata.count = 0;
   }
 
+  
   if (status_requested || superstatus_requested) {
     status_requested = false;
     // idle flag
-    if (machine_idle) {
+    if (!planner_blocks_available() && !serial_data_available()) {
       serial_write(INFO_READY_YES);
+      sleep_mode();  // sleep a bit
     }
 
     if (rx_buffer_underrun) {
@@ -432,11 +445,6 @@ void protocol_idle() {
       serial_write_param(STATUS_OFFCUSTOM_X, st.offsets[CUSTOMOFF_X]-st.offsets[TABLEOFF_X]);
       serial_write_param(STATUS_OFFCUSTOM_Y, st.offsets[CUSTOMOFF_Y]-st.offsets[TABLEOFF_Y]);
       serial_write_param(STATUS_OFFCUSTOM_Z, st.offsets[CUSTOMOFF_Z]-st.offsets[TABLEOFF_Z]);      
-
-      // target, absolute like stepper_get_position, debugging
-      // serial_write_param(STATUS_TARGET_X, st.target[X_AXIS]);
-      // serial_write_param(STATUS_TARGET_Y, st.target[Y_AXIS]);
-      // serial_write_param(STATUS_TARGET_Z, st.target[Z_AXIS]);
 
       serial_write_param(STATUS_FEEDRATE, st.feedrate);
       serial_write_param(STATUS_INTENSITY, st.intensity);
