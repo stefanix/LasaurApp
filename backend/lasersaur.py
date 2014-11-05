@@ -22,8 +22,8 @@ CMD_STOP = '\x01'
 CMD_RESUME = '\x02'
 CMD_STATUS = "\x03"
 CMD_SUPERSTATUS = "\x04"
-SERIAL_XON = '\x05'
-SERIAL_XOFF = '\x06'
+SERIAL_XON = '\x17'
+SERIAL_XOFF = '\x19'
 CMD_RASTER_DATA_START = '\x07'
 CMD_RASTER_DATA_END = '\x08'
 STATUS_END = '\x09'
@@ -127,7 +127,7 @@ class SerialLoopClass(threading.Thread):
         # TX_CHUNK_SIZE - this is the number of bytes to be 
         # written to the device in one go. It needs to match the device.
         self.TX_CHUNK_SIZE = 16
-        self.RX_CHUNK_SIZE = 16
+        self.RX_CHUNK_SIZE = 256
         self.xon_active = False
         
         # used for calculating percentage done
@@ -233,7 +233,7 @@ class SerialLoopClass(threading.Thread):
                     else:
                         self.request_status = 1  # processing -> normal request
                     last_status_request = time.time()
-            time.sleep(0.002)
+            time.sleep(0.004)
 
 
 
