@@ -9,9 +9,18 @@
 
 
 import sys, os, serial, threading
+try:
+    from serial.tools.list_ports import comports
+except ImportError:
+    comports = None
 
-EXITCHARCTER = '\x1d'   # GS/CTRL+]
-MENUCHARACTER = '\x14'  # Menu: CTRL+T
+EXITCHARCTER = serial.to_bytes([0x1d])   # GS/CTRL+]
+MENUCHARACTER = serial.to_bytes([0x14])  # Menu: CTRL+T
+
+DEFAULT_PORT = None
+DEFAULT_BAUDRATE = 9600
+DEFAULT_RTS = None
+DEFAULT_DTR = None
 
 
 def key_description(character):
@@ -72,6 +81,13 @@ else:
     def character(b):
         return b
 
+LF = serial.to_bytes([10])
+CR = serial.to_bytes([13])
+CRLF = serial.to_bytes([13, 10])
+
+X00 = serial.to_bytes([0])
+X0E = serial.to_bytes([0x0e])
+
 # first choose a platform dependant way to read single characters from the console
 global console
 
@@ -90,11 +106,11 @@ if os.name == 'nt':
         def getkey(self):
             while True:
                 z = msvcrt.getch()
-                if z == '\0' or z == '\xe0':    # functions keys, ignore
+                if z == X00 or z == X0E:    # functions keys, ignore
                     msvcrt.getch()
                 else:
-                    if z == '\r':
-                        return '\n'
+                    if z == CR:
+                        return LF
                     return z
 
     console = Console()
@@ -104,6 +120,7 @@ elif os.name == 'posix':
     class Console(object):
         def __init__(self):
             self.fd = sys.stdin.fileno()
+            self.old = None
 
         def setup(self):
             self.old = termios.tcgetattr(self.fd)
@@ -118,24 +135,32 @@ elif os.name == 'posix':
             return c
 
         def cleanup(self):
-            termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.old)
+            if self.old is not None:
+                termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.old)
 
     console = Console()
 
     def cleanup_console():
         console.cleanup()
 
-    console.setup()
     sys.exitfunc = cleanup_console      # terminal modes have to be restored on exit...
 
 else:
     raise NotImplementedError("Sorry no implementation for your platform (%s) available." % sys.platform)
 
 
+def dump_port_list():
+    if comports:
+        sys.stderr.write('\n--- Available ports:\n')
+        for port, desc, hwid in sorted(comports()):
+            #~ sys.stderr.write('--- %-20s %s [%s]\n' % (port, desc, hwid))
+            sys.stderr.write('--- %-20s %s\n' % (port, desc))
+
+
 CONVERT_CRLF = 2
 CONVERT_CR   = 1
 CONVERT_LF   = 0
-NEWLINE_CONVERISON_MAP = ('\n', '\r', '\r\n')
+NEWLINE_CONVERISON_MAP = (LF, CR, CRLF)
 LF_MODES = ('LF', 'CR', 'CR/LF')
 
 REPR_MODES = ('raw', 'some control', 'all control', 'hex')
@@ -329,7 +354,8 @@ class Miniterm(object):
                             LF_MODES[self.convert_outgoing],
                         ))
                     elif c in 'pP':                         # P -> change port
-                        sys.stderr.write('\n--- Enter port name: ')
+                        dump_port_list()
+                        sys.stderr.write('--- Enter port name: ')
                         sys.stderr.flush()
                         console.cleanup()
                         try:
@@ -444,63 +470,85 @@ def main():
         description = "Miniterm - A simple terminal program for the serial port."
     )
 
-    parser.add_option("-p", "--port",
+    group = optparse.OptionGroup(parser, "Port settings")
+
+    group.add_option("-p", "--port",
         dest = "port",
         help = "port, a number or a device name. (deprecated option, use parameter instead)",
-        default = None
+        default = DEFAULT_PORT
     )
 
-    parser.add_option("-b", "--baud",
+    group.add_option("-b", "--baud",
         dest = "baudrate",
         action = "store",
         type = 'int',
         help = "set baud rate, default %default",
-        default = 9600
+        default = DEFAULT_BAUDRATE
     )
 
-    parser.add_option("--parity",
+    group.add_option("--parity",
         dest = "parity",
         action = "store",
         help = "set parity, one of [N, E, O, S, M], default=N",
         default = 'N'
     )
 
-    parser.add_option("-e", "--echo",
-        dest = "echo",
-        action = "store_true",
-        help = "enable local echo (default off)",
-        default = False
-    )
-
-    parser.add_option("--rtscts",
+    group.add_option("--rtscts",
         dest = "rtscts",
         action = "store_true",
         help = "enable RTS/CTS flow control (default off)",
         default = False
     )
 
-    parser.add_option("--xonxoff",
+    group.add_option("--xonxoff",
         dest = "xonxoff",
         action = "store_true",
         help = "enable software flow control (default off)",
         default = False
     )
 
-    parser.add_option("--cr",
+    group.add_option("--rts",
+        dest = "rts_state",
+        action = "store",
+        type = 'int',
+        help = "set initial RTS line state (possible values: 0, 1)",
+        default = DEFAULT_RTS
+    )
+
+    group.add_option("--dtr",
+        dest = "dtr_state",
+        action = "store",
+        type = 'int',
+        help = "set initial DTR line state (possible values: 0, 1)",
+        default = DEFAULT_DTR
+    )
+
+    parser.add_option_group(group)
+
+    group = optparse.OptionGroup(parser, "Data handling")
+
+    group.add_option("-e", "--echo",
+        dest = "echo",
+        action = "store_true",
+        help = "enable local echo (default off)",
+        default = False
+    )
+
+    group.add_option("--cr",
         dest = "cr",
         action = "store_true",
         help = "do not send CR+LF, send CR only",
         default = False
     )
 
-    parser.add_option("--lf",
+    group.add_option("--lf",
         dest = "lf",
         action = "store_true",
         help = "do not send CR+LF, send LF only",
         default = False
     )
 
-    parser.add_option("-D", "--debug",
+    group.add_option("-D", "--debug",
         dest = "repr_mode",
         action = "count",
         help = """debug received data (escape non-printable chars)
@@ -512,30 +560,12 @@ def main():
         default = 0
     )
 
-    parser.add_option("--rts",
-        dest = "rts_state",
-        action = "store",
-        type = 'int',
-        help = "set initial RTS line state (possible values: 0, 1)",
-        default = None
-    )
+    parser.add_option_group(group)
 
-    parser.add_option("--dtr",
-        dest = "dtr_state",
-        action = "store",
-        type = 'int',
-        help = "set initial DTR line state (possible values: 0, 1)",
-        default = None
-    )
 
-    parser.add_option("-q", "--quiet",
-        dest = "quiet",
-        action = "store_true",
-        help = "suppress non error messages",
-        default = False
-    )
+    group = optparse.OptionGroup(parser, "Hotkeys")
 
-    parser.add_option("--exit-char",
+    group.add_option("--exit-char",
         dest = "exit_char",
         action = "store",
         type = 'int',
@@ -543,13 +573,27 @@ def main():
         default = 0x1d
     )
 
-    parser.add_option("--menu-char",
+    group.add_option("--menu-char",
         dest = "menu_char",
         action = "store",
         type = 'int',
         help = "ASCII code of special character that is used to control miniterm (menu)",
         default = 0x14
     )
+
+    parser.add_option_group(group)
+
+    group = optparse.OptionGroup(parser, "Diagnostics")
+
+    group.add_option("-q", "--quiet",
+        dest = "quiet",
+        action = "store_true",
+        help = "suppress non-error messages",
+        default = False
+    )
+
+    parser.add_option_group(group)
+
 
     (options, args) = parser.parse_args()
 
@@ -582,7 +626,10 @@ def main():
         if args:
             parser.error("too many arguments")
     else:
-        if port is None: port = 0
+        # no port given on command line -> ask user now
+        if port is None:
+            dump_port_list()
+            port = raw_input('Enter port name:')
 
     convert_outgoing = CONVERT_CRLF
     if options.cr:
@@ -631,6 +678,7 @@ def main():
         miniterm.serial.setRTS(options.rts_state)
         miniterm.rts_state = options.rts_state
 
+    console.setup()
     miniterm.start()
     try:
         miniterm.join(True)
@@ -639,7 +687,8 @@ def main():
     if not options.quiet:
         sys.stderr.write("\n--- exit ---\n")
     miniterm.join()
+    #~ console.cleanup()
 
-
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if __name__ == '__main__':
     main()

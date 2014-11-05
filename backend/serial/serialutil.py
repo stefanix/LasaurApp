@@ -46,14 +46,35 @@ except (NameError, AttributeError):
                 other = bytearray(other)
             return list.__eq__(self, other)
 
-# all Python versions prior 3.x convert str([17]) to '[17]' instead of '\x11'
-# so a simple bytes(sequence) doesn't work for all versions
+# ``memoryview`` was introduced in Python 2.7 and ``bytes(some_memoryview)``
+# isn't returning the contents (very unfortunate). Therefore we need special
+# cases and test for it. Ensure that there is a ``memoryview`` object for older
+# Python versions. This is easier than making every test dependent on its
+# existence.
+try:
+    memoryview
+except (NameError, AttributeError):
+    # implementation does not matter as we do not realy use it.
+    # it just must not inherit from something else we might care for.
+    class memoryview:
+        pass
+
+
+# all Python versions prior 3.x convert ``str([17])`` to '[17]' instead of '\x11'
+# so a simple ``bytes(sequence)`` doesn't work for all versions
 def to_bytes(seq):
     """convert a sequence to a bytes type"""
-    b = bytearray()
-    for item in seq:
-        b.append(item)  # this one handles int and str
-    return bytes(b)
+    if isinstance(seq, bytes):
+        return seq
+    elif isinstance(seq, bytearray):
+        return bytes(seq)
+    elif isinstance(seq, memoryview):
+        return seq.tobytes()
+    else:
+        b = bytearray()
+        for item in seq:
+            b.append(item)  # this one handles int and str for our emulation and ints for Python 3.x
+        return bytes(b)
 
 # create control bytes
 XON  = to_bytes([17])
@@ -84,12 +105,13 @@ class SerialTimeoutException(SerialException):
     """Write timeouts give an exception"""
 
 
-writeTimeoutError = SerialTimeoutException("Write timeout")
-portNotOpenError = ValueError('Attempting to use a port that is not open')
+writeTimeoutError = SerialTimeoutException('Write timeout')
+portNotOpenError = SerialException('Attempting to use a port that is not open')
 
 
 class FileLike(object):
-    """An abstract file like class.
+    """\
+    An abstract file like class.
 
     This class implements readline and readlines based on read and
     writelines based on write.
@@ -139,8 +161,10 @@ class FileLike(object):
         return self
 
     def readline(self, size=None, eol=LF):
-        """read a line which is terminated with end-of-line (eol) character
-        ('\n' by default) or until timeout."""
+        """\
+        Read a line which is terminated with end-of-line (eol) character
+        ('\n' by default) or until timeout.
+        """
         leneol = len(eol)
         line = bytearray()
         while True:
@@ -156,8 +180,10 @@ class FileLike(object):
         return bytes(line)
 
     def readlines(self, sizehint=None, eol=LF):
-        """read a list of lines, until timeout.
-        sizehint is ignored."""
+        """\
+        Read a list of lines, until timeout.
+        sizehint is ignored.
+        """
         if self.timeout is None:
             raise ValueError("Serial port MUST have enabled timeout for this function!")
         leneol = len(eol)
@@ -173,8 +199,10 @@ class FileLike(object):
         return lines
 
     def xreadlines(self, sizehint=None):
-        """Read lines, implemented as generator. It will raise StopIteration on
-        timeout (empty read). sizehint is ignored."""
+        """\
+        Read lines, implemented as generator. It will raise StopIteration on
+        timeout (empty read). sizehint is ignored.
+        """
         while True:
             line = self.readline()
             if not line: break
@@ -198,8 +226,10 @@ class FileLike(object):
 
 
 class SerialBase(object):
-    """Serial port base class. Provides __init__ function and properties to
-       get/set port settings."""
+    """\
+    Serial port base class. Provides __init__ function and properties to
+    get/set port settings.
+    """
 
     # default values, may be overridden in subclasses that do not support all values
     BAUDRATES = (50, 75, 110, 134, 150, 200, 300, 600, 1200, 1800, 2400, 4800,
@@ -227,9 +257,11 @@ class SerialBase(object):
                  dsrdtr=False,          # None: use rtscts setting, dsrdtr override if True or False
                  interCharTimeout=None  # Inter-character timeout, None to disable
                  ):
-        """Initialize comm port object. If a port is given, then the port will be
-           opened immediately. Otherwise a Serial port object in closed state
-           is returned."""
+        """\
+        Initialize comm port object. If a port is given, then the port will be
+        opened immediately. Otherwise a Serial port object in closed state
+        is returned.
+        """
 
         self._isOpen   = False
         self._port     = None           # correct value is assigned below through properties
@@ -284,8 +316,10 @@ class SerialBase(object):
     #  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
 
     def setPort(self, port):
-        """Change the port. The attribute portstr is set to a string that
-           contains the name of the port."""
+        """\
+        Change the port. The attribute portstr is set to a string that
+        contains the name of the port.
+        """
 
         was_open = self._isOpen
         if was_open: self.close()
@@ -301,23 +335,30 @@ class SerialBase(object):
         if was_open: self.open()
 
     def getPort(self):
-        """Get the current port setting. The value that was passed on init or using
-           setPort() is passed back. See also the attribute portstr which contains
-           the name of the port as a string."""
+        """\
+        Get the current port setting. The value that was passed on init or using
+        setPort() is passed back. See also the attribute portstr which contains
+        the name of the port as a string.
+        """
         return self._port
 
     port = property(getPort, setPort, doc="Port setting")
 
 
     def setBaudrate(self, baudrate):
-        """Change baud rate. It raises a ValueError if the port is open and the
+        """\
+        Change baud rate. It raises a ValueError if the port is open and the
         baud rate is not possible. If the port is closed, then the value is
-        accepted and the exception is raised when the port is opened."""
+        accepted and the exception is raised when the port is opened.
+        """
         try:
-            self._baudrate = int(baudrate)
+            b = int(baudrate)
         except TypeError:
             raise ValueError("Not a valid baudrate: %r" % (baudrate,))
         else:
+            if b <= 0:
+                raise ValueError("Not a valid baudrate: %r" % (baudrate,))
+            self._baudrate = b
             if self._isOpen:  self._reconfigurePort()
 
     def getBaudrate(self):
@@ -465,14 +506,18 @@ class SerialBase(object):
             'dsrdtr', 'rtscts', 'timeout', 'writeTimeout', 'interCharTimeout')
 
     def getSettingsDict(self):
-        """Get current port settings as a dictionary. For use with
-        applySettingsDict"""
+        """\
+        Get current port settings as a dictionary. For use with
+        applySettingsDict.
+        """
         return dict([(key, getattr(self, '_'+key)) for key in self._SETTINGS])
 
     def applySettingsDict(self, d):
-        """apply stored settings from a dictionary returned from
+        """\
+        apply stored settings from a dictionary returned from
         getSettingsDict. it's allowed to delete keys from the dictionary. these
-        values will simply left unchanged."""
+        values will simply left unchanged.
+        """
         for key in self._SETTINGS:
             if d[key] != getattr(self, '_'+key):   # check against internal "_" value
                 setattr(self, key, d[key])          # set non "_" value to use properties write function

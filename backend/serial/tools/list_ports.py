@@ -4,7 +4,7 @@
 # this is a wrapper module for different platform implementations of the
 # port enumeration feature
 #
-# (C) 2011 Chris Liechti <cliechti@gmx.net>
+# (C) 2011-2013 Chris Liechti <cliechti@gmx.net>
 # this is distributed under a free software license, see license.txt
 
 """\
@@ -31,6 +31,7 @@ elif os.name == 'posix':
 else:
     raise ImportError("Sorry: no implementation for your platform ('%s') available" % (os.name,))
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 def grep(regexp):
     """\
@@ -38,11 +39,13 @@ def grep(regexp):
     hardware ID are searched. The function returns an iterable that returns the
     same tuples as comport() would do.
     """
+    r = re.compile(regexp, re.I)
     for port, desc, hwid in comports():
-        if re.search(regexp, port, re.I) or re.search(regexp, desc) or re.search(regexp, hwid):
+        if r.search(port) or r.search(desc) or r.search(hwid):
             yield port, desc, hwid
 
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 def main():
     import optparse
 
@@ -50,7 +53,7 @@ def main():
         usage = "%prog [options] [<regexp>]",
         description = "Miniterm - A simple terminal program for the serial port."
     )
-    
+
     parser.add_option("--debug",
             help="print debug messages and tracebacks (development mode)",
             dest="debug",
@@ -83,17 +86,18 @@ def main():
         iterator = sorted(comports())
     # list them
     for port, desc, hwid in iterator:
-        print "%-20s" % (port,)
+        print("%-20s" % (port,))
         if options.verbose > 1:
-            print "    desc: %s" % (desc,)
-            print "    hwid: %s" % (hwid,)
+            print("    desc: %s" % (desc,))
+            print("    hwid: %s" % (hwid,))
         hits += 1
     if options.verbose:
         if hits:
-            print "%d ports found" % (hits,)
+            print("%d ports found" % (hits,))
         else:
-            print "no ports found"
+            print("no ports found")
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # test
 if __name__ == '__main__':
     main()

@@ -269,6 +269,7 @@ class SerialLoopClass(threading.Thread):
                             to_send = ''.join(islice(self.tx_buffer, 0, self.TX_CHUNK_SIZE))
                             t_prewrite = time.time()
                             actuallySent = self.device.write(to_send)
+                            # self.device.flush()  # wait until kernel buffer is written
                             if time.time() - t_prewrite > 0.01:
                                 print "WARN: write delay 1"
                         except serial.SerialTimeoutException:
@@ -317,8 +318,10 @@ class SerialLoopClass(threading.Thread):
         if ord(char) < 32:  ### flow
             if char == SERIAL_XON:
                 self.xon_active = True
+                self.device.flowControlOut(enable=True)
             elif char == SERIAL_XOFF:
                 self.xon_active = False
+                self.device.flowControlOut(enable=False)
             elif char == STATUS_END:
                 # status frame complete, compile status
                 self._status, self._s = self._s, self._status
