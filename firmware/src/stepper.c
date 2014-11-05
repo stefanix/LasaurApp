@@ -146,7 +146,7 @@ void stepper_stop_processing() {
 }
 
 // is the stepper interrupt processing
-void stepper_processing() {
+bool stepper_processing() {
   return processing_flag;
 }
 

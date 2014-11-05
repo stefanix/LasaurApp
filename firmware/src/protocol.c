@@ -134,6 +134,8 @@ void protocol_loop() {
     chr = serial_protocol_read();  // blocks until there is data
     if (stepper_stop_requested()) {
       // when stop, ignore serial chars
+      // NOTE: A stop can happen any time during the protocol loop
+      //       because both stepper and serial rx interrupt my trigger it.
       protocol_idle();
     } else {
       if(chr < 128) {  /////////////////////////////// marker

@@ -39,7 +39,7 @@ void stepper_start_processing();
 // make the stepper subsystem fall asleep
 void stepper_stop_processing();
 // is the stepper interrupt processing
-void stepper_processing();
+bool stepper_processing();
 
 // stop (error) functions
 void stepper_request_stop(uint8_t status);
