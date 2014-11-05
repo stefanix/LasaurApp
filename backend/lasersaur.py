@@ -319,9 +319,11 @@ class SerialLoopClass(threading.Thread):
             if char == SERIAL_XON:
                 self.xon_active = True
                 self.device.flowControlOut(enable=True)
+                sys.stdout.write('+')
             elif char == SERIAL_XOFF:
                 self.xon_active = False
                 self.device.flowControlOut(enable=False)
+                sys.stdout.write('-')
             elif char == STATUS_END:
                 # status frame complete, compile status
                 self._status, self._s = self._s, self._status
