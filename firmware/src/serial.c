@@ -44,7 +44,8 @@
 * buffer read:  if(!empty) {return buf[tail]}    *
 *************************************************/
 #define RX_BUFFER_SIZE 255
-#define RX_BUFFER_LIMIT 65  // when to send a XOFF
+#define RX_BUFFER_UPPER 65  // when to send a XOFF
+#define RX_BUFFER_LOWER 85  // when to send a XON
 #define TX_BUFFER_SIZE 128
 uint8_t rx_buffer[RX_BUFFER_SIZE];
 volatile uint8_t rx_buffer_head = 0;
@@ -156,7 +157,7 @@ inline uint8_t serial_read() {
   uint8_t data = rx_buffer[rx_buffer_tail];
   if (++rx_buffer_tail == RX_BUFFER_SIZE) {rx_buffer_tail = 0;}  // increment
   ATOMIC_BLOCK(ATOMIC_FORCEON) {
-    if (rx_buffer_open_slots == RX_BUFFER_LIMIT) {  // enough slots opening up
+    if (rx_buffer_open_slots == RX_BUFFER_LOWER) {  // enough slots opening up
       send_xon_flag = true;
       UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt  
     }    
@@ -186,7 +187,7 @@ SIGNAL(USART_RX_vect) {
     uint8_t head = rx_buffer_head;  // optimize for volatile    
     uint8_t next_head = head + 1;
     if (next_head == RX_BUFFER_SIZE) {next_head = 0;}
-    if (rx_buffer_open_slots == RX_BUFFER_LIMIT) {
+    if (rx_buffer_open_slots == RX_BUFFER_UPPER) {
       send_xoff_flag = true;
       UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt
     }
