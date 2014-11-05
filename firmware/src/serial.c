@@ -45,7 +45,7 @@
 *************************************************/
 #define RX_BUFFER_SIZE 255
 #define RX_BUFFER_UPPER 65  // when to send a XOFF
-#define RX_BUFFER_LOWER 85  // when to send a XON
+#define RX_BUFFER_LOWER 128  // when to send a XON
 #define TX_BUFFER_SIZE 128
 uint8_t rx_buffer[RX_BUFFER_SIZE];
 volatile uint8_t rx_buffer_head = 0;

@@ -371,6 +371,7 @@ class SerialLoopClass(threading.Thread):
             self.tx_buffer.clear()
             self.job_size = 0
             self._ready = False
+            self.device.flushOutput()
 
         elif 64 < ord(char) < 91:  # info flags
             # chr is in [A-Z], info flag
