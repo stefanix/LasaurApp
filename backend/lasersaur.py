@@ -877,6 +877,7 @@ def job(jobdict):
 
     # return to origin
     feedrate(conf['seekrate'])
+    intensity(0.0)
     if jobdict['vector'].has_key('noreturn') and jobdict['vector']['noreturn']:
         pass
     else:
