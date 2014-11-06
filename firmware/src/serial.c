@@ -44,8 +44,8 @@
 * buffer read:  if(!empty) {return buf[tail]}    *
 *************************************************/
 #define RX_BUFFER_SIZE 255
-#define RX_BUFFER_UPPER 65  // when to send a XOFF
-#define RX_BUFFER_LOWER 128  // when to send a XON
+#define RX_BUFFER_UPPER 180  // when to send a XOFF
+#define RX_BUFFER_LOWER 200  // when to send a XON
 #define TX_BUFFER_SIZE 128
 uint8_t rx_buffer[RX_BUFFER_SIZE];
 volatile uint8_t rx_buffer_head = 0;
@@ -66,8 +66,9 @@ volatile uint8_t tx_buffer_tail = 0;
 * and apon receiving it send the next chunk.     *
 *************************************************/
 #define RX_CHUNK_SIZE 16
-volatile bool send_xoff_flag = 0;
-volatile bool send_xon_flag = 0;
+volatile bool send_xoff_flag = false;
+volatile bool send_xon_flag = false;
+bool xon_active = false;
 
 volatile bool raster_mode = false;
 
@@ -96,6 +97,12 @@ void serial_init() {
   UCSR0B |= 1<<RXCIE0;
 	  
 	// defaults to 8-bit, no parity, 1 stop bit
+
+  serial_write(INFO_HELLO);
+  // send first XON
+  xon_active = false;
+  send_xon_flag = true;
+  UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt  
 }
 
 
@@ -115,7 +122,7 @@ void serial_write(uint8_t data) {
     tx_buffer[tx_buffer_head] = data;
     tx_buffer_head = next_head;
     
-  	UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt  
+  	UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt 
 }
 
 
@@ -138,9 +145,11 @@ SIGNAL(USART_UDRE_vect) {
   if (send_xoff_flag) {
     UDR0 = SERIAL_XOFF;
     send_xoff_flag = false;
-  } else if (send_xon_flag) {
+    xon_active = false;
+  } else if (send_xon_flag && !xon_active) {
     UDR0 = SERIAL_XON;
     send_xon_flag = false;
+    xon_active = true;
   } else {                    // Send a byte from the buffer 
     UDR0 = tx_buffer[tail];
     if (++tail == TX_BUFFER_SIZE) {tail = 0;}  // increment
@@ -199,6 +208,7 @@ SIGNAL(USART_RX_vect) {
       rx_buffer_head = next_head;
       rx_buffer_open_slots--;
     }
+
   }
 }
 

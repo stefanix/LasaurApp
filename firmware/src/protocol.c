@@ -122,9 +122,6 @@ void protocol_init() {
   status_requested = true;
   superstatus_requested = true;
   rx_buffer_underrun = false;
-
-  serial_write(INFO_HELLO);
-  serial_write(SERIAL_XON);
 }
 
 
