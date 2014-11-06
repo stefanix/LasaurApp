@@ -102,3 +102,13 @@ def build_firmware(firmware_name="LasaurGrbl"):
 
     return 0
 
+
+if __name__ == '__main__':
+    import driveboard
+    from config import conf
+    buildname = conf['firmware']
+    if buildname.endswith('.hex'):
+        buildname = buildname[:-4]
+    return_code = driveboard.build(firmware_name=buildname)
+    if return_code != 0:
+        bottle.abort(400, "Build failed.")

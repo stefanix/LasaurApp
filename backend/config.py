@@ -52,9 +52,9 @@ conf = {
 ### serial port
 #
 if conf['serial_port'] == '':
-    import lasersaur
-    conf['serial_port'] = lasersaur.find_controller()
-    reload(lasersaur)  # so port defaults are correct
+    import driveboard
+    conf['serial_port'] = driveboard.find_controller()
+    reload(driveboard)  # so port defaults are correct
 #
 ###
 

@@ -189,3 +189,9 @@ def usb_reset_hack():
     # Note: This should be irrelevant on the Lasersaur/BBB.
     command = "avrdude -p atmega328p -P "+conf['serial_port']+" -c arduino -U flash:r:flash.bin:r -q -q"
     return subprocess.call(command, shell=True) 
+
+
+if __name__ == '__main__':
+    ret = flash_upload(serial_port=conf['serial_port'], firmware_file=conf['firmware'])
+    if ret != 0:
+        print "ERROR: flash failed"

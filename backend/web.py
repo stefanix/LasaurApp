@@ -11,7 +11,7 @@ import webbrowser
 import wsgiref.simple_server
 import bottle
 from config import conf
-import lasersaur
+import driveboard
 import jobimport
 
 
@@ -28,7 +28,7 @@ def checkuser(user, pw):
 def checkserial(func):
     """Decorator to call function only when machine connected."""
     def _decorator(*args, **kwargs):
-            if lasersaur.connected():
+            if driveboard.connected():
                 return func(*args, **kwargs)
             else:
                 bottle.abort(400, "No machine.")
@@ -97,88 +97,88 @@ def config():
 @bottle.auth_basic(checkuser)
 @checkserial
 def status():
-    return json.dumps(lasersaur.status())
+    return json.dumps(driveboard.status())
 
 @bottle.route('/homing')
 @bottle.auth_basic(checkuser)
 @checkserial
 def homing():
-    lasersaur.homing()
+    driveboard.homing()
 
 @bottle.route('/feedrate/<val:float>')
 @bottle.auth_basic(checkuser)
 @checkserial
 def feedrate(val):
-    lasersaur.feedrate(val)
+    driveboard.feedrate(val)
 
 @bottle.route('/intensity/<val:float>')
 @bottle.auth_basic(checkuser)
 @checkserial
 def intensity(val):
-    lasersaur.intensity(val)
+    driveboard.intensity(val)
 
 @bottle.route('/relative')
 @bottle.auth_basic(checkuser)
 @checkserial
 def relative():
-    lasersaur.relative()
+    driveboard.relative()
 
 @bottle.route('/absolute')
 @bottle.auth_basic(checkuser)
 @checkserial
 def absolute():
-    lasersaur.absolute()
+    driveboard.absolute()
 
 @bottle.route('/move/<x:float>/<y:float>/<z:float>')
 @bottle.auth_basic(checkuser)
 @checkserial
 def move(x, y, z):
-    lasersaur.move(x, y, z)
+    driveboard.move(x, y, z)
 
 @bottle.route('/air_on')
 @bottle.auth_basic(checkuser)
 @checkserial
 def air_on():
-    lasersaur.air_on()
+    driveboard.air_on()
 
 @bottle.route('/air_off')
 @bottle.auth_basic(checkuser)
 @checkserial
 def air_off():
-    lasersaur.air_off()
+    driveboard.air_off()
 
 @bottle.route('/aux1_on')
 @bottle.auth_basic(checkuser)
 @checkserial
 def aux1_on():
-    lasersaur.aux1_on()
+    driveboard.aux1_on()
 
 @bottle.route('/aux1_off')
 @bottle.auth_basic(checkuser)
 @checkserial
 def aux1_off():
-    lasersaur.aux1_off()
+    driveboard.aux1_off()
 
 @bottle.route('/offset/<x:float>/<y:float>/<z:float>')
 @bottle.auth_basic(checkuser)
 @checkserial
 def offset(x, y, z):
-    lasersaur.def_offset_custom(x, y, z)
-    lasersaur.sel_offset_custom()
+    driveboard.def_offset_custom(x, y, z)
+    driveboard.sel_offset_custom()
 
 @bottle.route('/clear_offset')
 @bottle.auth_basic(checkuser)
 @checkserial
 def clear_offset():
-    lasersaur.def_offset_custom(0,0,0)
-    lasersaur.sel_offset_table()
+    driveboard.def_offset_custom(0,0,0)
+    driveboard.sel_offset_table()
 
 
 
 
 ### JOBS QUEUE
 
-def _get_sorted(globpattern, library=False):
+def _get_sorted(globpattern, library=False, stripext=False):
     files = []
     cwd_temp = os.getcwd()
     try:
@@ -190,6 +190,12 @@ def _get_sorted(globpattern, library=False):
             os.chdir(conf['stordir'])
             files = filter(os.path.isfile, glob.glob(globpattern))
             files.sort(key=lambda x: os.path.getmtime(x))
+        if stripext:
+            for i in range(len(files)):
+                if files[i].endswith('.lsa'):
+                    files[i] = files[i][:-4]
+                elif files[i].endswith('.lsa.starred'):
+                    files[i] = files[i][:-12]
     finally:
         os.chdir(cwd_temp)
     return files
@@ -253,6 +259,18 @@ def _add(job, name):
         fp.write(job)
         print "file saved: " + namepath
 
+def _unique_name(jobname):
+    files = _get_sorted('*.lsa*', stripext=True)
+    if jobname in files:
+        for i in xrange(2,999):
+            altname = "%s_%s" % (jobname, i)
+            if altname in files:
+                continue
+            else:
+                jobname = altname
+    return jobname
+
+
 
 @bottle.route('/load', method='POST')
 @bottle.auth_basic(checkuser)
@@ -272,52 +290,32 @@ def load():
     # sanity check
     if job is None or name is None or optimize is None:
         bottle.abort(400, "Invalid request data.")
-    # check file name available
-    if _exists(name):
-        bottle.abort(400, "File name exists.")
     # convert
     try:
         job = jobimport.convert(job, optimize)
     except TypeError:
         bottle.abort(400, "Invalid file type.")
 
-    # name fix, TODO: think about this
-    # namend = name[-4:]
-    # if namend == '.lsa':
-    #     pass
-    # elif namend == '.svg' or  namend == '.dxf' or namend == '.ngc' \
-    #   or namend == '.SVG' or  namend == '.DXF' or namend == '.NGC' \
-    #   or namend == '.LSA':
-    #     name = name[:-4] + '.lsa'
-    # else:
-    #     name = name + '.lsa'
-
-    _add(json.dumps(job), name)
-
-    return name
+    altname = _unique_name(name)
+    _add(json.dumps(job), altname)
+    return altname
     
 
 
-@bottle.route('/list')
-@bottle.route('/list/<kind>')
+@bottle.route('/listing')
+@bottle.route('/listing/<kind>')
 @bottle.auth_basic(checkuser)
-def list(kind=None):
+def listing(kind=None):
     """List all queue jobs by name."""
     if kind is None:
-        files = _get_sorted('*.lsa*')
+        files = _get_sorted('*.lsa*', stripext=True)
     elif kind == 'starred':
-        files = _get_sorted('*.lsa.starred')
+        files = _get_sorted('*.lsa.starred', stripext=True)
         print files
     elif kind == 'unstarred':
-        files = _get_sorted('*.lsa')
+        files = _get_sorted('*.lsa', stripext=True)
     else:
         bottle.abort(400, "Invalid kind.")
-    # remove ext
-    for i in range(len(files)):
-        if files[i].endswith('.lsa'):
-            files[i] = files[i][:-4]
-        elif files[i].endswith('.lsa.starred'):
-            files[i] = files[i][:-12]
     return json.dumps(files)
 
 
@@ -351,9 +349,9 @@ def unstar(jobname):
         bottle.abort(400, "No such file.")
 
 
-@bottle.route('/delete/<jobname>')
+@bottle.route('/remove/<jobname>')
 @bottle.auth_basic(checkuser)
-def delete(jobname):
+def remove(jobname):
     """Delete a job."""
     jobpath = _get_path(jobname)
     os.remove(jobpath)
@@ -370,15 +368,11 @@ def clear():
 
 ### LIBRARY
 
-@bottle.route('/list_library')
+@bottle.route('/listing_library')
 @bottle.auth_basic(checkuser)
-def list_library():
+def listing_library():
     """List all library jobs by name."""
-    files = _get_sorted('*.lsa', library=True)
-    # remove ext
-    for i in range(len(files)):
-        if files[i].endswith('.lsa'):
-            files[i] = files[i][:-4]
+    files = _get_sorted('*.lsa', library=True, stripext=True)
     return json.dumps(files)
 
 
@@ -395,7 +389,9 @@ def get_library(jobname):
 def load_library(jobname):
     """Load a library job into the queue."""
     job = _get(jobname, library=True)
+    jobname = _unique_name(jobname)
     _add(job, jobname)
+    return jobname
 
 
 
@@ -407,9 +403,9 @@ def load_library(jobname):
 def run(jobname):
     """Send job from queue to the machine."""
     job = _get(jobname)
-    if not lasersaur.status()['ready']:
+    if not driveboard.status()['ready']:
         bottle.abort(400, "Machine not ready.")
-    lasersaur.job(json.loads(job))
+    driveboard.job(json.loads(job))
 
 
 @bottle.route('/progress')
@@ -417,7 +413,7 @@ def run(jobname):
 @checkserial
 def progress():
     """Get percentage of job done, 0-100, -1 if none active."""
-    return lasersaur.percentage()
+    return driveboard.percentage()
 
 
 @bottle.route('/pause')
@@ -425,7 +421,7 @@ def progress():
 @checkserial
 def pause():
     """Pause a job gracefully."""
-    lasersaur.pause()
+    driveboard.pause()
 
 
 @bottle.route('/unpause')
@@ -433,7 +429,7 @@ def pause():
 @checkserial
 def unpause():
     """Resume a paused job."""
-    lasersaur.unpause()
+    driveboard.unpause()
 
 
 @bottle.route('/stop')
@@ -441,7 +437,7 @@ def unpause():
 @checkserial
 def stop():
     """Halt machine immediately and purge job."""
-    lasersaur.stop()
+    driveboard.stop()
 
 
 @bottle.route('/unstop')
@@ -449,7 +445,7 @@ def stop():
 @checkserial
 def unstop():
     """Recover machine from stop mode."""
-    lasersaur.unstop()
+    driveboard.unstop()
 
 
 
@@ -462,7 +458,7 @@ def unstop():
 def build(self, firmware_name=None):
     """Build firmware from firmware/src files."""
     buildname = "LasaurGrbl_from_src"
-    return_code = lasersaur.build(firmware_name=buildname)
+    return_code = driveboard.build(firmware_name=buildname)
     if return_code != 0:
         bottle.abort(400, "Build failed.")
 
@@ -472,7 +468,7 @@ def build(self, firmware_name=None):
 @bottle.auth_basic(checkuser)
 def flash(self, firmware=None):
     """Flash firmware to MCU."""
-    return_code = lasersaur.flash(firmware_file=firmware)
+    return_code = driveboard.flash(firmware_file=firmware)
     if return_code != 0:
         bottle.abort(400, "Flashing failed.")
 
@@ -481,12 +477,12 @@ def flash(self, firmware=None):
 @bottle.auth_basic(checkuser)
 def reset():
     """Reset MCU"""
-    connected = lasersaur.connected()
+    connected = driveboard.connected()
     if connected:
-        lasersaur.close()
-    lasersaur.reset()
+        driveboard.close()
+    driveboard.reset()
     if connected:
-        lasersaur.connect()
+        driveboard.connect()
 
 
 
@@ -512,7 +508,7 @@ class Server(threading.Thread):
             except KeyboardInterrupt:
                 break
         print "\nShutting down..."
-        lasersaur.close()
+        driveboard.close()
 
     def stop(self):
         with self.lock:
@@ -554,8 +550,8 @@ def start(threaded=True, browser=False, debug=False):
     print "Use Ctrl-C to quit."
     print "-----------------------------------------------------------------------------"    
     print
-    lasersaur.connect(server=True)  # also start websocket stat server
-    if not lasersaur.connected():
+    driveboard.connect(server=True)  # also start websocket stat server
+    if not driveboard.connected():
         print "---------------"
         print "HOW TO configure the SERIAL PORT:"
         print "in LasaurApp/backend/ create a configuration file" 

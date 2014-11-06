@@ -6,7 +6,7 @@ import threading
 import logging
 from websocket.SimpleWebSocketServer import WebSocket, SimpleWebSocketServer
 from config import conf
-import lasersaur
+import driveboard
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
 
@@ -46,11 +46,11 @@ class ClientSocket(WebSocket):
 
         if 'cmd_air_enable' in msg:
             print "air"
-            lasersaur.air_on()
+            driveboard.air_on()
 
         elif 'cmd_air_disable' in msg:
             print "noair"
-            lasersaur.air_off()
+            driveboard.air_off()
 
 
                  
