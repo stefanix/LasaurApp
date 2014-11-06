@@ -44,8 +44,6 @@
 * buffer read:  if(!empty) {return buf[tail]}    *
 *************************************************/
 #define RX_BUFFER_SIZE 255
-#define RX_BUFFER_UPPER 180  // when to send a XOFF
-#define RX_BUFFER_LOWER 200  // when to send a XON
 #define TX_BUFFER_SIZE 128
 uint8_t rx_buffer[RX_BUFFER_SIZE];
 volatile uint8_t rx_buffer_head = 0;
@@ -156,7 +154,7 @@ SIGNAL(USART_UDRE_vect) {
 }
 
 
-void check_chunk_request() {
+void chunk_request() {
   if (bytes_on_order + RX_CHUNK_SIZE < rx_buffer_open_slots) {
     request_chunk_flag = true;
     UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt
@@ -170,7 +168,7 @@ inline uint8_t serial_read() {
   if (++rx_buffer_tail == RX_BUFFER_SIZE) {rx_buffer_tail = 0;}  // increment  
   rx_buffer_open_slots++;
   ATOMIC_BLOCK(ATOMIC_FORCEON) {
-    check_chunk_request();
+    chunk_request();
   }
   return data;
 }
@@ -205,7 +203,7 @@ SIGNAL(USART_RX_vect) {
       rx_buffer_head = next_head;
       rx_buffer_open_slots--;
       bytes_on_order--;
-      check_chunk_request();
+      chunk_request();
     }
   }
 }
