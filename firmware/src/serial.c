@@ -66,9 +66,8 @@ volatile uint8_t tx_buffer_tail = 0;
 * and apon receiving it send the next chunk.     *
 *************************************************/
 #define RX_CHUNK_SIZE 16
-volatile bool send_xoff_flag = false;
-volatile bool send_xon_flag = false;
-bool xon_active = false;
+volatile bool request_chunk_flag = false;
+volatile uint8_t bytes_on_order = 0;
 
 volatile bool raster_mode = false;
 
@@ -99,10 +98,11 @@ void serial_init() {
 	// defaults to 8-bit, no parity, 1 stop bit
 
   serial_write(INFO_HELLO);
-  // send first XON
-  xon_active = false;
-  send_xon_flag = true;
-  UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt  
+
+  // order first chunk
+  request_chunk_flag = true;
+  UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt
+  bytes_on_order = RX_CHUNK_SIZE;
 }
 
 
@@ -142,14 +142,9 @@ inline void serial_write_param(uint8_t param, double val) {
 SIGNAL(USART_UDRE_vect) {
   uint8_t tail = tx_buffer_tail;  // optimize for volatile
   
-  if (send_xoff_flag) {
-    UDR0 = SERIAL_XOFF;
-    send_xoff_flag = false;
-    xon_active = false;
-  } else if (send_xon_flag && !xon_active) {
-    UDR0 = SERIAL_XON;
-    send_xon_flag = false;
-    xon_active = true;
+  if (request_chunk_flag) {
+    UDR0 = CMD_REQUEST_CHUNK;
+    request_chunk_flag = false;
   } else {                    // Send a byte from the buffer 
     UDR0 = tx_buffer[tail];
     if (++tail == TX_BUFFER_SIZE) {tail = 0;}  // increment
@@ -161,19 +156,25 @@ SIGNAL(USART_UDRE_vect) {
 }
 
 
+void check_chunk_request() {
+  if (bytes_on_order + RX_CHUNK_SIZE < rx_buffer_open_slots) {
+    request_chunk_flag = true;
+    UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt
+    bytes_on_order += RX_CHUNK_SIZE;
+  }
+}
+
 inline uint8_t serial_read() {
   // return data, advance tail
   uint8_t data = rx_buffer[rx_buffer_tail];
-  if (++rx_buffer_tail == RX_BUFFER_SIZE) {rx_buffer_tail = 0;}  // increment
+  if (++rx_buffer_tail == RX_BUFFER_SIZE) {rx_buffer_tail = 0;}  // increment  
+  rx_buffer_open_slots++;
   ATOMIC_BLOCK(ATOMIC_FORCEON) {
-    if (rx_buffer_open_slots == RX_BUFFER_LOWER) {  // enough slots opening up
-      send_xon_flag = true;
-      UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt  
-    }    
-    rx_buffer_open_slots++;
+    check_chunk_request();
   }
   return data;
 }
+
 
 // rx interrupt, called whenever a new byte is in UDR0
 SIGNAL(USART_RX_vect) {
@@ -196,10 +197,6 @@ SIGNAL(USART_RX_vect) {
     uint8_t head = rx_buffer_head;  // optimize for volatile    
     uint8_t next_head = head + 1;
     if (next_head == RX_BUFFER_SIZE) {next_head = 0;}
-    if (rx_buffer_open_slots == RX_BUFFER_UPPER) {
-      send_xoff_flag = true;
-      UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt
-    }
     if (next_head == rx_buffer_tail) {
       // buffer is full, other side sent too much data
       stepper_request_stop(STOPERROR_RX_BUFFER_OVERFLOW);
@@ -207,8 +204,9 @@ SIGNAL(USART_RX_vect) {
       rx_buffer[head] = data;
       rx_buffer_head = next_head;
       rx_buffer_open_slots--;
+      bytes_on_order--;
+      check_chunk_request();
     }
-
   }
 }
 

@@ -22,8 +22,7 @@ CMD_STOP = '\x01'
 CMD_RESUME = '\x02'
 CMD_STATUS = "\x03"
 CMD_SUPERSTATUS = "\x04"
-SERIAL_XON = '\x17'
-SERIAL_XOFF = '\x19'
+CMD_REQUEST_CHUNK = "\x05"
 CMD_RASTER_DATA_START = '\x07'
 CMD_RASTER_DATA_END = '\x08'
 STATUS_END = '\x09'
@@ -128,7 +127,7 @@ class SerialLoopClass(threading.Thread):
         # written to the device in one go. It needs to match the device.
         self.TX_CHUNK_SIZE = 16
         self.RX_CHUNK_SIZE = 32
-        self.xon_active = False
+        self.bytes_ordered = 0
         
         # used for calculating percentage done
         self.job_size = 0
@@ -228,22 +227,16 @@ class SerialLoopClass(threading.Thread):
                 break
             with self.lock:
                 # read/write
-                # The idea here is to have more reads than writes.
-                # Write has to fast enough to be able to supply raster data
-                # yet slow enough not to overflow the atmega buffer during
-                # the time a XOFF is being sent and received here.
                 if self.device:
                     if not self._paused:
                         try:
                             self._serial_read()
-                            write_interval = time.time()-last_write
-                            if write_interval > 0.008:
-                                # (1/0.008)*16 = 2000 bytes/s
-                                # for raster we need: 10(10000/60.0) = 1660 bytes/s
-                                self._serial_write()
-                                last_write = time.time()
-                                if write_interval > 0.01:
-                                    sys.stdout.write('~')
+                            # (1/0.008)*16 = 2000 bytes/s
+                            # for raster we need: 10(10000/60.0) = 1660 bytes/s
+                            self._serial_write()
+                            # if time.time()-last_write > 0.01:
+                            #     sys.stdout.write('~')
+                            # last_write = time.time()
 
                         except OSError:
                             print "ERROR: serial got disconnected 1."
@@ -269,8 +262,7 @@ class SerialLoopClass(threading.Thread):
                     last_status_request = time.time()
                 # flush stdout, so print shows up timely
                 sys.stdout.flush()
-            # time.sleep(0.004)
-            time.sleep(0.001)
+            time.sleep(0.004)
 
 
 
@@ -278,14 +270,9 @@ class SerialLoopClass(threading.Thread):
         for char in self.device.read(self.RX_CHUNK_SIZE):
             # sys.stdout.write('('+char+','+str(ord(char))+')')
             if ord(char) < 32:  ### flow
-                if char == SERIAL_XON:
-                    self.xon_active = True
-                    self.device.flowControlOut(enable=True)
-                    sys.stdout.write('+')
-                elif char == SERIAL_XOFF:
-                    self.xon_active = False
-                    self.device.flowControlOut(enable=False)
-                    sys.stdout.write('-')
+                if char == CMD_REQUEST_CHUNK:
+                    self.bytes_ordered += self.TX_CHUNK_SIZE
+                    # sys.stdout.write('[%s]' % self.bytes_ordered)
                 elif char == STATUS_END:
                     # status frame complete, compile status
                     self._status, self._s = self._s, self._status
@@ -416,19 +403,23 @@ class SerialLoopClass(threading.Thread):
             self.reset_status()
             self.request_status = 2  # super request
         ### send buffer chunk
-        if self.tx_buffer and self.xon_active:
-            try:
-                to_send = ''.join(islice(self.tx_buffer, 0, self.TX_CHUNK_SIZE))
-                t_prewrite = time.time()
-                actuallySent = self.device.write(to_send)
-                # self.device.flush()  # wait until kernel buffer is written
-                if time.time() - t_prewrite > 0.01:
-                    print "WARN: write delay 1"
-            except serial.SerialTimeoutException:
-                actuallySent = 0  # assume nothing has been sent
-                print "ERROR: writeTimeoutError 2"
-            for i in range(actuallySent):
-                self.tx_buffer.popleft()
+        if self.tx_buffer:
+            if self.bytes_ordered >= self.TX_CHUNK_SIZE:
+                try:
+                    to_send = ''.join(islice(self.tx_buffer, 0, self.TX_CHUNK_SIZE))
+                    t_prewrite = time.time()
+                    actuallySent = self.device.write(to_send)
+                    self.bytes_ordered -= actuallySent
+                    # sys.stdout.write('{%s}' % self.bytes_ordered)
+                    # if actuallySent != self.TX_CHUNK_SIZE:
+                        # print "ERROR: write did not complete"
+                    if time.time() - t_prewrite > 0.01:
+                        print "WARN: write delay 1"
+                except serial.SerialTimeoutException:
+                    actuallySent = 0  # assume nothing has been sent
+                    print "ERROR: writeTimeoutError 2"
+                for i in range(actuallySent):
+                    self.tx_buffer.popleft()
         else:
             if self.job_size:  # job finished sending
                 self.job_size = 0
@@ -442,7 +433,6 @@ class SerialLoopClass(threading.Thread):
             self.device.write(char)
             if time.time() - t_prewrite > 0.01:
                 print "WARN: write delay 2"
-            self.device.flushOutput()
         except serial.SerialTimeoutException:
             print "ERROR: writeTimeoutError 1"
 
