@@ -5,6 +5,7 @@ import json
 import glob
 import argparse
 import gtk
+import glib
 
 import lasersaur
 import jobimport
@@ -30,11 +31,25 @@ class PyApp(gtk.Window):
         gtk.ACCEL_LOCKED, gtk.main_quit)
         self.add_accel_group(accel_group)
 
-        darea = gtk.DrawingArea()
-        darea.connect("expose-event", self.expose)
-        self.add(darea)
+        self.darea = gtk.DrawingArea()
+        self.darea.connect("expose-event", self.expose)
+        self.add(self.darea)
+
+        self.timer = True
+        glib.timeout_add(1400, self.on_timer)
+        self.path_idx = 0
+        self.poly_idx = 0
+        self.inc = 20
+        self.first = 0
+        self.last = self.inc
 
         self.show_all()
+
+
+    def on_timer(self):
+        if not self.timer: return False
+        self.darea.queue_draw()
+        return True
 
     
     def expose(self, widget, event):
@@ -43,13 +58,61 @@ class PyApp(gtk.Window):
         cr.set_line_width(1)
         cr.set_source_rgb(0.0, 0.0, 0.0)
 
-        for path in job['vector']['paths']:
-            for polyline in path:
+        if self.first >= len(job['vector']['paths'][self.path_idx][self.poly_idx]):
+            self.poly_idx += 1
+            if self.poly_idx >= len(job['vector']['paths'][self.path_idx]):
+                self.poly_idx = 0
+                self.path_idx += 1
+                if self.path_idx >= len(job['vector']['paths']):
+                    # done
+                    # cr.paint()
+                    self.timer = False
+                    return
+                else:
+                    self.first = 0
+                    self.last = min(self.inc, len(job['vector']['paths'][self.path_idx][self.poly_idx]))    
+            else:
+                self.first = 0
+                self.last = min(self.inc, len(job['vector']['paths'][self.path_idx][self.poly_idx]))
+        else:
+            if self.last >= len(job['vector']['paths'][self.path_idx][self.poly_idx]):
+                self.last = len(job['vector']['paths'][self.path_idx][self.poly_idx]) - 1
+
+        # polyline = job['vector']['paths'][self.path_idx][self.poly_idx]
+        # cr.move_to(polyline[0][0], polyline[0][1])
+        # for i in xrange(self.first+1, self.last+1):
+        #     cr.line_to(polyline[i][0], polyline[i][1])
+
+        for i in xrange(self.path_idx):
+            path = job['vector']['paths'][i]
+            for ii in xrange(self.poly_idx):
+                polyline = path[ii]
                 cr.move_to(polyline[0][0], polyline[0][1])
-                for i in xrange(1, len(polyline)):
+                for i in xrange(1, self.last+1):
                     cr.line_to(polyline[i][0], polyline[i][1])
 
+
+        break_ = False
+        for path in job['vector']['paths']:
+            if break_: break
+            for polyline in path:
+                if self.count >= todraw:
+                    break_ = True
+                if break_: break
+                cr.move_to(polyline[0][0], polyline[0][1])
+                self.count += 1
+                for i in xrange(1, len(polyline)):
+                    if self.count >= todraw:
+                        break_ = True
+                    if break_: break
+                    cr.line_to(polyline[i][0], polyline[i][1])
+                    self.count += 1
+                        
         cr.stroke()
+
+        self.first = self.last + 1
+        self.last += self.inc
+
     
 
 
