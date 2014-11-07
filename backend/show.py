@@ -37,11 +37,8 @@ class PyApp(gtk.Window):
 
         self.timer = True
         glib.timeout_add(1400, self.on_timer)
-        self.path_idx = 0
-        self.poly_idx = 0
         self.inc = 20
-        self.first = 0
-        self.last = self.inc
+        self.todraw = self.inc
 
         self.show_all()
 
@@ -58,60 +55,26 @@ class PyApp(gtk.Window):
         cr.set_line_width(1)
         cr.set_source_rgb(0.0, 0.0, 0.0)
 
-        if self.first >= len(job['vector']['paths'][self.path_idx][self.poly_idx]):
-            self.poly_idx += 1
-            if self.poly_idx >= len(job['vector']['paths'][self.path_idx]):
-                self.poly_idx = 0
-                self.path_idx += 1
-                if self.path_idx >= len(job['vector']['paths']):
-                    # done
-                    # cr.paint()
-                    self.timer = False
-                    return
-                else:
-                    self.first = 0
-                    self.last = min(self.inc, len(job['vector']['paths'][self.path_idx][self.poly_idx]))    
-            else:
-                self.first = 0
-                self.last = min(self.inc, len(job['vector']['paths'][self.path_idx][self.poly_idx]))
-        else:
-            if self.last >= len(job['vector']['paths'][self.path_idx][self.poly_idx]):
-                self.last = len(job['vector']['paths'][self.path_idx][self.poly_idx]) - 1
-
-        # polyline = job['vector']['paths'][self.path_idx][self.poly_idx]
-        # cr.move_to(polyline[0][0], polyline[0][1])
-        # for i in xrange(self.first+1, self.last+1):
-        #     cr.line_to(polyline[i][0], polyline[i][1])
-
-        for i in xrange(self.path_idx):
-            path = job['vector']['paths'][i]
-            for ii in xrange(self.poly_idx):
-                polyline = path[ii]
-                cr.move_to(polyline[0][0], polyline[0][1])
-                for i in xrange(1, self.last+1):
-                    cr.line_to(polyline[i][0], polyline[i][1])
-
-
+        count = 0
         break_ = False
         for path in job['vector']['paths']:
             if break_: break
             for polyline in path:
-                if self.count >= todraw:
+                if count >= self.todraw:
                     break_ = True
                 if break_: break
                 cr.move_to(polyline[0][0], polyline[0][1])
-                self.count += 1
+                count += 1
                 for i in xrange(1, len(polyline)):
-                    if self.count >= todraw:
+                    if count >= self.todraw:
                         break_ = True
                     if break_: break
                     cr.line_to(polyline[i][0], polyline[i][1])
-                    self.count += 1
+                    count += 1
                         
         cr.stroke()
 
-        self.first = self.last + 1
-        self.last += self.inc
+        self.todraw + self.inc
 
     
 
