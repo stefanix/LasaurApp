@@ -18,6 +18,8 @@ __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
 class PyApp(gtk.Window):
 
     def __init__(self):
+        global args
+
         super(PyApp, self).__init__()
 
         self.set_title("Lasersaur")
@@ -35,10 +37,11 @@ class PyApp(gtk.Window):
         self.darea.connect("expose-event", self.expose)
         self.add(self.darea)
 
-        self.timer = True
-        glib.timeout_add(1400, self.on_timer)
-        self.inc = 20
-        self.todraw = self.inc
+        if args.animate:
+            self.timer = True
+            glib.timeout_add(140, self.on_timer)
+            self.inc = 20
+            self.todraw = self.inc
 
         self.show_all()
 
@@ -55,26 +58,38 @@ class PyApp(gtk.Window):
         cr.set_line_width(1)
         cr.set_source_rgb(0.0, 0.0, 0.0)
 
-        count = 0
-        break_ = False
-        for path in job['vector']['paths']:
-            if break_: break
-            for polyline in path:
-                if count >= self.todraw:
-                    break_ = True
+        if args.animate:
+            count = 0
+            break_ = False
+            for i in xrange(len(job['vector']['paths'])):
+                path = job['vector']['paths'][i]
                 if break_: break
-                cr.move_to(polyline[0][0], polyline[0][1])
-                count += 1
-                for i in xrange(1, len(polyline)):
+                for polyline in path:
                     if count >= self.todraw:
                         break_ = True
                     if break_: break
-                    cr.line_to(polyline[i][0], polyline[i][1])
+                    cr.move_to(polyline[0][0], polyline[0][1])
                     count += 1
-                        
+                    for i in xrange(1, len(polyline)):
+                        if count >= self.todraw:
+                            break_ = True
+                        if break_: break
+                        cr.line_to(polyline[i][0], polyline[i][1])
+                        count += 1
+                if i == len(job['vector']['paths'])-1:
+                    # all drawn
+                    # self.timer = False
+                    self.todraw = self.inc
+            self.todraw += self.inc
+        else:
+            for path in job['vector']['paths']:
+                for polyline in path:
+                    cr.move_to(polyline[0][0], polyline[0][1])
+                    for i in xrange(1, len(polyline)):
+                        cr.line_to(polyline[i][0], polyline[i][1])
+                            
         cr.stroke()
 
-        self.todraw + self.inc
 
     
 
@@ -92,7 +107,11 @@ if __name__ == '__main__':
     if args.jobfile:
         jobfile = os.path.join(thislocation, "testjobs", args.jobfile)
         with open(jobfile) as fp:
-            job = jobimport.convert(fp.read(), optimize=True)
+            job = fp.read()
+        if os.path.splitext(jobfile)[1] == '.lsa':
+            job = json.loads(job)
+        else:
+            job = jobimport.convert(job, optimize=True)
         # run gtk window
         PyApp()
         gtk.main()
