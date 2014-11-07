@@ -175,6 +175,7 @@ class Lasersaur(object):
         name, ext = os.path.splitext(name)
         if ext != '.lsa':
             job = jobimport.convert(job, optimize)
+            job = json.dumps(job)
             outfile = "%s.lsa" % (name)
             with open(outfile,'w') as fp:
                 fp.write(job)
@@ -409,6 +410,7 @@ feedrate = lasersaur.feedrate
 intensity = lasersaur.intensity
 relative = lasersaur.relative
 absolute = lasersaur.absolute
+move = lasersaur.move
 air_on = lasersaur.air_on
 air_off = lasersaur.air_off
 aux1_on = lasersaur.aux1_on

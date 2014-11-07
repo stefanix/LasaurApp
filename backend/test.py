@@ -7,9 +7,8 @@ import json
 import threading
 
 import web
-from config import conf 
 import lasersaur
-import driveboard
+from config import conf 
 
 
 # assertEqual(a, b)
@@ -49,36 +48,30 @@ Z_ORIGIN_OFFSET = 0.0
 thislocation = os.path.dirname(os.path.realpath(__file__))
 
 
+def setUpModule():
+    # start web interface
+    web.start(threaded=True, debug=False)
+    time.sleep(0.5)
+    lasersaur.set_host("127.0.0.1")
+
+def tearDownModule():
+    # stop web interface
+    web.stop()
+
+
+
+
 class TestLowLevel(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        # start web interface
-        # web.start(threaded=True, debug=False)
-        # time.sleep(0.5)
-        # conf lasersaur
-        cls.laser = lasersaur.Lasersaur("127.0.0.1")
-
-    @classmethod
-    def tearDownClass(cls):
-        # stop web interface
-        # web.stop()
-        pass
-
-    # def setUp(self):
-    #     self.laser = lasersaur.Lasersaur("127.0.0.1")
-    # def tearDown(self):
-    #     pass
 
     def test_config(self):
         # test if we can get a sound config dict
-        c = self.laser.config()
+        c = lasersaur.config()
         self.assertIsInstance(c, dict)
         self.assertIn('appname', c.keys())
         self.assertIn('version', c.keys())
 
     def test_status(self):
-        s = self.laser.status()
+        s = lasersaur.status()
         self.assertIsInstance(s, dict)
         self.assertIn('appver', s.keys())
         self.assertIn('firmver', s.keys())
@@ -86,77 +79,77 @@ class TestLowLevel(unittest.TestCase):
     def test_feedrate_intensity(self):
         new_rate = 4500.1
         new_intens = 210
-        self.laser.feedrate(4500.1)
-        self.laser.intensity(new_intens)
-        time.sleep(0.6)
-        s = self.laser.status()
-        self.assertAlmostEqual(s['feedrate'], new_rate, 1)
-        self.assertAlmostEqual(s['intensity'], new_intens, 1)
+        lasersaur.feedrate(new_rate)
+        lasersaur.intensity(new_intens)
+        time.sleep(1)
+        s = lasersaur.status()
+        self.assertAlmostEqual(s['feedrate'], new_rate, DEC)
+        self.assertAlmostEqual(s['intensity'], new_intens, DEC)
 
     def test_move(self):
-        self.laser.absolute()
-        pos = self.laser.status()['pos']
+        lasersaur.absolute()
+        pos = lasersaur.status()['pos']
         self.assertAlmostEqual(pos[0], stepX(0), DEC)
         self.assertAlmostEqual(pos[1], stepY(0), DEC)
         self.assertAlmostEqual(pos[2], stepZ(0), DEC)
-        self.laser.move(3,4,5)
-        time.sleep(1)
-        pos = self.laser.status()['pos']
+        lasersaur.move(3,4,5)
+        time.sleep(2)
+        pos = lasersaur.status()['pos']
         self.assertAlmostEqual(pos[0], stepX(3), DEC)
         self.assertAlmostEqual(pos[1], stepY(4), DEC)
         self.assertAlmostEqual(pos[2], stepZ(5), DEC)
         #relative
-        self.laser.relative()
-        self.laser.move(2,2,2)
-        time.sleep(1)
-        pos = self.laser.status()['pos']
+        lasersaur.relative()
+        lasersaur.move(2,2,2)
+        time.sleep(2)
+        pos = lasersaur.status()['pos']
         self.assertAlmostEqual(pos[0], stepX(5), DEC)
         self.assertAlmostEqual(pos[1], stepY(6), DEC)
         self.assertAlmostEqual(pos[2], stepZ(7), DEC)
         # absolute after relative
-        self.laser.absolute()
-        self.laser.move(0,0,0)
-        time.sleep(1)
-        pos = self.laser.status()['pos']
+        lasersaur.absolute()
+        lasersaur.move(0,0,0)
+        time.sleep(2)
+        pos = lasersaur.status()['pos']
         self.assertAlmostEqual(pos[0], stepX(0), DEC)
         self.assertAlmostEqual(pos[1], stepY(0), DEC)
         self.assertAlmostEqual(pos[2], stepZ(0), DEC)
 
     def test_offset(self):
-        self.laser.absolute()
-        self.laser.move(15.123,15.123,15.123)
-        time.sleep(1)
-        pos = self.laser.status()['pos']
+        lasersaur.absolute()
+        lasersaur.move(15.123,15.123,15.123)
+        time.sleep(2)
+        pos = lasersaur.status()['pos']
         self.assertAlmostEqual(pos[0], stepX(15.123), DEC)
         self.assertAlmostEqual(pos[1], stepY(15.123), DEC)
         self.assertAlmostEqual(pos[2], stepZ(15.123), DEC)
-        self.laser.offset(4,4,4)
-        time.sleep(0.6)
-        off = self.laser.status()['offset']
+        lasersaur.offset(4,4,4)
+        time.sleep(1)
+        off = lasersaur.status()['offset']
         self.assertAlmostEqual(off[0], 4, DEC)
         self.assertAlmostEqual(off[1], 4, DEC)
         self.assertAlmostEqual(off[2], 4, DEC)
         # pos after offset change
-        pos = self.laser.status()['pos']
+        pos = lasersaur.status()['pos']
         self.assertAlmostEqual(pos[0], stepX(11.123, 4), DEC)
         self.assertAlmostEqual(pos[1], stepY(11.123, 4), DEC)
         self.assertAlmostEqual(pos[2], stepZ(11.123, 4), DEC)
         # move with offset
-        self.laser.move(16.543,16.543,16.543)
-        time.sleep(1)
-        pos = self.laser.status()['pos']
+        lasersaur.move(16.543,16.543,16.543)
+        time.sleep(2)
+        pos = lasersaur.status()['pos']
         self.assertAlmostEqual(pos[0], stepX(16.543, 4), DEC)
         self.assertAlmostEqual(pos[1], stepY(16.543, 4), DEC)
         self.assertAlmostEqual(pos[2], stepZ(16.543, 4), DEC) 
         # clear offset
-        self.laser.clear_offset()
-        time.sleep(0.6)
-        off = self.laser.status()['offset']
+        lasersaur.clear_offset()
+        time.sleep(1)
+        off = lasersaur.status()['offset']
         self.assertAlmostEqual(off[0], 0, DEC)
         self.assertAlmostEqual(off[1], 0, DEC)
         self.assertAlmostEqual(off[2], 0, DEC)
         # pos after clear offset
-        pos = self.laser.status()['pos']
+        pos = lasersaur.status()['pos']
         self.assertAlmostEqual(pos[0], stepX(20.543), DEC)
         self.assertAlmostEqual(pos[1], stepY(20.543), DEC)
         self.assertAlmostEqual(pos[2], stepZ(20.543), DEC)
@@ -193,60 +186,73 @@ class TestQueue(unittest.TestCase):
 
     def test_queue_library(self):
         # empty job queue
-        self.laser.clear()
-        jobs = self.laser.listing('unstarred')
+        lasersaur.clear()
+        jobs = lasersaur.listing('unstarred')
         self.assertIsInstance(jobs, list)
         self.assertListEqual(jobs, [])
-        starred = self.laser.listing('starred')
+        starred = lasersaur.listing('starred')
         self.assertIsInstance(starred, list)
         for job in starred:
-            self.laser.unstar(job)
-        self.laser.clear()
-        jobs = self.laser.listing()
+            lasersaur.unstar(job)
+        lasersaur.clear()
+        jobs = lasersaur.listing()
         self.assertIsInstance(jobs, list)
         self.assertListEqual(jobs, [])
         #library
-        lib = self.laser.listing_library()
+        lib = lasersaur.listing_library()
         self.assertIsInstance(lib, list)
         self.assertIn('Lasersaur', lib)
-        job = self.laser.get_library('Lasersaur')
+        job = lasersaur.get_library('Lasersaur')
         self.assertIsInstance(job, dict)
-        self.laser.load_library('Lasersaur')
+        lasersaur.load_library('Lasersaur')
         # queue
-        jobs = self.laser.listing()
+        jobs = lasersaur.listing()
         self.assertIsInstance(jobs, list)
         self.assertIn('Lasersaur', jobs)
         # get
-        job = self.laser.get('Lasersaur')
+        job = lasersaur.get('Lasersaur')
         self.assertIsInstance(job, dict)
         # list, starring
-        jobs = self.laser.listing('starred')
+        jobs = lasersaur.listing('starred')
         self.assertIsInstance(jobs, list)
         self.assertListEqual(jobs, [])
-        self.laser.star('Lasersaur')
-        jobs = self.laser.listing('starred')
+        lasersaur.star('Lasersaur')
+        jobs = lasersaur.listing('starred')
         self.assertIsInstance(jobs, list)
         self.assertIn('Lasersaur', jobs)
-        jobs = self.laser.listing('unstarred')
+        jobs = lasersaur.listing('unstarred')
         self.assertIsInstance(jobs, list)
         self.assertListEqual(jobs, [])
-        self.laser.unstar('Lasersaur')
-        jobs = self.laser.listing('starred')
+        lasersaur.unstar('Lasersaur')
+        jobs = lasersaur.listing('starred')
         self.assertIsInstance(jobs, list)
         self.assertListEqual(jobs, [])
-        jobs = self.laser.listing('unstarred')
+        jobs = lasersaur.listing('unstarred')
         self.assertIsInstance(jobs, list)
         self.assertIn('Lasersaur', jobs)
-        jobs = self.laser.listing()
+        jobs = lasersaur.listing()
         self.assertIsInstance(jobs, list)
         self.assertIn('Lasersaur', jobs)
         #del
-        self.laser.delete('Lasersaur')
-        jobs = self.laser.listing()
+        lasersaur.remove('Lasersaur')
+        jobs = lasersaur.listing()
         self.assertIsInstance(jobs, list)
         self.assertListEqual(jobs, [])
-        #TODO: constant job nums on add
-        #TODO: delete of starred file
+        #delete of starred file
+        lasersaur.load_library('Lasersaur')
+        lasersaur.star('Lasersaur')
+        lasersaur.remove('Lasersaur')
+        jobs = lasersaur.listing()
+        self.assertListEqual(jobs, [])
+        #constant job nums on add
+        for i in range(conf['max_jobs_in_list'] + 3):
+            lasersaur.load_library('Lasersaur')
+        jobs = lasersaur.listing()
+        self.assertEqual(len(jobs), conf['max_jobs_in_list'])
+        print jobs
+        lasersaur.clear()
+        jobs = lasersaur.listing()
+        self.assertListEqual(jobs, [])
 
 
 
@@ -266,52 +272,21 @@ class TestQueue(unittest.TestCase):
 #         web.stop()
 
 #     def testLoad(self):
-#         # jobname = self.laser.load(os.path.join(thislocation,'test_svgs','full-bed.svg'))
-#         # jobname = self.laser.load(os.path.join(thislocation,'test_svgs','Lasersaur.lsa'))
-#         # self.assertIn(jobname, self.laser.listing())
-#         # self.laser.run(jobname) 
-#         jobs = self.laser.listing()
-#         # self.laser.run(jobs[-1], async=False)
-#         self.laser.run(jobs[-1])
+#         # jobname = lasersaur.load(os.path.join(thislocation,'test_svgs','full-bed.svg'))
+#         # jobname = lasersaur.load(os.path.join(thislocation,'test_svgs','Lasersaur.lsa'))
+#         # self.assertIn(jobname, lasersaur.listing())
+#         # lasersaur.run(jobname) 
+#         jobs = lasersaur.listing()
+#         # lasersaur.run(jobs[-1], async=False)
+#         lasersaur.run(jobs[-1])
 
-#         s = self.laser.status()
+#         s = lasersaur.status()
 #         while not s['ready']:
 #             print s['pos']
 #             time.sleep(1)
-#             s = self.laser.status()
+#             s = lasersaur.status()
 #         print s['pos']
 
-
-
-
-# class TestSerial(unittest.TestCase):
-
-#     @classmethod
-#     def setUpClass(cls):
-#         driveboard.connect()
-#         time.sleep(0.3)
-
-#     @classmethod
-#     def tearDownClass(cls):
-#         time.sleep(20)
-#         driveboard.close()
-
-#     def testJob(self):
-#         jobfile = os.path.join(thislocation,'test_svgs','Lasersaur.lsa')
-#         with open(jobfile) as fp:
-#             job = fp.read()
-#         driveboard.job(json.loads(job))
-
-
-
-def setUpModule():
-    # start web interface
-    web.start(threaded=True, debug=False)
-    time.sleep(0.5)
-
-def tearDownModule():
-    # stop web interface
-    web.stop()
 
 
 if __name__ == '__main__':

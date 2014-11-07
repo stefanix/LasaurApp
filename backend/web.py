@@ -268,6 +268,7 @@ def _unique_name(jobname):
                 continue
             else:
                 jobname = altname
+                break
     return jobname
 
 
@@ -298,7 +299,7 @@ def load():
 
     altname = _unique_name(name)
     _add(json.dumps(job), altname)
-    return altname
+    return json.dumps(altname)
     
 
 
@@ -391,7 +392,7 @@ def load_library(jobname):
     job = _get(jobname, library=True)
     jobname = _unique_name(jobname)
     _add(job, jobname)
-    return jobname
+    return json.dumps(jobname)
 
 
 

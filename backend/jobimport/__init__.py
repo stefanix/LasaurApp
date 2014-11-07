@@ -20,20 +20,17 @@ def convert(job, optimize=True):
             pathoptimizer.optimize(
                 job['vector']['paths'], conf['tolerance'])
             job['vector']['optimized'] = conf['tolerance']
-        job = json.dumps(job)
     elif type_ == 'svg':
         job = read_svg(job, conf['workspace'],
                        conf['tolerance'], optimize=optimize)
-        job = json.dumps(job)
     elif type_ == 'dxf':
         job = read_dxf(job, conf['tolerance'], optimize=optimize)
-        job = json.dumps(job)
     elif type_ == 'ngc':
         job = read_ngc(job, conf['tolerance'], optimize=optimize)
-        job = json.dumps(job)
     else:
         print "ERROR: file type not recognized"
         raise TypeError
+    return job
 
 
 def read_svg(svg_string, workspace, tolerance, forced_dpi=None, optimize=True):

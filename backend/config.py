@@ -233,4 +233,4 @@ try:
     conf.update(userconfig.conf)
     print "Config: using userconfig.py"
 except ImportError:
-    print "Config: using defaults, no userconfig.py present"
+    pass

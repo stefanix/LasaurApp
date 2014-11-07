@@ -55,20 +55,20 @@ class ClientSocket(WebSocket):
 
                  
     def handleConnected(self):
-        print self.address, 'connected'
+        print "statserver: Client %s connected." % self.address
         with S.messageglock:
             message_cache = S.message_on_connected
         if message_cache:
             self.sendMessage(message_cache)
 
     def handleClose(self):
-        print self.address, 'closed'
+        print "statserver: Client connection %s closed." % self.address
 
 
 
 def start():
     ### server thread
-    print "INFO: starting status server on port %s" % (conf['websocket_port'])
+    print "statserver: Starting on port %s." % (conf['websocket_port'])
     S.stop_server = False
     S.server = SimpleWebSocketServer(conf['network_host'], 
                                      conf['websocket_port'], ClientSocket)
@@ -119,18 +119,18 @@ def stop():
         with S.messageglock:
             S.stop_messager = True
         S.messagethread.join()
-        print "Status message thread stopped."
+        print "statserver: Message thread stopped."
     else:
-        print "Status message thread was already stopped."
+        print "statserver: Message thread was already stopped."
     S.messagethread = None
 
     if S.serverthread and S.serverthread.is_alive():
         with S.serverlock:
             S.stop_server = True
         S.serverthread.join()
-        print "Status server thread stopped."
+        print "statserver: Server thread stopped."
     else:
-        print "Status server thread was already stopped."
+        print "statserver: Server thread was already stopped."
     S.serverthread = None
     S.server.close()
     S.server = None
