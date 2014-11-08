@@ -39,9 +39,15 @@ class PyApp(gtk.Window):
 
         if args.animate:
             self.timer = True
-            glib.timeout_add(140, self.on_timer)
-            self.inc = 20
+            glib.timeout_add(40, self.on_timer)  #25fps
+            self.inc = 4
             self.todraw = self.inc
+            # firgure out total points
+            self.total = 0
+            for path in job['vector']['paths']:
+                for polyline in path:
+                    for point in polyline:
+                        self.total += 1
 
         self.show_all()
 
@@ -57,6 +63,7 @@ class PyApp(gtk.Window):
         cr = widget.window.cairo_create()
         cr.set_line_width(1)
         cr.set_source_rgb(0.0, 0.0, 0.0)
+
 
         if args.animate:
             count = 0
@@ -76,10 +83,10 @@ class PyApp(gtk.Window):
                         if break_: break
                         cr.line_to(polyline[i][0], polyline[i][1])
                         count += 1
-                if i == len(job['vector']['paths'])-1:
-                    # all drawn
-                    # self.timer = False
-                    self.todraw = self.inc
+            if self.todraw >= self.total:
+                # all drawn
+                # self.timer = False
+                self.todraw = 0
             self.todraw += self.inc
         else:
             for path in job['vector']['paths']:
