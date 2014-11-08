@@ -161,7 +161,7 @@ class Lasersaur(object):
     ### JOBS QUEUE
 
 
-    def convert(self, job, optimize=True):
+    def convert(self, job, tolerance=None, optimize=True):
         """Convert a job file.
 
         Args:
@@ -169,14 +169,17 @@ class Lasersaur(object):
             optimize: Flag for optimizing path tolerances.
         """
         import jobimport # dependancy only when actually needed
-        name = os.path.basename(job)
+        base, name = os.path.split(job)
         with open(job) as fp:
             job = fp.read()
         name, ext = os.path.splitext(name)
         if ext != '.lsa':
-            job = jobimport.convert(job, optimize)
+            if tolerance is None:
+                job = jobimport.convert(job, optimize=optimize)
+            else:
+                job = jobimport.convert(job, tolerance=tolerance, optimize=optimize)
             job = json.dumps(job)
-            outfile = "%s.lsa" % (name)
+            outfile = os.path.join(base, "%s.conv.lsa" % (name))
             with open(outfile,'w') as fp:
                 fp.write(job)
             print "INFO: job file written to: %s" % outfile
@@ -206,6 +209,7 @@ class Lasersaur(object):
         if convert:
             import jobimport # dependancy only when actually needed
             job = jobimport.convert(job, optimize)
+            job = json.dumps(job)
             if optimize:
                 optimize = False
         if name is None:
@@ -234,6 +238,7 @@ class Lasersaur(object):
         if convert:
             import jobimport  # dependancy only when actually needed
             job = jobimport.convert(job, optimize)
+            job = json.dumps(job)
             if optimize:
                 optimize = False
         # load
@@ -263,7 +268,7 @@ class Lasersaur(object):
                 ]
             }
         }
-        return self.load(json.dumps(job))
+        return self.loads(json.dumps(job))
 
     def load_image(self, image, pos, size, feedrate=6000, intensity=50):
         """Create and load a raster engraving job.
@@ -296,7 +301,7 @@ class Lasersaur(object):
                 ]
             }
         }
-        return self.load(json.dumps(job))
+        return self.loads(json.dumps(job))
 
     def listing(self, kind=None):
         """List all queue jobs by name."""
@@ -418,7 +423,9 @@ aux1_off = lasersaur.aux1_off
 offset = lasersaur.offset
 clear_offset = lasersaur.clear_offset
 ### JOBS QUEUE
+convert = lasersaur.convert
 load = lasersaur.load
+loads = lasersaur.loads
 load_path = lasersaur.load_path
 load_image = lasersaur.load_image
 listing = lasersaur.listing
