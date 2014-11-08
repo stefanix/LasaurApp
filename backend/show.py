@@ -39,8 +39,12 @@ class PyApp(gtk.Window):
 
         if args.animate:
             self.timer = True
-            glib.timeout_add(40, self.on_timer)  #25fps
-            self.inc = 4
+            if args.fast:
+                glib.timeout_add(10, self.on_timer)  #100fps
+                self.inc = 8
+            else:
+                glib.timeout_add(40, self.on_timer)  #25fps
+                self.inc = 4                
             self.todraw = self.inc
             # firgure out total points
             self.total = 0
@@ -108,6 +112,8 @@ if __name__ == '__main__':
                            help='Lasersaur job file to show.')
     argparser.add_argument('-a', '--animate', dest='animate', action='store_true',
                            default=False, help='animate job')
+    argparser.add_argument('-f', '--fast', dest='fast', action='store_true',
+                           default=False, help='animate fast')
     args = argparser.parse_args()
 
     thislocation = os.path.dirname(os.path.realpath(__file__))
