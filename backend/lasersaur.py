@@ -39,7 +39,7 @@ __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
 
 class Lasersaur(object):
 
-    def __init__(self, host="lasersaur.local", port=4444, user="laser", pass_="laser"):
+    def __init__(self, host="lasersaur.local", port=80, user="laser", pass_="laser"):
         """Create a Lasersaur client object."""
         self.host = host
         self.port = port
@@ -448,7 +448,7 @@ def set_host(host):
     """Set host. Call this before making first request."""
     lasersaur.host = host
 
-def set_user(port):
+def set_port(port):
     """Set user. Call this before making first request."""
     lasersaur.port = port
 

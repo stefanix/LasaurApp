@@ -52,7 +52,7 @@ def setUpModule():
     # start web interface
     web.start(threaded=True, debug=False)
     time.sleep(0.5)
-    lasersaur.set_host("127.0.0.1")
+    lasersaur.set_host(host="127.0.0.1", port="4444")
 
 def tearDownModule():
     # stop web interface
