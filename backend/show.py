@@ -121,10 +121,10 @@ if __name__ == '__main__':
         jobfile = os.path.join(thislocation, "testjobs", args.jobfile)
         with open(jobfile) as fp:
             job = fp.read()
-        if os.path.splitext(jobfile)[1] == '.lsa':
-            job = json.loads(job)
-        else:
-            job = jobimport.convert(job, optimize=True)
+        # if os.path.splitext(jobfile)[1] == '.lsa':
+        #     job = json.loads(job)
+        # else:
+        job = jobimport.convert(job, optimize=True)
         # run gtk window
         PyApp()
         gtk.main()

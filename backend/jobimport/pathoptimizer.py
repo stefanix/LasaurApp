@@ -199,34 +199,27 @@ def sort_by_seektime(path, start=[0.0, 0.0]):
     path_unsorted = []
     tree = kdtree.Tree(2)
     for i in xrange(len(path)):
+        pathseg = path[i]
         # copy, so we can place the result in path
-        path_unsorted.append(path[i])
+        path_unsorted.append(pathseg)
         # populate kdtree
-        tree.insert(path[i][0], i+1)      # startpoint, data
-        tree.insert(path[i][-1], -(i+1))  # endpoint, -data
+        tree.insert(pathseg[0], (i,False))  # startpoint, data
+        tree.insert(pathseg[-1], (i,True))  # endpoint, -data
 
     # sort by proximity, greedy
     endpoint = start
     newIdx = 0
     usedIdxs = {}
-    for p in path_unsorted:
+    for p in xrange(2*len(path_unsorted)):
         # print endpoint[0], endpoint[1]
         # i = tree.nearest(endpoint[0], endpoint[1])
         node, distsq = tree.nearest(endpoint, checkempty=True)
-        i = node.data
+        i, rev = node.data
         node.data = None
-        if i > 0:  # a path segment's startpoint is closest
-            i = i-1
-            rev = False
-        else:      # a path segment's endpoint is closest
-            i = -i-1
-            rev = True
         if i not in usedIdxs:
-            if rev:      # a path segment's endpoint is closest
-                path_unsorted[i].reverse()  # reverse, endpoint is closest
-                path[newIdx] = path_unsorted[i]
-            else:  # a path segment's startpoint is closest
-                path[newIdx] = path_unsorted[i]
+            path[newIdx] = path_unsorted[i]
+            if rev:
+                path[newIdx].reverse()
             endpoint = path[newIdx][-1]  # prime for next iteration
             newIdx += 1
             usedIdxs[i] = True
@@ -239,6 +232,7 @@ def optimize(paths, tolerance):
     tolerance2 = tolerance**2
     epsilon2 = (0.1*tolerance)**2
     for path in paths:
-        connect_segments(path, epsilon2)
-        simplify_all(path, tolerance2)
+        pass
+        # connect_segments(path, epsilon2)
+        # simplify_all(path, tolerance2)
         sort_by_seektime(path)
