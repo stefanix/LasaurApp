@@ -204,15 +204,13 @@ def sort_by_seektime(path, start=[0.0, 0.0]):
         path_unsorted.append(pathseg)
         # populate kdtree
         tree.insert(pathseg[0], (i,False))  # startpoint, data
-        tree.insert(pathseg[-1], (i,True))  # endpoint, -data
+        tree.insert(pathseg[-1], (i,True))  # endpoint, data
 
     # sort by proximity, greedy
     endpoint = start
     newIdx = 0
     usedIdxs = {}
     for p in xrange(2*len(path_unsorted)):
-        # print endpoint[0], endpoint[1]
-        # i = tree.nearest(endpoint[0], endpoint[1])
         node, distsq = tree.nearest(endpoint, checkempty=True)
         i, rev = node.data
         node.data = None
@@ -234,5 +232,5 @@ def optimize(paths, tolerance):
     for path in paths:
         pass
         # connect_segments(path, epsilon2)
-        # simplify_all(path, tolerance2)
+        simplify_all(path, tolerance2)
         sort_by_seektime(path)
