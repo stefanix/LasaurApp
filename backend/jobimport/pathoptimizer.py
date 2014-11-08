@@ -28,46 +28,31 @@ def connect_segments(path, epsilon2):
     Optimizes continuity of path.
 
     This function joins path segments if either the next start point
-    or end point is congruent with the current end point. In case of
-    an end point join it reverses the path segment.
+    is congruent with the current end point.
     """
     join_count = 0
-    reverse_count = 0
     newIdx = 0
     for i in xrange(1,len(path)):
-        lastpath = path[newIdx]
+        lastpathseg = path[newIdx]
         pathseg = path[i]
-        point = lastpath[-1]
+        point = lastpathseg[-1]
         startpoint = pathseg[0]
-        endpoint = pathseg[-1]
 
-        # join into lastpath
+        # join into lastpathseg
         d2_start = (point[0]-startpoint[0])**2 + (point[1]-startpoint[1])**2
         if d2_start < epsilon2:
-            lastpath.extend(pathseg[1:])
+            lastpathseg.extend(pathseg[1:])
             join_count += 1
-            continue
-
-        # reverse-join into lastpath
-        d2_end = (point[0]-endpoint[0])**2 + (point[1]-endpoint[1])**2
-        if d2_end < epsilon2:
-            pathseg.reverse()
-            lastpath.extend(pathseg[1:])
-            join_count += 1
-            reverse_count += 1
             continue
         
         # add as is
-        path[newIdx] = pathseg
         newIdx += 1
+        path[newIdx] = pathseg
 
     # remove exessive slots
     for i in xrange(len(path)-newIdx):
         path.pop()
 
-    # report if excessive reverts
-    if reverse_count > 100:
-        log.info("reverted many path segments: " + str(reverse_count))
     # report if excessive joins
     if join_count > 100:
         log.info("joined many path segments: " + str(join_count))
@@ -231,6 +216,6 @@ def optimize(paths, tolerance):
     epsilon2 = (0.1*tolerance)**2
     for path in paths:
         pass
-        # connect_segments(path, epsilon2)
-        simplify_all(path, tolerance2)
-        sort_by_seektime(path)
+        connect_segments(path, epsilon2)
+        # simplify_all(path, tolerance2)
+        # sort_by_seektime(path)

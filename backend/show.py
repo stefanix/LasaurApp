@@ -46,12 +46,6 @@ class PyApp(gtk.Window):
                 glib.timeout_add(40, self.on_timer)  #25fps
                 self.inc = 4                
             self.todraw = self.inc
-            # firgure out total points
-            self.total = 0
-            for path in job['vector']['paths']:
-                for polyline in path:
-                    for point in polyline:
-                        self.total += 1
 
         self.show_all()
 
@@ -63,7 +57,7 @@ class PyApp(gtk.Window):
 
     
     def expose(self, widget, event):
-        global job, args
+        global job, args, total_points
         cr = widget.window.cairo_create()
         cr.set_line_width(1)
         cr.set_source_rgb(0.0, 0.0, 0.0)
@@ -87,7 +81,7 @@ class PyApp(gtk.Window):
                         if break_: break
                         cr.line_to(polyline[i][0], polyline[i][1])
                         count += 1
-            if self.todraw >= self.total:
+            if self.todraw >= total_points:
                 # all drawn
                 # self.timer = False
                 self.todraw = 0
@@ -114,6 +108,8 @@ if __name__ == '__main__':
                            default=False, help='animate job')
     argparser.add_argument('-f', '--fast', dest='fast', action='store_true',
                            default=False, help='animate fast')
+    argparser.add_argument('-n', '-nooptimize', dest='nooptimize', action='store_true',
+                           default=False, help='do not optimize geometry')
     args = argparser.parse_args()
 
     thislocation = os.path.dirname(os.path.realpath(__file__))
@@ -121,10 +117,19 @@ if __name__ == '__main__':
         jobfile = os.path.join(thislocation, "testjobs", args.jobfile)
         with open(jobfile) as fp:
             job = fp.read()
-        # if os.path.splitext(jobfile)[1] == '.lsa':
-        #     job = json.loads(job)
-        # else:
-        job = jobimport.convert(job, optimize=True)
+        job = jobimport.convert(job, optimize=not(args.nooptimize))
+
+        # stats
+        total_points = 0
+        for path in job['vector']['paths']:
+            for polyline in path:
+                for point in polyline:
+                    total_points += 1
+        print "STATS:"
+        print "\ttotal points: %s" % total_points
+        if 'vector' in job and 'optimized' in job['vector']:
+            print "\ttolerance: %s" % job['vector']['optimized']
+
         # run gtk window
         PyApp()
         gtk.main()

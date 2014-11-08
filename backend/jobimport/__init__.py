@@ -14,12 +14,13 @@ __author__ = 'Stefan Hechenberger <stefan@nortd.com>'
 
 def convert(job, optimize=True):
     type_ = get_type(job)
-    if type_ == 'lsa' and optimize:
+    if type_ == 'lsa':
         job = json.loads(job)
-        if 'vector' in job and 'paths' in job['vector']:
-            pathoptimizer.optimize(
-                job['vector']['paths'], conf['tolerance'])
-            job['vector']['optimized'] = conf['tolerance']
+        if optimize:
+            if 'vector' in job and 'paths' in job['vector']:
+                pathoptimizer.optimize(
+                    job['vector']['paths'], conf['tolerance'])
+                job['vector']['optimized'] = conf['tolerance']
     elif type_ == 'svg':
         job = read_svg(job, conf['workspace'],
                        conf['tolerance'], optimize=optimize)
