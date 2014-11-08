@@ -108,8 +108,10 @@ if __name__ == '__main__':
                            default=False, help='animate job')
     argparser.add_argument('-f', '--fast', dest='fast', action='store_true',
                            default=False, help='animate fast')
-    argparser.add_argument('-n', '-nooptimize', dest='nooptimize', action='store_true',
+    argparser.add_argument('-n', '--nooptimize', dest='nooptimize', action='store_true',
                            default=False, help='do not optimize geometry')
+    argparser.add_argument('-t', '--tolerance', dest='tolerance',
+                           default=0.08, help='tolerance in mm')
     args = argparser.parse_args()
 
     thislocation = os.path.dirname(os.path.realpath(__file__))
@@ -117,7 +119,8 @@ if __name__ == '__main__':
         jobfile = os.path.join(thislocation, "testjobs", args.jobfile)
         with open(jobfile) as fp:
             job = fp.read()
-        job = jobimport.convert(job, optimize=not(args.nooptimize))
+        job = jobimport.convert(job, tolerance=float(args.tolerance), 
+                                     optimize=not(args.nooptimize))
 
         # stats
         total_points = 0

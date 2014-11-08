@@ -217,5 +217,5 @@ def optimize(paths, tolerance):
     for path in paths:
         pass
         connect_segments(path, epsilon2)
-        # simplify_all(path, tolerance2)
-        # sort_by_seektime(path)
+        simplify_all(path, tolerance2)
+        sort_by_seektime(path)

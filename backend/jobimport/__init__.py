@@ -12,22 +12,22 @@ __author__ = 'Stefan Hechenberger <stefan@nortd.com>'
 
 
 
-def convert(job, optimize=True):
+def convert(job, tolerance=conf['tolerance'], optimize=True):
     type_ = get_type(job)
     if type_ == 'lsa':
         job = json.loads(job)
         if optimize:
             if 'vector' in job and 'paths' in job['vector']:
                 pathoptimizer.optimize(
-                    job['vector']['paths'], conf['tolerance'])
-                job['vector']['optimized'] = conf['tolerance']
+                    job['vector']['paths'], tolerance)
+                job['vector']['optimized'] = tolerance
     elif type_ == 'svg':
         job = read_svg(job, conf['workspace'],
-                       conf['tolerance'], optimize=optimize)
+                       tolerance, optimize=optimize)
     elif type_ == 'dxf':
-        job = read_dxf(job, conf['tolerance'], optimize=optimize)
+        job = read_dxf(job, tolerance, optimize=optimize)
     elif type_ == 'ngc':
-        job = read_ngc(job, conf['tolerance'], optimize=optimize)
+        job = read_ngc(job, tolerance, optimize=optimize)
     else:
         print "ERROR: file type not recognized"
         raise TypeError
