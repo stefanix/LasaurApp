@@ -275,6 +275,11 @@ class SerialLoopClass(threading.Thread):
                     self._status, self._s = self._s, self._status
                     self._status['paused'] = self._paused
                     self._status['serial'] = bool(self.device)
+                    if self.job_size == 0:
+                        self._status['progress'] = 1.0
+                    else:
+                        self._status['progress'] = 1.0-len(SerialLoop.tx_buffer) \
+                                                   /float(SerialLoop.job_size)
                     self._s['stops'].clear()
                     self._s['info'].clear()
                     self._s['ready'] = False
@@ -584,17 +589,6 @@ def build(firmware_name="LasaurGrbl"):
 def reset():
     import flash
     flash.reset_atmega()
-
-
-def percentage():
-    """Return the percentage done as a float 0-1.0.
-    Return -1 if no job is active."""
-    global SerialLoop
-    ret = -1
-    with SerialLoop.lock:
-        if SerialLoop.job_size != 0:
-            ret = 1.0-len(SerialLoop.tx_buffer)/float(SerialLoop.job_size)
-    return ret
 
 
 def status():

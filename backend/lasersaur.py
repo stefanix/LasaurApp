@@ -18,13 +18,14 @@
 #   lasersaur.run(jobname)
 # 
 # while not lasersaur.ready():
-#   print "%s% done!" % (lasersaur.progress())
+#   print "%s% done!" % (lasersaur.status()['progress'])
 #   time.sleep(1)
 # 
 # print "job done"
 #
 
 import os
+import sys
 import time
 import json
 import base64
@@ -52,8 +53,8 @@ class Lasersaur(object):
         """Make a http request.
 
         Raises:
-            urllib2.URLError: Host not reachable.
-            urllib2.HTTPError: Web server responded with an error code.
+            requests.ConnectionError: Host not reachable.
+            requests.HTTPError: Web server responded with an error code.
         """
 
         url = "http://%s:%s%s" % (self.host, self.port, url)
@@ -142,7 +143,7 @@ class Lasersaur(object):
 
     ### JOBS QUEUE
 
-    def openfile(self, jobfile, optimize=True, tolerance=None):
+    def open_file(self, jobfile, optimize=True, tolerance=None):
         """Load and convert a job file locally.
 
         Args:
@@ -165,7 +166,7 @@ class Lasersaur(object):
         return job
 
 
-    def convertfile(self, jobfile, optimize=True, tolerance=None):
+    def convert_file(self, jobfile, optimize=True, tolerance=None):
         """Convert any job file to a .lsa file.
 
         Args:
@@ -179,7 +180,7 @@ class Lasersaur(object):
         import jobimport # dependancy only when actually needed
         base, name = os.path.split(jobfile)
         name, ext = os.path.splitext(name)
-        job = self.openfile(jobfile, convert=True, optimize=optimize, tolerance=tolerance)
+        job = self.open_file(jobfile, optimize=optimize, tolerance=tolerance)
         job = json.dumps(job)
         outfile = os.path.join(base, "%s.conv.lsa" % (name))
         with open(outfile,'w') as fp:
@@ -195,7 +196,7 @@ class Lasersaur(object):
         there it can be run by calling the run(jobname) function.
 
         Typically a job is sent in the native lsa format. Supported
-        file types can be converted with the openfile() function.
+        file types can be converted with the open_file() function.
         Alternatively, any supported file types can be loaded and will
         then be converted on the machine (this is usually slower).
 
@@ -212,6 +213,24 @@ class Lasersaur(object):
         load_request = json.dumps(load_request)
         return self._request('/load', postdict={'load_request':load_request}, ret=True)
 
+
+    def load_file(self, jobfile, optimize=True, tolerance=None):
+        """Convert any job file to a .lsa file.
+
+        Args:
+            jobfile: Path to job file (lsa, svg, dxf, or gcode).
+            optimize: Flag for optimizing path tolerances.
+            tolerance: Tolerance used in convert/optimization.
+
+        Returns:
+            Unique name give to the job. This is either name or 
+            name_<numeral>.
+        """
+        import jobimport # dependancy only when actually needed
+        base, name = os.path.split(jobfile)
+        name, ext = os.path.splitext(name)
+        job = self.open_file(jobfile, optimize=optimize, tolerance=tolerance)
+        return self.load(job, name, optimize=False)
 
 
     def load_path(self, path, feedrate, intensity):
@@ -317,21 +336,46 @@ class Lasersaur(object):
 
     ### JOB EXECUTION
 
-    def run(self, jobname, sync=False, printpos=False):
+    def run(self, jobname, progress=True):
         """Send job from queue to the machine."""
         self._request('/run/%s' % jobname)
-        if sync:
-            time.sleep(1)
+        if progress:
+            print 'Starting [                                        ]',
+            print '\b'*42,
+            sys.stdout.flush()
+            time.sleep(0.6)
             stat = self.status()
+            level = 0.025
             while not stat['ready']:
-                if printpos:
-                    print stat['pos']
+                while stat['progress'] > level:
+                    print '\b.',
+                    sys.stdout.flush()
+                    level += 0.025
                 time.sleep(1)
                 stat = self.status()
+            print '\b]  Done!'
 
-    def progress(self):
-        """Get percentage of job done, 0-1.0."""
-        return self._request('/progress', ret=True)
+
+    def run_file(self, jobfile, feedrate=None, intensity=0, progress=True, local=False):
+        """A quick way to run a job"""
+        base, name = os.path.split(jobfile)
+        name, ext = os.path.splitext(name)
+        job = lasersaur.open_file(jobfile, optimize=True)
+        if 'vector' in job and 'paths' in job['vector'] and type(job['vector']['paths']) is list:
+            if 'passes' not in job['vector'] or feedrate is not None:
+                # file has no pass info | feedrate is specified
+                if feedrate is None: feedrate = 4000
+                job['vector']['passes'] = [{
+                        "paths":range(len(job['vector']['paths'])),  # apply to all path
+                        "feedrate":feedrate,
+                        "intensity":intensity
+                    }]
+        if local:
+            self.host = '127.0.0.1'
+            self.port = 4444
+        jobname = lasersaur.load(job, name=name, optimize=False)
+        lasersaur.run(jobname, progress=progress)
+
 
     def pause(self):
         """Pause a job gracefully."""
@@ -404,9 +448,10 @@ aux1_off = lasersaur.aux1_off
 offset = lasersaur.offset
 clear_offset = lasersaur.clear_offset
 ### JOBS QUEUE
-openfile = lasersaur.openfile
-convertfile = lasersaur.convertfile
+open_file = lasersaur.open_file
+convert_file = lasersaur.convert_file
 load = lasersaur.load
+load_file = lasersaur.load_file
 load_path = lasersaur.load_path
 load_image = lasersaur.load_image
 listing = lasersaur.listing
@@ -421,7 +466,7 @@ get_library = lasersaur.get_library
 load_library = lasersaur.load_library
 ### JOB EXECUTION
 run = lasersaur.run
-progress = lasersaur.progress
+run_file = lasersaur.run_file
 pause = lasersaur.pause
 unpause = lasersaur.unpause
 stop = lasersaur.stop
@@ -442,22 +487,6 @@ def configure(host="lasersaur.local", port=80, user="laser", pass_="laser"):
 
 
 
-def testjob(jobfile, feedrate=4000, intensity=0, local=False):
-    """A quick way to run a job"""
-    jobpath = os.path.join(thislocation,'testjobs', jobfile)
-    job = lasersaur.openfile(jobpath)
-    if 'vector' in job:
-        job['vector']['passes'] = [{
-                "paths":[0],
-                "feedrate":feedrate,
-                "intensity":intensity
-            }]
-    if local:
-        configure(host='127.0.0.1', port=4444)
-    jobname = lasersaur.load(job, name=os.path.splitext(jobfile)[0])
-    lasersaur.run(jobname)
-
-
 
 if __name__ == '__main__':
     jobname = lasersaur.load_library('Lasersaur.lsa')
@@ -465,7 +494,7 @@ if __name__ == '__main__':
       lasersaur.run(jobname)
 
     while not lasersaur.ready():
-      print "%s done!" % (lasersaur.progress())
+      print "%s done!" % (lasersaur.status()['progress'])
       time.sleep(1)
 
     print "job done"

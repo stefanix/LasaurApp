@@ -243,7 +243,7 @@ class TestJobs(unittest.TestCase):
 
     def testLoad(self):
         jobfile = os.path.join(thislocation,'testjobs','full-bed.svg')
-        job = lasersaur.openfile(jobfile)
+        job = lasersaur.open_file(jobfile)
         if 'vector' in job:
             job['vector']['passes'] = [{
                     "paths":[0],
@@ -252,7 +252,7 @@ class TestJobs(unittest.TestCase):
                 }]
         jobname = lasersaur.load(job)
         self.assertIn(jobname, lasersaur.listing())
-        lasersaur.run(jobname, sync=True, printpos=True)
+        lasersaur.run(jobname, progress=True)
         print "done!"
 
 

@@ -394,6 +394,10 @@ def load_library(jobname):
     _add(job, jobname)
     return json.dumps(jobname)
 
+@bottle.route('/test')
+@bottle.auth_basic(checkuser)
+def test(jobname):
+    return 100/0.0
 
 
 ### JOB EXECUTION
@@ -407,14 +411,6 @@ def run(jobname):
     if not driveboard.status()['ready']:
         bottle.abort(400, "Machine not ready.")
     driveboard.job(json.loads(job))
-
-
-@bottle.route('/progress')
-@bottle.auth_basic(checkuser)
-@checkserial
-def progress():
-    """Get percentage of job done, 0-1.0, -1 if none active."""
-    return json.dumps(driveboard.percentage())
 
 
 @bottle.route('/pause')
