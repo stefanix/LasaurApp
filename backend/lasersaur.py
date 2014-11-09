@@ -48,7 +48,6 @@ class Lasersaur(object):
         self.pass_ = pass_
 
 
-
     def _request(self, url, postdict=None, ret=False):
         """Make a http request.
 
@@ -70,6 +69,7 @@ class Lasersaur(object):
 
         if ret:
             return r.json()
+
 
 
 
@@ -479,7 +479,7 @@ reset = lasersaur.reset
 
 
 def configure(host="lasersaur.local", port=80, user="laser", pass_="laser"):
-    """Client configuration. Call this before making first request."""
+    """Helper to change configuration of the singelton of this module."""
     lasersaur.host = host
     lasersaur.port = port
     lasersaur.user = user
