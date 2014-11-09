@@ -28,8 +28,7 @@ import os
 import time
 import json
 import base64
-import urllib
-import urllib2
+import requests
 
 
 __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
@@ -46,17 +45,7 @@ class Lasersaur(object):
         self.port = port
         self.user = user
         self.pass_ = pass_
-        self._first_request = True
 
-
-    def _auth(self):
-        # urllib2: enable auth
-        password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
-        top_level_url = "http://%s:%s/" % (self.host, self.port)
-        password_mgr.add_password(None, top_level_url, self.user, self.pass_)
-        handler = urllib2.HTTPBasicAuthHandler(password_mgr)
-        opener = urllib2.build_opener(handler)
-        urllib2.install_opener(opener) # use auth for all urllib2.urlopen()
 
 
     def _request(self, url, postdict=None, ret=False):
@@ -66,34 +55,21 @@ class Lasersaur(object):
             urllib2.URLError: Host not reachable.
             urllib2.HTTPError: Web server responded with an error code.
         """
-        if self._first_request:
-            # lazily install authentication opener
-            self._auth()
-            self._first_request = False
 
-
-        # TODO: url encode
         url = "http://%s:%s%s" % (self.host, self.port, url)
-
-        if postdict:
-            postdata = urllib.urlencode(postdict)
+        if postdict is None:
+            r = requests.get(url, auth=(self.user, self.pass_))
         else:
-            postdata = None
-        # print postdata
-        req = urllib2.Request(url, postdata)
-        try:
-            response = urllib2.urlopen(req, timeout=10)
-        except urllib2.HTTPError as e:
-            nomachine = "No machine."
-            if e.code == 400 and nomachine in e.read():
-                print "ERROR: %s" % nomachine
-            raise e
-        except urllib2.URLError:
-            print "ERROR: broken pipe"
-            return
+            r = requests.post(url, auth=(self.user, self.pass_), data=postdict)
+
+        if not r.ok:
+            if r.status_code == 400:
+                print "WEB ERROR: "+r.text[r.text.find('<pre>')+5:r.text.find('</pre>')]
+            r.raise_for_status()
+
         if ret:
-            return json.loads(response.read())
-                
+            return r.json()
+
 
 
     ### LOW-LEVEL
@@ -347,7 +323,6 @@ class Lasersaur(object):
         if sync:
             time.sleep(1)
             stat = self.status()
-            print stat
             while not stat['ready']:
                 if printpos:
                     print stat['pos']
@@ -479,7 +454,6 @@ def testjob(jobfile, feedrate=4000, intensity=0, local=False):
             }]
     if local:
         configure(host='127.0.0.1', port=4444)
-    print job
     jobname = lasersaur.load(job, name=os.path.splitext(jobfile)[0])
     lasersaur.run(jobname)
 
