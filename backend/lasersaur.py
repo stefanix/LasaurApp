@@ -378,11 +378,12 @@ class Lasersaur(object):
         """Gracefully cancel a job."""
         self.pause()
         time.sleep(1)
-        while not self.status()['ready']
+        while not self.status()['ready']:
             time.sleep(1)
         self.stop()
         self.unstop()
         self.move(0,0,0)
+
 
     ### MCU MANAGMENT
 
