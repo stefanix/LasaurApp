@@ -280,7 +280,7 @@ def load():
 
     Args:
         (Args come in through the POST request.)
-        job: lsa, svg, dxf, or ngc string
+        job: Parsed lsa or job string (lsa, svg, dxf, or ngc).
         name: name of the job (string)
         optimize: flag whether to optimize (bool)
     """
@@ -293,7 +293,7 @@ def load():
         bottle.abort(400, "Invalid request data.")
     # convert
     try:
-        job = jobimport.convert(job, optimize)
+        job = jobimport.convert(job, optimize=optimize)
     except TypeError:
         bottle.abort(400, "Invalid file type.")
 

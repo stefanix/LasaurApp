@@ -160,88 +160,72 @@ class Lasersaur(object):
 
     ### JOBS QUEUE
 
-
-    def convert(self, job, tolerance=None, optimize=True):
-        """Convert a job file.
+    def openfile(self, jobfile, optimize=True, tolerance=None):
+        """Load and convert a job file locally.
 
         Args:
-            job: Path to job file (lsa, svg, dxf, or gcode).
+            jobfile: Path to job file (lsa, svg, dxf, or ngc).
             optimize: Flag for optimizing path tolerances.
+            tolerance: Tolerance used in convert/optimization.
+
+        Returns:
+            A parsed .lsa job.
         """
         import jobimport # dependancy only when actually needed
-        base, name = os.path.split(job)
-        with open(job) as fp:
-            job = fp.read()
-        name, ext = os.path.splitext(name)
-        if ext != '.lsa':
-            if tolerance is None:
-                job = jobimport.convert(job, optimize=optimize)
-            else:
-                job = jobimport.convert(job, tolerance=tolerance, optimize=optimize)
-            job = json.dumps(job)
-            outfile = os.path.join(base, "%s.conv.lsa" % (name))
-            with open(outfile,'w') as fp:
-                fp.write(job)
-            print "INFO: job file written to: %s" % outfile
-        else:
-            print "WARN: already a .lsa file"
-
-
-
-    def load(self, job, name=None, convert=True, optimize=True):
-        """Load a job file.
-
-        Args:
-            job: Path to job file (lsa, svg, dxf, or gcode).
-            name: Name the job. Defaults to file name.
-                  If not unique gets a post-numeral.
-            convert: Flag for converting/optimizing locally.
-            optimize: Flag for optimizing path tolerances.
-
-        Returns:
-            Unique name give to the job. This is either name or 
-            name_<numeral>.
-        """
-        name_f = os.path.basename(job)
-        with open(job) as fp:
+        name_f = os.path.basename(jobfile)
+        with open(jobfile) as fp:
             job = fp.read()
         name_f, ext = os.path.splitext(name_f)
-        if convert:
-            import jobimport # dependancy only when actually needed
-            job = jobimport.convert(job, optimize)
-            job = json.dumps(job)
-            if optimize:
-                optimize = False
-        if name is None:
-            name = name_f
-        # load
-        load_request = {"job": job, "name":name, "optimize": optimize}
-        load_request = json.dumps(load_request)
-        return self._request('/load', postdict={'load_request':load_request}, ret=True)
+        if tolerance:
+            job = jobimport.convert(job, optimize=optimize, tolerance=tolerance)
+        else:
+            job = jobimport.convert(job, optimize=optimize)
+        return job
 
 
-
-    def loads(self, job, name="job", convert=True, optimize=True):
-        """Load a job from string (as opposed to read from file).
+    def convertfile(self, jobfile, optimize=True, tolerance=None):
+        """Convert any job file to a .lsa file.
 
         Args:
-            job: Can be: lsa (native), svg, dxf, or gcode.
-            name: Name the job. If not unique gets a post-numeral.
-            convert: Flag for converting/optimizing locally.
+            jobfile: Path to job file (lsa, svg, dxf, or gcode).
             optimize: Flag for optimizing path tolerances.
+            tolerance: Tolerance used in convert/optimization.
+
+        Output:
+            A .lsa file in the same directory called <name>.conv.lsa
+        """
+        import jobimport # dependancy only when actually needed
+        base, name = os.path.split(jobfile)
+        name, ext = os.path.splitext(name)
+        job = self.openfile(jobfile, convert=True, optimize=optimize, tolerance=tolerance)
+        job = json.dumps(job)
+        outfile = os.path.join(base, "%s.conv.lsa" % (name))
+        with open(outfile,'w') as fp:
+            fp.write(job)
+        print "INFO: job file written to: %s" % outfile
+
+
+
+    def load(self, job, name="job", optimize=True):
+        """Load a job to the machine.
+
+        This will place a job in the job list on the machine. From 
+        there it can be run by calling the run(jobname) function.
+
+        Typically a job is sent in the native lsa format. Supported
+        file types can be converted with the openfile() function.
+        Alternatively, any supported file types can be loaded and will
+        then be converted on the machine (this is usually slower).
+
+        Args:
+            job: Parsed lsa job OR job string (lsa, svg, dxf, or ngc).
+            name: Name the job. If not unique gets a post-numeral.
+            optimize: Flag for optimizing path tolerances on machine.
 
         Returns:
             Unique name give to the job. This is either name or 
             name_<numeral>.
         """
-        # convert locally
-        if convert:
-            import jobimport  # dependancy only when actually needed
-            job = jobimport.convert(job, optimize)
-            job = json.dumps(job)
-            if optimize:
-                optimize = False
-        # load
         load_request = {"job": job, "name":name, "optimize": optimize}
         load_request = json.dumps(load_request)
         return self._request('/load', postdict={'load_request':load_request}, ret=True)
@@ -351,12 +335,18 @@ class Lasersaur(object):
 
     ### JOB EXECUTION
 
-    def run(self, jobname, async=True):
+    def run(self, jobname, sync=False, printpos=False):
         """Send job from queue to the machine."""
         self._request('/run/%s' % jobname)
-        if not async:
-            while not self.ready(cache=0):
+        if sync:
+            time.sleep(1)
+            stat = self.status()
+            print stat
+            while not stat['ready']:
+                if printpos:
+                    print stat['pos']
                 time.sleep(1)
+                stat = self.status()
 
     def progress(self):
         """Get percentage of job done."""
@@ -423,9 +413,9 @@ aux1_off = lasersaur.aux1_off
 offset = lasersaur.offset
 clear_offset = lasersaur.clear_offset
 ### JOBS QUEUE
-convert = lasersaur.convert
+openfile = lasersaur.openfile
+convertfile = lasersaur.convertfile
 load = lasersaur.load
-loads = lasersaur.loads
 load_path = lasersaur.load_path
 load_image = lasersaur.load_image
 listing = lasersaur.listing
@@ -451,20 +441,11 @@ flash = lasersaur.flash
 reset = lasersaur.reset
 
 
-def set_host(host):
-    """Set host. Call this before making first request."""
+def configure(host="lasersaur.local", port=80, user="laser", pass_="laser"):
+    """Client configuration. Call this before making first request."""
     lasersaur.host = host
-
-def set_port(port):
-    """Set user. Call this before making first request."""
     lasersaur.port = port
-
-def set_user(user):
-    """Set user. Call this before making first request."""
     lasersaur.user = user
-    
-def set_pass(pass_):
-    """Set password. Call this before making first request."""
     lasersaur.pass_ = pass_
 
 

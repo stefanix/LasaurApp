@@ -49,15 +49,12 @@ thislocation = os.path.dirname(os.path.realpath(__file__))
 
 
 def setUpModule():
-    # start web interface
     web.start(threaded=True, debug=False)
     time.sleep(0.5)
-    lasersaur.set_host(host="127.0.0.1", port="4444")
+    lasersaur.configure(host="127.0.0.1", port="4444")
 
 def tearDownModule():
-    # stop web interface
     web.stop()
-
 
 
 
@@ -170,20 +167,6 @@ def stepZ(val, off1=0, off2=Z_ORIGIN_OFFSET):
 
 class TestQueue(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        # start web interface
-        # web.start(threaded=True, debug=False)
-        # time.sleep(0.5)
-        # conf lasersaur
-        cls.laser = lasersaur.Lasersaur("127.0.0.1")
-
-    @classmethod
-    def tearDownClass(cls):
-        # stop web interface
-        # web.stop()
-        pass
-
     def test_queue_library(self):
         # empty job queue
         lasersaur.clear()
@@ -256,37 +239,21 @@ class TestQueue(unittest.TestCase):
 
 
 
-# class TestJobs(unittest.TestCase):
+class TestJobs(unittest.TestCase):
 
-#     @classmethod
-#     def setUpClass(cls):
-#         # start web interface
-#         web.start(threaded=True, debug=False)
-#         time.sleep(0.5)
-#         # conf lasersaur
-#         cls.laser = lasersaur.Lasersaur("127.0.0.1")
-
-#     @classmethod
-#     def tearDownClass(cls):
-#         # stop web interface
-#         web.stop()
-
-#     def testLoad(self):
-#         # jobname = lasersaur.load(os.path.join(thislocation,'test_svgs','full-bed.svg'))
-#         # jobname = lasersaur.load(os.path.join(thislocation,'test_svgs','Lasersaur.lsa'))
-#         # self.assertIn(jobname, lasersaur.listing())
-#         # lasersaur.run(jobname) 
-#         jobs = lasersaur.listing()
-#         # lasersaur.run(jobs[-1], async=False)
-#         lasersaur.run(jobs[-1])
-
-#         s = lasersaur.status()
-#         while not s['ready']:
-#             print s['pos']
-#             time.sleep(1)
-#             s = lasersaur.status()
-#         print s['pos']
-
+    def testLoad(self):
+        jobfile = os.path.join(thislocation,'testjobs','full-bed.svg')
+        job = lasersaur.openfile(jobfile)
+        if 'vector' in job:
+            job['vector']['passes'] = [{
+                    "paths":[0],
+                    "feedrate":4000,
+                    "intensity":53
+                }]
+        jobname = lasersaur.load(job)
+        self.assertIn(jobname, lasersaur.listing())
+        lasersaur.run(jobname, sync=True, printpos=True)
+        print "done!"
 
 
 if __name__ == '__main__':

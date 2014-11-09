@@ -12,15 +12,30 @@ __author__ = 'Stefan Hechenberger <stefan@nortd.com>'
 
 
 
-def convert(job, tolerance=conf['tolerance'], optimize=True):
+def convert(job, optimize=True, tolerance=conf['tolerance']):
+    """Convert a job string (lsa, svg, dxf, or ngc).
+
+    Args:
+        job: Parsed lsa or job string (lsa, svg, dxf, or ngc).
+        optimize: Flag for optimizing path tolerances.
+        tolerance: Tolerance used in convert/optimization.
+
+    Returns:
+        A parsed .lsa job.
+    """
     type_ = get_type(job)
     if type_ == 'lsa':
-        job = json.loads(job)
+        if type(job) is str:
+            job = json.loads(job)
         if optimize:
+            # only optimize if requested
             if 'vector' in job and 'paths' in job['vector']:
-                pathoptimizer.optimize(
-                    job['vector']['paths'], tolerance)
-                job['vector']['optimized'] = tolerance
+                # only optimize if vector data
+                if 'optimized' not in job['vector']['paths']:
+                    # only optimize if not already optimized
+                    pathoptimizer.optimize(
+                        job['vector']['paths'], tolerance)
+                    job['vector']['optimized'] = tolerance
     elif type_ == 'svg':
         job = read_svg(job, conf['workspace'],
                        tolerance, optimize=optimize)
@@ -163,19 +178,25 @@ def read_ngc(ngc_string, tolerance, optimize=False):
 def get_type(job):
     """Figure out file type from job string."""
     # figure out type
-    jobheader = job[:256].lstrip()
-    if jobheader and jobheader[0] == '{':
+    if type(job) is dict:
         type_ = 'lsa'
-    elif '<?xml' in jobheader and '<svg' in jobheader:
-        type_ = 'svg'
-    elif 'SECTION' in jobheader and 'HEADER' in jobheader:
-        type_ = 'dxf'
-    elif 'G0' in jobheader or 'G1' in jobheader or \
-         'G00' in jobheader or 'G01' in jobheader or \
-         'g0' in jobheader or 'g1' in jobheader or \
-         'g00' in jobheader or 'g01' in jobheader:
-        type_ = 'ngc'
+    elif type(job) is str:
+        jobheader = job[:256].lstrip()
+        if jobheader and jobheader[0] == '{':
+            type_ = 'lsa'
+        elif '<?xml' in jobheader and '<svg' in jobheader:
+            type_ = 'svg'
+        elif 'SECTION' in jobheader and 'HEADER' in jobheader:
+            type_ = 'dxf'
+        elif 'G0' in jobheader or 'G1' in jobheader or \
+             'G00' in jobheader or 'G01' in jobheader or \
+             'g0' in jobheader or 'g1' in jobheader or \
+             'g00' in jobheader or 'g01' in jobheader:
+            type_ = 'ngc'
+        else:
+            print "ERROR: Cannot figure out file type 1."
+            raise TypeError
     else:
-        print "ERROR: Cannot figure out file type."
-        raise TypeError
+        print "ERROR: Cannot figure out file type 2."
+        raise TypeError     
     return type_

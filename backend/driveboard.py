@@ -137,7 +137,6 @@ class SerialLoopClass(threading.Thread):
         self._s = {}
         self.reset_status()
         self._paused = False
-        self._ready = False
 
         self.request_stop = False
         self.request_resume = False
@@ -255,7 +254,7 @@ class SerialLoopClass(threading.Thread):
                     self._status['ready']  = False
                 # status request
                 if time.time()-last_status_request > 0.5:
-                    if self._ready:
+                    if self._status['ready']:
                         self.request_status = 2  # ready -> super request
                     else:
                         self.request_status = 1  # processing -> normal request
@@ -276,11 +275,11 @@ class SerialLoopClass(threading.Thread):
                 elif char == STATUS_END:
                     # status frame complete, compile status
                     self._status, self._s = self._s, self._status
-                    self._status['ready'] = self._ready
                     self._status['paused'] = self._paused
                     self._status['serial'] = bool(self.device)
                     self._s['stops'].clear()
                     self._s['info'].clear()
+                    self._s['ready'] = False
                     # send through status server
                     if self.server_enabled:
                         statusjson = json.dumps(self._status)
@@ -319,19 +318,18 @@ class SerialLoopClass(threading.Thread):
                 # in stop mode
                 self.tx_buffer.clear()
                 self.job_size = 0
-                self._ready = False
                 self.device.flushOutput()
 
             elif 64 < ord(char) < 91:  # info flags
                 # chr is in [A-Z], info flag
                 if char == INFO_READY_YES:
-                    self._ready = True
+                    self._s['ready'] = True
                 elif char == INFO_DOOR_OPEN:
                     self._s['info']['door'] = True
                 elif char == INFO_CHILLER_OFF:
                     self._s['info']['chiller'] = True
                 elif char == INFO_BUFFER_UNDERRUN:
-                    if not self._ready:
+                    if not self._status['ready']:
                         print "INFO: Firmware rx buffer empty."
                 else:
                     print "ERROR: invalid info flag"
@@ -611,7 +609,7 @@ def homing():
     """Run homing cycle."""
     global SerialLoop
     with SerialLoop.lock:
-        if SerialLoop._ready or status()['stops']:
+        if SerialLoop._status['ready'] or SerialLoop._status['stops']:
             SerialLoop.send_command(CMD_HOMING)
         else:
             print "WARN: ignoring homing command while job running"
