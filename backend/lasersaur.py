@@ -35,6 +35,7 @@ import urllib2
 __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
 
 
+thislocation = os.path.dirname(os.path.realpath(__file__))
 
 
 class Lasersaur(object):
@@ -448,6 +449,22 @@ def configure(host="lasersaur.local", port=80, user="laser", pass_="laser"):
     lasersaur.user = user
     lasersaur.pass_ = pass_
 
+
+
+def testjob(jobfile, feedrate=4000, intensity=0, local=False):
+    """A quick way to run a job"""
+    jobpath = os.path.join(thislocation,'testjobs', jobfile)
+    job = lasersaur.openfile(jobpath)
+    if 'vector' in job:
+        job['vector']['passes'] = [{
+                "paths":[0],
+                "feedrate":feedrate,
+                "intensity":intensity
+            }]
+    if local:
+        configure(host='127.0.0.1', port=4444)
+    jobname = lasersaur.load(job, name=os.path.splitext(jobfile)[0])
+    lasersaur.run(jobname)
 
 
 
