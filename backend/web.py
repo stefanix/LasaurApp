@@ -414,7 +414,7 @@ def run(jobname):
 @checkserial
 def progress():
     """Get percentage of job done, 0-100, -1 if none active."""
-    return driveboard.percentage()
+    return json.dumps(driveboard.percentage())
 
 
 @bottle.route('/pause')
