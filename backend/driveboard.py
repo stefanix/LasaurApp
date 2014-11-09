@@ -227,26 +227,24 @@ class SerialLoopClass(threading.Thread):
             with self.lock:
                 # read/write
                 if self.device:
-                    if not self._paused:
-                        try:
-                            self._serial_read()
-                            # (1/0.008)*16 = 2000 bytes/s
-                            # for raster we need: 10(10000/60.0) = 1660 bytes/s
-                            self._serial_write()
-                            # if time.time()-last_write > 0.01:
-                            #     sys.stdout.write('~')
-                            # last_write = time.time()
-
-                        except OSError:
-                            print "ERROR: serial got disconnected 1."
-                            self.stop_processing = True
-                            self._status['serial'] = False
-                            self._status['ready'] = False
-                        except ValueError:
-                            print "ERROR: serial got disconnected 2."
-                            self.stop_processing = True
-                            self._status['serial'] = False
-                            self._status['ready']  = False  
+                    try:
+                        self._serial_read()
+                        # (1/0.008)*16 = 2000 bytes/s
+                        # for raster we need: 10(10000/60.0) = 1660 bytes/s    
+                        self._serial_write()
+                        # if time.time()-last_write > 0.01:
+                        #     sys.stdout.write('~')
+                        # last_write = time.time()
+                    except OSError:
+                        print "ERROR: serial got disconnected 1."
+                        self.stop_processing = True
+                        self._status['serial'] = False
+                        self._status['ready'] = False
+                    except ValueError:
+                        print "ERROR: serial got disconnected 2."
+                        self.stop_processing = True
+                        self._status['serial'] = False
+                        self._status['ready']  = False  
                 else:
                     print "ERROR: serial got disconnected 3."
                     self.stop_processing = True
@@ -318,6 +316,7 @@ class SerialLoopClass(threading.Thread):
                 # in stop mode
                 self.tx_buffer.clear()
                 self.job_size = 0
+                self._paused = False
                 self.device.flushOutput()
 
             elif 64 < ord(char) < 91:  # info flags
@@ -402,22 +401,23 @@ class SerialLoopClass(threading.Thread):
             self.request_status = 2  # super request
         ### send buffer chunk
         if self.tx_buffer:
-            if self.bytes_ordered >= self.TX_CHUNK_SIZE:
-                try:
-                    to_send = ''.join(islice(self.tx_buffer, 0, self.TX_CHUNK_SIZE))
-                    t_prewrite = time.time()
-                    actuallySent = self.device.write(to_send)
-                    self.bytes_ordered -= actuallySent
-                    # sys.stdout.write('{%s}' % self.bytes_ordered)
-                    # if actuallySent != self.TX_CHUNK_SIZE:
-                        # print "ERROR: write did not complete"
-                    if time.time() - t_prewrite > 0.01:
-                        print "WARN: write delay 1"
-                except serial.SerialTimeoutException:
-                    actuallySent = 0  # assume nothing has been sent
-                    print "ERROR: writeTimeoutError 2"
-                for i in range(actuallySent):
-                    self.tx_buffer.popleft()
+            if not self._paused:
+                if self.bytes_ordered >= self.TX_CHUNK_SIZE:
+                    try:
+                        to_send = ''.join(islice(self.tx_buffer, 0, self.TX_CHUNK_SIZE))
+                        t_prewrite = time.time()
+                        actuallySent = self.device.write(to_send)
+                        self.bytes_ordered -= actuallySent
+                        # sys.stdout.write('{%s}' % self.bytes_ordered)
+                        # if actuallySent != self.TX_CHUNK_SIZE:
+                            # print "ERROR: write did not complete"
+                        if time.time() - t_prewrite > 0.01:
+                            print "WARN: write delay 1"
+                    except serial.SerialTimeoutException:
+                        actuallySent = 0  # assume nothing has been sent
+                        print "ERROR: writeTimeoutError 2"
+                    for i in range(actuallySent):
+                        self.tx_buffer.popleft()
         else:
             if self.job_size:  # job finished sending
                 self.job_size = 0

@@ -71,6 +71,7 @@ class Lasersaur(object):
             self._auth()
             self._first_request = False
 
+
         # TODO: url encode
         url = "http://%s:%s%s" % (self.host, self.port, url)
 
@@ -78,14 +79,18 @@ class Lasersaur(object):
             postdata = urllib.urlencode(postdict)
         else:
             postdata = None
+        # print postdata
         req = urllib2.Request(url, postdata)
         try:
-            response = urllib2.urlopen(req)
+            response = urllib2.urlopen(req, timeout=10)
         except urllib2.HTTPError as e:
             nomachine = "No machine."
             if e.code == 400 and nomachine in e.read():
                 print "ERROR: %s" % nomachine
             raise e
+        except urllib2.URLError:
+            print "ERROR: broken pipe"
+            return
         if ret:
             return json.loads(response.read())
                 
@@ -369,6 +374,13 @@ class Lasersaur(object):
         """Recover machine from stop mode."""
         self._request('/unstop')
 
+    def cancel(self):
+        """Gracefully cancel a job."""
+        self._request('/pause')
+        time.sleep(1)
+        while self.status()['ready']
+            time.sleep(1)
+        self._request('/unstop')
 
     ### MCU MANAGMENT
 
@@ -436,6 +448,7 @@ pause = lasersaur.pause
 unpause = lasersaur.unpause
 stop = lasersaur.stop
 unstop = lasersaur.unstop
+cancel = lasersaur.cancel
 ### MCU MANAGMENT
 build = lasersaur.build
 flash = lasersaur.flash
@@ -463,6 +476,7 @@ def testjob(jobfile, feedrate=4000, intensity=0, local=False):
             }]
     if local:
         configure(host='127.0.0.1', port=4444)
+    print job
     jobname = lasersaur.load(job, name=os.path.splitext(jobfile)[0])
     lasersaur.run(jobname)
 
