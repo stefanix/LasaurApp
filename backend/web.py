@@ -413,7 +413,7 @@ def run(jobname):
 @bottle.auth_basic(checkuser)
 @checkserial
 def progress():
-    """Get percentage of job done, 0-100, -1 if none active."""
+    """Get percentage of job done, 0-1.0, -1 if none active."""
     return json.dumps(driveboard.percentage())
 
 

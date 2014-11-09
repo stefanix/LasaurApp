@@ -587,13 +587,13 @@ def reset():
 
 
 def percentage():
-    """Return the percentage done as an integer between 0-100.
+    """Return the percentage done as a float 0-1.0.
     Return -1 if no job is active."""
     global SerialLoop
     ret = -1
     with SerialLoop.lock:
         if SerialLoop.job_size != 0:
-            ret = int(100-100*len(SerialLoop.tx_buffer)/float(SerialLoop.job_size))
+            ret = 1.0-len(SerialLoop.tx_buffer)/float(SerialLoop.job_size)
     return ret
 
 

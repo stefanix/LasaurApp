@@ -350,7 +350,7 @@ class Lasersaur(object):
                 stat = self.status()
 
     def progress(self):
-        """Get percentage of job done."""
+        """Get percentage of job done, 0-1.0."""
         return self._request('/progress', ret=True)
 
     def pause(self):
