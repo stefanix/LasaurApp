@@ -538,6 +538,9 @@ static void homing_cycle(bool x_axis, bool y_axis, bool z_axis, bool reverse_dir
   
   // Apply the global invert mask
   out_bits ^= INVERT_MASK;
+
+  // Reverse z-axis
+  out_bits ^= (1<<Z_DIRECTION_BIT)
   
   // Set direction pins
   STEPPING_PORT = (STEPPING_PORT & ~DIRECTION_MASK) | (out_bits & DIRECTION_MASK);
