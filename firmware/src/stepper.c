@@ -539,9 +539,6 @@ static void homing_cycle(bool x_axis, bool y_axis, bool z_axis, bool reverse_dir
   // Apply the global invert mask
   out_bits ^= INVERT_MASK;
 
-  // Reverse z-axis
-  out_bits ^= (1<<Z_DIRECTION_BIT)
-  
   // Set direction pins
   STEPPING_PORT = (STEPPING_PORT & ~DIRECTION_MASK) | (out_bits & DIRECTION_MASK);
   
@@ -596,7 +593,7 @@ static void approach_limit_switch(bool x, bool y, bool z) {
 }
 
 static void leave_limit_switch(bool x, bool y, bool z) {
-  homing_cycle(x, y, z, true, CONFIG_HOMINGRATE*10);
+  homing_cycle(x, y, z, true, CONFIG_HOMINGRATE);
 }
 
 void stepper_homing_cycle() {  
