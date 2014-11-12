@@ -598,8 +598,13 @@ static void leave_limit_switch(bool x, bool y, bool z) {
 
 void stepper_homing_cycle() {  
   // home the x and y axis
+  #ifdef ENABLE_3AXES
+  approach_limit_switch(true, true, true);
+  leave_limit_switch(true, true, true);
+  #else
   approach_limit_switch(true, true, false);
   leave_limit_switch(true, true, false);
+  #endif
 }
 
 
