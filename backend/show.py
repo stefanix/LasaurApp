@@ -58,6 +58,11 @@ class PyApp(gtk.Window):
     
     def expose(self, widget, event):
         global job, args, total_points
+        # Cairo
+        # http://zetcode.com/gui/pygtk/drawing/
+        # http://zetcode.com/gui/pygtk/drawingII/
+        # see gtk.gdk.CairoContext
+        # http://cairographics.org/tutorial/
         cr = widget.window.cairo_create()
         cr.set_line_width(1)
         cr.set_source_rgb(0.0, 0.0, 0.0)

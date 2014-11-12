@@ -8,7 +8,7 @@ from config import conf
 
 
 thislocation = os.path.dirname(os.path.realpath(__file__))
-resources_dir = os.path.join(thislocation, '..')
+resources_dir = os.path.abspath(os.path.join(thislocation, '..'))
 firmware_file = "LasaurGrbl.hex"
 serial_port = "/dev/ttyACM0"
 
@@ -16,6 +16,15 @@ serial_port = "/dev/ttyACM0"
 def flash_upload(serial_port=serial_port, resources_dir=resources_dir, firmware_file=firmware_file):
     firmware_file = firmware_file.replace("/", "").replace("\\", "")  # make sure no evil injection
     FIRMWARE = os.path.join(resources_dir, "firmware", firmware_file)
+
+    # honor src/config.user.h if exists
+    if os.path.exists(os.path.join(resources_dir, "firmware", 'src', 'config.user.h')):
+        name, ext = os.path.splitext(FIRMWARE)
+        FIRMWARE = name + '_user' + ext
+        print "INFO: using %s" % FIRMWARE
+        if not os.path.exists(FIRMWARE):
+            print "ERROR: first build 'config.user.h'-based firmware"
+
     if not os.path.exists(FIRMWARE):
         print "ERROR: invalid firmware path"
         return

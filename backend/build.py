@@ -55,6 +55,13 @@ def build_firmware(firmware_name="LasaurGrbl"):
     cwd_temp = os.getcwd()
     os.chdir(source_dir)
 
+    # honor src/config.user.h if exists
+    if os.path.exists('config.user.h'):
+        shutil.copy('config.h', 'config.orig.h')
+        shutil.copy('config.user.h', 'config.h')
+        firmware_name = firmware_name + '_user'
+        print "INFO: using config.user.h"
+
     DEVICE = "atmega328p"
     CLOCK = "16000000"
     BUILDNAME = firmware_name
@@ -78,10 +85,12 @@ def build_firmware(firmware_name="LasaurGrbl"):
     # os.system('%(objdump)s -t -j .bss main.elf' % {'objdump':AVROBJDUMPAPP})
 
     if ret != 0:
-        os.chdir(cwd_temp)
         return "Error: failed to build"
 
     try:
+        # honor src/config.user.h if exists
+        if os.path.exists('config.user.h'):
+            shutil.move('config.orig.h', 'config.h')
         ## clean after upload
         print "Cleaning up build files."
         for fileobj in OBJECTS:
