@@ -525,6 +525,7 @@ static void homing_cycle(bool x_axis, bool y_axis, bool z_axis, bool reverse_dir
   uint8_t limit_bits;
   uint8_t x_overshoot_count = 6;
   uint8_t y_overshoot_count = 6;
+  uint8_t z_overshoot_count = 6;
   
   if (x_axis) { out_bits |= (1<<X_STEP_BIT); }
   if (y_axis) { out_bits |= (1<<Y_STEP_BIT); }
@@ -563,14 +564,16 @@ static void homing_cycle(bool x_axis, bool y_axis, bool z_axis, bool reverse_dir
         y_overshoot_count--;
       }        
     }
-    // if (z_axis && !(limit_bits & (1<<Z1_LIMIT_BIT))) {
-    //   if(z_overshoot_count == 0) {
-    //     z_axis = false;
-    //     out_bits ^= (1<<Z_STEP_BIT);
-    //   } else {
-    //     z_overshoot_count--;
-    //   }        
-    // }
+    #ifdef ENABLE_3AXES
+    if (z_axis && !(limit_bits & (1<<Z1_LIMIT_BIT))) {
+      if(z_overshoot_count == 0) {
+        z_axis = false;
+        out_bits ^= (1<<Z_STEP_BIT);
+      } else {
+        z_overshoot_count--;
+      }        
+    }
+    #endif
     if(x_axis || y_axis || z_axis) {
         // step all axes still in out_bits
         STEPPING_PORT |= out_bits & STEPPING_MASK;
@@ -586,11 +589,11 @@ static void homing_cycle(bool x_axis, bool y_axis, bool z_axis, bool reverse_dir
 }
 
 static void approach_limit_switch(bool x, bool y, bool z) {
-  homing_cycle(x, y, z,false, 600);
+  homing_cycle(x, y, z,false, CONFIG_HOMINGRATE);
 }
 
 static void leave_limit_switch(bool x, bool y, bool z) {
-  homing_cycle(x, y, z, true, 10000);
+  homing_cycle(x, y, z, true, CONFIG_HOMINGRATE*10);
 }
 
 void stepper_homing_cycle() {  
