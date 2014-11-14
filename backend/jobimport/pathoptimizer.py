@@ -27,7 +27,7 @@ def connect_segments(path, epsilon2):
     """
     Optimizes continuity of path.
 
-    This function joins path segments if either the next start point
+    This function joins path segments if the next start point
     is congruent with the current end point.
     """
     join_count = 0
@@ -43,14 +43,13 @@ def connect_segments(path, epsilon2):
         if d2_start < epsilon2:
             lastpathseg.extend(pathseg[1:])
             join_count += 1
-            continue
-        
-        # add as is
-        newIdx += 1
-        path[newIdx] = pathseg
+        else:
+            # add pathseg to next slot
+            newIdx += 1
+            path[newIdx] = pathseg
 
     # remove exessive slots
-    for i in xrange(len(path)-newIdx):
+    for i in xrange(len(path)-(newIdx+1)):
         path.pop()
 
     # report if excessive joins
@@ -210,12 +209,13 @@ def sort_by_seektime(path, start=[0.0, 0.0]):
 
 
 
-
 def optimize(paths, tolerance):
     tolerance2 = tolerance**2
     epsilon2 = (0.1*tolerance)**2
     for path in paths:
-        pass
+        # print "PATH before optimize: %s" % len(path)
         connect_segments(path, epsilon2)
         simplify_all(path, tolerance2)
         sort_by_seektime(path)
+        # print "PATH after optimize: %s" % len(path)
+

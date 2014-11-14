@@ -66,7 +66,10 @@ class PyApp(gtk.Window):
         cr = widget.window.cairo_create()
         cr.set_line_width(1)
         cr.set_source_rgb(0.0, 0.0, 0.0)
-
+        seeks = widget.window.cairo_create()
+        seeks.set_source_rgb(0.7, 0.7, 0.7)
+        seeks.set_line_width(1)
+        seeks.move_to(0,0)
 
         if args.animate:
             count = 0
@@ -78,6 +81,7 @@ class PyApp(gtk.Window):
                     if count >= self.todraw:
                         break_ = True
                     if break_: break
+                    seeks.line_to(polyline[0][0], polyline[0][1])
                     cr.move_to(polyline[0][0], polyline[0][1])
                     count += 1
                     for i in xrange(1, len(polyline)):
@@ -85,19 +89,21 @@ class PyApp(gtk.Window):
                             break_ = True
                         if break_: break
                         cr.line_to(polyline[i][0], polyline[i][1])
+                        seeks.line_to(polyline[i][0], polyline[i][1])
                         count += 1
             if self.todraw >= total_points:
-                # all drawn
-                # self.timer = False
                 self.todraw = 0
             self.todraw += self.inc
         else:
             for path in job['vector']['paths']:
                 for polyline in path:
+                    seeks.line_to(polyline[0][0], polyline[0][1])
                     cr.move_to(polyline[0][0], polyline[0][1])
                     for i in xrange(1, len(polyline)):
                         cr.line_to(polyline[i][0], polyline[i][1])
-                            
+                        seeks.move_to(polyline[i][0], polyline[i][1])
+                       
+        seeks.stroke()
         cr.stroke()
 
 
