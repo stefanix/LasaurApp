@@ -18,7 +18,7 @@ import jobimport
 __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
 
 
-bottle.BaseRequest.MEMFILE_MAX = 1024*1024*20 # max 20Mb files
+bottle.BaseRequest.MEMFILE_MAX = 1024*1024*100 # max 100Mb files
 
 
 def checkuser(user, pw):
@@ -586,7 +586,7 @@ def stop():
 
 
 if __name__ == "__main__":
-    start(threaded=True, browser=False, debug=False)
+    start()
     while 1:  # wait until keyboard interrupt
         try:
             time.sleep(0.1)

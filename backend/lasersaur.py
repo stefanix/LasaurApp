@@ -30,12 +30,16 @@ import time
 import json
 import base64
 import requests
+import logging
 
 
 __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
 
 
 thislocation = os.path.dirname(os.path.realpath(__file__))
+
+logging.basicConfig()
+logging.getLogger().setLevel(logging.ERROR)
 
 
 class Lasersaur(object):
@@ -46,7 +50,6 @@ class Lasersaur(object):
         self.port = port
         self.user = user
         self.pass_ = pass_
-
 
     def _request(self, url, postdict=None, ret=False):
         """Make a http request.
@@ -340,7 +343,7 @@ class Lasersaur(object):
         """Send job from queue to the machine."""
         self._request('/run/%s' % jobname)
         if progress:
-            print 'Starting [                                        ]',
+            print 'Processing [                                        ]',
             print '\b'*42,
             sys.stdout.flush()
             time.sleep(0.6)
@@ -375,6 +378,7 @@ class Lasersaur(object):
             self.port = 4444
         jobname = lasersaur.load(job, name=name, optimize=False)
         lasersaur.run(jobname, progress=progress)
+        return jobname
 
 
     def pause(self):
@@ -478,12 +482,10 @@ flash = lasersaur.flash
 reset = lasersaur.reset
 
 
-def configure(host="lasersaur.local", port=80, user="laser", pass_="laser"):
-    """Helper to change configuration of the singelton of this module."""
-    lasersaur.host = host
-    lasersaur.port = port
-    lasersaur.user = user
-    lasersaur.pass_ = pass_
+def local():
+    """Configure for server running on same machine."""
+    lasersaur.host = "127.0.0.1"
+    lasersaur.port = 4444
 
 
 

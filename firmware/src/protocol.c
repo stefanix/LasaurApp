@@ -92,14 +92,15 @@ typedef struct {
 } data_t;
 static data_t pdata;
 
-// uint8_t line_checksum_ok_already;
 static volatile bool status_requested;           // when set protocol_idle will write status to serial
 static volatile bool superstatus_requested;      // extended status
-static bool rx_buffer_underrun;                  // when the rx serial buffer runs empty
+static volatile uint16_t rx_buffer_underruns;     // when the rx serial buffer runs empty
+static volatile bool rx_buffer_underruns_reported;
 
 static void on_cmd(uint8_t command);
 static void on_param(uint8_t parameter);
 static double get_curent_value();
+static uint16_t stack_clearance();
 
 
 void protocol_init() {
@@ -118,14 +119,14 @@ void protocol_init() {
   st.offsets[3+X_AXIS] = CONFIG_X_ORIGIN_OFFSET;
   st.offsets[3+Y_AXIS] = CONFIG_Y_ORIGIN_OFFSET;
   st.offsets[3+Z_AXIS] = CONFIG_Z_ORIGIN_OFFSET;
-  // line_checksum_ok_already = false;
   status_requested = true;
   superstatus_requested = true;
-  rx_buffer_underrun = false;
+  rx_buffer_underruns = 0;
+  rx_buffer_underruns_reported = true;
 }
 
 
-void protocol_loop() {
+inline void protocol_loop() {
   uint8_t chr;
   while(true) {
     chr = serial_protocol_read();  // blocks until there is data
@@ -332,21 +333,22 @@ inline void on_param(uint8_t parameter) {
 }
 
 
-void protocol_request_status() {
+inline void protocol_request_status() {
   status_requested = true;
 }
 
-void protocol_request_superstatus() {
+inline void protocol_request_superstatus() {
   superstatus_requested = true;
 }
 
 
-void protocol_mark_underrun() {
-  rx_buffer_underrun = true;
+inline void protocol_mark_underrun() {
+  rx_buffer_underruns += 1;
+  rx_buffer_underruns_reported = false;
 }
 
 
-void protocol_idle() {
+inline void protocol_idle() {
   // Continuously called in protocol_loop
   // Also called when the protocol loop is blocked by
   // one of the following conditions:
@@ -374,12 +376,12 @@ void protocol_idle() {
   // }
 
   if (stepper_stop_requested()) {
-      // TODO: make sure from the time triggered to time handled in protocol loop nothing weird happens
-      // WARN: this is contioously call during a stop condition
-      // TODO: reset serial rx buffer
-      planner_reset_block_buffer();
-      planner_set_position(stepper_get_position_x(), stepper_get_position_y(), stepper_get_position_z());      
-      pdata.count = 0;
+    // TODO: make sure from the time triggered to time handled in protocol loop nothing weird happens
+    // WARN: this is contioously call during a stop condition
+    // TODO: reset serial rx buffer
+    planner_reset_block_buffer();
+    planner_set_position(stepper_get_position_x(), stepper_get_position_y(), stepper_get_position_z());      
+    pdata.count = 0;
   }
 
   
@@ -387,13 +389,8 @@ void protocol_idle() {
     status_requested = false;
     // idle flag
     if (!planner_blocks_available() && !serial_data_available()) {
-      serial_write(INFO_READY_YES);
+      serial_write(INFO_IDLE_YES);
       sleep_mode();  // sleep a bit
-    }
-
-    if (rx_buffer_underrun) {
-      serial_write(INFO_BUFFER_UNDERRUN);
-      rx_buffer_underrun = false;
     }
 
     if (SENSE_DOOR_OPEN) {
@@ -431,25 +428,33 @@ void protocol_idle() {
     }
 
     // position, an absolute coord, report relative to current offset
-    serial_write_param(STATUS_POS_X, stepper_get_position_x()-st.offsets[3*st.offselect+X_AXIS]);
-    serial_write_param(STATUS_POS_Y, stepper_get_position_y()-st.offsets[3*st.offselect+Y_AXIS]);
-    serial_write_param(STATUS_POS_Z, stepper_get_position_z()-st.offsets[3*st.offselect+Z_AXIS]);
+    serial_write_param(INFO_POS_X, stepper_get_position_x()-st.offsets[3*st.offselect+X_AXIS]);
+    serial_write_param(INFO_POS_Y, stepper_get_position_y()-st.offsets[3*st.offselect+Y_AXIS]);
+    serial_write_param(INFO_POS_Z, stepper_get_position_z()-st.offsets[3*st.offselect+Z_AXIS]);
+
+    if (!rx_buffer_underruns_reported) {
+      serial_write_param(INFO_BUFFER_UNDERRUN, rx_buffer_underruns);
+      rx_buffer_underruns_reported = true;
+    }
+
+    serial_write_param(INFO_STACK_CLEARANCE, stack_clearance());
 
     if (superstatus_requested) {
       superstatus_requested = false;
       // version
-      serial_write_param(STATUS_VERSION, VERSION);
+      serial_write_param(INFO_VERSION, VERSION);
 
       // custom offset, an absolute coord, report relative to table offset
-      serial_write_param(STATUS_OFFCUSTOM_X, st.offsets[CUSTOMOFF_X]-st.offsets[TABLEOFF_X]);
-      serial_write_param(STATUS_OFFCUSTOM_Y, st.offsets[CUSTOMOFF_Y]-st.offsets[TABLEOFF_Y]);
-      serial_write_param(STATUS_OFFCUSTOM_Z, st.offsets[CUSTOMOFF_Z]-st.offsets[TABLEOFF_Z]);      
+      serial_write_param(INFO_OFFCUSTOM_X, st.offsets[CUSTOMOFF_X]-st.offsets[TABLEOFF_X]);
+      serial_write_param(INFO_OFFCUSTOM_Y, st.offsets[CUSTOMOFF_Y]-st.offsets[TABLEOFF_Y]);
+      serial_write_param(INFO_OFFCUSTOM_Z, st.offsets[CUSTOMOFF_Z]-st.offsets[TABLEOFF_Z]);      
 
-      serial_write_param(STATUS_FEEDRATE, st.feedrate);
-      serial_write_param(STATUS_INTENSITY, st.intensity);
-      serial_write_param(STATUS_DURATION, st.duration);
-      serial_write_param(STATUS_PIXEL_WIDTH, st.pixel_width);
+      serial_write_param(INFO_FEEDRATE, st.feedrate);
+      serial_write_param(INFO_INTENSITY, st.intensity);
+      serial_write_param(INFO_DURATION, st.duration);
+      serial_write_param(INFO_PIXEL_WIDTH, st.pixel_width);
     }
+
     serial_write(STATUS_END);
   }
 }
@@ -473,6 +478,44 @@ inline double get_curent_value() {
             (pdata.chars[1]-128L)*128L + 
             (pdata.chars[0]-128L))-134217728L ) / 1000.0);  // 134217728 = 2**27
 }
+
+
+
+// track stack clearance///////////////////////////////////////////////////////
+// from discussion on AVR Freaks. web search "AVRGCC Monitoring Stack Usage"
+extern uint8_t _end;
+extern uint8_t __stack;
+void paint_stack() __attribute__ ((naked)) __attribute__ ((section (".init1")));
+void paint_stack() {
+  // paint stack sram with 0xc5 so we can detect 
+  // how much sram gets used by stack spikes.
+  // This gets called before main() by the ".init1" line.
+  __asm volatile ("    ldi r30,lo8(_end)\n"
+                  "    ldi r31,hi8(_end)\n"
+                  "    ldi r24,lo8(0xc5)\n" /* STACK_CANARY = 0xc5 */
+                  "    ldi r25,hi8(__stack)\n"
+                  "    rjmp .cmp\n"
+                  ".loop:\n"
+                  "    st Z+,r24\n"
+                  ".cmp:\n"
+                  "    cpi r30,lo8(__stack)\n"
+                  "    cpc r31,r25\n"
+                  "    brlo .loop\n"
+                  "    breq .loop"::);
+}
+
+static uint16_t stack_clearance() {
+  // Return num of bytes of sram that have never been used
+  // by stack. This only makes sense when not using heap.
+  const uint8_t *p = &_end;
+  uint16_t c = 0;
+  while(*p == 0xc5 && p <= &__stack) {
+    p++;
+    c++;
+  }
+  return c;
+}
+///////////////////////////////////////////////////////////////////////////////
 
 
 

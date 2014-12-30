@@ -1,5 +1,23 @@
 
 
+Atmega328 Memory
+================
+
+- The chip has 32K flash, 2K sram, and 1K EEPROM
+- The avr-size command lists memory stats about the program (.elf file).
+  - 'text' is the program instructions (in flash only)
+  - 'data' is the constants (in flash and in sram)
+  - 'bss' is uninitialized data (sram only)
+
+The avr-size tool shows the percentage of flash ("Program") and sram ("Data") use. Assuming the program does not dynamically allocate memory (malloc) the only uncertainty left is the stack. Depending on the depth of function calls, functions' parameters, and functions' local variables the stack may use up the sram. The stack will then corrupt static data. 
+
+What to do about the stack growing too big:
+
+- inline small functions (only works when not using size optimization -Os)
+
+
+
+
 Raster
 ======
 

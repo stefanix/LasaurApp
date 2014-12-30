@@ -68,6 +68,7 @@ def build_firmware(firmware_name="LasaurGrbl"):
     OBJECTS  = ["main", "serial", "protocol", "planner", "sense_control", "stepper"]
 
     COMPILE = AVRGCCAPP + " -Wall -Os -DF_CPU=" + CLOCK + " -mmcu=" + DEVICE + " -I. -ffunction-sections" + " --std=c99"
+    # COMPILE = AVRGCCAPP + " -Wall -O3 -DF_CPU=" + CLOCK + " -mmcu=" + DEVICE + " -I. -ffunction-sections" + " --std=c99"
 
     for fileobj in OBJECTS:
         command = '%(compile)s -c %(obj)s.c -o %(obj)s.o' % {'compile': COMPILE, 'obj':fileobj}
@@ -79,10 +80,12 @@ def build_firmware(firmware_name="LasaurGrbl"):
     command = '%(objcopy)s -j .text -j .data -O ihex main.elf %(product)s.hex' % {'objcopy': AVROBJCOPYAPP, 'obj':fileobj, 'product':BUILDNAME}
     ret += subprocess.call(command, shell=True)
 
-    command = '%(size)s *.hex *.elf *.o' % {'size':AVRSIZEAPP}
+    # command = '%(size)s *.hex *.elf *.o' % {'size':AVRSIZEAPP}
+    command = '%(size)s --mcu=%(mcu)s --format=avr *.elf' % {'size':AVRSIZEAPP, 'mcu':DEVICE}
     ret += subprocess.call(command, shell=True)
 
-    # os.system('%(objdump)s -t -j .bss main.elf' % {'objdump':AVROBJDUMPAPP})
+    # command = '%(objdump)s -t -j .bss main.elf' % {'objdump':AVROBJDUMPAPP}
+    # ret += subprocess.call(command, shell=True)
 
     if ret != 0:
         return "Error: failed to build"

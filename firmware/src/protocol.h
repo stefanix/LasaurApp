@@ -91,30 +91,28 @@
 
 
 // status: info markers
-#define INFO_READY_YES 'A'
+#define INFO_IDLE_YES 'A'
 #define INFO_DOOR_OPEN 'B'
 #define INFO_CHILLER_OFF 'C'
-#define INFO_BUFFER_UNDERRUN 'D'
 
 // status:  info params
-#define STATUS_POS_X 'x'
-#define STATUS_POS_Y 'y'
-#define STATUS_POS_Z 'z'
-#define STATUS_VERSION 'v'
+#define INFO_POS_X 'x'
+#define INFO_POS_Y 'y'
+#define INFO_POS_Z 'z'
+#define INFO_VERSION 'v'
+#define INFO_BUFFER_UNDERRUN 'w'
+#define INFO_STACK_CLEARANCE 'u'
 
 #define INFO_HELLO '~'
 
 // super status:
-#define STATUS_OFFCUSTOM_X 'a'
-#define STATUS_OFFCUSTOM_Y 'b'
-#define STATUS_OFFCUSTOM_Z 'c'
-// #define STATUS_TARGET_X 'd'
-// #define STATUS_TARGET_Y 'e'
-// #define STATUS_TARGET_Z 'f'
-#define STATUS_FEEDRATE 'g'
-#define STATUS_INTENSITY 'h'
-#define STATUS_DURATION 'i'
-#define STATUS_PIXEL_WIDTH 'j'
+#define INFO_OFFCUSTOM_X 'a'
+#define INFO_OFFCUSTOM_Y 'b'
+#define INFO_OFFCUSTOM_Z 'c'
+#define INFO_FEEDRATE 'g'
+#define INFO_INTENSITY 'h'
+#define INFO_DURATION 'i'
+#define INFO_PIXEL_WIDTH 'j'
 
 
 

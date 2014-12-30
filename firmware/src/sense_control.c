@@ -73,7 +73,7 @@ inline void control_laser_intensity(uint8_t intensity) {
 
 
 
-void control_air_assist(bool enable) {
+inline void control_air_assist(bool enable) {
   if (enable) {
     ASSIST_PORT |= (1 << AIR_ASSIST_BIT);
   } else {
@@ -81,7 +81,7 @@ void control_air_assist(bool enable) {
   }
 }
 
-void control_aux1_assist(bool enable) {
+inline void control_aux1_assist(bool enable) {
   if (enable) {
     ASSIST_PORT |= (1 << AUX1_ASSIST_BIT);
   } else {
@@ -89,7 +89,7 @@ void control_aux1_assist(bool enable) {
   }  
 }
 
-void control_aux2_assist(bool enable) {
+inline void control_aux2_assist(bool enable) {
   if (enable) {
     ASSIST_PORT |= (1 << AUX2_ASSIST_BIT);
   } else {

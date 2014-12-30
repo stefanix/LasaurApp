@@ -223,28 +223,31 @@ ISR(TIMER1_COMPA_vect) {
 
   #ifndef DEBUG_IGNORE_SENSORS
     // stop program when any limit is hit
-    if (SENSE_LIMITS) {
-      if (SENSE_X1_LIMIT) {
-        stepper_request_stop(STOPERROR_LIMIT_HIT_X1);
-      }
-      if (SENSE_X2_LIMIT) {
-        stepper_request_stop(STOPERROR_LIMIT_HIT_X2);
-      }
-      if (SENSE_Y1_LIMIT) {
-        stepper_request_stop(STOPERROR_LIMIT_HIT_Y1);
-      }
-      if (SENSE_Y2_LIMIT) {
-        stepper_request_stop(STOPERROR_LIMIT_HIT_Y2);
-      }
-      if (SENSE_Z1_LIMIT) {
-        stepper_request_stop(STOPERROR_LIMIT_HIT_Z1);
-      }
-      if (SENSE_Z2_LIMIT) {
-        stepper_request_stop(STOPERROR_LIMIT_HIT_Z2);
-      }
+    if (SENSE_X1_LIMIT) {
+      stepper_request_stop(STOPERROR_LIMIT_HIT_X1);
       busy = false;
-      return;    
-    }
+      return;  
+    } else if (SENSE_X2_LIMIT) {
+      stepper_request_stop(STOPERROR_LIMIT_HIT_X2);
+      busy = false;
+      return; 
+    } else if (SENSE_Y1_LIMIT) {
+      stepper_request_stop(STOPERROR_LIMIT_HIT_Y1);
+      busy = false;
+      return; 
+    }else if (SENSE_Y2_LIMIT) {
+      stepper_request_stop(STOPERROR_LIMIT_HIT_Y2);
+      busy = false;
+      return; 
+    } else if (SENSE_Z1_LIMIT) {
+      stepper_request_stop(STOPERROR_LIMIT_HIT_Z1);
+      busy = false;
+      return; 
+    } else if (SENSE_Z2_LIMIT) {
+      stepper_request_stop(STOPERROR_LIMIT_HIT_Z2);
+      busy = false;
+      return; 
+    }  
   #endif
 
   // pulse steppers
@@ -518,7 +521,7 @@ inline void adjust_intensity( uint8_t intensity ) {
 
 
 
-static void homing_cycle(bool x_axis, bool y_axis, bool z_axis, bool reverse_direction, uint32_t microseconds_per_pulse) {
+inline static void homing_cycle(bool x_axis, bool y_axis, bool z_axis, bool reverse_direction, uint32_t microseconds_per_pulse) {
   
   uint32_t step_delay = microseconds_per_pulse - CONFIG_PULSE_MICROSECONDS;
   uint8_t out_bits = DIRECTION_MASK;
@@ -588,15 +591,15 @@ static void homing_cycle(bool x_axis, bool y_axis, bool z_axis, bool reverse_dir
   return;
 }
 
-static void approach_limit_switch(bool x, bool y, bool z) {
+inline static void approach_limit_switch(bool x, bool y, bool z) {
   homing_cycle(x, y, z,false, CONFIG_HOMINGRATE);
 }
 
-static void leave_limit_switch(bool x, bool y, bool z) {
+inline static void leave_limit_switch(bool x, bool y, bool z) {
   homing_cycle(x, y, z, true, CONFIG_HOMINGRATE);
 }
 
-void stepper_homing_cycle() {  
+inline void stepper_homing_cycle() {  
   // home the x and y axis
   #ifdef ENABLE_3AXES
   approach_limit_switch(true, true, true);

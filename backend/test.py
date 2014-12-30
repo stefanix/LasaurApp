@@ -51,7 +51,7 @@ thislocation = os.path.dirname(os.path.realpath(__file__))
 def setUpModule():
     web.start(threaded=True, debug=False)
     time.sleep(0.5)
-    lasersaur.configure(host="127.0.0.1", port="4444")
+    lasersaur.local()
 
 def tearDownModule():
     web.stop()

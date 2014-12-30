@@ -54,6 +54,11 @@ uint8_t tx_buffer[TX_BUFFER_SIZE];
 volatile uint8_t tx_buffer_head = 0;
 volatile uint8_t tx_buffer_tail = 0;
 
+bool first_transmission = true;
+uint8_t data_prev = 0;
+
+bool buffer_underrun_marked = false;
+
 /** protocol *************************************
 * The sending app initiates any stream by        *
 * requesting a ready byte. This serial code then *
@@ -105,22 +110,22 @@ void serial_init() {
 
 
 
-void serial_write(uint8_t data) {
-    // Calculate next head
-    uint8_t next_head = tx_buffer_head + 1;
-    if (next_head == TX_BUFFER_SIZE) { next_head = 0; }  // wrap around
+inline void serial_write(uint8_t data) {
+  // Calculate next head
+  uint8_t next_head = tx_buffer_head + 1;
+  if (next_head == TX_BUFFER_SIZE) { next_head = 0; }  // wrap around
 
-    // wait, if buffer is full
-    while (next_head == tx_buffer_tail) {
-      // sleep_mode();
-      // protocol_idle();  // don't call, may turn recursive
-    }
+  // wait, if buffer is full
+  while (next_head == tx_buffer_tail) {
+    // sleep_mode();
+    // protocol_idle();  // don't call, may turn recursive
+  }
 
-    // Store data and advance head
-    tx_buffer[tx_buffer_head] = data;
-    tx_buffer_head = next_head;
-    
-  	UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt 
+  // Store data and advance head
+  tx_buffer[tx_buffer_head] = data;
+  tx_buffer_head = next_head;
+  
+	UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt 
 }
 
 
@@ -154,7 +159,7 @@ SIGNAL(USART_UDRE_vect) {
 }
 
 
-void chunk_request() {
+inline void chunk_request() {
   if (bytes_on_order + RX_CHUNK_SIZE < rx_buffer_open_slots) {
     request_chunk_flag = true;
     UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt
@@ -177,6 +182,18 @@ inline uint8_t serial_read() {
 // rx interrupt, called whenever a new byte is in UDR0
 SIGNAL(USART_RX_vect) {
   uint8_t data = UDR0;
+  // transmission error check
+  if (first_transmission) {  // ignore data
+    first_transmission = false;
+    data_prev = data;
+    return;
+  } else {  // use, but check with previous
+    first_transmission = true;
+    if (data != data_prev) {
+      stepper_request_stop(STOPERROR_TRANSMISSION_ERROR);
+    }
+  }
+  // handle char
   if (data < 32) {  // handle controls chars
     if (data == CMD_STOP) {
       // special stop character, bypass buffer
@@ -209,7 +226,7 @@ SIGNAL(USART_RX_vect) {
 }
 
 
-uint8_t serial_protocol_read() {
+inline uint8_t serial_protocol_read() {
   // called from protocol loop
   while (raster_mode) {
     // Block while in raster mode.
@@ -220,9 +237,13 @@ uint8_t serial_protocol_read() {
     protocol_idle();
   }
   // wait, buffer empty
+  buffer_underrun_marked = false;
   while (rx_buffer_tail == rx_buffer_head) {
     // sleep_mode();
-    protocol_mark_underrun();
+    if (!buffer_underrun_marked) {
+      protocol_mark_underrun();
+      buffer_underrun_marked = true;
+    }
     protocol_idle();
   }
   // we have non-raster data
@@ -236,9 +257,13 @@ uint8_t serial_protocol_read() {
       protocol_idle();
     }
     // wait, buffer empty
+    buffer_underrun_marked = false;
     while (rx_buffer_tail == rx_buffer_head) {
       // sleep_mode();
-      protocol_mark_underrun();
+      if (!buffer_underrun_marked) {
+        protocol_mark_underrun();
+        buffer_underrun_marked = true;
+      }
       protocol_idle();
     }
     // back to normal mode
@@ -249,7 +274,7 @@ uint8_t serial_protocol_read() {
 }
 
 
-uint8_t serial_raster_read() {
+inline uint8_t serial_raster_read() {
   /** raster buffer ********************************
   * The rx_buffer doubles as a raster buffer. This *
   * depends on the right sequence of commands:     *
@@ -287,7 +312,7 @@ uint8_t serial_raster_read() {
 }
 
 
-uint8_t serial_data_available() {
+inline uint8_t serial_data_available() {
   return rx_buffer_tail != rx_buffer_head;
 }
 
