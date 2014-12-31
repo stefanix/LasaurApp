@@ -69,8 +69,8 @@ bool buffer_underrun_marked = false;
 * and apon receiving it send the next chunk.     *
 *************************************************/
 #define RX_CHUNK_SIZE 16
-volatile bool request_chunk_flag = false;
-volatile uint8_t bytes_on_order = 0;
+volatile bool notify_chunk_processed = false;
+uint8_t rx_buffer_processed = 0;
 
 volatile bool raster_mode = false;
 
@@ -101,11 +101,6 @@ void serial_init() {
 	// defaults to 8-bit, no parity, 1 stop bit
 
   serial_write(INFO_HELLO);
-
-  // order first chunk
-  request_chunk_flag = true;
-  UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt
-  bytes_on_order = RX_CHUNK_SIZE;
 }
 
 
@@ -145,9 +140,9 @@ inline void serial_write_param(uint8_t param, double val) {
 SIGNAL(USART_UDRE_vect) {
   uint8_t tail = tx_buffer_tail;  // optimize for volatile
   
-  if (request_chunk_flag) {
-    UDR0 = CMD_REQUEST_CHUNK;
-    request_chunk_flag = false;
+  if (notify_chunk_processed) {
+    UDR0 = CMD_CHUNK_PROCESSED ;
+    notify_chunk_processed = false;
   } else {                    // Send a byte from the buffer 
     UDR0 = tx_buffer[tail];
     if (++tail == TX_BUFFER_SIZE) {tail = 0;}  // increment
@@ -159,22 +154,19 @@ SIGNAL(USART_UDRE_vect) {
 }
 
 
-inline void chunk_request() {
-  if (bytes_on_order + RX_CHUNK_SIZE < rx_buffer_open_slots) {
-    request_chunk_flag = true;
-    UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt
-    bytes_on_order += RX_CHUNK_SIZE;
-  }
-}
-
 inline uint8_t serial_read() {
   // return data, advance tail
   uint8_t data = rx_buffer[rx_buffer_tail];
   if (++rx_buffer_tail == RX_BUFFER_SIZE) {rx_buffer_tail = 0;}  // increment  
   rx_buffer_open_slots++;
-  ATOMIC_BLOCK(ATOMIC_FORCEON) {
-    chunk_request();
-  }
+  // ATOMIC_BLOCK(ATOMIC_FORCEON) {
+    rx_buffer_processed++;
+    if (rx_buffer_processed == RX_CHUNK_SIZE) {
+      notify_chunk_processed = true;
+      UCSR0B |=  (1 << UDRIE0);  // enable tx interrupt
+      rx_buffer_processed = 0;
+    }
+  // }
   return data;
 }
 
@@ -219,8 +211,6 @@ SIGNAL(USART_RX_vect) {
       rx_buffer[head] = data;
       rx_buffer_head = next_head;
       rx_buffer_open_slots--;
-      bytes_on_order--;
-      chunk_request();
     }
   }
 }

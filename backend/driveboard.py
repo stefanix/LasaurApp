@@ -20,7 +20,7 @@ CMD_STOP = "\x01"
 CMD_RESUME = "\x02"
 CMD_STATUS = "\x03"
 CMD_SUPERSTATUS = "\x04"
-CMD_REQUEST_CHUNK = "\x05"
+CMD_CHUNK_PROCESSED = "\x05"
 CMD_RASTER_DATA_START = "\x07"
 CMD_RASTER_DATA_END = "\x08"
 STATUS_END = '\x09'
@@ -120,7 +120,7 @@ markers_tx = {
     "\x02": "CMD_RESUME",
     "\x03": "CMD_STATUS",
     "\x04": "CMD_SUPERSTATUS",
-    "\x05": "CMD_REQUEST_CHUNK",
+    "\x05": "CMD_CHUNK_PROCESSED",
     "\x07": "CMD_RASTER_DATA_START",
     "\x08": "CMD_RASTER_DATA_END",
     "\x09": "STATUS_END",
@@ -226,7 +226,8 @@ class SerialLoopClass(threading.Thread):
         # written to the device in one go. It needs to match the device.
         self.TX_CHUNK_SIZE = 16
         self.RX_CHUNK_SIZE = 32
-        self.bytes_ordered = 0
+        self.FIRMBUF_SIZE = 256  # needs to match device firmware
+        self.firmbuf_used = 0
         
         # used for calculating percentage done
         self.job_size = 0
@@ -368,9 +369,10 @@ class SerialLoopClass(threading.Thread):
         for char in self.device.read(self.RX_CHUNK_SIZE):
             # sys.stdout.write('('+char+','+str(ord(char))+')')
             if ord(char) < 32:  ### flow
-                if char == CMD_REQUEST_CHUNK:
-                    self.bytes_ordered += self.TX_CHUNK_SIZE
-                    # sys.stdout.write('[%s]' % self.bytes_ordered)
+                if char == CMD_CHUNK_PROCESSED:
+                    self.firmbuf_used -= self.TX_CHUNK_SIZE
+                    if self.firmbuf_used < 0:
+                        print "ERROR: firmware buffer tracking to low"
                 elif char == STATUS_END:
                     # status frame complete, compile status
                     self._status, self._s = self._s, self._status
@@ -537,9 +539,9 @@ class SerialLoopClass(threading.Thread):
             self.reset_status()
             self.request_status = 2  # super request
         ### send buffer chunk
-        if self.tx_buffer:
+        if self.tx_buffer and len(self.tx_buffer) > self.tx_pos:
             if not self._paused:
-                if self.bytes_ordered >= self.TX_CHUNK_SIZE:
+                if (self.FIRMBUF_SIZE - self.firmbuf_used) > self.TX_CHUNK_SIZE:
                     try:
                         # to_send = ''.join(islice(self.tx_buffer, 0, self.TX_CHUNK_SIZE))
                         to_send = self.tx_buffer[self.tx_pos:self.tx_pos+self.TX_CHUNK_SIZE]
@@ -558,8 +560,10 @@ class SerialLoopClass(threading.Thread):
                             assumedSent = 0
                         else:
                             assumedSent = expectedSent
-                            self.bytes_ordered -= assumedSent
-                        if time.time() - t_prewrite > 0.01:
+                            self.firmbuf_used += assumedSent
+                            if self.firmbuf_used > self.FIRMBUF_SIZE:
+                                print "ERROR: firmware buffer tracking too high"
+                        if time.time() - t_prewrite > 0.1:
                             print "WARN: write delay 1"
                     except serial.SerialTimeoutException:
                         assumedSent = 0
@@ -568,7 +572,7 @@ class SerialLoopClass(threading.Thread):
                     #     self.tx_buffer.popleft()
                     self.tx_pos += assumedSent
         else:
-            if self.job_size:  # job finished sending
+            if self.tx_buffer:  # job finished sending
                 self.job_size = 0
                 self.tx_buffer = []
                 self.tx_pos = 0
@@ -582,8 +586,9 @@ class SerialLoopClass(threading.Thread):
             # self.device.write(char)
             # print "send_char: [%s,%s]" % (str(ord(char)),str(ord(char)))
             self.device.write(char+char)  # by protocol send twice
-            if time.time() - t_prewrite > 0.01:
-                print "WARN: write delay 2"
+            if time.time() - t_prewrite > 0.1:
+                pass
+                # print "WARN: write delay 2"
         except serial.SerialTimeoutException:
             print "ERROR: writeTimeoutError 1"
 

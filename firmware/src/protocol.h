@@ -25,7 +25,7 @@
 #define CMD_RESUME '\x02'
 #define CMD_STATUS '\x03'
 #define CMD_SUPERSTATUS '\x04'
-#define CMD_REQUEST_CHUNK '\x05'
+#define CMD_CHUNK_PROCESSED '\x05'
 #define CMD_RASTER_DATA_START '\x07'
 #define CMD_RASTER_DATA_END '\x08'
 #define STATUS_END '\x09'
