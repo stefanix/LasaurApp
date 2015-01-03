@@ -636,9 +636,8 @@ def connect(port=conf['serial_port'], baudrate=conf['baudrate'], server=False):
     if not SerialLoop:
         SerialLoop = SerialLoopClass()
 
-        # Create serial device with read timeout set to 100us.
-        # This results in the read() being almost non-blocking 
-        # without consuming the entire processor.
+        # Create serial device with read timeout set to 0.
+        # This results in the read() being non-blocking.
         # Write on the other hand uses a large timeout but should not be blocking
         # much because we ask it only to write TX_CHUNK_SIZE at a time.
         # BUG WARNING: the pyserial write function does not report how

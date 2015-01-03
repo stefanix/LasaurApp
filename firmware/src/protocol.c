@@ -19,26 +19,45 @@
 /* 
 
 The Lasersaur Protocol
-----------------------
+======================
 
 The protocol is a ascii/binary hybrid. Markers are printable
 ascii values while binary data is transmitted in the extended 
 ascii range [128,255].
 
 A transmitted byte can either be a command, a parameter, or a
-partial binary number (data). Four bytes encode a number.
-Parameters need to be set before sending the command that uses them.
+partial number (data). Four bytes encode a number. Parameters 
+need to be set before sending the command that uses them.
 Similarly the number needs to be set before sending the parameter
 marker. This inverse transmission makes the parser super simple.
 
 For example to send a line command:
-<number>x<number>yB
+<number>x<number>y<number>zB
 
 Numbers are four bytes with values in the extended ascii range [128,255].
 They are fixed-point floats with 3 decimals in the range of
 [-134217.728, 134217.727]. For details how they are encoded see:
 get_curent_value()
 
+
+Flow Control
+------------
+
+The firmware has a serial rx buffer which receives the instructions
+byte-by-byte. The client sends a maximum number of bytes that is equvalent
+to the buffer size. Whenever the firmware processes bytes from the 
+buffer it lets the client know it can send more bytes. Latter notification
+does not happen for every byte but for a certain chunk of bytes.
+
+
+Transmission Error Detection
+----------------------------
+
+To diagnose faulty serial connections this firmware uses a simple
+error detection scheme. Every byte is transmitted twice and the redundant
+byte is compared and discarded right in the serial interrupt handler. 
+Computationally this is very efficient. It's also quite suitable since we 
+have enough bandwidth. It beats checksums in our case.
 
 */
 
