@@ -586,11 +586,11 @@ if args.beaglebone:
     ### if running on BBB/Ubuntu 14.04, setup pin muxing UART1
     pin24list = glob.glob("/sys/devices/ocp.*/P9_24_pinmux.*/state")
     for pin24 in pin24list:
-        os.system("echo uart > %s") % (pin24)
+        os.system("echo uart > %s" % (pin24))
 
     pin26list = glob.glob("/sys/devices/ocp.*/P9_26_pinmux.*/state")
     for pin26 in pin26list:
-        os.system("echo uart > %s") % (pin26)
+        os.system("echo uart > %s" % (pin26))
 
 
     ### Set up atmega328 reset control
@@ -601,7 +601,7 @@ if args.beaglebone:
     ### if running on BBB/Ubuntu 14.04, setup pin muxing GPIO2_7 (pin 46)
     pin46list = glob.glob("/sys/devices/ocp.*/P8_46_pinmux.*/state")
     for pin46 in pin46list:
-        os.system("echo gpio > %s") % (pin46)
+        os.system("echo gpio > %s" % (pin46))
 
     try:
         fw = file("/sys/class/gpio/export", "w")
@@ -631,7 +631,7 @@ if args.beaglebone:
     ### if running on BBB/Ubuntu 14.04, setup pin muxing GPIO2_9 (pin 44)
     pin44list = glob.glob("/sys/devices/ocp.*/P8_44_pinmux.*/state")
     for pin44 in pin44list:
-        os.system("echo gpio > %s") % (pin44)
+        os.system("echo gpio > %s" % (pin44))
 
     try:
         fw = file("/sys/class/gpio/export", "w")
@@ -659,7 +659,7 @@ if args.beaglebone:
     ### if running on BBB/Ubuntu 14.04, setup pin muxing GPIO2_12 (pin 39)
     pin39list = glob.glob("/sys/devices/ocp.*/P8_39_pinmux.*/state")
     for pin39 in pin39list:
-        os.system("echo gpio > %s") % (pin39)
+        os.system("echo gpio > %s" % (pin39))
 
     try:
         fw = file("/sys/class/gpio/export", "w")
