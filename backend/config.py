@@ -13,6 +13,7 @@
 
 import os
 import sys
+import glob
 
 
 conf = {
@@ -123,6 +124,7 @@ if conf['hardware'] == 'beaglebone':
     if os.geteuid() == 0:
         conf['network_port'] = 80
 
+    # Beaglebone white specific
     if os.path.exists("/sys/kernel/debug/omap_mux/uart1_txd"):
         # we are not on the beaglebone black, setup uart1
         # echo 0 > /sys/kernel/debug/omap_mux/uart1_txd
@@ -134,10 +136,26 @@ if conf['hardware'] == 'beaglebone':
         fw.write("%X" % ((1 << 5) | 0))
         fw.close()
 
+    ### if running on BBB/Ubuntu 14.04, setup pin muxing UART1
+    pin24list = glob.glob("/sys/devices/ocp.*/P9_24_pinmux.*/state")
+    for pin24 in pin24list:
+        os.system("echo uart > %s" % (pin24))
+
+    pin26list = glob.glob("/sys/devices/ocp.*/P9_26_pinmux.*/state")
+    for pin26 in pin26list:
+        os.system("echo uart > %s" % (pin26))
+
+
     ### Set up atmega328 reset control
     # The reset pin is connected to GPIO2_7 (2*32+7 = 71).
     # Setting it to low triggers a reset.
     # echo 71 > /sys/class/gpio/export
+
+    ### if running on BBB/Ubuntu 14.04, setup pin muxing GPIO2_7 (pin 46)
+    pin46list = glob.glob("/sys/devices/ocp.*/P8_46_pinmux.*/state")
+    for pin46 in pin46list:
+        os.system("echo gpio > %s" % (pin46))
+
     try:
         fw = file("/sys/class/gpio/export", "w")
         fw.write("%d" % (71))
@@ -161,6 +179,12 @@ if conf['hardware'] == 'beaglebone':
     # The reset pin is connected to GPIO2_9 (2*32+9 = 73).
     # Setting it to low triggers a reset.
     # echo 73 > /sys/class/gpio/export
+
+    ### if running on BBB/Ubuntu 14.04, setup pin muxing GPIO2_9 (pin 44)
+    pin44list = glob.glob("/sys/devices/ocp.*/P8_44_pinmux.*/state")
+    for pin44 in pin44list:
+        os.system("echo gpio > %s" % (pin44))
+
     try:
         fw = file("/sys/class/gpio/export", "w")
         fw.write("%d" % (73))
@@ -182,6 +206,12 @@ if conf['hardware'] == 'beaglebone':
 
     ### read stepper driver configure pin GPIO2_12 (2*32+12 = 76).
     # Low means Geckos, high means SMC11s
+
+    ### if running on BBB/Ubuntu 14.04, setup pin muxing GPIO2_12 (pin 39)
+    pin39list = glob.glob("/sys/devices/ocp.*/P8_39_pinmux.*/state")
+    for pin39 in pin39list:
+        os.system("echo gpio > %s" % (pin39))
+
     try:
         fw = file("/sys/class/gpio/export", "w")
         fw.write("%d" % (76))
