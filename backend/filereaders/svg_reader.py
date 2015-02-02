@@ -44,7 +44,7 @@ except ImportError:
 #   * non-pixel units (cm, mm, in, pt, pc)
 #   * 'style' attribute and presentation attributes
 #   * curves, arcs, cirles, ellipses tesellated according to tolerance
-#  
+#
 # Intentinally not Supported:
 #   * markers
 #   * masking
@@ -68,7 +68,7 @@ class SVGReader:
     def __init__(self, tolerance, target_size):
         # parsed path data, paths by color
         # {'#ff0000': [[[x,y], [x,y], ...], [], ..], '#0000ff':[]}
-        # Each path is a list of vertices which is a list of two floats.        
+        # Each path is a list of vertices which is a list of two floats.
         self.boundarys = {}
 
         # the px unit DPIs, conversion to real-world dimensions
@@ -78,7 +78,7 @@ class SVGReader:
         # what the svg size (typically page dimensions) should be mapped to
         self._target_size = target_size
 
-        # tolerance settings, used in tessalation, path simplification, etc         
+        # tolerance settings, used in tessalation, path simplification, etc
         self.tolerance = tolerance
         self.tolerance2 = tolerance**2
         self.tolerance2_half = (0.5*tolerance)**2
@@ -86,19 +86,19 @@ class SVGReader:
 
         # init helper object for tag reading
         self._tagReader = SVGTagReader(self)
-        
+
         # lasersaur cut setting from SVG file
         # list of triplets ... [(pass#, key, value), ...]
         # pass# designates the pass this lasertag controls
         # key is the kind of setting (one of: intensity, feedrate, color)
         # value is the actual value to use
         self.lasertags = []
-        
+
         # # tags that should not be further traversed
         # self.ignore_tags = {'defs':None, 'pattern':None, 'clipPath':None}
 
 
-        
+
     def parse(self, svgstring, force_dpi=None):
         """ Parse a SVG document.
 
@@ -108,18 +108,18 @@ class SVGReader:
         Path data is returned as paths by color:
         {'#ff0000': [[path0, path1, ..], [path0, ..], ..]}
         Each path is a list of vertices which is a list of two floats.
-        
+
         One issue with svg documents is that they use px (or unit-less)
         dimensions and most vector apps are not explicit how to convert
         these to real-world units. This method tries to be smart about
         figuring the implied px unit DPIs with the following strategy:
 
         1. from argument (force_dpi)
-        2. from units of page size 
+        2. from units of page size
         3. from hints of (known) originating apps
         4. from ratio of page and target size
         5. defaults to 90 DPI
-        """        
+        """
         self.dpi = None
         self.boundarys = {}
 
@@ -134,22 +134,26 @@ class SVGReader:
         # 1. Get px unit DPIs from argument
         if force_dpi is not None:
             self.dpi = force_dpi
-            log.info("SVG import forced to "+str(self.dpi)+"dpi.")            
+            log.info("SVG import forced to "+str(self.dpi)+"dpi.")
 
         # get page size
         w = svgRootElement.attrib.get('width')
         h = svgRootElement.attrib.get('height')
-        if not w or not h:
-            # get size from viewBox
-            # http://www.w3.org/TR/SVG11/coords.html#ViewBoxAttribute
-            vb = svgRootElement.attrib.get('viewBox')
-            if vb:
-                vb_parts = vb.split(',')
-                if len(vb_parts) != 4:
-                    vb_parts = vb.split(' ')
-                if len(vb_parts) == 4:
-                    w = vb_parts[2];
-                    h = vb_parts[3];     
+
+        # get viewBox size
+        # http://www.w3.org/TR/SVG11/coords.html#ViewBoxAttribute
+        vb = svgRootElement.attrib.get('viewBox')
+        if vb:
+            vb_parts = vb.split(',')
+            if len(vb_parts) != 4:
+                vb_parts = vb.split(' ')
+            if len(vb_parts) == 4:
+                if not w or not h:
+                    w = vb_parts[2]
+                    h = vb_parts[3]
+                else:
+                    vb_w = vb_parts[2]
+                    vb_h = vb_parts[3]
 
         # 2. Try to get px unit DPIs from page size unit.
         # If page size has real-world units make px (and unit-less) the same.
@@ -160,6 +164,10 @@ class SVGReader:
             elif w.endswith('mm'):
                 log.info("Page size in 'mm' -> setting up dpi to treat px (and no) units as 'mm'.")
                 self.dpi = 25.4
+                # TODO
+                # if vb_w and vb_h and w != vb_w:
+                #     vb_scale = w/vb_w
+                #     self.dpi *= vb_scale
             elif w.endswith('pt'):
                 log.info("Page size in 'pt' -> setting up dpi to treat px (and no) units as 'pt'.")
                 self.dpi = 72
@@ -176,7 +184,7 @@ class SVGReader:
             svghead = svgstring[0:400]
             if 'Inkscape' in svghead:
                 self.dpi = 90.0
-                log.info("SVG exported with Inkscape -> 90dpi.")      
+                log.info("SVG exported with Inkscape -> 90dpi.")
             elif 'Illustrator' in svghead:
                 self.dpi = 72.0
                 log.info("SVG exported with Illustrator -> 72dpi.")
@@ -188,10 +196,10 @@ class SVGReader:
                 log.info("SVG exported with CorelDraw -> 96dpi.")
             elif 'Qt' in svghead:
                 self.dpi = 90.0
-                log.info("SVG exported with Qt lib -> 90dpi.")            
-        
+                log.info("SVG exported with Qt lib -> 90dpi.")
 
-                
+
+
         # 4. Try to get px unit DPIs from the ratio of page size to target size
         if not self.dpi and w and h:
             try:
@@ -203,7 +211,7 @@ class SVGReader:
                     self.dpi = round(25.4*w/self._target_size[0])  # round, assume integer dpi
                     log.info("px unit DPIs from page and target size -> " + str(round(self.dpi,2)))
             except ValueError, TypeError:
-                log.warn("invalid w, h numerals or no target_size") 
+                log.warn("invalid w, h numerals or no target_size")
 
         # 5. Fall back on px unit DPIs default value
         if not self.dpi:
@@ -212,13 +220,13 @@ class SVGReader:
 
         # 6. Set the conversion factor
         self.px2mm = 25.4/self.dpi
-        
+
         # adjust tolerances to px units
         self.tolerance2_px = (self.tolerance/self.px2mm)*(self.tolerance/self.px2mm)
-        
+
         # let the fun begin
         # recursively parse children
-        # output will be in self.boundarys    
+        # output will be in self.boundarys
         node = {
             'xformToWorld': [1,0,0,1,0,0],
             'display': 'visible',
@@ -231,7 +239,7 @@ class SVGReader:
             'opacity': 1.0
         }
         self.parse_children(svgRootElement, node)
-        
+
         # build result dictionary
         parse_results = {'boundarys':self.boundarys, 'dpi':self.dpi}
         if self.lasertags:
@@ -240,7 +248,7 @@ class SVGReader:
         return parse_results
 
 
-    
+
     def parse_children(self, domNode, parentNode):
         for child in domNode:
             # log.debug("considering tag: " + child.tag)
@@ -261,10 +269,10 @@ class SVGReader:
                     'opacity': parentNode.get('opacity')
                 }
 
-                # 2. parse child 
+                # 2. parse child
                 # with current attributes and transformation
                 self._tagReader.read_tag(child, node)
-                
+
                 # 3. compile boundarys + conversions
                 for path in node['paths']:
                     if path:  # skip if empty subpath
@@ -283,7 +291,7 @@ class SVGReader:
                 # 4. any lasertags (cut settings)?
                 if node.has_key('lasertags'):
                     self.lasertags.extend(node['lasertags'])
-            
+
                 # recursive call
                 self.parse_children(child, node)
 
