@@ -127,13 +127,19 @@ $(document).ready(function(){
   }
       
   function handleParsedGeometry(data) {
-    // data is a dict with the following keys [boundarys, dpi, lasertags]
+    // data is a dict with the following keys [boundarys, dpi, lasertags, rasters]
+    var rasters = data.rasters;
     var boundarys = data.boundarys;
-    if (boundarys) {
+    if (boundarys || rasters) {
       DataHandler.setByPaths(boundarys);
       if (path_optimize) {
         DataHandler.segmentizeLongLines();
       }
+
+      if (rasters) {
+        DataHandler.addRasters(rasters);
+      }
+      
       // some init
       $('#canvas_properties .colorbtns').html('');  // reset colors
       canvas.background('#ffffff');
