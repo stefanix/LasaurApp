@@ -21,7 +21,7 @@ DataHandler = {
   },
 
   isEmpty : function() {
-    return (Object.keys(this.paths_by_color).length == 0 && 
+    return (Object.keys(this.paths_by_color).length == 0 &&
             this.rasters.length == 0);
   },
 
@@ -109,7 +109,7 @@ DataHandler = {
       img.width = Math.round(raster['size_mm'][0]/app_settings.raster_kerf);
       img.height = Math.round(raster['size_mm'][1]/app_settings.raster_kerf);
       raster['image'] = img;
-      
+
       this.rasters.push(raster);
     }
     // also calculate stats
@@ -215,7 +215,7 @@ DataHandler = {
       canvas_temp.height = image.height;
       ctx.drawImage(image, 0, 0);
 
-      // convert to grayscale and map to 
+      // convert to grayscale and map to
       // extended ascii range [128,255]
       var data_ascii = [];
       var data = ctx.getImageData(0, 0, canvas_temp.width, canvas_temp.height);
@@ -415,7 +415,7 @@ DataHandler = {
       canvas.line(xmax,ymax,xmax,ymin);
       canvas.line(xmax,ymin,xmin,ymin);
       obj.bboxExpand(bbox_combined, xmin, ymin);
-      obj.bboxExpand(bbox_combined, xmax, ymax); 
+      obj.bboxExpand(bbox_combined, xmax, ymax);
     }
 
     // rasters
@@ -590,11 +590,11 @@ DataHandler = {
       var bbox_raster = [Infinity, Infinity, 0, 0];
       for (var k=0; k<this.rasters.length; k++) {
         var raster = this.rasters[k];
-        this.bboxExpand(bbox_raster, 
+        this.bboxExpand(bbox_raster,
                         raster.pos[0] - app_settings.raster_offset,
                         raster.pos[1]);
-        this.bboxExpand(bbox_raster, 
-                        raster.pos[0] + raster.size_mm[0] + app_settings.raster_offset, 
+        this.bboxExpand(bbox_raster,
+                        raster.pos[0] + raster.size_mm[0] + app_settings.raster_offset,
                         raster.pos[1] + raster.size_mm[1]);
         length_rasters += (2*app_settings.raster_offset + raster.size_mm[0]) * raster.image.height;
       }

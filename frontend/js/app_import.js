@@ -252,7 +252,7 @@ $(document).ready(function(){
       var jobdata = DataHandler.getJson(getDeselectedColors());
       var filename = $('#import_name').val();
       save_and_add_to_job_queue(filename, jobdata);
-      load_into_job_widget(filename, jobdata);
+      load_job(filename, jobdata);
       $('#tab_jobs_button').trigger('click');
 
       // reset tap

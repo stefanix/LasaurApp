@@ -30,7 +30,7 @@ CMD_LINE = "B"
 CMD_DWELL = "C"
 CMD_RASTER = "D"
 
-CMD_REF_RELATIVE = "E" 
+CMD_REF_RELATIVE = "E"
 CMD_REF_ABSOLUTE = "F"
 
 CMD_HOMING = "G"
@@ -49,8 +49,8 @@ CMD_AUX2_DISABLE = "Q"
 
 
 PARAM_TARGET_X = "x"
-PARAM_TARGET_Y = "y" 
-PARAM_TARGET_Z = "z" 
+PARAM_TARGET_Y = "y"
+PARAM_TARGET_Z = "z"
 PARAM_FEEDRATE = "f"
 PARAM_INTENSITY = "s"
 PARAM_DURATION = "d"
@@ -130,7 +130,7 @@ markers_tx = {
     "C": "CMD_DWELL",
     "D": "CMD_RASTER",
 
-    "E": "CMD_REF_RELATIVE", 
+    "E": "CMD_REF_RELATIVE",
     "F": "CMD_REF_ABSOLUTE",
 
     "G": "CMD_HOMING",
@@ -149,8 +149,8 @@ markers_tx = {
 
 
     "x": "PARAM_TARGET_X",
-    "y": "PARAM_TARGET_Y", 
-    "z": "PARAM_TARGET_Z", 
+    "y": "PARAM_TARGET_Y",
+    "z": "PARAM_TARGET_Z",
     "f": "PARAM_FEEDRATE",
     "s": "PARAM_INTENSITY",
     "d": "PARAM_DURATION",
@@ -222,13 +222,13 @@ class SerialLoopClass(threading.Thread):
         self.tx_buffer = []
         self.tx_pos = 0
 
-        # TX_CHUNK_SIZE - this is the number of bytes to be 
+        # TX_CHUNK_SIZE - this is the number of bytes to be
         # written to the device in one go. It needs to match the device.
         self.TX_CHUNK_SIZE = 16
         self.RX_CHUNK_SIZE = 32
         self.FIRMBUF_SIZE = 256  # needs to match device firmware
         self.firmbuf_used = 0
-        
+
         # used for calculating percentage done
         self.job_size = 0
 
@@ -292,7 +292,7 @@ class SerialLoopClass(threading.Thread):
             'feedrate': 0.0,
             'intensity': 0.0,
             'duration': 0.0,
-            'pixelwidth': 0.0         
+            'pixelwidth': 0.0
         }
         self._s = copy.deepcopy(self._status)
 
@@ -332,7 +332,7 @@ class SerialLoopClass(threading.Thread):
                     try:
                         self._serial_read()
                         # (1/0.008)*16 = 2000 bytes/s
-                        # for raster we need: 10(10000/60.0) = 1660 bytes/s    
+                        # for raster we need: 10(10000/60.0) = 1660 bytes/s
                         self._serial_write()
                         # if time.time()-last_write > 0.01:
                         #     sys.stdout.write('~')
@@ -346,7 +346,7 @@ class SerialLoopClass(threading.Thread):
                         print "ERROR: serial got disconnected 2."
                         self.stop_processing = True
                         self._status['serial'] = False
-                        self._status['ready']  = False  
+                        self._status['ready']  = False
                 else:
                     print "ERROR: serial got disconnected 3."
                     self.stop_processing = True
@@ -417,7 +417,7 @@ class SerialLoopClass(threading.Thread):
                     self._s['stops']['requested'] = True
                     print "ERROR firmware: stop request"
                 elif char == ERROR_RX_BUFFER_OVERFLOW:
-                    self._s['stops']['buffer'] = True                                    
+                    self._s['stops']['buffer'] = True
                     print "ERROR firmware: rx buffer overflow"
                 elif char == ERROR_INVALID_MARKER:
                     self._s['stops']['marker'] = True
@@ -438,7 +438,7 @@ class SerialLoopClass(threading.Thread):
                     print "ERROR: invalid stop error marker"
                 # in stop mode, print recent transmission
                 recent_chars = self.tx_buffer[max(0,self.tx_pos-128):self.tx_pos]
-                print "RECENT TX BUFFER:" 
+                print "RECENT TX BUFFER:"
                 for char in recent_chars:
                     if markers_tx.has_key(char):
                         print "\t%s" % (markers_tx[char])
@@ -446,7 +446,7 @@ class SerialLoopClass(threading.Thread):
                         print "\t(data byte)"
                     else:
                         print "\t(invalid)"
-                print "----------------" 
+                print "----------------"
                 # stop mode housekeeping
                 self.tx_buffer = []
                 self.tx_pos = 0
@@ -480,7 +480,7 @@ class SerialLoopClass(threading.Thread):
                 elif char == INFO_POS_Z:
                     self._s['pos'][2] = num
                 elif char == INFO_VERSION:
-                    num = 'v' + str(int(num)/100.0)
+                    num = str(int(num)/100.0)
                     self._s['firmver'] = num
                 elif char == INFO_BUFFER_UNDERRUN:
                     self._s['underruns'] = num
@@ -510,13 +510,13 @@ class SerialLoopClass(threading.Thread):
                     self.pdata_chars[self.pdata_count] = char
                     self.pdata_count += 1
                 else:
-                    print "ERROR: invalid data" 
+                    print "ERROR: invalid data"
             else:
                 print ord(char)
                 print char
                 print "ERROR: invalid marker"
                 self.pdata_count = 0
-       
+
 
 
 
@@ -600,7 +600,7 @@ class SerialLoopClass(threading.Thread):
 ### API ###################################################################
 ###########################################################################
 
-            
+
 def find_controller(baudrate=conf['baudrate']):
     if os.name == 'posix':
         iterator = sorted(serial.tools.list_ports.grep('tty'))
@@ -625,11 +625,11 @@ def find_controller(baudrate=conf['baudrate']):
                     return s.portstr
                 s.close()
             except serial.SerialException:
-                pass      
+                pass
     print "ERROR: No controller found."
     return None
 
-    
+
 
 def connect(port=conf['serial_port'], baudrate=conf['baudrate'], server=False):
     global SerialLoop
@@ -786,12 +786,12 @@ def relative():
     with SerialLoop.lock:
         SerialLoop.send_command(CMD_REF_RELATIVE)
 
-    
+
 def absolute():
     global SerialLoop
     with SerialLoop.lock:
         SerialLoop.send_command(CMD_REF_ABSOLUTE)
-    
+
 def move(x, y, z=0.0):
     global SerialLoop
     with SerialLoop.lock:
@@ -927,7 +927,7 @@ def job(jobdict):
     #                         if 'feedrate' in pass_:
     #                             feedrate(pass_['feedrate'])
     #                         else:
-    #                             feedrate(conf['feedrate'])     
+    #                             feedrate(conf['feedrate'])
     #                         move(posx, posy)
     #                         rastermove(posright, posy)
     #                         move(leadoutpos, posy)
@@ -1000,7 +1000,7 @@ def job(jobdict):
                                     if 'intensity' in pass_:
                                         intensity(pass_['intensity'])
                                     # turn on assists if set to 'feed'
-                                    # also air_assist defaults to 'feed'                 
+                                    # also air_assist defaults to 'feed'
                                     if 'air_assist' in pass_ and pass_['air_assist'] == 'feed':
                                         air_on()
                                     if 'aux1_assist' in pass_ and pass_['aux1_assist'] == 'feed':
@@ -1140,7 +1140,7 @@ def testjob(jobname="Lasersaur", feedrate=2000, intensity=10):
             "paths":[0],
             "feedrate":feedrate,
             "intensity":intensity }]
-    
+
     job(j)
 
 def torturejob():
