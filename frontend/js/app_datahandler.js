@@ -130,7 +130,7 @@ DataHandler = {
       }
     }
     // footer
-    glist.push("M81\nS0\nG0X0Y0F"+app_settings.max_seek_speed+"\n");
+    glist.push("S0\nG0X0Y0F"+app_settings.max_seek_speed+"\nM81\n");
     // alert(JSON.stringify(glist.join('')))
     return glist.join('');
   },

@@ -310,6 +310,13 @@ class SVGPathReader:
             # protect from deep recursion cases
             # max 2**18 = 262144 segments
             return
+        elif level == 0:
+            if (x1 == x2 and y1 == y2 and x2 == x3 and y2 == y3) or \
+               (x2 == x3 and y2 == y3 and x3 == x4 and y3 == y4):
+                # the tolerance would never reached, but it's a straight line
+                #subpath.append([x1, y1]) # probably not needed
+                subpath.append([x4, y4])
+                return
         
         # Calculate all the mid-points of the line segments
         x12   = (x1 + x2) / 2.0

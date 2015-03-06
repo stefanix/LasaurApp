@@ -419,7 +419,7 @@ $(document).ready(function(){
     // $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
     send_gcode(gcode, "Stopping ...", false); 
     var delayedresume = setTimeout(function() {
-      var gcode = '~\nG90\nM81\nG0X0Y0F'+app_settings.max_seek_speed+'\n'  // ~ is resume char
+      var gcode = '~\nG90\nG0X0Y0F'+app_settings.max_seek_speed+'\nM81\n'  // ~ is resume char
       // $().uxmessage('notice', gcode.replace(/\n/g, '<br>'));
       send_gcode(gcode, "Resetting ...", false);
     }, 1000);
