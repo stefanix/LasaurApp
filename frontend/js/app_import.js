@@ -7,10 +7,10 @@
 
 
 $(document).ready(function(){
-  
+
   var path_optimize = 1;
   var forceSvgDpiTo = undefined;
-  
+
   /// big canvas init
   var w = app_settings.canvas_dimensions[0];
   var h = app_settings.canvas_dimensions[1];
@@ -24,13 +24,13 @@ $(document).ready(function(){
       $(this).css('cursor', 'url');
     },
     function () {
-      $(this).css('cursor', 'pointer'); 
+      $(this).css('cursor', 'pointer');
     }
   );
   var canvas = new Canvas('#import_canvas');
   canvas.width = w;
   canvas.height = h;
-  canvas.background('#ffffff'); 
+  canvas.background('#ffffff');
 
 
   //reset tap
@@ -41,7 +41,7 @@ $(document).ready(function(){
 
   $('#bed_size_note').html(app_settings.work_area_dimensions[0]+'x'+
                            app_settings.work_area_dimensions[1]+'mm');
-  
+
   // file upload form
   $('#svg_upload_file').change(function(e){
     $('#file_import_btn').button('loading');
@@ -55,7 +55,7 @@ $(document).ready(function(){
       browser_supports_file_api = false;
       $().uxmessage('notice', "This browser does not support the files property.");
     }
-    
+
     if (browser_supports_file_api) {
       if (input.files[0]) {
         var fr = new FileReader()
@@ -67,7 +67,7 @@ $(document).ready(function(){
     } else {  // fallback
       // $().uxmessage('notice', "Using fallback: file form upload.");
     }
-    
+
     // reset file input form field so change event also triggers if
     // same file is chosen again (but with different dpi)
     $('#import_name').val($('#svg_upload_file').val().split('\\').pop().split('/').pop());
@@ -96,22 +96,22 @@ $(document).ready(function(){
       type: "POST",
       url: "/file_reader",
       data: {'filename':filename,
-             'filedata':filedata, 
-             'dpi':forceSvgDpiTo, 
+             'filedata':filedata,
+             'dpi':forceSvgDpiTo,
              'optimize':path_optimize,
              'dimensions':JSON.stringify(app_settings.work_area_dimensions)},
       dataType: "json",
       success: function (data) {
         if (ext == '.svg' || ext == '.SVG') {
-          $().uxmessage('success', "SVG parsed."); 
-          $('#dpi_import_info').html('Using <b>' + data.dpi + 'dpi</b> for converting px units.');
+          $().uxmessage('success', "SVG parsed.");
+          $('#dpi_import_info').html('Using <b>' + data.dpi + '</b> for converting units.');
         } else if (ext == '.dxf' || ext == '.DXF') {
-          $().uxmessage('success', "DXF parsed."); 
+          $().uxmessage('success', "DXF parsed.");
           $('#dpi_import_info').html('Assuming mm units in DXF file.');
         } else if (ext == '.ngc' || ext == '.NGC') {
-          $().uxmessage('success', "G-Code parsed."); 
+          $().uxmessage('success', "G-Code parsed.");
         } else {
-          $().uxmessage('warning', "File extension not supported. Import SVG, DXF, or G-Code files."); 
+          $().uxmessage('warning', "File extension not supported. Import SVG, DXF, or G-Code files.");
         }
         // alert(JSON.stringify(data));
         handleParsedGeometry(data);
@@ -125,7 +125,7 @@ $(document).ready(function(){
       }
     });
   }
-      
+
   function handleParsedGeometry(data) {
     // data is a dict with the following keys [boundarys, dpi, lasertags]
     var boundarys = data.boundarys;
@@ -144,14 +144,14 @@ $(document).ready(function(){
       }
       $('#canvas_properties .colorbtns').append(' <span id="num_selected_colors">0</span> colors selected for import.');
       $('button.preview_color').click(function(e){
-        // toggling manually because automatic toggling 
+        // toggling manually because automatic toggling
         // would happen after generatPreview()
         if($(this).hasClass('active')) {
           $(this).removeClass('active');
           $(this).removeClass('active-strong');
         } else {
-          $(this).addClass('active');         
-          $(this).addClass('active-strong');          
+          $(this).addClass('active');
+          $(this).addClass('active-strong');
         }
         generatePreview();
       });
@@ -161,11 +161,11 @@ $(document).ready(function(){
         $().uxmessage('notice', "lasertags -> applying defaults");
         DataHandler.setPassesFromLasertags(data.lasertags);
       }
-      // actually redraw right now 
-      generatePreview();      
+      // actually redraw right now
+      generatePreview();
     } else {
       $().uxmessage('notice', "No data loaded to write G-code.");
-    }   
+    }
   }
 
 
@@ -174,7 +174,7 @@ $(document).ready(function(){
       DataHandler.draw(canvas, app_settings.to_canvas_scale, getDeselectedColors());
     } else {
       $().uxmessage('notice', "No data loaded to generate preview.");
-    }       
+    }
   }
 
 
@@ -197,7 +197,7 @@ $(document).ready(function(){
   $('#file_import_btn').click(function(e){
     path_optimize = 1;
     $('#svg_upload_file').trigger('click');
-  });  
+  });
   $('#svg_import_72_btn').click(function(e){
     path_optimize = 1;
     forceSvgDpiTo = 72;
@@ -215,17 +215,17 @@ $(document).ready(function(){
     forceSvgDpiTo = 96;
     $('#svg_upload_file').trigger('click');
     return false;
-  });    
+  });
   $('#svg_import_nop_btn').click(function(e){
     path_optimize = 0;
     $('#svg_upload_file').trigger('click');
     return false;
-  });  
+  });
 
-  
+
   // setting up add to queue button
   $("#import_to_queue").click(function(e) {
-    if (!(DataHandler.isEmpty())) {     
+    if (!(DataHandler.isEmpty())) {
       var jobdata = DataHandler.getJson(getDeselectedColors());
       var filename = $('#import_name').val();
       save_and_add_to_job_queue(filename, jobdata);

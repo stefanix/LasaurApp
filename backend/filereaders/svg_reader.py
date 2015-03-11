@@ -6,16 +6,16 @@ import math
 import logging
 
 from .webcolors import hex_to_rgb, rgb_to_hex
-from .utilities import matrixMult, matrixApply,
-                       vertexScale, parseFloats, parseScalar
+from .utilities import matrixMult, matrixApply
+from .utilities import vertexScale, parseFloats, parseScalar
 from .svg_tag_reader import SVGTagReader
 
 
 logging.basicConfig()
 log = logging.getLogger("svg_reader")
 # log.setLevel(logging.DEBUG)
-# log.setLevel(logging.INFO)
-log.setLevel(logging.WARN)
+log.setLevel(logging.INFO)
+# log.setLevel(logging.WARN)
 
 
 try:
@@ -153,7 +153,7 @@ class SVGReader:
         # 1. Get px2mm from argument
         if force_dpi is not None:
             self.px2mm = 25.4/force_dpi
-            log.info("SVG import forced to "+str(force_dpi)+"dpi.")
+            log.info("SVG import forced to %s dpi." % (force_dpi))
 
         # Get width, height, viewBox for further processing
         if not self.px2mm:
@@ -174,21 +174,23 @@ class SVGReader:
                 if width_unit != height_unit:
                     log.error("Conflicting units found.")
                 unit = width_unit
+                log.info("SVG w,h (unit) is %s,%s (%s)." % (width, height, unit))
 
             # get viewBox
             # http://www.w3.org/TR/SVG11/coords.html#ViewBoxAttribute
             vb = svgRootElement.attrib.get('viewBox')
             if vb:
                 vb_x, vb_y, vb_w, vb_h = parseFloats(vb)
+                log.info("SVG viewBox (%s,%s,%s,%s)." % (vb_x, vb_y, vb_w, vb_h))
 
         # 2. Get px2mm from width, height, viewBox
         if not self.px2mm:
-            if (width and height) or (vb_x and vb_y and vb_w and vb_h):
+            if (width and height) or vb:
                 if not (width and height):
                     # default to viewBox
                     width = vb_w
                     height = vb_h
-                if not (vb_x and vb_y and vb_w and vb_h):
+                if not vb:
                     # default to width, height, and no offset
                     vb_x = 0.0
                     vb_y = 0.0
@@ -200,13 +202,16 @@ class SVGReader:
                 if unit == 'mm':
                     # great, the svg file already uses mm
                     pass
+                    log.info("px2mm by svg mm unit")
                 elif unit == 'in':
                     # prime for inch to mm conversion
                     self.px2mm *= 25.4
+                    log.info("px2mm by svg inch unit")
                 elif unit == 'cm':
                     # prime for cm to mm conversion
                     self.px2mm *= 10.0
-                else unit == '':
+                    log.info("px2mm by svg cm unit")
+                elif unit == 'px' or unit == '':
                     # no physical units in file
                     # we have to interpret user (px) units
                     # 3. For some apps we can make a good guess.
@@ -229,11 +234,14 @@ class SVGReader:
                     else:
                         # give up in this step
                         self.px2mm = None
-
+                else:
+                    log.error("SVG with unsupported unit.")
+                    self.px2mm = None
 
         # 4. Get px2mm by the ratio of svg size to target size
         if not self.px2mm and (width and height):
             self.px2mm = self._target_size[0]/width
+            log.info("px2mm by target_size/page_size ratio")
 
 
         # 5. Fall back on px unit DPIs default value
@@ -329,5 +337,8 @@ class SVGReader:
 
 
 
-# if __name__ == "__main__":
-#     # do something here when used directly
+if __name__ == "__main__":
+    with open(os.path.join(svgpath, "rocket_full.svg")) as f:
+        svgstring = f.read()
+    svgReader = SVGReader(0.08, [1220,610])
+    svgReader.parse(svg_string, forced_dpi)
