@@ -3,6 +3,7 @@ import re
 
 
 re_findall_floats = re.compile('(-?[0-9]+\.?[0-9]*(?:e-?[0-9]*)?)').findall
+re_scalar_unit = re.compile('(-?[0-9]+\.?[0-9]*(?:e-?[0-9]*)?([a-z]*))').findall
 
 
 def parseFloats(float_strings):
@@ -14,6 +15,12 @@ def parseFloats(float_strings):
 	for i in range(len(float_strings)):  # use index so we can edit in-place
 		float_strings[i] = float(float_strings[i])
 	return float_strings
+
+def parseScalar(scalar_unit_string):
+	"""Parse one scalar string with (optional) unit and return both."""
+	num, unit = re_scalar_unit(scalar_unit_string)[0]
+	num = float(num)
+	return (num, unit)
 
 
 def matrixMult(mA, mB):
@@ -34,7 +41,3 @@ def matrixApply(mat, vec):
 def vertexScale(v, f):
     v[0] *= f
     v[1] *= f
-
-
-
-
