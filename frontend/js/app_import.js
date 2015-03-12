@@ -36,7 +36,7 @@ $(document).ready(function(){
   //reset tap
   $('#canvas_properties .colorbtns').html('');  // reset colors
   canvas.background('#ffffff');
-  $('#dpi_import_info').html('Supported file formats are: <b>SVG</b>, <b>DXF</b> (<a href="http://labs.nortd.com/lasersaur/manual/dxf_import">subset</a>)');
+  $('#dpi_import_info').html('Supported file formats are: <b>SVG</b>, <b>DXF</b> (<a href="http://www.lasersaur.com/manual/dxf_import">subset</a>)');
 
 
   $('#bed_size_note').html(app_settings.work_area_dimensions[0]+'x'+
@@ -258,7 +258,7 @@ $(document).ready(function(){
       // reset tap
       $('#canvas_properties .colorbtns').html('');  // reset colors
       canvas.background('#ffffff');
-      $('#dpi_import_info').html('Supported file formats are: <b>SVG</b>, <b>DXF</b> (<a href="http://labs.nortd.com/lasersaur/manual/dxf_import">subset</a>)');
+      $('#dpi_import_info').html('Supported file formats are: <b>SVG</b>, <b>DXF</b> (<a href="http://www.lasersaur.com/manual/dxf_import">subset</a>)');
       $('#import_name').val('');
     } else {
       $().uxmessage('warning', "no data");
