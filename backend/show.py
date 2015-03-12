@@ -29,7 +29,7 @@ class PyApp(gtk.Window):
         self.connect("destroy", gtk.main_quit)
         # exit with ctr-q
         accel_group = gtk.AccelGroup()
-        accel_group.connect_group(ord('q'), gtk.gdk.CONTROL_MASK, 
+        accel_group.connect_group(ord('q'), gtk.gdk.CONTROL_MASK,
         gtk.ACCEL_LOCKED, gtk.main_quit)
         self.add_accel_group(accel_group)
 
@@ -44,7 +44,7 @@ class PyApp(gtk.Window):
                 self.inc = 8
             else:
                 glib.timeout_add(40, self.on_timer)  #25fps
-                self.inc = 4                
+                self.inc = 4
             self.todraw = self.inc
 
         self.show_all()
@@ -55,7 +55,7 @@ class PyApp(gtk.Window):
         self.darea.queue_draw()
         return True
 
-    
+
     def expose(self, widget, event):
         global job, args, total_points
         # Cairo
@@ -102,12 +102,12 @@ class PyApp(gtk.Window):
                     for i in xrange(1, len(polyline)):
                         cr.line_to(polyline[i][0], polyline[i][1])
                         seeks.move_to(polyline[i][0], polyline[i][1])
-                       
+
         seeks.stroke()
         cr.stroke()
 
 
-    
+
 
 
 if __name__ == '__main__':
@@ -130,7 +130,7 @@ if __name__ == '__main__':
         jobfile = os.path.join(thislocation, "testjobs", args.jobfile)
         with open(jobfile) as fp:
             job = fp.read()
-        job = jobimport.convert(job, tolerance=float(args.tolerance), 
+        job = jobimport.convert(job, tolerance=float(args.tolerance),
                                      optimize=not(args.nooptimize))
 
         # stats
@@ -155,7 +155,4 @@ if __name__ == '__main__':
         os.chdir(cwd_temp)
         print "Name one of the following files:"
         for file_ in files:
-            print file_    
-
-
-
+            print file_
