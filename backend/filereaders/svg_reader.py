@@ -14,8 +14,8 @@ from .svg_tag_reader import SVGTagReader
 logging.basicConfig()
 log = logging.getLogger("svg_reader")
 # log.setLevel(logging.DEBUG)
-log.setLevel(logging.INFO)
-# log.setLevel(logging.WARN)
+# log.setLevel(logging.INFO)
+log.setLevel(logging.WARN)
 
 
 try:

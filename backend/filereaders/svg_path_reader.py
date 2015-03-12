@@ -47,7 +47,7 @@ class SVGPathReader:
         totalMaxScale = _matrixExtractScale(node['xformToWorld'])
         if totalMaxScale != 0 and totalMaxScale != 1.0:
             self._tolerance2 /= (totalMaxScale)**2
-        
+
         idx = [0]  # using a list to be mutable in helper functions
 
         def _nextIsNum(d, idx, howmany):
@@ -57,7 +57,7 @@ class SVGPathReader:
                     ret = False
             return ret
 
-        
+
         def _getNext(d, idx):
             i = idx[0]
             idx[0] += 1
@@ -66,13 +66,13 @@ class SVGPathReader:
                 return f
             else:
                 return None
-        
+
         x = 0
         y = 0
         cmdPrev = ''
         xPrevCp = 0
         yPrevCp = 0
-        subpath = []  
+        subpath = []
 
         while 1:
             cmd = _getNext(d, idx)
@@ -84,7 +84,7 @@ class SVGPathReader:
                     node['paths'].append(subpath)
                     subpath = []
                 while _nextIsNum(d, idx, 2):
-                    # subsequent coords are treated 
+                    # subsequent coords are treated
                     # the same as absolute lineto
                     x = _getNext(d, idx)
                     y = _getNext(d, idx)
@@ -100,7 +100,7 @@ class SVGPathReader:
                     y = _getNext(d, idx)
                     subpath.append([x, y])
                 while _nextIsNum(d, idx, 2):
-                    # subsequent coords are treated 
+                    # subsequent coords are treated
                     # the same as relative lineto
                     x += _getNext(d, idx)
                     y += _getNext(d, idx)
@@ -173,10 +173,10 @@ class SVGPathReader:
                 while _nextIsNum(d, idx, 4):
                     if cmdPrev in 'CcSs]':
                         x2 = x-(xPrevCp-x)
-                        y2 = y-(yPrevCp-y) 
+                        y2 = y-(yPrevCp-y)
                     else:
                         x2 = x
-                        y2 = y              
+                        y2 = y
                     x3 = _getNext(d, idx)
                     y3 = _getNext(d, idx)
                     x4 = _getNext(d, idx)
@@ -192,10 +192,10 @@ class SVGPathReader:
                 while _nextIsNum(d, idx, 4):
                     if cmdPrev in 'CcSs]':
                         x2 = x-(xPrevCp-x)
-                        y2 = y-(yPrevCp-y) 
+                        y2 = y-(yPrevCp-y)
                     else:
                         x2 = x
-                        y2 = y              
+                        y2 = y
                     x3 = x + _getNext(d, idx)
                     y3 = y + _getNext(d, idx)
                     x4 = x + _getNext(d, idx)
@@ -228,29 +228,29 @@ class SVGPathReader:
                     self.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0)
                     subpath.append([x3,y3])
                     x = x3
-                    y = y3        
+                    y = y3
             elif cmd == 'T':  # curveto quadratic absolute shorthand
                 while _nextIsNum(d, idx, 2):
                     if cmdPrev in 'QqTt':
                         x2 = x-(xPrevCp-x)
-                        y2 = y-(yPrevCp-y) 
+                        y2 = y-(yPrevCp-y)
                     else:
                         x2 = x
-                        y2 = y              
+                        y2 = y
                     x3 = _getNext(d, idx)
                     y3 = _getNext(d, idx)
                     subpath.append([x,y])
                     self.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0)
                     subpath.append([x3,y3])
                     x = x3
-                    y = y3 
+                    y = y3
                     xPrevCp = x2
                     yPrevCp = y2
             elif cmd == 't':  # curveto quadratic relative shorthand
                 while _nextIsNum(d, idx, 2):
                     if cmdPrev in 'QqTt':
                         x2 = x-(xPrevCp-x)
-                        y2 = y-(yPrevCp-y) 
+                        y2 = y-(yPrevCp-y)
                     else:
                         x2 = x
                         y2 = y
@@ -260,7 +260,7 @@ class SVGPathReader:
                     self.addQuadraticBezier(subpath, x, y, x2, y2, x3, y3, 0)
                     subpath.append([x3,y3])
                     x = x3
-                    y = y3 
+                    y = y3
                     xPrevCp = x2
                     yPrevCp = y2
             elif cmd == 'A':  # eliptical arc absolute
@@ -271,7 +271,7 @@ class SVGPathReader:
                     large = _getNext(d, idx)
                     sweep = _getNext(d, idx)
                     x2 = _getNext(d, idx)
-                    y2 = _getNext(d, idx)        
+                    y2 = _getNext(d, idx)
                     self.addArc(subpath, x, y, rx, ry, xrot, large, sweep, x2, y2)
                     x = x2
                     y = y2
@@ -294,8 +294,8 @@ class SVGPathReader:
         if subpath:
             node['paths'].append(subpath)
             subpath = []
-        
-    
+
+
 
     def addCubicBezier(self, subpath, x1, y1, x2, y2, x3, y3, x4, y4, level):
         # for details see:
@@ -305,12 +305,12 @@ class SVGPathReader:
         # is we want to have control over the deviation to the curve.
         # This mean we subdivide more and have more curve points in
         # curvy areas and less in flatter areas of the curve.
-        
+
         if level > 18:
             # protect from deep recursion cases
             # max 2**18 = 262144 segments
             return
-        
+
         # Calculate all the mid-points of the line segments
         x12   = (x1 + x2) / 2.0
         y12   = (y1 + y2) / 2.0
@@ -348,9 +348,9 @@ class SVGPathReader:
             # protect from deep recursion cases
             # max 2**18 = 262144 segments
             return
-        
+
         # Calculate all the mid-points of the line segments
-        x12   = (x1 + x2) / 2.0                
+        x12   = (x1 + x2) / 2.0
         y12   = (y1 + y2) / 2.0
         x23   = (x2 + x3) / 2.0
         y23   = (y2 + y3) / 2.0
@@ -362,16 +362,16 @@ class SVGPathReader:
         d = abs(((x2 - x3) * dy - (y2 - y3) * dx))
 
         if d*d <= 5.0 * self._tolerance2 * (dx*dx + dy*dy):
-            # added factor of 5.0 to match circle resolution      
+            # added factor of 5.0 to match circle resolution
             subpath.append([x123, y123])
-            return                 
-        
+            return
+
         # Continue subdivision
         self.addQuadraticBezier(subpath, x1, y1, x12, y12, x123, y123, level + 1)
         self.addQuadraticBezier(subpath, x123, y123, x23, y23, x3, y3, level + 1)
 
-    
-    
+
+
     def addArc(self, subpath, x1, y1, rx, ry, phi, large_arc, sweep, x2, y2):
         # Implemented based on the SVG implementation notes
         # plus some recursive sugar for incrementally refining the
@@ -393,7 +393,7 @@ class SVGPathReader:
         cy_ = -r*ry*x_ / rx
         cx = cp*cx_ - sp*cy_ + 0.5*(x1 + x2)
         cy = sp*cx_ + cp*cy_ + 0.5*(y1 + y2)
-        
+
         def _angle(u, v):
             a = math.acos((u[0]*v[0] + u[1]*v[1]) /
                             math.sqrt(((u[0])**2 + (u[1])**2) *
@@ -402,25 +402,25 @@ class SVGPathReader:
             if u[0]*v[1] > u[1]*v[0]:
                 sgn = 1
             return sgn * a
-    
+
         psi = _angle([1,0], [(x_-cx_)/rx, (y_-cy_)/ry])
         delta = _angle([(x_-cx_)/rx, (y_-cy_)/ry], [(-x_-cx_)/rx, (-y_-cy_)/ry])
         if sweep and delta < 0:
             delta += math.pi * 2
         if not sweep and delta > 0:
             delta -= math.pi * 2
-        
+
         def _getVertex(pct):
             theta = psi + delta * pct
             ct = math.cos(theta)
             st = math.sin(theta)
-            return [cp*rx*ct-sp*ry*st+cx, sp*rx*ct+cp*ry*st+cy]        
-        
+            return [cp*rx*ct-sp*ry*st+cx, sp*rx*ct+cp*ry*st+cy]
+
         # let the recursive fun begin
         def _recursiveArc(t1, t2, c1, c5, level, tolerance2):
             def _vertexDistanceSquared(v1, v2):
                 return (v2[0]-v1[0])**2 + (v2[1]-v1[1])**2
-            
+
             def _vertexMiddle(v1, v2):
                 return [ (v2[0]+v1[0])/2.0, (v2[1]+v1[1])/2.0 ]
 
@@ -439,7 +439,7 @@ class SVGPathReader:
             subpath.append(c3)
             if _vertexDistanceSquared(c4, _vertexMiddle(c3,c5)) > tolerance2:
                 _recursiveArc(tHalf, t2, c3, c5, level+1, tolerance2)
-                
+
         t1Init = 0.0
         t2Init = 1.0
         c1Init = _getVertex(t1Init)
