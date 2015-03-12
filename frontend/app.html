@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
-<head> 
-    
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8"> 
-<title>LasaurApp</title> 
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>LasaurApp</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="/css/bootstrap.min.css" type="text/css"> 
-<link rel="stylesheet" href="/css/jquery.toastmessage.css" type="text/css"> 
+<link rel="stylesheet" href="/css/bootstrap.min.css" type="text/css">
+<link rel="stylesheet" href="/css/jquery.toastmessage.css" type="text/css">
 <link rel="stylesheet" href="/css/style.css" type="text/css">
 <script src="/js/jquery-1.7.2.min.js"></script>
 <script src="/js/bootstrap.min.js"></script>
@@ -39,19 +39,19 @@
                     <button id="go_to_origin" class="btn" type="submit" title="move to origin">(0,0)</i></button>
                     <button id="homing_cycle" class="btn" type="submit" title="run homing cycle, find table origin"><i class="icon-home"></i></button>
                     <button id="cancel_btn" class="btn" type="submit" title="stop and purge job"><i class="icon-stop"></i></button>
-                </div>      
+                </div>
                 <button id="pause_btn" class="btn pull-right" type="submit" title="pause/continue"><i class="icon-pause"></i></button>
                 <a class="brand" href="/" style="color:#666666"><img src="/img/lasersaur-dino-brand.png" style="margin-right:6px">LasaurApp</a>
                 <div class="nav-collapse">
                     <ul class="nav">
-                        <li><a href="#about_modal" data-toggle="modal">About</a></li> 
+                        <li><a href="#about_modal" data-toggle="modal">About</a></li>
                         <li class="divider-vertical"></li>
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">Manual<b class="caret"></b></a>
                             <ul class="dropdown-menu">
-                                <li><a href="http://labs.nortd.com/lasersaur/manual/">Manual TOC</a></li>
-                                <li><a href="http://labs.nortd.com/lasersaur/manual/operation">Operating a Lasersaur</a></li>
-                                <li><a href="http://labs.nortd.com/lasersaur/manual/lasertags">LaserTags</a></li>
+                                <li><a href="http://www.lasersaur.com/manual/">Manual TOC</a></li>
+                                <li><a href="http://www.lasersaur.com/manual/operation">Operating a Lasersaur</a></li>
+                                <li><a href="http://www.lasersaur.com/manual/lasertags">LaserTags</a></li>
                             </ul>
                         </li>
                         <li class="dropdown">
@@ -79,7 +79,7 @@
         <div class="modal-body">
             <p><img src="/img/lasersaur-black_w530.jpg"></p>
             <div style="width:60px;margin-left:auto;margin-right:auto;margin-top:20px;margin-bottom:20px"><img src="/img/lasersaur-dino.png" style="width:60px"></div>
-            <p>LasaurApp is the offical control app for the Lasersaur laser cutter and part of the <a href="http://labs.nortd.com/lasersaur/">Lasersaur project</a>. This software is made available under the <a href="https://gnu.org/licenses/gpl.html">GPLv3 (version 3 or later)</a> software license. Copyright (c) 2013 <a href="http://labs.nortd.com/">Nortd Labs</a></p>
+            <p>LasaurApp is the offical control app for the Lasersaur laser cutter and part of the <a href="http://www.lasersaur.com/">Lasersaur project</a>. This software is made available under the <a href="https://gnu.org/licenses/gpl.html">GPLv3 (version 3 or later)</a> software license. Copyright (c) 2013 <a href="http://labs.nortd.com/">Nortd Labs</a></p>
             <ul>
             <li>LasaurApp version <span id="lasaurapp_version"></span></li>
             <li>Firmware version <span id="firmware_version">&lt;not connected&gt;</span></li>
@@ -104,27 +104,27 @@
             <button id="really_cancel_btn" class="btn btn-danger">Stop Job!</button>
         </div>
     </div>
-    
-    
+
+
     <div id="container" class="container">
         <div class="row">
             <div class="span12">
                 <div class="tabbable row">
-                    
+
                     <!--tabbar start-->
                     <div class="span2 tabs-left">
-                        <ul class="nav nav-tabs" style="width:100%">            
+                        <ul class="nav nav-tabs" style="width:100%">
                             <li class="active"><a href="#tab_jobs" id="tab_jobs_button" data-toggle="tab"><i class="icon-th-list" style="margin-right:2px"></i> Laser Jobs</a></li>
                             <li><a href="#tab_import" id="tab_import_button" data-toggle="tab"><i class="icon-folder-open" style="margin-right:2px"></i> File Import</a></li>
                             <li><a href="#tab_mover" id="tab_mover_button" data-toggle="tab"><i class="icon-move" style="margin-right:2px"></i> Move/Jog</a></li>
-                            <li><a href="#tab_logs" id="tab_logs_button" data-toggle="tab"><i class="icon-exclamation-sign" style="margin-right:2px"></i> Logs</a></li>                         
+                            <li><a href="#tab_logs" id="tab_logs_button" data-toggle="tab"><i class="icon-exclamation-sign" style="margin-right:2px"></i> Logs</a></li>
                         </ul>
                     </div>
                     <!--tabbar end-->
-                    <div class="span10">    
-                        <div class="tab-content" style="overflow:visible; padding-bottom:30px">              
+                    <div class="span10">
+                        <div class="tab-content" style="overflow:visible; padding-bottom:30px">
                             <!--content start-->
-                            
+
                             <div id="tab_jobs" class="tab-pane active">
                                 <div style="width:650px;">
                                     <div class="well clearfix" style="margin-bottom:40px">
@@ -141,7 +141,7 @@
                                                 <p>Need <a id="add_pass_btn" href="">more passes?</a></p>
                                             </div>
                                             <div id="passes" class="pull-left" style="width:400px">
-                                                <!-- passes go here -->                                     
+                                                <!-- passes go here -->
                                             </div>
                                         </div>
                                         <div style="padding-top:20px">
@@ -164,7 +164,7 @@
                                             </div>
                                             <button id="job_save_to_queue" class="btn btn-large pull-right" title="add to queue" data-delay="500" style="margin-right:10px">
                                                     <span class="icon-th-list"></span>
-                                            </button>                                            
+                                            </button>
                                         </div>
                                         <div id="progressbar" class="progress progress-striped" style="margin-top:70px; clear:both">
                                             <div class="bar" style="width:0%;"></div>
@@ -174,7 +174,7 @@
                                         clear
                                     </button>
                                     <h3>Recent Jobs</h3>
-                                    <div> 
+                                    <div>
                                         <ul id="job_queue" class="nav nav-tabs nav-stacked">
                                             <!-- job queue -->
                                         </ul>
@@ -187,14 +187,14 @@
                                                 <!-- stock library go here -->
                                             </ul>
                                         </div>
-                                    </div> 
-                                </div>                             
+                                    </div>
+                                </div>
                             </div>
-                            
-                            <div id="tab_import" class="tab-pane">                                                  
+
+                            <div id="tab_import" class="tab-pane">
                                 <div class="well clearfix" style="width:610px">
 
-                                    <div class="row" style="margin-left:0px">                                       
+                                    <div class="row" style="margin-left:0px">
                                     <div class="btn-group pull-left">
                                             <button id="file_import_btn" class="btn btn-large" data-loading-text="loading..." autocomplete="off">
                                                 <i class="icon-folder-open"></i> Import
@@ -209,17 +209,17 @@
                                         </ul>
                                     </div>
                                         <div id="dpi_import_info" class="pull-left" style="margin:10px"></div>
-                                        
+
                                         <div class="pull-left">
                                             <form id="svg_upload_form" action="#" onsubmit="return false;">
                                                 <input type="file" id="svg_upload_file" name="data" style="visibility:hidden; position:fixed">
                                             </form>
                                         </div>
                                     </div>
-                                    <div id="import_canvas_container" style="margin-top:16px;"></div>                                       
+                                    <div id="import_canvas_container" style="margin-top:16px;"></div>
                                     <div id="canvas_properties">
                                         <div class="colorbtns"></div>
-                                    </div>                                              
+                                    </div>
                                     <div class="pull-left">
                                         <button id="import_to_queue" class="btn btn-large" style="margin-top:16px">
                                             <i class="icon-th-list"></i> Add to Queue
@@ -228,20 +228,20 @@
                                     <div class="pull-left" style="margin-top:27px; margin-left:20px">
                                         under name
                                     </div>
-                                    <div class="pull-left" style="margin-top:22px; margin-left:10px">                            
+                                    <div class="pull-left" style="margin-top:22px; margin-left:10px">
                                         <input type="text" id="import_name" style="width:240px" placeholder="Name...">
                                     </div>
                                 </div> <!--end of well-->
-                                
+
                                 <div class="alert" style="width:400px">
                                     <a class="close" data-dismiss="alert">×</a>
                                     <strong>Note!</strong> Set page size in your SVG vector app to <b id="bed_size_note"></b>.
-                                </div>      
+                                </div>
                                 <div class="alert" style="width:400px">
                                     <a class="close" data-dismiss="alert">×</a>
-                                    <strong>Note!</strong> Set cutting parameters in the SVG file with <a href="http://labs.nortd.com/lasersaur/manual/lasertags">LaserTags</a>.
-                                </div>                                                  
-                            </div> <!-- end of import tab -->                           
+                                    <strong>Note!</strong> Set cutting parameters in the SVG file with <a href="http://www.lasersaur.com/manual/lasertags">LaserTags</a>.
+                                </div>
+                            </div> <!-- end of import tab -->
 
                             <div id="tab_mover" class="tab-pane" style="margin-left:0px">
                                 <div class="well" style="width:610px">
@@ -251,7 +251,7 @@
                                             <div id="offset_area" style="display:none; position:absolute; top:100px; left:100px; width:100px; height:100px; border-top:1px dashed #aaaaaa; border-left:1px dashed #aaaaaa">
                                                 <div id="offset_info" style="margin:4px"></div>
                                             </div>
-                                        </div>  
+                                        </div>
                                     </div>
                                     <div class="row" style="width:475px; margin-left:auto; margin-right:auto; margin-top:20px">
                                         <div id="seek_feed_btns" class="btn-group pull-left" data-toggle="buttons-radio">
@@ -262,7 +262,7 @@
                                             <span class="add-on" style="margin-right:-5px;">%</span>
                                             <input id="intensity_field" type="textfield" value="0" style="width:26px; display:none">
                                             <input id="intensity_field_disabled" type="textfield" class="disabled" disabled="" value="0" style="width:26px;">
-                                        </div>                                  
+                                        </div>
                                         <div id="feedrate_btns" class="btn-group pull-right" data-toggle="buttons-radio">
                                             <button id="feedrate_btn_slow" class="btn">slow</button>
                                             <button id="feedrate_btn_medium" class="btn">medium</button>
@@ -271,8 +271,8 @@
                                         <div class="input-append pull-right" style="margin-right:8px; margin-top:1px;">
                                             <input id="feedrate_field" type="textfield" value="8000" style="width:36px;">
                                             <span class="add-on" style="margin-left:-5px;">mm/min</span>
-                                        </div>                                      
-                                    
+                                        </div>
+
                                     </div>
                                     <div class="row clearfix" style="width:400px; margin-left:auto; margin-right:auto; margin-top:16px">
                                         <div class="well pull-left" style="width:140px; height:130px; background-color:#dddddd">
@@ -285,17 +285,17 @@
                                             </div>
                                             <div class="row" style="width:44px; margin-left:auto; margin-right:auto; margin-top:8px">
                                                 <button id="jog_down_btn" class="btn btn-large"><i class="icon-arrow-down"></i></button>
-                                            </div> 
+                                            </div>
                                         </div>
                                         <div class="well pull-right" style="width:168px; height:130px; background-color:#dddddd">
                                             <div class="btn-group" style="margin-top:26px; margin-bottom:14px">
                                                 <button id="location_set_btn" class="btn"><span id="loc_move_cut_word">Move</span>To</button>
                                                 <button id="origin_set_btn" class="btn">OffsetTo</button>
-                                            </div>                                        
+                                            </div>
                                             <div class="input-prepend pull-left">
                                                 <span class="add-on" style="margin-right:-5px;">x</span>
                                                 <input id="x_location_field" type="textfield" value="0" style="width:48px;">
-                                            </div> 
+                                            </div>
                                             <div class="input-prepend pull-left" style="margin-left:4px;">
                                                 <span class="add-on" style="margin-right:-5px;">y</span>
                                                 <input id="y_location_field" type="textfield" value="0" style="width:42px;">
@@ -305,23 +305,23 @@
                                     <div class="row" style="width:210px; margin-left:auto; margin-right:auto;">
                                         <button id="air_on_btn" class="btn">Air Assist On</button>
                                         <button id="air_off_btn" class="btn">Air Assist Off</button>
-                                    </div>                                  
+                                    </div>
                                 </div>
                                 <div class="alert" style="width:400px">
                                     <a class="close" data-dismiss="alert">×</a>
                                     <strong>Note!</strong> Set an offset by shift-clicking in the work area.
-                                </div>   
+                                </div>
                                 <div class="alert" style="width:400px">
                                     <a class="close" data-dismiss="alert">×</a>
                                     <strong>Note!</strong> User arrow keys to jog. De/increase step with alt and shift.
-                                </div>                                                              
-                            </div> <!-- end of mover tab -->                    
+                                </div>
+                            </div> <!-- end of mover tab -->
 
                             <div id="tab_logs" class="tab-pane active">
                                 <div class="alert" style="margin:5px; display:none">
                                     <a class="close" data-dismiss="alert">×</a>
                                     Log, most recent messages first:
-                                </div>                              
+                                </div>
                                 <div id="log_content" style="clear:both; overflow:auto; display:none">
                                     <!-- log -->
                                 </div>
@@ -338,4 +338,3 @@
 
 </body>
 </html>
-

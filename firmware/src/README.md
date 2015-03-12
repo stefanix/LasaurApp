@@ -6,7 +6,7 @@ This is the firmware we use for the Lasersaur. It's a slightly modified version 
 
 How to get this firmware onto an Arduino Uno? There is a python script that will do the trick. Edit the "flash.py" and follow the instruction in it. You will need a USB cable and the Arduino IDE.
 
-For more information see the [Lasersaur Software Setup Guide](http://labs.nortd.com/lasersaur/manual/software_setup).
+For more information see the [Lasersaur Software Setup Guide](http://www.lasersaur.com/manual/software_setup).
 
 **DISCLAIMER:** Please be aware that operating a DIY laser cutter can be dangerous and requires full awareness of the risks involved. You build the machine and you will have to make sure it is safe. The instructions of the Lasersaur project and related software come without any warranty or guarantees whatsoever. All information is provided as-is and without claims to mechanical or electrical fitness, safety, or usefulness. You are fully responsible for doing your own evaluations and making sure your system does not burn, blind, or electrocute people.
 
@@ -59,13 +59,9 @@ Coordinate Systems
   - use G10 L20 P1 in homing cycle to set the physical home position, associated with G54
   - use G10 L2 P2 X10 Y10 to set a standard offset from the home, associated with the G55 coords
   - use G10 L20 P3 (or G10 L2 P3 X__ Y1__) to set a temporary origin, associated with G56
-  
+
 stop, pause, resume
 --------------------
 stop on: power, chiller, limit, \03 control char
 stop resume on: \02 control char
 pause on: door, resume on door close
-
-
-
-
