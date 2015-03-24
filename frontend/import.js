@@ -7,19 +7,19 @@
 
 $(document).ready(function(){
 
-  var path_optimize = 1;
-  var forceSvgDpiTo = undefined;
+  var path_optimize = true
+  var forceSvgDpiTo = undefined
   // open button
   $('#open_btn').click(function(e){
-    e.preventDefault();
-    path_optimize = 1;
+    e.preventDefault()
+    path_optimize = true
     // forceSvgDpiTo = 90;
-    $('#open_file_fld').trigger('click');
+    $('#open_file_fld').trigger('click')
   })
 
   // file upload form
   $('#open_file_fld').change(function(e){
-    e.preventDefault();
+    e.preventDefault()
     $('#open_btn').button('loading')
     var input = $('#open_file_fld').get(0)
 
@@ -45,17 +45,17 @@ $(document).ready(function(){
     }
 
     // reset file input form field so change event also triggers again
-    var filename = $('#open_file_fld').val().split('\\').pop().split('/').pop();
-    $('title').html("LasaurApp - " + filename);
-    $('#open_file_fld').val('');
+    var name = $('#open_file_fld').val().split('\\').pop().split('/').pop()
+    $('title').html("LasaurApp - " + name)
+    $('#open_file_fld').val('')
   });
 
 
 
   function sendToBackend(e) {
-    var filedata = e.target.result
-    var filename = $('title').html().split(" - ")[1]
-    var ext = filename.slice(-4)
+    var job = e.target.result
+    var name = $('title').html().split(" - ")[1]
+    var ext = name.slice(-4)
 
     // type
     var type = ''
@@ -69,35 +69,31 @@ $(document).ready(function(){
     $().uxmessage('notice', "parsing "+type+" ...")
 
     // large file note
-    if (filedata.length > 102400) {
-      $().uxmessage('notice', "Big file! May take a few minutes.");
+    if (job.length > 102400) {
+      $().uxmessage('notice', "Big file! May take a few minutes.")
     }
 
     // send to backend
-    $.ajax({
-      type: "POST",
-      url: "/load",
-      data: {'filename':filename,
-             'filedata':filedata,
-             'dpi':forceSvgDpiTo,
-             'optimize':path_optimize,
-             'dimensions':JSON.stringify(app_settings.work_area_dimensions)},
-      dataType: "json",
+    var load_request = {'job':job, 'name':name, 'optimize':path_optimize}
+    post_request({
+      url:'/load',
+      data: load_request,
       success: function (data) {
         $().uxmessage('notice', "Parsed "+type+".")
-        $().uxmessage('notice', 'Using <b>' + data.dpi + 'dpi</b> for converting px units.')
+        $('title').html("LasaurApp - " + data)
         // alert(JSON.stringify(data));
-        handleParsedGeometry(data);
+        // handleParsedGeometry(data);
       },
       error: function (data) {
-        $().uxmessage('error', "backend error.");
-        $().uxmessage('error', JSON.stringify(data), false);
+        $().uxmessage('error', "backend error.")
+        $().uxmessage('error', JSON.stringify(data), false)
       },
       complete: function (data) {
-        $('#open_btn').button('reset');
+        $('#open_btn').button('reset')
         forceSvgDpiTo = undefined;  // reset
       }
-    });
+    })
+
   }
 
 
@@ -196,9 +192,9 @@ $(document).ready(function(){
   $("#import_to_queue").click(function(e) {
     if (!(DataHandler.isEmpty())) {
       var jobdata = DataHandler.getJson(getDeselectedColors());
-      var filename = $('title').html().split(" - ")[1]
-      save_and_add_to_job_queue(filename, jobdata);
-      load_job(filename, jobdata);
+      var name = $('title').html().split(" - ")[1]
+      save_and_add_to_job_queue(name, jobdata);
+      load_job(name, jobdata);
       $('#tab_jobs_button').trigger('click');
 
       // reset tap

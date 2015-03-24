@@ -6,259 +6,17 @@ var lasaurapp_version_reported = false
 var progress_not_yet_done_flag = false;
 
 
-(function($){
-  $.fn.uxmessage = function(kind, text, max_length) {
-    if (max_length == undefined) {
-        max_length = 100
-    }
-
-    if (max_length !== false && text.length > max_length) {
-      text = text.slice(0,max_length) + '\n...'
-    }
-
-    text = text.replace(/\n/g,'<br>')
-
-    if (kind == 'notice') {
-      $('#log_content').prepend('<div class="log_item log_notice well" style="display:none">' + text + '</div>')
-      $('#log_content').children('div').first().show('blind')
-      if ($("#log_content").is(':hidden')) {
-        $().toastmessage('showToast',
-          {text: text, sticky: false, position: 'top-right', type: 'notice'}
-        )
-      }
-    } else if (kind == 'success') {
-      $('#log_content').prepend('<div class="log_item log_success well" style="display:none">' + text + '</div>');
-      $('#log_content').children('div').first().show('blind');
-      if ($("#log_content").is(':hidden')) {
-        $().toastmessage('showToast',
-          {text: text, sticky: false, position: 'top-right', type: 'success'}
-        )
-      }
-    } else if (kind == 'warning') {
-      $('#log_content').prepend('<div class="log_item log_warning well" style="display:none">' + text + '</div>');
-      $('#log_content').children('div').first().show('blind');
-      if ($("#log_content").is(':hidden')) {
-        $().toastmessage('showToast',
-          {text: text, sticky: false, position: 'top-right', type: 'warning'}
-        )
-      }
-    } else if (kind == 'error') {
-      $('#log_content').prepend('<div class="log_item log_error well" style="display:none">' + text + '</div>');
-      $('#log_content').children('div').first().show('blind');
-      if ($("#log_content").is(':hidden')) {
-        $().toastmessage('showToast',
-          {text: text, sticky: false, position: 'top-right', type: 'error'}
-        )
-      }
-    }
-
-    while ($('#log_content').children('div').length > 200) {
-      $('#log_content').children('div').last().remove();
-    }
-
-  };
-})(jQuery);
-
-
-function get_request(args) {
-  // args items: url, success, error, complete
-  $.ajax({
-    type: "GET",
-    url: args.url,
-    dataType: "json",
-    username: "laser",
-    password: "laser",
-    statusCode: {
-      400: function(s) {
-        // alert(JSON.stringify(s))
-        if ('responseText' in s) {
-          r = s.responseText;
-          var error_txt = r.slice(r.indexOf('<pre>')+5,r.lastIndexOf('</pre>'))
-          $().uxmessage('error', error_txt);
-        }
-      },
-      401: function() {
-        $().uxmessage('error', "Wrong password/username.");
-      }
-    },
-    success: function (data) {
-      if ('success' in args) {
-        args.success(data);
-      }
-    },
-    error: function (data) {
-      if ('error' in args) {
-        args.error(data);
-      }
-    },
-    complete: function (data) {
-      if ('complete' in args) {
-        args.complete(data);
-      }
-    }
-  });
-}
-
-
-function send_job(job, success_msg, progress) {
-  if (true) {
-    if ('vector' in job || 'raster' in job) {
-      // $().uxmessage('notice', JSON.stringify(job), Infinity);
-      $.ajax({
-        type: "POST",
-        url: "/job",
-        data: {'job_data':JSON.stringify(job)},
-        // dataType: "json",
-        success: function (data) {
-          if (data == "__ok__") {
-            $().uxmessage('success', success_msg);
-            if (progress = true) {
-              // show progress bar, register live updates
-              if ($("#progressbar").children().first().width() == 0) {
-                $("#progressbar").children().first().width('5%');
-                $("#progressbar").show();
-                progress_not_yet_done_flag = true;
-                setTimeout(update_progress, 2000);
-              }
-            }
-          } else {
-            $().uxmessage('error', "Backend error: " + data);
-          }
-        },
-        error: function (data) {
-          // alert(JSON.stringify(data))
-          $().uxmessage('error', "Timeout. LasaurApp server down?");
-          if ("responseText" in data) {
-            $().uxmessage('error', data.responseText, Infinity);
-          }
-        },
-        complete: function (data) {
-          // future use
-        }
-      });
-    } else {
-      $().uxmessage('error', "No job data.");
-    }
-  } else {
-    $().uxmessage('warning', "Not ready, request ignored.");
-  }
-}
-
-
-
-function send_relative_move(x, y, z, seekrate, success_msg) {
-  var job = {
-    "vector":{
-      "passes":[
-        {
-          "paths":[0],
-          "relative":true,
-          "seekrate":seekrate
-        }
-      ],
-      "paths":[
-        [
-          [[x,y,z]]
-        ]
-      ],
-      "noreturn": true
-    }
-  }
-  send_job(job, success_msg, false);
-}
-
-
-function update_progress() {
-  $.get('/queue_pct_done', function(data) {
-    if (data.length > 0) {
-      var pct = parseInt(data);
-      $("#progressbar").children().first().width(pct+'%');
-      setTimeout(update_progress, 2000);
-    } else {
-      if (progress_not_yet_done_flag) {
-        $("#progressbar").children().first().width('100%');
-        $().uxmessage('notice', "Done.");
-        progress_not_yet_done_flag = false;
-        setTimeout(update_progress, 2000);
-      } else {
-        $('#progressbar').hide();
-        $("#progressbar").children().first().width(0);
-      }
-    }
-  });
-}
-
-
-function open_bigcanvas(scale, deselectedColors) {
-  var w = scale * app_settings.canvas_dimensions[0];
-  var h = scale * app_settings.canvas_dimensions[1];
-  $('#container').before('<a id="close_big_canvas" href="#"><canvas id="big_canvas" width="'+w+'px" height="'+h+'px" style="border:1px dashed #aaaaaa;"></canvas></a>');
-  var mid = $('body').innerWidth()/2.0-30;
-  $('#close_big_canvas').click(function(e){
-    close_bigcanvas();
-    return false;
-  });
-  $("html").on('keypress.closecanvas', function (e) {
-    if ((e.which && e.which == 13) || (e.keyCode && e.keyCode == 13) ||
-        (e.which && e.which == 27) || (e.keyCode && e.keyCode == 27)) {
-      // on enter or escape
-      close_bigcanvas();
-      return false;
-    } else {
-      return true;
-    }
-  });
-  // $('#big_canvas').focus();
-  $('#container').hide();
-  var bigcanvas = new Canvas('#big_canvas');
-  // DataHandler.draw(bigcanvas, 4*app_settings.to_canvas_scale, getDeselectedColors());
-  if (deselectedColors === undefined) {
-    DataHandler.draw(bigcanvas, scale*app_settings.to_canvas_scale);
-  } else {
-    DataHandler.draw(bigcanvas, scale*app_settings.to_canvas_scale, deselectedColors);
-  }
-}
-
-
-function close_bigcanvas() {
-  $('#big_canvas').remove();
-  $('#close_big_canvas').remove();
-  $('html').off('keypress.closecanvas');
-  delete bigcanvas;
-  $('#container').show();
-}
-
-
-function generate_download(filename, filedata) {
-  $.ajax({
-    type: "POST",
-    url: "/stash_download",
-    data: {'filedata': filedata},
-    success: function (data) {
-      window.open("/download/" + data + "/" + filename, '_blank');
-    },
-    error: function (data) {
-      $().uxmessage('error', "Timeout. LasaurApp server down?");
-    },
-    complete: function (data) {
-      // future use
-    }
-  });
-}
-
-
-
 function setup_canvas() {
-  var height = $(window).height();
-  var nav_height = $('#main-navbar').outerHeight(true);
-  var footer_height = $('#main-footer').outerHeight(true);
+  var height = $(window).height()
+  var nav_height = $('#main-navbar').outerHeight(true)
+  var footer_height = $('#main-footer').outerHeight(true)
   // $("#main-container").attr("top", nav_height);
-  $("#main-container").height((height-nav_height-footer_height)+'px');
+  $("#main-container").height((height-nav_height-footer_height)+'px')
 }
 
 $(window).resize(function() {
   setup_canvas()
-});
+})
 
 
 
@@ -274,41 +32,47 @@ $(document).ready(function(){
 
   setup_canvas()
 
-  var width = $('#job-canvas').innerWidth();
-  var height = $('#job-canvas').innerHeight();
+  var width = $('#job-canvas').innerWidth()
+  var height = $('#job-canvas').innerHeight()
   // Get a reference to the canvas object
-  var canvas = document.getElementById('job-canvas');
+  var canvas = document.getElementById('job-canvas')
   // Create an empty project and a view for the canvas:
-  paper.setup(canvas);
+  paper.setup(canvas)
 
-  var path = new paper.Path();
-  path.strokeColor = 'red';
-  path.closed = true;
-  path.add([1,1],[width-1,1],[width-1,height-1],[1,height-1]);
+  var path = new paper.Path()
+  path.strokeColor = 'red'
+  path.closed = true
+  path.add([1,1],[width-1,1],[width-1,height-1],[1,height-1])
 
-  var path2 = new paper.Path();
-  path2.strokeColor = 'red';
-  path2.closed = true;
-  path2.add([60,60],[width-60,60],[width-60,height-60],[60,height-60]);
+  var path2 = new paper.Path()
+  path2.strokeColor = 'red'
+  path2.closed = true
+  path2.add([60,60],[width-60,60],[width-60,height-60],[60,height-60])
 
-  paper.view.draw();
+  paper.view.draw()
 
 
-  $().uxmessage('notice', "Frontend started.");
+  $().uxmessage('notice', "Frontend started.")
 
   // get config from server
   get_request({
     url:'/config',
     success: function (data) {
-      $().uxmessage('success', "App config received.");
-      appconfig_main = data;
-      // alert(JSON.stringify(data));
+      $().uxmessage('success', "App config received.")
+      appconfig_main = data
+      // show in config modal
+      var html = ''
+      var keys_sorted = Object.keys(appconfig_main).sort()
+      for (var i=0; i<keys_sorted.length; i++) {
+        html += keys_sorted[i] + " : " + appconfig_main[keys_sorted[i]] + "<br>"
+      }
+      $('#config_content').html(html)
     },
     error: function (data) {
-      $().uxmessage('error', "No app config received");
+      $().uxmessage('error', "No app config received")
     },
     complete: function (data) {
-      // ready_2();
+      // ready_2()
     }
   })
 

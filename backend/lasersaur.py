@@ -4,7 +4,7 @@
 # ###
 #
 # This is a client implementation that connects to the LasaurApp
-# control software on a Lasersaur. 
+# control software on a Lasersaur.
 #
 # This library is an example client for the Lasersaur net API.
 #
@@ -16,11 +16,11 @@
 # jobname = lasersaur.load_library('Lasersaur.lsa')
 # if lasersaur.ready():
 #   lasersaur.run(jobname)
-# 
+#
 # while not lasersaur.ready():
 #   print "%s% done!" % (lasersaur.status()['progress'])
 #   time.sleep(1)
-# 
+#
 # print "job done"
 #
 
@@ -116,7 +116,7 @@ class Lasersaur(object):
 
     def relative(self):
         self._request('/relative')
-        
+
     def absolute(self):
         self._request('/absolute')
 
@@ -195,7 +195,7 @@ class Lasersaur(object):
     def load(self, job, name="job", optimize=True):
         """Load a job to the machine.
 
-        This will place a job in the job list on the machine. From 
+        This will place a job in the job list on the machine. From
         there it can be run by calling the run(jobname) function.
 
         Typically a job is sent in the native lsa format. Supported
@@ -209,12 +209,13 @@ class Lasersaur(object):
             optimize: Flag for optimizing path tolerances on machine.
 
         Returns:
-            Unique name give to the job. This is either name or 
+            Unique name give to the job. This is either name or
             name_<numeral>.
         """
-        load_request = {"job": job, "name":name, "optimize": optimize}
-        load_request = json.dumps(load_request)
-        return self._request('/load', postdict={'load_request':load_request}, ret=True)
+        if type(job) is dict:
+            job =  json.dumps(job)
+        load_request = json.dumps({"job": job, "name":name, "optimize": optimize})
+        return self._request('/load', postdict={'load_request'load_request}, ret=True)
 
 
     def load_file(self, jobfile, optimize=True, tolerance=None):
@@ -226,7 +227,7 @@ class Lasersaur(object):
             tolerance: Tolerance used in convert/optimization.
 
         Returns:
-            Unique name give to the job. This is either name or 
+            Unique name give to the job. This is either name or
             name_<numeral>.
         """
         import jobimport # dependancy only when actually needed
@@ -256,7 +257,7 @@ class Lasersaur(object):
                 ]
             }
         }
-        return self.loads(json.dumps(job))
+        return self.load(json.dumps(job))
 
     def load_image(self, image, pos, size, feedrate=6000, intensity=50):
         """Create and load a raster engraving job.
@@ -283,13 +284,13 @@ class Lasersaur(object):
                 "images":[
                     {
                         "pos": pos,
-                        "size": size, 
+                        "size": size,
                         "data": img_b64
                     }
                 ]
             }
         }
-        return self.loads(json.dumps(job))
+        return self.load(json.dumps(job))
 
     def listing(self, kind=None):
         """List all queue jobs by name."""

@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+
+
   <head>
+
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -19,15 +22,16 @@
     <script src="js/jquery.toastmessage.js"></script>
     <script src="js/paper-full.min.js"></script>
 
-    <script src="settings.js"></script>
+    <script src="lib.js"></script>
     <script src="app.js"></script>
     <script src="import.js"></script>
 
   </head>
 
+
   <body>
 
-    <!-- Fixed navbar -->
+    <!-- fixed navbar -->
     <nav id="main-navbar" class="navbar navbar-default">
       <div class="container" style="width:100%; padding-left:0">
 
@@ -75,7 +79,8 @@
                 <li><a href="#">Flash Firmware</a></li>
                 <li><a href="#">Flash Firmware from Source</a></li>
                 <li><a href="#">Reset Atmega</a></li>
-                <li><a href="#" data-toggle="modal" data-target=".log-modal">Log</a></li>
+                <li><a href="#" data-toggle="modal" data-target="#config-modal">Show Configuration</a></li>
+                <li><a href="#" data-toggle="modal" data-target="#log-modal">Log</a></li>
               </ul>
             </li>
           </ul>
@@ -110,19 +115,44 @@
       </div>
     </nav>
 
-    <!-- Begin page content -->
+    <!-- begin page content -->
     <div id="main-container" class="container">
+
       <!-- canvas -->
       <canvas id="job-canvas" style="width:100%; height:100%" resize></canvas>
-      <!-- log -->
-      <!-- <div id="log_content" style="overflow:auto; display:none"></div> -->
-      <div class="modal fade log-modal" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+
+      <!-- log modal-->
+      <div id="log-modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
-          <div id="log_content" class="modal-content"></div>
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              <h4 class="modal-title" id="myModalLabel">Log</h4>
+            </div>
+            <div id="log_content" class="modal-body">
+            </div>
+          </div>
         </div>
       </div>
-    </div>
 
+      <!-- config modal -->
+      <div id="config-modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              <h4 class="modal-title" id="myModalLabel">Configuration</h4>
+            </div>
+            <div id="config_content" class="modal-body">
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <!-- end page content -->
+
+    <!-- footer -->
     <footer id="main-footer" class="footer">
       <div class="container" style="width:100%">
         <a class="navbar-brand" href="/">
@@ -137,5 +167,9 @@
 
       </div>
     </footer>
+
+
   </body>
+
+
 </html>

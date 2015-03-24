@@ -115,7 +115,7 @@ def read_svg(svg_string, workspace, tolerance, forced_dpi=None, optimize=True):
                         "paths": idxs,
                         "feedrate": tag[1],
                         "intensity": tag[3]
-                    })                    
+                    })
     return job
 
 
@@ -180,7 +180,7 @@ def get_type(job):
     # figure out type
     if type(job) is dict:
         type_ = 'lsa'
-    elif type(job) is str:
+    elif type(job) is str or type(job) is unicode:
         jobheader = job[:256].lstrip()
         if jobheader and jobheader[0] == '{':
             type_ = 'lsa'
@@ -198,5 +198,5 @@ def get_type(job):
             raise TypeError
     else:
         print "ERROR: Cannot figure out file type 2."
-        raise TypeError     
+        raise TypeError
     return type_
