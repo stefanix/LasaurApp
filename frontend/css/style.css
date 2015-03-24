@@ -1,16 +1,51 @@
-
+/* Sticky footer styles
+-------------------------------------------------- */
+html {
+  position: relative;
+  min-height: 100%;
+}
 body {
-  padding-top:50px; 
+  /* Margin bottom by footer height */
+  margin-bottom: 60px;
+}
+.footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  /* Set the fixed height of the footer here */
+  height: 60px;
+  background-color: #f5f5f5;
 }
 
 
-a:focus { 
-    outline: none; 
+/* Custom page CSS
+-------------------------------------------------- */
+/* Not required for template or sticky footer method. */
+
+#main-navbar {
+    margin:0;
 }
 
+#main-container {
+  /*position:fixed;
+  top:52px;
+  left:0;*/
+  padding:0;
+  margin:0;
+  /*border: 1px blue solid;*/
+  width:100%;
+}
+.container .text-muted {
+  margin: 20px 0;
+}
 
-.target_highlight {
-  background-color:rgb(252, 248, 227);
+.footer > .container {
+  padding-right: 15px;
+  padding-left: 15px;
+}
+
+code {
+  font-size: 80%;
 }
 
 
@@ -19,18 +54,14 @@ div.log_item {
   margin: 5px;
 }
 div.log_notice {
-  border: 1px solid #aaaaaa;
+  border: 2px solid #aaaaaa;
 }
 div.log_success {
-  border: 1px solid green;
+  border: 2px solid green;
 }
 div.log_warning {
-  border: 1px solid orange;  
+  border: 2px solid orange;
 }
 div.log_error {
-  border: 1px solid red;
-}
-
-button.active-strong {
-  border: 1px solid #aaaaaa;
+  border: 2px solid red;
 }

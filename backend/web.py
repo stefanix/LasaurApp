@@ -43,15 +43,22 @@ def checkserial(func):
 def default_handler():
     return bottle.static_file('app.html', root=os.path.join(conf['rootdir'], 'frontend') )
 
+@bottle.route('/:path#.+#')
+def static_css_handler(path):
+    return bottle.static_file(path, root=os.path.join(conf['rootdir'], 'frontend'))
 
 @bottle.route('/css/:path#.+#')
 def static_css_handler(path):
     return bottle.static_file(path, root=os.path.join(conf['rootdir'], 'frontend', 'css'))
-    
+
+@bottle.route('/fonts/:path#.+#')
+def static_css_handler(path):
+    return bottle.static_file(path, root=os.path.join(conf['rootdir'], 'frontend', 'fonts'))
+
 @bottle.route('/js/:path#.+#')
 def static_js_handler(path):
     return bottle.static_file(path, root=os.path.join(conf['rootdir'], 'frontend', 'js'))
-    
+
 @bottle.route('/img/:path#.+#')
 def static_img_handler(path):
     return bottle.static_file(path, root=os.path.join(conf['rootdir'], 'frontend', 'img'))
@@ -249,7 +256,7 @@ def _clear(limit=None):
 def _add(job, name):
     # add job (lsa string)
     # delete excessive job files
-    num_to_del = (len(_get_sorted('*.lsa')) +1) - conf['max_jobs_in_list']  
+    num_to_del = (len(_get_sorted('*.lsa')) +1) - conf['max_jobs_in_list']
     _clear(num_to_del)
     # add
     namepath = os.path.join(conf['stordir'], name.strip('/\\')+'.lsa')
@@ -300,7 +307,7 @@ def load():
     altname = _unique_name(name)
     _add(json.dumps(job), altname)
     return json.dumps(altname)
-    
+
 
 
 @bottle.route('/listing')
@@ -517,7 +524,7 @@ S = Server()
 
 def start(threaded=True, browser=False, debug=False):
     """ Start a bottle web server.
-        Derived from WSGIRefServer.run() 
+        Derived from WSGIRefServer.run()
         to have control over the main loop.
     """
     class FixedHandler(wsgiref.simple_server.WSGIRequestHandler):
@@ -529,8 +536,8 @@ def start(threaded=True, browser=False, debug=False):
 
     S.server = wsgiref.simple_server.make_server(
         conf['network_host'],
-        conf['network_port'], 
-        bottle.default_app(), 
+        conf['network_port'],
+        bottle.default_app(),
         wsgiref.simple_server.WSGIServer,
         FixedHandler
     )
@@ -542,19 +549,19 @@ def start(threaded=True, browser=False, debug=False):
     print "-----------------------------------------------------------------------------"
     print "Bottle server starting up ..."
     # print "Serial is set to %d bps" % BITSPERSECOND
-    print "Point your browser to: "    
-    print "http://%s:%d/      (local)" % ('127.0.0.1', conf['network_port'])  
+    print "Point your browser to: "
+    print "http://%s:%d/      (local)" % ('127.0.0.1', conf['network_port'])
     print "Use Ctrl-C to quit."
-    print "-----------------------------------------------------------------------------"    
+    print "-----------------------------------------------------------------------------"
     print
     driveboard.connect(server=True)  # also start websocket stat server
     if not driveboard.connected():
         print "---------------"
         print "HOW TO configure the SERIAL PORT:"
-        print "in LasaurApp/backend/ create a configuration file" 
+        print "in LasaurApp/backend/ create a configuration file"
         print "userconfig.py, and add something like:"
         print "conf = {"
-        print "    'serial_port': 'COM3'," 
+        print "    'serial_port': 'COM3',"
         print "}"
         print "Any settings in this conf dictionary will overwrite config.py"
         print "---------------"
@@ -578,7 +585,7 @@ def start(threaded=True, browser=False, debug=False):
 def stop():
     global S
     S.stop()
-    # recreate server to unbind 
+    # recreate server to unbind
     # and allow restarting
     del S
     S = Server()
@@ -594,11 +601,3 @@ if __name__ == "__main__":
             break
     stop()
     print "END of LasaurApp"
-
-
-
-
-
-    
-
-

@@ -1,342 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="img/favicon.ico">
 
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<title>LasaurApp</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="/css/bootstrap.min.css" type="text/css">
-<link rel="stylesheet" href="/css/jquery.toastmessage.css" type="text/css">
-<link rel="stylesheet" href="/css/style.css" type="text/css">
-<script src="/js/jquery-1.7.2.min.js"></script>
-<script src="/js/bootstrap.min.js"></script>
-<script src="/js/jquery.toastmessage.js"></script>
-<script src="/js/jquery.hotkeys.js"></script>
-<script src="/js/settings.js"></script>
-<script src="/js/app_svgreader.js"></script>
-<script src="/js/app_job.js"></script>
-<script src="/js/app_canvas.js"></script>
-<script src="/js/app.js"></script>
-<script src="/js/app_laserjobs.js"></script>
-<script src="/js/app_mover.js"></script>
-<script src="/js/app_import.js"></script>
+    <title>LasaurApp</title>
 
-</head>
-<body>
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/jquery.toastmessage.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
 
-    <div class="navbar navbar-fixed-top">
-        <div class="navbar-inner">
-            <div class="container">
-                <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-                    <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
-                </a>
-                <div class="btn-group pull-right">
-                    <button id="connect_btn" class="btn disabled btn-danger" type="submit">Ready</button>
-                    <button id="door_status_btn" class="btn disabled btn-warning" type="submit">Door</button>
-                    <button id="chiller_status_btn" class="btn disabled btn-warning" type="submit">Chiller</button>
-                </div>
-                <div class="btn-group pull-right">
-                    <button id="origin_btn" class="btn" type="submit" title="move to origin">(0,0)</i></button>
-                    <button id="homing_btn" class="btn" type="submit" title="run homing cycle, find table origin"><i class="icon-home"></i></button>
-                    <button id="stop_btn" class="btn" type="submit" title="stop and purge job"><i class="icon-stop"></i></button>
-                </div>
-                <button id="pause_btn" class="btn pull-right" type="submit" title="pause/continue"><i class="icon-pause"></i></button>
-                <a class="brand" href="/" style="color:#666666"><img src="/img/lasersaur-dino-brand.png" style="margin-right:6px">LasaurApp</a>
-                <div class="nav-collapse">
-                    <ul class="nav">
-                        <li><a href="#about_modal" data-toggle="modal">About</a></li>
-                        <li class="divider-vertical"></li>
-                        <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Manual<b class="caret"></b></a>
-                            <ul class="dropdown-menu">
-                                <li><a href="http://www.lasersaur.com/manual/">Manual TOC</a></li>
-                                <li><a href="http://www.lasersaur.com/manual/operation">Operating a Lasersaur</a></li>
-                                <li><a href="http://www.lasersaur.com/manual/lasertags">LaserTags</a></li>
-                            </ul>
-                        </li>
-                        <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Admin<b class="caret"></b></a>
-                            <ul class="dropdown-menu">
-                                <li><a href="flash_firmware">Flash Firmware (latest)</a></li>
-                                <li><a href="build_firmware">Build and Flash from Source</a></li>
-                                <li><a id="reset_btn" href="#">Reset Atmega (restarts firmware)</a></li>
-                            </ul>
-                        </li>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/jquery.toastmessage.js"></script>
+    <script src="js/paper-full.min.js"></script>
 
-                    </ul>
-                </div>
-            </div>
+    <script src="settings.js"></script>
+    <script src="app.js"></script>
+    <script src="import.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav id="main-navbar" class="navbar navbar-default">
+      <div class="container" style="width:100%; padding-left:0">
+
+        <div class="btn-group pull-right" style="padding:8px">
+          <!-- status indicators -->
+          <button id="ready_status_btn" class="btn disabled btn-danger" type="submit">Ready</button>
+          <button id="door_status_btn" class="btn disabled btn-warning" type="submit">Door</button>
+          <button id="chiller_status_btn" class="btn disabled btn-warning" type="submit">Chiller</button>
         </div>
+
+        <div class="btn-group pull-right" style="padding:8px">
+          <!-- stop button -->
+          <button id="stop_btn" class="btn btn-default" type="submit" title="stop and purge job">
+            <span class="glyphicon glyphicon-stop"></span>
+          </button>
+          <!-- origin button -->
+          <button id="origin_btn" class="btn btn-default" type="submit" title="move to origin">
+            (0,0)
+          </button>
+          <!-- homing button -->
+          <button id="homing_btn" class="btn btn-default" type="submit" title="run homing cycle, find table origin">
+            <span class="glyphicon glyphicon-home"></span>
+          </button>
+        </div>
+
+        <div id="navbar" class="navbar pull-left" style="padding-left:0px; margin:0; border:0">
+          <ul class="nav navbar-nav" style="height:50px">
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+                <span class="glyphicon glyphicon-menu-hamburger" style="font-size:1.4em"></span>
+              </a>
+              <ul class="dropdown-menu" role="menu">
+                <li><a href="#">Open</a></li>
+                <li><a href="#">Clear</a></li>
+                <li><a href="#">Job Info</a></li>
+                <li><a href="#">Export</a></li>
+                <li class="divider"></li>
+                <li><a href="#about">Job Queue</a></li>
+                <li><a href="#about">Library</a></li>
+                <li class="divider"></li>
+                <li><a href="#about">Manual</a></li>
+                <li><a href="#about">About</a></li>
+                <li class="divider"></li>
+                <li class="dropdown-header">Admin</li>
+                <li><a href="#">Flash Firmware</a></li>
+                <li><a href="#">Flash Firmware from Source</a></li>
+                <li><a href="#">Reset Atmega</a></li>
+                <li><a href="#" data-toggle="modal" data-target=".log-modal">Log</a></li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+
+        <!-- open button -->
+        <div class="btn-group pull-left" style="padding:8px">
+            <button id="open_btn" class="btn btn-default" type="submit"
+                    title="open new job" data-loading-text="loading..." autocomplete="off">Open</button>
+        </div>
+        <form id="open_file_form" action="#" onsubmit="return false;">
+            <input type="file" id="open_file_fld" name="data" style="visibility:hidden; position:fixed">
+        </form>
+
+        <!-- process buttons -->
+        <div class="btn-group pull-left" style="padding:8px">
+            <button id="run_btn" class="btn btn-primary" type="submit" title="run this job">
+              Run this job!
+            </button>
+            <button id="boundary_btn" class="btn btn-primary" type="submit" title="show bounding box">
+              <span class="glyphicon glyphicon-resize-full"></span>
+            </button>
+        </div>
+
+        <!-- pause button -->
+        <div class="btn-group pull-left" style="padding:8px">
+          <button id="pause_btn" class="btn btn-default" type="submit" title="toggle pause">
+            <span class="glyphicon glyphicon-pause"></span>
+          </button>
+        </div>
+
+      </div>
+    </nav>
+
+    <!-- Begin page content -->
+    <div id="main-container" class="container">
+      <!-- canvas -->
+      <canvas id="job-canvas" style="width:100%; height:100%" resize></canvas>
+      <!-- log -->
+      <!-- <div id="log_content" style="overflow:auto; display:none"></div> -->
+      <div class="modal fade log-modal" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <div id="log_content" class="modal-content"></div>
+        </div>
+      </div>
     </div>
 
+    <footer id="main-footer" class="footer">
+      <div class="container" style="width:100%">
+        <a class="navbar-brand" href="/">
+          <img src="img/lasersaur-dino-lasaurapp-190.png" style="margin-right:6px">
+        </a>
 
-    <!-- about modal -->
-    <div id="about_modal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="about_label" aria-hidden="true">
-        <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-            <h3 id="about_label">About LasaurApp</h3>
+        <div class="btn-group" style="padding:12px">
+            <button id="ready_status_btn" class="btn btn-default" type="submit">Motion</button>
+            <button id="door_status_btn" class="btn btn-default" type="submit">Offset</button>
+            <button id="chiller_status_btn" class="btn btn-default" type="submit">Jog</button>
         </div>
-        <div class="modal-body">
-            <p><img src="/img/lasersaur-black_w530.jpg"></p>
-            <div style="width:60px;margin-left:auto;margin-right:auto;margin-top:20px;margin-bottom:20px"><img src="/img/lasersaur-dino.png" style="width:60px"></div>
-            <p>LasaurApp is the offical control app for the Lasersaur laser cutter and part of the <a href="http://www.lasersaur.com/">Lasersaur project</a>. This software is made available under the <a href="https://gnu.org/licenses/gpl.html">GPLv3 (version 3 or later)</a> software license. Copyright (c) 2013 <a href="http://labs.nortd.com/">Nortd Labs</a></p>
-            <ul>
-            <li>LasaurApp version <span id="lasaurapp_version"></span></li>
-            <li>Firmware version <span id="firmware_version">&lt;not connected&gt;</span></li>
-            </ul>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-primary" data-dismiss="modal" aria-hidden="true">Close</button>
-        </div>
-    </div>
 
-    <!-- cancel modal -->
-    <div id="cancel_modal" class="modal hide" tabindex="-1" role="dialog" aria-labelledby="cancel_modal_label" aria-hidden="true">
-        <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-            <h3 id="cancel_modal_label">Stop Job</h3>
-        </div>
-        <div class="modal-body">
-            <p>Press ENTER to confirm stopping the current job.</p>
-        </div>
-        <div class="modal-footer">
-            <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
-            <button id="really_stop_btn" class="btn btn-danger">Stop Job!</button>
-        </div>
-    </div>
-
-
-    <div id="container" class="container">
-        <div class="row">
-            <div class="span12">
-                <div class="tabbable row">
-
-                    <!--tabbar start-->
-                    <div class="span2 tabs-left">
-                        <ul class="nav nav-tabs" style="width:100%">
-                            <li class="active"><a href="#tab_jobs" id="tab_jobs_button" data-toggle="tab"><i class="icon-th-list" style="margin-right:2px"></i> Laser Jobs</a></li>
-                            <li><a href="#tab_import" id="tab_import_button" data-toggle="tab"><i class="icon-folder-open" style="margin-right:2px"></i> File Import</a></li>
-                            <li><a href="#tab_mover" id="tab_mover_button" data-toggle="tab"><i class="icon-move" style="margin-right:2px"></i> Move/Jog</a></li>
-                            <li><a href="#tab_logs" id="tab_logs_button" data-toggle="tab"><i class="icon-exclamation-sign" style="margin-right:2px"></i> Logs</a></li>
-                        </ul>
-                    </div>
-                    <!--tabbar end-->
-                    <div class="span10">
-                        <div class="tab-content" style="overflow:visible; padding-bottom:30px">
-                            <!--content start-->
-
-                            <div id="tab_jobs" class="tab-pane active">
-                                <div style="width:650px;">
-                                    <div class="well clearfix" style="margin-bottom:40px">
-                                        <input type="text" id="job_name" style="width:296px" placeholder="Load or import a job.">
-                                        <button id="file_import_quick_btn" class="btn pull-right" title="file import" data-delay="500">
-                                            <span class="icon-folder-open"></span>
-                                        </button>
-                                        <textarea id="job_data" style="display:none"></textarea>
-                                        <div id="preview_canvas_container"></div>
-                                        <!-- passes -->
-                                        <div id="passes_container" class="well clearfix" style="width:594px; margin:0px; margin-top:10px; padding:8px; background-color:#dddddd; display:none">
-                                            <div id="passes_info" class="pull-right" style="width:180px; color:#888888; display:none">
-                                                <p>Vector cuts: Use one or more passes with different cut parameters (feedrate, intensity). Assign path colors to passes as needed.</p>
-                                                <p>Need <a id="add_pass_btn" href="">more passes?</a></p>
-                                            </div>
-                                            <div id="passes" class="pull-left" style="width:400px">
-                                                <!-- passes go here -->
-                                            </div>
-                                        </div>
-                                        <div style="padding-top:20px">
-                                            <div class="btn-group pull-left">
-                                                <button id="job_submit" class="btn btn-large btn-primary">Send to Lasersaur</button>
-                                                <button id="job_bbox_submit" class="btn btn-large btn-primary" title="send bounding box to lasersaur" data-delay="500">
-                                                    <span class="icon-resize-full icon-white"></span>
-                                                </button>
-                                            </div>
-                                            <div id="stats_after_name" class="pull-left" style="margin-left:20px;padding-top:10px;color:#888888"></div>
-                                            <div class="btn-group pull-right">
-                                                <a class="btn btn-large dropdown-toggle" data-toggle="dropdown" href="#">
-                                                    <span class="icon-share-alt"></span>
-                                                    <span class="caret"></span>
-                                                </a>
-                                                <ul class="dropdown-menu">
-                                                    <li><a id="export_json_btn" href="#">Export Job as JSON</a></li>
-                                                    <li><a id="export_gcode_btn" href="#">Export Job as G-Code</a></li>
-                                                </ul>
-                                            </div>
-                                            <button id="job_save_to_queue" class="btn btn-large pull-right" title="add to queue" data-delay="500" style="margin-right:10px">
-                                                    <span class="icon-th-list"></span>
-                                            </button>
-                                        </div>
-                                        <div id="progressbar" class="progress progress-striped" style="margin-top:70px; clear:both">
-                                            <div class="bar" style="width:0%;"></div>
-                                        </div>
-                                    </div>
-                                    <button id="clear_queue" class="btn btn-mini pull-right" title="delete non-starred jobs" data-delay="500">
-                                        clear
-                                    </button>
-                                    <h3>Recent Jobs</h3>
-                                    <div>
-                                        <ul id="job_queue" class="nav nav-tabs nav-stacked">
-                                            <!-- job queue -->
-                                        </ul>
-                                        <div class="btn-group dropup">
-                                            <a class="btn btn-large dropdown-toggle" data-toggle="dropdown" href="#">
-                                                Library Jobs
-                                                <span class="caret"></span>
-                                            </a>
-                                            <ul id="job_library" class="dropdown-menu"></ul>
-                                                <!-- stock library go here -->
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div id="tab_import" class="tab-pane">
-                                <div class="well clearfix" style="width:610px">
-
-                                    <div class="row" style="margin-left:0px">
-                                    <div class="btn-group pull-left">
-                                            <button id="file_import_btn" class="btn btn-large" data-loading-text="loading..." autocomplete="off">
-                                                <i class="icon-folder-open"></i> Import
-                                            </button>
-                                        <button class="btn btn-large dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
-                                        <ul class="dropdown-menu">
-                                            <li><a id="svg_import_72_btn" href="#">Import 72dpi SVG</a></li>
-                                            <li><a id="svg_import_90_btn" href="#">Import 90dpi SVG</a></li>
-                                            <li><a id="svg_import_96_btn" href="#">Import 96dpi SVG</a></li>
-                                                <li class="divider"></li>
-                                            <li><a id="svg_import_nop_btn" href="#">Import without Optimizing</a></li>
-                                        </ul>
-                                    </div>
-                                        <div id="dpi_import_info" class="pull-left" style="margin:10px"></div>
-
-                                        <div class="pull-left">
-                                            <form id="svg_upload_form" action="#" onsubmit="return false;">
-                                                <input type="file" id="svg_upload_file" name="data" style="visibility:hidden; position:fixed">
-                                            </form>
-                                        </div>
-                                    </div>
-                                    <div id="import_canvas_container" style="margin-top:16px;"></div>
-                                    <div id="canvas_properties">
-                                        <div class="colorbtns"></div>
-                                    </div>
-                                    <div class="pull-left">
-                                        <button id="import_to_queue" class="btn btn-large" style="margin-top:16px">
-                                            <i class="icon-th-list"></i> Add to Queue
-                                        </button>
-                                    </div>
-                                    <div class="pull-left" style="margin-top:27px; margin-left:20px">
-                                        under name
-                                    </div>
-                                    <div class="pull-left" style="margin-top:22px; margin-left:10px">
-                                        <input type="text" id="import_name" style="width:240px" placeholder="Name...">
-                                    </div>
-                                </div> <!--end of well-->
-
-                                <div class="alert" style="width:400px">
-                                    <a class="close" data-dismiss="alert">×</a>
-                                    <strong>Note!</strong> Set page size in your SVG vector app to <b id="bed_size_note"></b>.
-                                </div>
-                                <div class="alert" style="width:400px">
-                                    <a class="close" data-dismiss="alert">×</a>
-                                    <strong>Note!</strong> Set cutting parameters in the SVG file with <a href="http://www.lasersaur.com/manual/lasertags">LaserTags</a>.
-                                </div>
-                            </div> <!-- end of import tab -->
-
-                            <div id="tab_mover" class="tab-pane" style="margin-left:0px">
-                                <div class="well" style="width:610px">
-                                    <div class="row" style="margin-left:0px">
-                                        <div id="cutting_area" style="position:relative; width:610px; height:305px; border:1px dashed #aaaaaa;">
-                                            <div id="head_position" style="position:absolute; top:0px; left:0px; width:5px; height:5px; Background: #ff0000;">
-                                            </div>
-                                            <div id="coordinates_info" style="margin:4px"></div>
-                                            <div id="offset_area" style="display:none; position:absolute; top:100px; left:100px; width:100px; height:100px; border-top:1px dashed #aaaaaa; border-left:1px dashed #aaaaaa">
-                                                <div id="offset_info" style="margin:4px"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row" style="width:475px; margin-left:auto; margin-right:auto; margin-top:20px">
-                                        <div id="seek_feed_btns" class="btn-group pull-left" data-toggle="buttons-radio">
-                                            <button id="seek_btn" class="btn active">Move</button>
-                                            <button id="feed_btn" class="btn">Cut</button>
-                                        </div>
-                                        <div id="intensity_input_div" class="input-prepend pull-left" style="margin-left:8px; margin-top:1px;">
-                                            <span class="add-on" style="margin-right:-5px;">%</span>
-                                            <input id="intensity_field" type="textfield" value="0" style="width:26px; display:none">
-                                            <input id="intensity_field_disabled" type="textfield" class="disabled" disabled="" value="0" style="width:26px;">
-                                        </div>
-                                        <div id="feedrate_btns" class="btn-group pull-right" data-toggle="buttons-radio">
-                                            <button id="feedrate_btn_slow" class="btn">slow</button>
-                                            <button id="feedrate_btn_medium" class="btn">medium</button>
-                                            <button id="feedrate_btn_fast" class="btn active">fast</button>
-                                        </div>
-                                        <div class="input-append pull-right" style="margin-right:8px; margin-top:1px;">
-                                            <input id="feedrate_field" type="textfield" value="8000" style="width:36px;">
-                                            <span class="add-on" style="margin-left:-5px;">mm/min</span>
-                                        </div>
-
-                                    </div>
-                                    <div class="row clearfix" style="width:400px; margin-left:auto; margin-right:auto; margin-top:16px">
-                                        <div class="well pull-left" style="width:140px; height:130px; background-color:#dddddd">
-                                            <div class="row" style="width:44px; margin-left:auto; margin-right:auto;">
-                                                <button id="jog_up_btn" class="btn btn-large"><i class="icon-arrow-up"></i></button>
-                                            </div>
-                                            <div class="row" style="width:140px; margin-left:auto; margin-right:auto; margin-top:8px">
-                                                <button id="jog_left_btn" class="btn btn-large pull-left"><i class="icon-arrow-left"></i></button>
-                                                <button id="jog_right_btn" class="btn btn-large pull-right"><i class="icon-arrow-right"></i></button>
-                                            </div>
-                                            <div class="row" style="width:44px; margin-left:auto; margin-right:auto; margin-top:8px">
-                                                <button id="jog_down_btn" class="btn btn-large"><i class="icon-arrow-down"></i></button>
-                                            </div>
-                                        </div>
-                                        <div class="well pull-right" style="width:168px; height:130px; background-color:#dddddd">
-                                            <div class="btn-group" style="margin-top:26px; margin-bottom:14px">
-                                                <button id="location_set_btn" class="btn"><span id="loc_move_cut_word">Move</span>To</button>
-                                                <button id="origin_set_btn" class="btn">OffsetTo</button>
-                                            </div>
-                                            <div class="input-prepend pull-left">
-                                                <span class="add-on" style="margin-right:-5px;">x</span>
-                                                <input id="x_location_field" type="textfield" value="0" style="width:48px;">
-                                            </div>
-                                            <div class="input-prepend pull-left" style="margin-left:4px;">
-                                                <span class="add-on" style="margin-right:-5px;">y</span>
-                                                <input id="y_location_field" type="textfield" value="0" style="width:42px;">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row" style="width:210px; margin-left:auto; margin-right:auto;">
-                                        <button id="air_on_btn" class="btn">Air Assist On</button>
-                                        <button id="air_off_btn" class="btn">Air Assist Off</button>
-                                    </div>
-                                </div>
-                                <div class="alert" style="width:400px">
-                                    <a class="close" data-dismiss="alert">×</a>
-                                    <strong>Note!</strong> Set an offset by shift-clicking in the work area.
-                                </div>
-                                <div class="alert" style="width:400px">
-                                    <a class="close" data-dismiss="alert">×</a>
-                                    <strong>Note!</strong> User arrow keys to jog. De/increase step with alt and shift.
-                                </div>
-                            </div> <!-- end of mover tab -->
-
-                            <div id="tab_logs" class="tab-pane active">
-                                <div class="alert" style="margin:5px; display:none">
-                                    <a class="close" data-dismiss="alert">×</a>
-                                    Log, most recent messages first:
-                                </div>
-                                <div id="log_content" style="clear:both; overflow:auto; display:none">
-                                    <!-- log -->
-                                </div>
-                            </div> <!-- end of log tab -->
-
-                            <!--content end-->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-</body>
+      </div>
+    </footer>
+  </body>
 </html>

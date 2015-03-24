@@ -1,15 +1,15 @@
 
-var appconfig_main = undefined;
-var hardware_ready_state = false;
-var firmware_version_reported = false;
-var lasaurapp_version_reported = false;
+var appconfig_main = undefined
+var hardware_ready_state = false
+var firmware_version_reported = false
+var lasaurapp_version_reported = false
 var progress_not_yet_done_flag = false;
 
 
 (function($){
   $.fn.uxmessage = function(kind, text, max_length) {
     if (max_length == undefined) {
-        max_length = 100;
+        max_length = 100
     }
 
     if (max_length !== false && text.length > max_length) {
@@ -19,28 +19,36 @@ var progress_not_yet_done_flag = false;
     text = text.replace(/\n/g,'<br>')
 
     if (kind == 'notice') {
-      $('#log_content').prepend('<div class="log_item log_notice well" style="display:none">' + text + '</div>');
-      $('#log_content').children('div').first().show('blind');
+      $('#log_content').prepend('<div class="log_item log_notice well" style="display:none">' + text + '</div>')
+      $('#log_content').children('div').first().show('blind')
       if ($("#log_content").is(':hidden')) {
-        $().toastmessage('showNoticeToast', text);
+        $().toastmessage('showToast',
+          {text: text, sticky: false, position: 'top-right', type: 'notice'}
+        )
       }
     } else if (kind == 'success') {
       $('#log_content').prepend('<div class="log_item log_success well" style="display:none">' + text + '</div>');
       $('#log_content').children('div').first().show('blind');
       if ($("#log_content").is(':hidden')) {
-        $().toastmessage('showSuccessToast', text);
+        $().toastmessage('showToast',
+          {text: text, sticky: false, position: 'top-right', type: 'success'}
+        )
       }
     } else if (kind == 'warning') {
       $('#log_content').prepend('<div class="log_item log_warning well" style="display:none">' + text + '</div>');
       $('#log_content').children('div').first().show('blind');
       if ($("#log_content").is(':hidden')) {
-        $().toastmessage('showWarningToast', text);
+        $().toastmessage('showToast',
+          {text: text, sticky: false, position: 'top-right', type: 'warning'}
+        )
       }
     } else if (kind == 'error') {
       $('#log_content').prepend('<div class="log_item log_error well" style="display:none">' + text + '</div>');
       $('#log_content').children('div').first().show('blind');
       if ($("#log_content").is(':hidden')) {
-        $().toastmessage('showErrorToast', text);
+        $().toastmessage('showToast',
+          {text: text, sticky: false, position: 'top-right', type: 'error'}
+        )
       }
     }
 
@@ -135,46 +143,7 @@ function send_job(job, success_msg, progress) {
     $().uxmessage('warning', "Not ready, request ignored.");
   }
 }
-// function send_gcode(gcode, success_msg, progress) {
-//   // if (hardware_ready_state || gcode[0] == '!' || gcode[0] == '~') {
-//   if (true) {
-//     if (typeof gcode === "string" && gcode != '') {
-//       // $().uxmessage('notice', gcode, Infinity);
-//       $.ajax({
-//         type: "POST",
-//         url: "/gcode",
-//         data: {'job_data':gcode},
-//         // dataType: "json",
-//         success: function (data) {
-//           if (data == "__ok__") {
-//             $().uxmessage('success', success_msg);
-//             if (progress = true) {
-//               // show progress bar, register live updates
-//               if ($("#progressbar").children().first().width() == 0) {
-//                 $("#progressbar").children().first().width('5%');
-//                 $("#progressbar").show();
-//                 progress_not_yet_done_flag = true;
-//                 setTimeout(update_progress, 2000);
-//               }
-//             }
-//           } else {
-//             $().uxmessage('error', "Backend error: " + data);
-//           }
-//         },
-//         error: function (data) {
-//           $().uxmessage('error', "Timeout. LasaurApp server down?");
-//         },
-//         complete: function (data) {
-//           // future use
-//         }
-//       });
-//     } else {
-//       $().uxmessage('error', "No gcode.");
-//     }
-//   } else {
-//     $().uxmessage('warning', "Not ready, request ignored.");
-//   }
-// }
+
 
 
 function send_relative_move(x, y, z, seekrate, success_msg) {
@@ -279,9 +248,22 @@ function generate_download(filename, filedata) {
 
 
 
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
+function setup_canvas() {
+  var height = $(window).height();
+  var nav_height = $('#main-navbar').outerHeight(true);
+  var footer_height = $('#main-footer').outerHeight(true);
+  // $("#main-container").attr("top", nav_height);
+  $("#main-container").height((height-nav_height-footer_height)+'px');
+}
 
+$(window).resize(function() {
+  setup_canvas()
+});
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 
 $(document).ready(function(){
@@ -290,10 +272,27 @@ $(document).ready(function(){
     alert("Error: Browser may be too old/non-standard.")
   }
 
-  $('#tab_logs_button').click(function(){
-    $('#log_content').show()
-    $('#tab_logs div.alert').show()
-  })
+  setup_canvas()
+
+  var width = $('#job-canvas').innerWidth();
+  var height = $('#job-canvas').innerHeight();
+  // Get a reference to the canvas object
+  var canvas = document.getElementById('job-canvas');
+  // Create an empty project and a view for the canvas:
+  paper.setup(canvas);
+
+  var path = new paper.Path();
+  path.strokeColor = 'red';
+  path.closed = true;
+  path.add([1,1],[width-1,1],[width-1,height-1],[1,height-1]);
+
+  var path2 = new paper.Path();
+  path2.strokeColor = 'red';
+  path2.closed = true;
+  path2.add([60,60],[width-60,60],[width-60,height-60],[60,height-60]);
+
+  paper.view.draw();
+
 
   $().uxmessage('notice', "Frontend started.");
 
@@ -303,12 +302,13 @@ $(document).ready(function(){
     success: function (data) {
       $().uxmessage('success', "App config received.");
       appconfig_main = data;
+      // alert(JSON.stringify(data));
     },
     error: function (data) {
       $().uxmessage('error', "No app config received");
     },
     complete: function (data) {
-      ready_2();
+      // ready_2();
     }
   })
 
