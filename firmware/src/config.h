@@ -79,9 +79,9 @@
 #else
   #define LIMITS_OVERWRITE_DDR  DDRD
   #define LIMITS_OVERWRITE_PORT PORTD
-  #define LIMITS_OVERWRITE_BIT  7  
+  #define LIMITS_OVERWRITE_BIT  7
 #endif
-  
+
 #define LIMIT_DDR               DDRC
 #define LIMIT_PORT              PORTC
 #define LIMIT_PIN               PINC
@@ -145,10 +145,10 @@
 
 // The temporal resolution of the acceleration management subsystem. Higher number give smoother
 // acceleration but may impact performance.
-// NOTE: Increasing this parameter will help any resolution related issues, especially with machines 
-// requiring very high accelerations and/or very fast feedrates. In general, this will reduce the 
+// NOTE: Increasing this parameter will help any resolution related issues, especially with machines
+// requiring very high accelerations and/or very fast feedrates. In general, this will reduce the
 // error between how the planner plans the motions and how the stepper program actually performs them.
-// However, at some point, the resolution can be high enough, where the errors related to numerical 
+// However, at some point, the resolution can be high enough, where the errors related to numerical
 // round-off can be great enough to cause problems and/or it's too fast for the Arduino. The correct
 // value for this parameter is machine dependent, so it's advised to set this only as high as needed.
 // Approximate successful values can range from 30L to 100L or more.
@@ -165,7 +165,11 @@
 // never reach its target. This parameter should always be greater than zero.
 #define MINIMUM_STEPS_PER_MINUTE 1600U // (steps/min) - Integer value only
 // 1600 @ 32step_per_mm = 50mm/min
-  
+
+// Minimum laser intensity, 0-255. Laser intensity is clamped to a minimum of this value.
+// If your laser switches off while moving slowly through high detail areas, increase this.
+#define MINIMUM_LASER_INTENSITY 0
+
 
 #define X_AXIS 0
 #define Y_AXIS 1
