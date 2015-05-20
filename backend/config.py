@@ -44,6 +44,14 @@ conf = {
 
     'usb_reset_hack': False,
     'raster_leadin': 40,
+
+    'max_segment_length': 5.0,
+
+    'raster_size': 0.4,                 # size (mm) of beam for rastering
+    'raster_offset': 40,
+    'raster_feedrate': 3000,
+    'raster_intensity': 20,
+    'raster_linechars': 70,
 }
 
 
@@ -79,11 +87,11 @@ else:
 ### stordir
 # This is to be used to store queue files and similar
 if sys.platform == 'darwin':
-    directory = os.path.join(os.path.expanduser('~'), 
-                             'Library', 'Application Support', 
+    directory = os.path.join(os.path.expanduser('~'),
+                             'Library', 'Application Support',
                              conf['company_name'], conf['appname'])
 elif sys.platform == 'win32':
-    directory = os.path.join(os.path.expandvars('%APPDATA%'), 
+    directory = os.path.join(os.path.expandvars('%APPDATA%'),
                              conf['company_name'], conf['appname'])
 else:
     directory = os.path.join(os.path.expanduser('~'), "." + conf['appname'])
@@ -101,10 +109,10 @@ conf['hardware'] = 'standard'
 ### check if running on BBB
 # also works on old Beaglebone if named 'lasersaur'
 # os.uname() on BBB:
-# ('Linux', 'lasersaur', '3.8.13-bone20', 
+# ('Linux', 'lasersaur', '3.8.13-bone20',
 #  '#1 SMP Wed May 29 06:14:59 UTC 2013', 'armv7l')
 uname = os.uname()
-if (sys.platform == "linux2" 
+if (sys.platform == "linux2"
         and (uname[1] == 'lasersaur' or uname[2] == '3.8.13-bone20')):
     conf['hardware'] = 'beaglebone'
 ### check if running on RaspberryPi

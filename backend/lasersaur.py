@@ -215,7 +215,7 @@ class Lasersaur(object):
         if type(job) is dict:
             job =  json.dumps(job)
         load_request = json.dumps({"job": job, "name":name, "optimize": optimize})
-        return self._request('/load', postdict={'load_request'load_request}, ret=True)
+        return self._request('/load', postdict={'load_request'}, ret=True)
 
 
     def load_file(self, jobfile, optimize=True, tolerance=None):

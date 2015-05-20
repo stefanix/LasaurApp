@@ -8,7 +8,7 @@ import threading
 
 import web
 import lasersaur
-from config import conf 
+from config import conf
 
 
 # assertEqual(a, b)
@@ -137,7 +137,7 @@ class TestLowLevel(unittest.TestCase):
         pos = lasersaur.status()['pos']
         self.assertAlmostEqual(pos[0], stepX(16.543, 4), DEC)
         self.assertAlmostEqual(pos[1], stepY(16.543, 4), DEC)
-        self.assertAlmostEqual(pos[2], stepZ(16.543, 4), DEC) 
+        self.assertAlmostEqual(pos[2], stepZ(16.543, 4), DEC)
         # clear offset
         lasersaur.clear_offset()
         time.sleep(1)
