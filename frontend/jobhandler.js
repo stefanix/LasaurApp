@@ -137,80 +137,95 @@ JobHandler = {
 
   // rendering //////////////////////////////////
 
-  draw : function (canvas, scale, exclude_colors, exclude_rasters) {
-    // draw rasters and paths
-    // exclude_colors, exclude_rasters is optional
-    canvas.background('#ffffff');
-    canvas.noFill();
-    var x_prev = 0;
-    var y_prev = 0;
-    // rasters
-    if (exclude_rasters === undefined || exclude_rasters !== true) {
-      for (var k=0; k<this.rasters.length; k++) {
-        var raster = this.rasters[k];
-
-        var x1 = raster.pos[0]*scale;
-        var y1 = raster.pos[1]*scale;
-        var width = raster.size_mm[0]*scale;
-        var height = raster.size_mm[1]*scale;
-        var image = raster.image;
-        var pixwidth = image.width;
-        var pixheight = image.height;
-        var offset = appconfig_main.raster_offset;
-
-        // var ppmmX = pixwidth / width;
-        // var ppmmY = pixheight / height;
-
-        // canvas.stroke('#aaaaaa');
-        // canvas.line(x_prev, y_prev, x1-offset, y);
-        // for (var y = y1; y < y1 + height; y++) {
-        //   var line = Math.round(ppmmY * (y-y1)) * pixwidth;
-        //   for (var x=x1; x < x1 + width; x++) {
-        //     var pixel = Math.round(line + (x - x1) * ppmmX);
-        //     // convert pixel value from extended ascii to hex: [128,255] -> [0-ff]
-        //     // hexpx = ((image[pixel].charCodeAt()-128)*2).toString(16)
-
-        //     // convert pixel value from extended ascii to hex: [33,118] -> [0-ff]
-        //     hexpx = ((image[pixel].charCodeAt()-33)*3).toString(16)
-        //     canvas.stroke('#'+hexpx+hexpx+hexpx);
-        //     canvas.line(x, y, x+1, y);
-        //   }
-        //   canvas.stroke('#aaaaaa');
-        //   canvas.line(x1 + width, y, x1 + width + offset, y);
-        //   canvas.line(x1 - offset, y, x1, y);
-        // }
-
-        canvas.ctx.drawImage(image, x1, y1, width, height);
-
-        x_prev = x1 + width + offset;
-        y_prev = y1 + height;
-      }
+  draw : function () {
+    // figure out scale
+    var w_workspace = appconfig_main.workspace[0]
+    var h_workspace = appconfig_main.workspace[1]
+    var aspect_workspace = w_workspace/h_workspace
+    var w_canvas = $('#job-canvas').innerWidth()
+    var h_canvas = $('#job-canvas').innerHeight()
+    var aspect_canvas = w_canvas/h_canvas
+    var scale = w_canvas/w_workspace  // default for same aspect
+    if (aspect_canvas > aspect_workspace) {
+      // canvas wider, fit by height
+      var scale = h_canvas/h_workspace
     }
+    // clear canvas
+    paper.project.clear()
+
+    // // rasters
+    // for (var k=0; k<this.rasters.length; k++) {
+    //   var raster = this.rasters[k];
+    //
+    //   var x1 = raster.pos[0]*scale;
+    //   var y1 = raster.pos[1]*scale;
+    //   var width = raster.size_mm[0]*scale;
+    //   var height = raster.size_mm[1]*scale;
+    //   var image = raster.image;
+    //   var pixwidth = image.width;
+    //   var pixheight = image.height;
+    //   var offset = appconfig_main.raster_offset;
+    //
+    //   // var ppmmX = pixwidth / width;
+    //   // var ppmmY = pixheight / height;
+    //
+    //   // canvas.stroke('#aaaaaa');
+    //   // canvas.line(x_prev, y_prev, x1-offset, y);
+    //   // for (var y = y1; y < y1 + height; y++) {
+    //   //   var line = Math.round(ppmmY * (y-y1)) * pixwidth;
+    //   //   for (var x=x1; x < x1 + width; x++) {
+    //   //     var pixel = Math.round(line + (x - x1) * ppmmX);
+    //   //     // convert pixel value from extended ascii to hex: [128,255] -> [0-ff]
+    //   //     // hexpx = ((image[pixel].charCodeAt()-128)*2).toString(16)
+    //
+    //   //     // convert pixel value from extended ascii to hex: [33,118] -> [0-ff]
+    //   //     hexpx = ((image[pixel].charCodeAt()-33)*3).toString(16)
+    //   //     canvas.stroke('#'+hexpx+hexpx+hexpx);
+    //   //     canvas.line(x, y, x+1, y);
+    //   //   }
+    //   //   canvas.stroke('#aaaaaa');
+    //   //   canvas.line(x1 + width, y, x1 + width + offset, y);
+    //   //   canvas.line(x1 - offset, y, x1, y);
+    //   // }
+    //
+    //   canvas.ctx.drawImage(image, x1, y1, width, height);
+    //
+    //   x_prev = x1 + width + offset;
+    //   y_prev = y1 + height;
+    // }
+
+
     // paths
-    for (var color in this.paths_by_color) {
-      if (exclude_colors === undefined || !(color in exclude_colors)) {
-        var paths = this.paths_by_color[color];
-        for (var k=0; k<paths.length; k++) {
-          var path = paths[k];
-          if (path.length > 0) {
-            var x = path[0][0]*scale;
-            var y = path[0][1]*scale;
-            canvas.stroke('#aaaaaa');
-            canvas.line(x_prev, y_prev, x, y);
-            x_prev = x;
-            y_prev = y;
-            canvas.stroke(color);
-            for (vertex=1; vertex<path.length; vertex++) {
-              var x = path[vertex][0]*scale;
-              var y = path[vertex][1]*scale;
-              canvas.line(x_prev, y_prev, x, y);
-              x_prev = x;
-              y_prev = y;
+    var x = 0;
+    var y = 0;
+    if ('paths' in this.vector) {
+      for (var i=0; i<this.vector.paths.length; i++) {
+        var path = this.vector.paths[i]
+        for (var j=0; j<path.length; j++) {
+          var pathseg = path[j]
+          if (pathseg.length > 0) {
+
+            var p_seek = new paper.Path()
+            p_seek.strokeColor = '#aaaaaa'
+            p_seek.add([x,y])
+            x = pathseg[0][0]*scale
+            y = pathseg[0][1]*scale
+            p_seek.add([x,y])
+
+            var p_feed = new paper.Path()
+            p_feed.strokeColor = '#000000'
+            p_feed.add([x,y])
+
+            for (vertex=1; vertex<pathseg.length; vertex++) {
+              x = pathseg[vertex][0]*scale
+              y = pathseg[vertex][1]*scale
+              p_feed.add([x,y])
             }
           }
         }
       }
     }
+    paper.view.draw()
   },
 
   draw_bboxes : function (canvas, scale) {
@@ -358,7 +373,7 @@ JobHandler = {
     var bbox_all = [Infinity, Infinity, -Infinity, -Infinity]
 
     // paths
-    if (this.vector.paths.length) > 0 {
+    if ('paths' in this.vector) {
       this.stats.paths = []
       for (var k=0; k<this.vector.paths.length; k++) {
         var x_prev = 0
@@ -390,14 +405,14 @@ JobHandler = {
     }
 
     // images
-    if (this.raster.images.length > 0) {
+    if ('images' in this.raster) {
       this.stats.images = []
       for (var k=0; k<this.raster.images.length; k++) {
         var image = this.raster.images[k]
         var image_length = (2*appconfig_main.raster_offset + image.size[0])
                          * Math.floor(image.size[1]/appconfig_main.raster_kerf)
         var image_bbox = [image.pos[0] - appconfig_main.raster_offset,
-                          image.pos[1]),
+                          image.pos[1],
                           image.pos[0] + image.size[0] + appconfig_main.raster_offset,
                           image.pos[1] + image.size[1]
                          ]
@@ -426,7 +441,9 @@ JobHandler = {
   getJobPathLength : function() {
     var total_length = 0;
     for (var k=0; k<this.vector.passes.length; k++) {
-      var
+      // var
+
+
 
     }
 

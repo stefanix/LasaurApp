@@ -96,7 +96,7 @@ $(document).ready(function(){
     // job is an lsa dict
 
     JobHandler.set(job, current_name, true)
-    JobHandler.draw(canvas)
+    JobHandler.draw()
 
     // debug, show image, stats
     // if ('rasters' in job) {
