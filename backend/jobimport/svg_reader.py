@@ -350,8 +350,8 @@ class SVGReader:
                     vertexScale(raster['pos'], self.px2mm)
 
                     # size to world scale and then to mm units
-                    matrixApplyScale(node['xformToWorld'], raster['size_mm'])
-                    vertexScale(raster['size_mm'], self.px2mm)
+                    matrixApplyScale(node['xformToWorld'], raster['size'])
+                    vertexScale(raster['size'], self.px2mm)
 
                     self.rasters.append(raster)
 

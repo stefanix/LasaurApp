@@ -60,14 +60,12 @@ JobHandler = {
 
   vector : {},
   raster : {},
-  raster_base64 : {},
   stats : {},
   name : "",
 
   clear : function() {
     this.vector = {}
     this.raster = {}
-    this.raster_base64 = {}
     this.stats = {}
     name = ""
   },
@@ -98,16 +96,15 @@ JobHandler = {
     if ('raster' in job) {
       if ('images' in job.raster) {
         this.raster = job.raster
-        this.raster_base64 = job.raster
         // convert base64 to Image object
         for (var i=0; i<this.raster.images.length; i++) {
           var image = this.raster.images[i]
-          var image_base64 = this.raster_base64.images[i]
+          var img_base64 = image.data
           image.data = new Image()
-          image.data.src = image_base64.data
+          image.data.src = img_base64
           // scale to have one pixel match raster_size (beam width for raster)
-          image.data.width = Math.round(image.size[0]/appconfig_main.raster_size);
-          image.data.height = Math.round(image.size[1]/appconfig_main.raster_size);
+          // image.data.width = Math.round(image.size[0]/appconfig_main.raster_size);
+          // image.data.height = Math.round(image.size[1]/appconfig_main.raster_size);
         }
       }
     }
@@ -125,7 +122,18 @@ JobHandler = {
   // writers //////////////////////////////////
 
   get : function() {
-    return {'vector':this.vector, 'raster':this.raster_base64, 'stats':this.stat}
+    var images_base64 = []
+    if ('images' in this.raster) {
+      // convert Image object to base64
+      for (var i=0; i<this.raster.images.length; i++) {
+        var image = this.raster.images[i]
+        images_base64.push({'pos':image.pos,
+                            'size':image.size,
+                            'data':image.data.src})
+      }
+    }
+    var raster_base64 = {'passes':this.raster.passes, 'images':images_base64}
+    return {'vector':this.vector, 'raster':raster_base64, 'stats':this.stat}
   },
 
   getJson : function() {
@@ -138,6 +146,10 @@ JobHandler = {
   // rendering //////////////////////////////////
 
   draw : function () {
+    var x = 0;
+    var y = 0;
+    // clear canvas
+    paper.project.clear()
     // figure out scale
     var w_workspace = appconfig_main.workspace[0]
     var h_workspace = appconfig_main.workspace[1]
@@ -149,55 +161,62 @@ JobHandler = {
     if (aspect_canvas > aspect_workspace) {
       // canvas wider, fit by height
       var scale = h_canvas/h_workspace
+      // indicate border, only on one side necessary
+      var w_scaled = w_workspace*scale
+      var p_bound = new paper.Path()
+      p_bound.fillColor = '#eeeeee'
+      p_bound.closed = true
+      p_bound.add([w_scaled,0],[w_canvas,0],[w_canvas,h_canvas],[w_scaled,h_canvas])
     }
-    // clear canvas
-    paper.project.clear()
 
-    // // rasters
-    // for (var k=0; k<this.rasters.length; k++) {
-    //   var raster = this.rasters[k];
-    //
-    //   var x1 = raster.pos[0]*scale;
-    //   var y1 = raster.pos[1]*scale;
-    //   var width = raster.size_mm[0]*scale;
-    //   var height = raster.size_mm[1]*scale;
-    //   var image = raster.image;
-    //   var pixwidth = image.width;
-    //   var pixheight = image.height;
-    //   var offset = appconfig_main.raster_offset;
-    //
-    //   // var ppmmX = pixwidth / width;
-    //   // var ppmmY = pixheight / height;
-    //
-    //   // canvas.stroke('#aaaaaa');
-    //   // canvas.line(x_prev, y_prev, x1-offset, y);
-    //   // for (var y = y1; y < y1 + height; y++) {
-    //   //   var line = Math.round(ppmmY * (y-y1)) * pixwidth;
-    //   //   for (var x=x1; x < x1 + width; x++) {
-    //   //     var pixel = Math.round(line + (x - x1) * ppmmX);
-    //   //     // convert pixel value from extended ascii to hex: [128,255] -> [0-ff]
-    //   //     // hexpx = ((image[pixel].charCodeAt()-128)*2).toString(16)
-    //
-    //   //     // convert pixel value from extended ascii to hex: [33,118] -> [0-ff]
-    //   //     hexpx = ((image[pixel].charCodeAt()-33)*3).toString(16)
-    //   //     canvas.stroke('#'+hexpx+hexpx+hexpx);
-    //   //     canvas.line(x, y, x+1, y);
-    //   //   }
-    //   //   canvas.stroke('#aaaaaa');
-    //   //   canvas.line(x1 + width, y, x1 + width + offset, y);
-    //   //   canvas.line(x1 - offset, y, x1, y);
-    //   // }
-    //
-    //   canvas.ctx.drawImage(image, x1, y1, width, height);
-    //
-    //   x_prev = x1 + width + offset;
-    //   y_prev = y1 + height;
-    // }
+    // rasters
+    if ('images' in this.raster) {
+      for (var k=0; k<this.raster.images.length; k++) {
+        var img = this.raster.images[k];
+        // alert(typeof(img.data))
+        var pos_x = img.pos[0]*scale;
+        var pos_y = img.pos[1]*scale;
+        var img_w = img.size[0]*scale;
+        var img_h = img.size[1]*scale;
+        var img_paper = new paper.Raster();
+        img_paper.image = img.data
+        img_paper.scale((img.size[0]*scale)/img.data.width)
+        img_paper.position = new paper.Point(pos_x+0.5*img_w, pos_y+0.5*img_h)
+
+        // var image = raster.image;
+        // var pixwidth = image.width;
+        // var pixheight = image.height;
+        // var offset = appconfig_main.raster_offset;
+        //
+        // var ppmmX = pixwidth / width;
+        // var ppmmY = pixheight / height;
+
+        // canvas.stroke('#aaaaaa');
+        // canvas.line(x_prev, y_prev, x1-offset, y);
+        // for (var y = y1; y < y1 + height; y++) {
+        //   var line = Math.round(ppmmY * (y-y1)) * pixwidth;
+        //   for (var x=x1; x < x1 + width; x++) {
+        //     var pixel = Math.round(line + (x - x1) * ppmmX);
+        //     // convert pixel value from extended ascii to hex: [128,255] -> [0-ff]
+        //     // hexpx = ((image[pixel].charCodeAt()-128)*2).toString(16)
+
+        //     // convert pixel value from extended ascii to hex: [33,118] -> [0-ff]
+        //     hexpx = ((image[pixel].charCodeAt()-33)*3).toString(16)
+        //     canvas.stroke('#'+hexpx+hexpx+hexpx);
+        //     canvas.line(x, y, x+1, y);
+        //   }
+        //   canvas.stroke('#aaaaaa');
+        //   canvas.line(x1 + width, y, x1 + width + offset, y);
+        //   canvas.line(x1 - offset, y, x1, y);
+        // }
+
+        x = pos_x + img_w + appconfig_main.raster_offset;
+        y = pos_y + img_h;
+      }
+    }
 
 
     // paths
-    var x = 0;
-    var y = 0;
     if ('paths' in this.vector) {
       for (var i=0; i<this.vector.paths.length; i++) {
         var path = this.vector.paths[i]
@@ -229,6 +248,7 @@ JobHandler = {
         }
       }
     }
+    // finally commit draw
     paper.view.draw()
   },
 
