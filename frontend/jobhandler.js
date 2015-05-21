@@ -167,6 +167,12 @@ JobHandler = {
       p_bound.fillColor = '#eeeeee'
       p_bound.closed = true
       p_bound.add([w_scaled,0],[w_canvas,0],[w_canvas,h_canvas],[w_scaled,h_canvas])
+    } else if (aspect_workspace > aspect_canvas) {
+      var h_scaled = h_workspace*scale
+      var p_bound = new paper.Path()
+      p_bound.fillColor = '#eeeeee'
+      p_bound.closed = true
+      p_bound.add([0,h_scaled],[w_canvas,h_scaled],[w_canvas,h_canvas],[0,h_canvas])
     }
 
     // rasters
