@@ -213,7 +213,11 @@ JobHandler = {
             p_seek.add([x,y])
 
             var p_feed = new paper.Path()
-            p_feed.strokeColor = '#000000'
+            if ('colors' in this.vector && i < this.vector.colors.length) {
+              p_feed.strokeColor = this.vector.colors[i]
+            } else {
+              p_feed.strokeColor = '#000000'
+            }
             p_feed.add([x,y])
 
             for (vertex=1; vertex<pathseg.length; vertex++) {
