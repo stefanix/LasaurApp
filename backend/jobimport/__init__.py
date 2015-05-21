@@ -78,12 +78,11 @@ def read_svg(svg_string, workspace, tolerance, forced_dpi=None, optimize=True):
 
 
     if 'rasters' in res:
+        job['raster'] = {}
+        job['raster']['images'] = []
         for raster in res['rasters']:
             # format: [(pos, size, data)]
-            job['raster'] = {}
-            job['raster']['images'] = []
-            imgs = job['raster']['images']
-            imgs.append(raster)
+            job['raster']['images'].append(raster)
 
     if 'lasertags' in res:
         # format: [('12', '2550', '', '100', '%', ':#fff000', ':#ababab', ':#ccc999', '', '', '')]
@@ -116,6 +115,7 @@ def read_svg(svg_string, workspace, tolerance, forced_dpi=None, optimize=True):
                         "feedrate": tag[1],
                         "intensity": tag[3]
                     })
+
     return job
 
 

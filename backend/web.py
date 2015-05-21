@@ -306,7 +306,6 @@ def load():
         bottle.abort(400, "Invalid file type.")
 
     altname = _unique_name(name)
-    print json.dumps(job)
     _add(json.dumps(job), altname)
     return json.dumps(altname)
 
