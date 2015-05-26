@@ -6,80 +6,50 @@ var lasaurapp_version_reported = false
 var progress_not_yet_done_flag = false;
 
 
-function setup_canvas() {
-  var height = $(window).height()
-  var nav_height = $('#main-navbar').outerHeight(true)
-  var footer_height = $('#main-footer').outerHeight(true)
-  // $("#main-container").attr("top", nav_height);
-  $("#main-container").height((height-nav_height-footer_height)+'px')
-}
-
-$(window).resize(function() {
-  setup_canvas()
-})
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
 
 $(document).ready(function(){
+  $().uxmessage('notice', "Frontend started.")
   // modern browser check
   if(!Object.hasOwnProperty('keys')) {
     alert("Error: Browser may be too old/non-standard.")
   }
-
-  setup_canvas()
-
-  var width = $('#job-canvas').innerWidth()
-  var height = $('#job-canvas').innerHeight()
-  // Get a reference to the canvas object
-  var canvas = document.getElementById('job-canvas')
-  // Create an empty project and a view for the canvas:
-  paper.setup(canvas)
-
-  var path = new paper.Path()
-  path.strokeColor = 'red'
-  path.closed = true
-  path.add([1,1],[width-1,1],[width-1,height-1],[1,height-1])
-
-  var path2 = new paper.Path()
-  path2.strokeColor = 'red'
-  path2.closed = true
-  path2.add([60,60],[width-60,60],[width-60,height-60],[60,height-60])
-
-  paper.view.draw()
-
-
-  $().uxmessage('notice', "Frontend started.")
-
-  // get config from server
+  // get appconfig from server
   get_request({
     url:'/config',
     success: function (data) {
       $().uxmessage('success', "App config received.")
       appconfig_main = data
-      // show in config modal
-      var html = ''
-      var keys_sorted = Object.keys(appconfig_main).sort()
-      for (var i=0; i<keys_sorted.length; i++) {
-        html += keys_sorted[i] + " : " + appconfig_main[keys_sorted[i]] + "<br>"
-      }
-      $('#config_content').html(html)
+      config_received()
     },
     error: function (data) {
-      $().uxmessage('error', "No app config received")
+      $().uxmessage('error', "Failed to receive app config.")
     },
-    complete: function (data) {
-      // ready_2()
-    }
+    complete: function (data) {}
   })
-
 });
 
 
-function ready_2() {
+
+function config_received() {
+  // show in config modal
+  var html = ''
+  var keys_sorted = Object.keys(appconfig_main).sort()
+  for (var i=0; i<keys_sorted.length; i++) {
+    html += keys_sorted[i] + " : " + appconfig_main[keys_sorted[i]] + "<br>"
+  }
+  $('#config_content').html(html)
+
+  // call 'ready' of jobview
+  jobview_ready()
+
+}
+
+
+function config_received_next() {
 
   $('#feedrate_field').val(appconfig_main.feedrate);
 

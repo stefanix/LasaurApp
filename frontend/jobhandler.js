@@ -48,7 +48,7 @@
 //               {
 //                   "pos": (100,50),          # pos in mm
 //                   "size": (300,200),        # size in mm
-//                   "data": <data in base64>
+//                   "data": <data in base64>  # internally this is a js Image
 //               }
 //           ]
 //       }

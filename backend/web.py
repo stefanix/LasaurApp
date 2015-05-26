@@ -53,7 +53,7 @@ def static_css_handler(path):
     return bottle.static_file(path, root=os.path.join(conf['rootdir'], 'frontend', 'css'))
 
 @bottle.route('/fonts/<path:path>')
-def static_css_handler(path):
+def static_font_handler(path):
     return bottle.static_file(path, root=os.path.join(conf['rootdir'], 'frontend', 'fonts'))
 
 @bottle.route('/js/<path:path>')
@@ -73,7 +73,7 @@ def favicon_handler():
 @bottle.auth_basic(checkuser)
 def temp():
     """Create temp file for downloading."""
-    filedata = request.forms.get('filedata')
+    filedata = bottle.request.forms.get('filedata')
     fp = tempfile.NamedTemporaryFile(mode='w', delete=False)
     filename = fp.name
     with fp:
@@ -88,7 +88,7 @@ def temp():
 @bottle.auth_basic(checkuser)
 def download(filename, dlname):
     print "requesting: " + filename
-    return static_file(filename, root=tempfile.gettempdir(), download=dlname)
+    return bottle.static_file(filename, root=tempfile.gettempdir(), download=dlname)
 
 
 
@@ -440,7 +440,7 @@ def unpause():
 @bottle.route('/stop')
 @bottle.auth_basic(checkuser)
 @checkserial
-def stop():
+def stop_():
     """Halt machine immediately and purge job."""
     driveboard.stop()
 

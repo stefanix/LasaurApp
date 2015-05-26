@@ -98,6 +98,7 @@ $(document).ready(function(){
     JobHandler.set(job, current_name, true)
     JobHandler.draw()
 
+
     // debug, show image, stats
     // if ('rasters' in job) {
       // for (var i=0; i<job.rasters.length; i++) {
