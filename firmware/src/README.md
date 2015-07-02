@@ -14,7 +14,7 @@ For more information see the [Lasersaur Software Setup Guide](http://www.lasersa
 Grbl - An embedded g-code interpreter and motion-controller for the Arduino/AVR328 microcontroller
 --------------
 
-For more information [on Grbl](https://github.com/simen/grbl)
+For more information [on Grbl](https://github.com/grbl/grbl)
 
 
 TODO
