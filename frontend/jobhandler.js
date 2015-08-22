@@ -115,6 +115,9 @@ JobHandler = {
     } else {
       this.calculateBasicStats()
     }
+
+    // view job info
+    $('#job-info').html("hello")
   },
 
 
@@ -149,7 +152,11 @@ JobHandler = {
     var x = 0;
     var y = 0;
     // clear canvas
-    paper.project.clear()
+    // paper.project.clear()
+    jobview_seekLayer.remove()
+    jobview_seekLayer = new paper.Layer()
+    jobview_feedLayer.remove()
+    jobview_feedLayer = new paper.Layer()
     // figure out scale
     var w_workspace = appconfig_main.workspace[0]
     var h_workspace = appconfig_main.workspace[1]
@@ -224,20 +231,28 @@ JobHandler = {
 
     // paths
     if ('paths' in this.vector) {
+      jobview_feedLayer.activate()
+      var job_group = new paper.Group()
       for (var i=0; i<this.vector.paths.length; i++) {
         var path = this.vector.paths[i]
+        jobview_feedLayer.activate()
+        var group = new paper.Group()
+        job_group.addChild(group)
         for (var j=0; j<path.length; j++) {
           var pathseg = path[j]
           if (pathseg.length > 0) {
 
+            jobview_seekLayer.activate()
             var p_seek = new paper.Path()
-            p_seek.strokeColor = '#aaaaaa'
+            p_seek.strokeColor = appconfig_main.seek_color
             p_seek.add([x,y])
             x = pathseg[0][0]*scale
             y = pathseg[0][1]*scale
             p_seek.add([x,y])
 
+            jobview_feedLayer.activate()
             var p_feed = new paper.Path()
+            group.addChild(p_feed);
             if ('colors' in this.vector && i < this.vector.colors.length) {
               p_feed.strokeColor = this.vector.colors[i]
             } else {
@@ -252,51 +267,19 @@ JobHandler = {
             }
           }
         }
+        // draw group's bounding box
+        jobview_seekLayer.activate()
+        var group_bounds = new paper.Path.Rectangle(group.bounds)
+        group_bounds.strokeColor = appconfig_main.bounds_color
       }
     }
+    // draw super bounding box
+    jobview_seekLayer.activate()
+    var all_bounds = new paper.Path.Rectangle(job_group.bounds)
+    all_bounds.strokeColor = appconfig_main.bounds_color
     // finally commit draw
     paper.view.draw()
   },
-
-  draw_bboxes : function (canvas, scale) {
-    // draw with bboxes by color
-    // only include colors that are in passe
-    var bbox_combined = [Infinity, Infinity, 0, 0];
-
-    function drawbb(stats, obj) {
-      var xmin = stats['bbox'][0]*scale;
-      var ymin = stats['bbox'][1]*scale;
-      var xmax = stats['bbox'][2]*scale;
-      var ymax = stats['bbox'][3]*scale;
-      canvas.stroke('#dddddd');
-      canvas.line(xmin,ymin,xmin,ymax);
-      canvas.line(xmin,ymax,xmax,ymax);
-      canvas.line(xmax,ymax,xmax,ymin);
-      canvas.line(xmax,ymin,xmin,ymin);
-      obj.bboxExpand(bbox_combined, xmin, ymin);
-      obj.bboxExpand(bbox_combined, xmax, ymax);
-    }
-
-    // rasters
-    if ('rasters' in this.stats) {
-      drawbb(this.stats['rasters'], this);
-    }
-    // for all job colors
-    for (var color in this.getPassesColors()) {
-      drawbb(this.stats[color], this);
-    }
-    // draw global bbox
-    xmin = bbox_combined[0];
-    ymin = bbox_combined[1];
-    xmax = bbox_combined[2];
-    ymax = bbox_combined[3];
-    canvas.stroke('#dddddd');
-    canvas.line(xmin,ymin,xmin,ymax);
-    canvas.line(xmin,ymax,xmax,ymax);
-    canvas.line(xmax,ymax,xmax,ymin);
-    canvas.line(xmax,ymin,xmin,ymin);
-  },
-
 
 
   // passes and colors //////////////////////////
@@ -414,7 +397,7 @@ JobHandler = {
         if (path.length > 1) {
           var x = path[0][0]
           var y = path[0][1]
-          this.bboxExpand(path_bbox, x, y)
+          // this.bboxExpand(path_bbox, x, y)
           x_prev = x
           y_prev = y
           for (vertex=1; vertex<path.length; vertex++) {
@@ -422,15 +405,15 @@ JobHandler = {
             var y = path[vertex][1]
             path_length +=
               Math.sqrt((x-x_prev)*(x-x_prev)+(y-y_prev)*(y-y_prev))
-            this.bboxExpand(path_bbox, x, y)
+            // this.bboxExpand(path_bbox, x, y)
             x_prev = x
             y_prev = y
           }
         }
         this.stats.paths.push({'bbox':path_bbox, 'length':path_length})
         length_all += path_length
-        this.bboxExpand(bbox_all, path_bbox[0], path_bbox[1])
-        this.bboxExpand(bbox_all, path_bbox[2], path_bbox[3])
+        // this.bboxExpand(bbox_all, path_bbox[0], path_bbox[1])
+        // this.bboxExpand(bbox_all, path_bbox[2], path_bbox[3])
       }
     }
 
@@ -448,8 +431,8 @@ JobHandler = {
                          ]
         this.stats.images.push({'bbox':path_bbox, 'length':path_length})
         length_all += image_length
-        this.bboxExpand(bbox_all, image_bbox[0], image_bbox[1])
-        this.bboxExpand(bbox_all, image_bbox[2], image_bbox[3])
+        // this.bboxExpand(bbox_all, image_bbox[0], image_bbox[1])
+        // this.bboxExpand(bbox_all, image_bbox[2], image_bbox[3])
       }
     }
 
@@ -460,13 +443,6 @@ JobHandler = {
     }
   },
 
-
-  bboxExpand : function(bbox, x, y) {
-    if (x < bbox[0]) {bbox[0] = x;}
-    else if (x > bbox[2]) {bbox[2] = x;}
-    if (y < bbox[1]) {bbox[1] = y;}
-    else if (y > bbox[3]) {bbox[3] = y;}
-  },
 
   getJobPathLength : function() {
     var total_length = 0;
@@ -484,15 +460,6 @@ JobHandler = {
     return total_length;
   },
 
-  getJobBbox : function() {
-    var total_bbox = [Infinity, Infinity, 0, 0];
-    for (var color in this.getPassesColors()) {
-      stat = this.stats[color];
-      this.bboxExpand(total_bbox, stat['bbox'][0], stat['bbox'][1]);
-      this.bboxExpand(total_bbox, stat['bbox'][2], stat['bbox'][3]);
-    }
-    return total_bbox;
-  },
 
 
   // path optimizations /////////////////////////

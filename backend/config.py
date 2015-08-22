@@ -52,6 +52,9 @@ conf = {
     'raster_feedrate': 3000,
     'raster_intensity': 20,
     'raster_linechars': 70,
+
+    'seek_color': '#eeeeee',            # color of seek lines in frontend
+    'bounds_color': '#dddddd',          # color of bounding boxes in frontend
 }
 
 

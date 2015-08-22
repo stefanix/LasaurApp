@@ -2,6 +2,9 @@ var jobview_width = 0
 var jobview_height = 0
 var jobview_mm2px = 1.0
 
+var jobview_feedLayer = undefined
+var jobview_seekLayer = undefined
+
 var nav_height_init = 0
 var footer_height = 0
 var info_width_init = 0
@@ -17,8 +20,8 @@ function jobview_resize() {
   // var containter_height = win_height-nav_height_init-footer_height_init
   $("#main-container").height(canvas_height)
   $("#job-canvas").width(win_width-info_width_init)
-  // $("#job-info").width(job_info_min_width)
-  $("#job-info").height(canvas_height)
+  // $("#info-panel").width(job_info_min_width)
+  $("#info-panel").height(canvas_height)
   // jobview_width = $('#job-canvas').innerWidth()
   // jobview_height = $('#job-canvas').innerHeight()
 
@@ -35,13 +38,13 @@ function jobview_resize() {
       jobview_mm2px = canvas_height/wk_height
       // indicate border, only on one side necessary
       $("#job-canvas").width(Math.floor(wk_width*jobview_mm2px))
-      $("#job-info").width(win_width-Math.ceil(wk_width*jobview_mm2px))
+      $("#info-panel").width(win_width-Math.ceil(wk_width*jobview_mm2px))
     } else if (aspect_workspace > aspect_canvas) {
       // canvas taller, fit by width
       var h_scaled = Math.floor(wk_height*jobview_mm2px)
-      $("#job-info").width(info_width_init)
+      $("#info-panel").width(info_width_init)
       $("#main-container").height(h_scaled)
-      $("#job-info").height(h_scaled)
+      $("#info-panel").height(h_scaled)
       // $('#main-footer').height(win_height-nav_height_init-h_scaled)
     } else {
       // excact fit
@@ -52,15 +55,9 @@ function jobview_resize() {
 
   // resize content
   setTimeout(function() {
-    var w_canvas = $('#job-canvas').innerWidth()
-    var h_canvas = $('#job-canvas').innerHeight()
     var resize_scale = jobview_width/jobview_width_last
-    console.log(jobview_width_last)
-    console.log(jobview_width)
-    console.log(resize_scale)
     jobview_width_last = jobview_width
     jobview_height_last = jobview_height
-
     for (var i=0; i<paper.project.layers.length; i++) {
       var layer = paper.project.layers[i]
       for (var j=0; j<layer.children.length; j++) {
@@ -68,11 +65,20 @@ function jobview_resize() {
         child.scale(resize_scale, new paper.Point(0,0))
       }
     }
-
     paper.view.draw()
   }, 600);
 }
 
+
+function jobview_deselect_all() {
+  for (var i=0; i<paper.project.layers.length; i++) {
+    var layer = paper.project.layers[i]
+    for (var j=0; j<layer.children.length; j++) {
+      var child = layer.children[j]
+      child.selected = false
+    }
+  }
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -88,7 +94,7 @@ function jobview_ready() {
 
   nav_height_init = $('#main-navbar').outerHeight(true)
   footer_height_init = $('#main-footer').outerHeight(true)
-  info_width_init = $("#job-info").outerWidth(true)
+  info_width_init = $("#info-panel").outerWidth(true)
 
   // calc/set canvas size
   jobview_resize()
@@ -99,30 +105,10 @@ function jobview_ready() {
   var canvas = document.getElementById('job-canvas')
   paper.setup(canvas)
 
-  // paper.view.onResize = function(event) {
-  //   setTimeout(function() {
-  //     var w_canvas = $('#job-canvas').innerWidth()
-  //     var h_canvas = $('#job-canvas').innerHeight()
-  //     var resize_scale = w_canvas/jobview_width
-  //     console.log(w_canvas)
-  //     console.log(jobview_width)
-  //     console.log(resize_scale)
-  //     if (resize_scale > 0.01 && resize_scale < 10) {
-  //       jobview_width = w_canvas
-  //       jobview_height = h_canvas
-
-  //       for (var i=0; i<paper.project.layers.length; i++) {
-  //         var layer = paper.project.layers[i]
-  //         for (var j=0; j<layer.children.length; j++) {
-  //           var child = layer.children[j]
-  //           child.scale(resize_scale, child.bounds.topLeft)
-  //         }
-  //       }
-
-  //       paper.view.draw()
-  //     }
-  //   }, 300);
-  // }
+  // seek lines layer
+  jobview_feedLayer = paper.project.activeLayer
+  jobview_seekLayer = new paper.Layer();
+  jobview_feedLayer.activate()
 
   // tools
   var tool1, tool2, tool_pass;
@@ -154,12 +140,30 @@ function jobview_ready() {
     path.arcTo(event.point);
   }
 
+  // Pass Tool
   tool_pass = new paper.Tool();
   tool_pass.onMouseDown = function(event) {
-    console.log(paper.project.hitTest())
-    paper.project.activeLayer.selected = false;
-    if (event.item) {
-      event.item.selected = true;
+    // console.log(paper.project.hitTest())
+    // paper.project.activeLayer.selected = false
+    // if (event.item) {
+    //   event.item.selected = true
+    // }
+    var hitOptions = {
+      // class: paper.Group,
+      segments: true,
+      stroke: true,
+      fill: true,
+      tolerance: 10
+    }
+    var hitResult = jobview_feedLayer.hitTest(event.point, hitOptions)
+    if (hitResult) {
+      jobview_deselect_all()
+      path = hitResult.item
+      path.parent.selected = !path.parent.selected
+      // show info on this group
+      
+    } else {
+      jobview_deselect_all()
     }
   }
 

@@ -44,21 +44,6 @@
           <button id="chiller_status_btn" class="btn disabled btn-warning" type="submit">Chiller</button>
         </div>
 
-        <div class="btn-group pull-right" style="padding:8px">
-          <!-- stop button -->
-          <button id="stop_btn" class="btn btn-default" type="submit" title="stop and purge job">
-            <span class="glyphicon glyphicon-stop"></span>
-          </button>
-          <!-- origin button -->
-          <button id="origin_btn" class="btn btn-default" type="submit" title="move to origin">
-            (0,0)
-          </button>
-          <!-- homing button -->
-          <button id="homing_btn" class="btn btn-default" type="submit" title="run homing cycle, find table origin">
-            <span class="glyphicon glyphicon-home"></span>
-          </button>
-        </div>
-
         <div id="navbar" class="navbar pull-left" style="padding-left:0px; margin:0; border:0">
           <ul class="nav navbar-nav" style="height:50px">
             <li class="dropdown">
@@ -102,15 +87,19 @@
             <button id="run_btn" class="btn btn-primary" type="submit" title="run this job">
               Run this job!
             </button>
-            <button id="boundary_btn" class="btn btn-primary" type="submit" title="show bounding box">
+            <button id="boundary_btn" class="btn btn-primary" type="submit" title="run bounding box">
               <span class="glyphicon glyphicon-resize-full"></span>
             </button>
         </div>
 
-        <!-- pause button -->
         <div class="btn-group pull-left" style="padding:8px">
+          <!-- pause button -->
           <button id="pause_btn" class="btn btn-default" type="submit" title="toggle pause">
             <span class="glyphicon glyphicon-pause"></span>
+          </button>
+          <!-- stop button -->
+          <button id="stop_btn" class="btn btn-default" type="submit" title="stop and purge job">
+            <span class="glyphicon glyphicon-stop"></span>
           </button>
         </div>
 
@@ -124,7 +113,70 @@
       <canvas id="job-canvas" class="pull-left" style="height:100%" resize></canvas>
 
       <!-- info div -->
-      <div id="job-info" class="pull-right" style="width:200px;background-color:#999999"></div>
+      <div id="info-panel" class="pull-right" style="width:200px; background-color:#f8f8f8; overflow:auto">
+        <div id="job-info" style="width:100%;background-color:#bbbbbb"></div>
+
+        <div id="job-passes" style="width:100%;padding:6px">
+          <div style="margin-bottom:20px">
+            <label>Pass 1</label>
+            <form class="form-inline">
+              <div class="form-group">
+                <div class="input-group">
+                  <div class="input-group-addon">F</div>
+                  <input type="text" class="form-control input-sm feedrate" style="width:4.5em;" placeholder="1500" title="feedrate">
+                </div>
+                <div class="input-group">
+                  <div class="input-group-addon">%</div>
+                  <input type="text" class="form-control input-sm intensity" style="width:3.5em;" placeholder="100" title="intensity 0-100%">
+                </div>
+              </div>
+            </form>
+            <div style="margin-top:10px">
+              <button class="btn btn-default btn-sm" type="submit">Assign</button>
+            </div>
+          </div>
+
+          <div style="margin-bottom:20px">
+            <label>Pass 2</label>
+            <form class="form-inline">
+              <div class="form-group">
+                <div class="input-group">
+                  <div class="input-group-addon">F</div>
+                  <input type="text" class="form-control input-sm feedrate" style="width:4.5em;" placeholder="1500" title="feedrate">
+                </div>
+                <div class="input-group">
+                  <div class="input-group-addon">%</div>
+                  <input type="text" class="form-control input-sm intensity" style="width:3.5em;" placeholder="100" title="intensity 0-100%">
+                </div>
+              </div>
+            </form>
+            <div style="margin-top:10px">
+              <button class="btn btn-default btn-sm" type="submit">Assign</button>
+            </div>
+          </div>
+
+          <div style="margin-bottom:20px">
+            <label>Pass 3</label>
+            <form class="form-inline">
+              <div class="form-group">
+                <div class="input-group">
+                  <div class="input-group-addon">F</div>
+                  <input type="text" class="form-control input-sm feedrate" style="width:4.5em;" placeholder="1500" title="feedrate">
+                </div>
+                <div class="input-group">
+                  <div class="input-group-addon">%</div>
+                  <input type="text" class="form-control input-sm intensity" style="width:3.5em;" placeholder="100" title="intensity 0-100%">
+                </div>
+              </div>
+            </form>
+            <div style="margin-top:10px">
+              <button class="btn btn-default btn-sm" type="submit">Assign</button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
 
       <!-- log modal-->
       <div id="log-modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
@@ -163,6 +215,17 @@
         <a class="navbar-brand" href="/">
           <img src="img/lasersaur-dino-lasaurapp-190.png" style="margin-right:6px">
         </a>
+
+        <div class="btn-group" style="padding:8px">
+          <!-- origin button -->
+          <button id="origin_btn" class="btn btn-default" type="submit" title="move to origin">
+            (0,0)
+          </button>
+          <!-- homing button -->
+          <button id="homing_btn" class="btn btn-default" type="submit" title="run homing cycle, find table origin">
+            <span class="glyphicon glyphicon-home"></span>
+          </button>
+        </div>
 
         <div class="btn-group" style="padding:12px">
             <button id="ready_status_btn" class="btn btn-default" type="submit">Motion</button>
