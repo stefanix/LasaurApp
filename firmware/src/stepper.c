@@ -339,7 +339,11 @@ ISR(TIMER1_COMPA_vect) {
         // decelerating
         } else if (step_events_completed >= current_block->decelerate_after) {
           if ( acceleration_tick() ) {  // scheduled speed change
-            adjusted_rate -= current_block->rate_delta;
+            if (adjusted_rate > current_block->rate_delta) {
+              adjusted_rate -= current_block->rate_delta;
+            } else {
+              adjusted_rate = 0; // unsigned
+            }
             if (adjusted_rate < current_block->final_rate) {  // overshot
               adjusted_rate = current_block->final_rate;
             }
