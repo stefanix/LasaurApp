@@ -142,6 +142,11 @@ class SVGReader:
         self.px2mm = None
         self.boundarys = {}
 
+        vb_x = None
+        vb_y = None
+        vb_w = None
+        vb_h = None
+
         # parse xml
         svgRootElement = ET.fromstring(svgstring)
         tagName = self._tagReader._get_tag(svgRootElement)
@@ -159,10 +164,6 @@ class SVGReader:
         if not self.px2mm:
             width = None
             height = None
-            vb_x = None
-            vb_y = None
-            vb_w = None
-            vb_h = None
             unit = ''
 
             # get width, height, unit
