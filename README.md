@@ -27,7 +27,7 @@ How to Use this App
 * The GUI will open in a browser at *http://localhost:4444*
   (supported are Firefox, Chrome, and likely future Safari 6+ or IE 10+)
 
-For more information see the [Lasersaur Software Setup Guide](http://www.lasersaur.com/manual/software_setup).
+For more information see the [Lasersaur Software Setup Guide](http://www.lasersaur.com/manual/software).
 
 
 
