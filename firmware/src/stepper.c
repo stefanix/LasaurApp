@@ -7,8 +7,8 @@
   Copyright (c) 2011 Stefan Hechenberger
   Copyright (c) 2009-2011 Simen Svale Skogsrud
   Copyright (c) 2011 Sungeun K. Jeon
-  
-  Inspired by the 'RepRap cartesian firmware' by Zack Smith and 
+
+  Inspired by the 'RepRap cartesian firmware' by Zack Smith and
   Philipp Tiefenbacher.
 
   LasaurGrbl is free software: you can redistribute it and/or modify
@@ -21,7 +21,7 @@
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
   ---
-  
+
            __________________________
           /|                        |\     _________________         ^
          / |                        | \   /|               |\        |
@@ -30,18 +30,18 @@
       /    |                        |   |  |               |   \     e
      +-----+------------------------+---+--+---------------+----+    e
      |               BLOCK 1            |      BLOCK 2          |    d
-  
+
                              time ----->
 
   The speed profile starts at block->initial_rate, accelerates by block->rate_delta
   during the first block->accelerate_until step_events_completed, then keeps going at constant speed until
   step_events_completed reaches block->decelerate_after after which it decelerates until final_rate is reached.
   The slope of acceleration is always +/- block->rate_delta and is applied at a constant rate following the midpoint rule.
-  Speed adjustments are made ACCELERATION_TICKS_PER_SECOND times per second.  
+  Speed adjustments are made ACCELERATION_TICKS_PER_SECOND times per second.
 */
 
 #define __DELAY_BACKWARD_COMPATIBLE__  // _delay_us() make backward compatible see delay.h
-  
+
 #include <math.h>
 #include <stdlib.h>
 #include <util/delay.h>
@@ -88,11 +88,11 @@ static uint32_t config_step_timer(uint32_t cycles);
 
 
 // Initialize and start the stepper motor subsystem
-void stepper_init() {  
+void stepper_init() {
   // Configure directions of interface pins
   STEPPING_DDR |= (STEPPING_MASK | DIRECTION_MASK);
   STEPPING_PORT = (STEPPING_PORT & ~(STEPPING_MASK | DIRECTION_MASK)) | INVERT_MASK;
-  
+
   // waveform generation = 0100 = CTC
   TCCR1B &= ~(1<<WGM13);
   TCCR1B |= (1<<WGM12);
@@ -107,27 +107,27 @@ void stepper_init() {
   TCCR2A = 0; // Normal operation
   TCCR2B = 0; // Disable timer until needed.
   TIMSK2 |= (1<<TOIE2); // Enable Timer2 interrupt flag
-  
+
   adjust_speed(MINIMUM_STEPS_PER_MINUTE);
   clear_vector(stepper_position);
-  stepper_set_position( CONFIG_X_ORIGIN_OFFSET, 
-                        CONFIG_Y_ORIGIN_OFFSET, 
+  stepper_set_position( CONFIG_X_ORIGIN_OFFSET,
+                        CONFIG_Y_ORIGIN_OFFSET,
                         CONFIG_Z_ORIGIN_OFFSET );
   acceleration_tick_counter = 0;
   current_block = NULL;
   stop_requested = false;
   stop_status = STATUS_OK;
   busy = false;
-  
+
   // start in the idle state
   // The stepper interrupt gets started when blocks are being added.
-  stepper_go_idle();  
+  stepper_go_idle();
 }
 
 
 // block until all command blocks are executed
 void stepper_synchronize() {
-  while(processing_flag) { 
+  while(processing_flag) {
     // sleep_mode();
   }
 }
@@ -188,7 +188,7 @@ void stepper_set_position(double x, double y, double z) {
   stepper_synchronize();  // wait until processing is done
   stepper_position[X_AXIS] = floor(x*CONFIG_X_STEPS_PER_MM + 0.5);
   stepper_position[Y_AXIS] = floor(y*CONFIG_Y_STEPS_PER_MM + 0.5);
-  stepper_position[Z_AXIS] = floor(z*CONFIG_Z_STEPS_PER_MM + 0.5);  
+  stepper_position[Z_AXIS] = floor(z*CONFIG_Z_STEPS_PER_MM + 0.5);
 }
 
 
@@ -201,9 +201,9 @@ void stepper_set_position(double x, double y, double z) {
 ISR(TIMER2_OVF_vect) {
   // reset step pins
   STEPPING_PORT = (STEPPING_PORT & ~STEPPING_MASK) | (INVERT_MASK & STEPPING_MASK);
-  TCCR2B = 0; // Disable Timer2 to prevent re-entering this interrupt when it's not needed. 
+  TCCR2B = 0; // Disable Timer2 to prevent re-entering this interrupt when it's not needed.
 }
-  
+
 
 // The Stepper ISR
 // This is the workhorse of LasaurGrbl. It is executed at the rate set with
@@ -214,7 +214,7 @@ ISR(TIMER1_COMPA_vect) {
   busy = true;
   if (stop_requested) {
     // go idle and absorb any blocks
-    stepper_go_idle(); 
+    stepper_go_idle();
     planner_reset_block_buffer();
     planner_request_position_update();
     gcode_request_position_update();
@@ -227,7 +227,7 @@ ISR(TIMER1_COMPA_vect) {
     if (SENSE_LIMITS) {
       stepper_request_stop(STATUS_LIMIT_HIT);
       busy = false;
-      return;    
+      return;
     }
     #ifndef DRIVEBOARD
       else if (SENSE_POWER_OFF) {
@@ -237,7 +237,7 @@ ISR(TIMER1_COMPA_vect) {
       }
     #endif
   #endif
-  
+
   // pulse steppers
   STEPPING_PORT = (STEPPING_PORT & ~DIRECTION_MASK) | (out_bits & DIRECTION_MASK);
   STEPPING_PORT = (STEPPING_PORT & ~STEPPING_MASK) | out_bits;
@@ -259,8 +259,8 @@ ISR(TIMER1_COMPA_vect) {
     if (current_block == NULL) {
       stepper_go_idle();
       busy = false;
-      return;       
-    }      
+      return;
+    }
     if (current_block->type == TYPE_LINE) {  // starting on new line block
       adjusted_rate = current_block->initial_rate;
       acceleration_tick_counter = CYCLES_PER_ACCELERATION_TICK/2; // start halfway, midpoint rule.
@@ -286,7 +286,7 @@ ISR(TIMER1_COMPA_vect) {
           stepper_position[X_AXIS] -= 1;
         } else {
           stepper_position[X_AXIS] += 1;
-        }        
+        }
       }
       counter_y += current_block->steps_y;
       if (counter_y > 0) {
@@ -297,29 +297,29 @@ ISR(TIMER1_COMPA_vect) {
           stepper_position[Y_AXIS] -= 1;
         } else {
           stepper_position[Y_AXIS] += 1;
-        }        
+        }
       }
       counter_z += current_block->steps_z;
       if (counter_z > 0) {
         out_bits |= (1<<Z_STEP_BIT);
         counter_z -= current_block->step_event_count;
-        // also keep track of absolute position        
+        // also keep track of absolute position
         if ((out_bits >> Z_DIRECTION_BIT) & 1 ) {
           stepper_position[Z_AXIS] -= 1;
         } else {
           stepper_position[Z_AXIS] += 1;
-        }        
+        }
       }
       //////
-      
+
       step_events_completed++;  // increment step count
-      
+
       // apply stepper invert mask
       out_bits ^= INVERT_MASK;
 
       ////////// SPEED ADJUSTMENT
       if (step_events_completed < current_block->step_event_count) {  // block not finished
-      
+
         // accelerating
         if (step_events_completed < current_block->accelerate_until) {
           if ( acceleration_tick() ) {  // scheduled speed change
@@ -329,23 +329,27 @@ ISR(TIMER1_COMPA_vect) {
             }
             adjust_speed( adjusted_rate );
           }
-        
+
         // deceleration start
         } else if (step_events_completed == current_block->decelerate_after) {
             // reset counter, midpoint rule
             // makes sure deceleration is performed the same every time
             acceleration_tick_counter = CYCLES_PER_ACCELERATION_TICK/2;
-                 
+
         // decelerating
         } else if (step_events_completed >= current_block->decelerate_after) {
           if ( acceleration_tick() ) {  // scheduled speed change
-            adjusted_rate -= current_block->rate_delta;
+            if (adjusted_rate > current_block->rate_delta) {
+              adjusted_rate -= current_block->rate_delta;
+            } else {
+              adjusted_rate = 0; // unsigned
+            }
             if (adjusted_rate < current_block->final_rate) {  // overshot
               adjusted_rate = current_block->final_rate;
             }
             adjust_speed( adjusted_rate );
           }
-        
+
         // cruising
         } else {
           // No accelerations. Make sure we cruise exactly at the nominal rate.
@@ -359,48 +363,48 @@ ISR(TIMER1_COMPA_vect) {
         planner_discard_current_block();
       }
       ////////// END OF SPEED ADJUSTMENT
-    
-      break; 
+
+      break;
 
     case TYPE_AIR_ASSIST_ENABLE:
       control_air_assist(true);
       current_block = NULL;
-      planner_discard_current_block();  
+      planner_discard_current_block();
       break;
 
     case TYPE_AIR_ASSIST_DISABLE:
       control_air_assist(false);
       current_block = NULL;
-      planner_discard_current_block();  
+      planner_discard_current_block();
       break;
 
     case TYPE_AUX1_ASSIST_ENABLE:
       control_aux1_assist(true);
       current_block = NULL;
-      planner_discard_current_block();  
+      planner_discard_current_block();
       break;
 
     case TYPE_AUX1_ASSIST_DISABLE:
       control_aux1_assist(false);
       current_block = NULL;
-      planner_discard_current_block();  
-      break;    
+      planner_discard_current_block();
+      break;
 
     #ifdef DRIVEBOARD
       case TYPE_AUX2_ASSIST_ENABLE:
         control_aux2_assist(true);
         current_block = NULL;
-        planner_discard_current_block();  
+        planner_discard_current_block();
         break;
 
       case TYPE_AUX2_ASSIST_DISABLE:
         control_aux2_assist(false);
         current_block = NULL;
-        planner_discard_current_block();  
-        break;    
+        planner_discard_current_block();
+        break;
     #endif
   }
-  
+
   busy = false;
 }
 
@@ -466,7 +470,7 @@ static void adjust_speed( uint32_t steps_per_minute ) {
   if (steps_per_minute < MINIMUM_STEPS_PER_MINUTE) { steps_per_minute = MINIMUM_STEPS_PER_MINUTE; }
   cycles_per_step_event = config_step_timer((CYCLES_PER_MICROSECOND*1000000*60)/steps_per_minute);
   // beam dynamics
-  uint8_t adjusted_intensity = current_block->nominal_laser_intensity * 
+  uint8_t adjusted_intensity = current_block->nominal_laser_intensity *
                                ((float)steps_per_minute/(float)current_block->nominal_rate);
   uint8_t constrained_intensity = max(adjusted_intensity, 0);
   control_laser_intensity(constrained_intensity);
@@ -481,7 +485,7 @@ static void adjust_speed( uint32_t steps_per_minute ) {
     TCCR0B = _BV(CS01) | _BV(CS00);
   } else {
     // set PWM freq to 122Hz
-    TCCR0B = _BV(CS02); 
+    TCCR0B = _BV(CS02);
   }
 }
 
@@ -490,31 +494,31 @@ static void adjust_speed( uint32_t steps_per_minute ) {
 
 
 static void homing_cycle(bool x_axis, bool y_axis, bool z_axis, bool reverse_direction, uint32_t microseconds_per_pulse) {
-  
+
   uint32_t step_delay = microseconds_per_pulse - CONFIG_PULSE_MICROSECONDS;
   uint8_t out_bits = DIRECTION_MASK;
   uint8_t limit_bits;
   uint8_t x_overshoot_count = 6;
   uint8_t y_overshoot_count = 6;
-  
+
   if (x_axis) { out_bits |= (1<<X_STEP_BIT); }
   if (y_axis) { out_bits |= (1<<Y_STEP_BIT); }
   if (z_axis) { out_bits |= (1<<Z_STEP_BIT); }
-  
+
   // Invert direction bits if this is a reverse homing_cycle
   if (reverse_direction) {
     out_bits ^= DIRECTION_MASK;
   }
-  
+
   // Apply the global invert mask
   out_bits ^= INVERT_MASK;
-  
+
   // Set direction pins
   STEPPING_PORT = (STEPPING_PORT & ~DIRECTION_MASK) | (out_bits & DIRECTION_MASK);
-  
+
   for(;;) {
     limit_bits = LIMIT_PIN;
-    if (reverse_direction) {         
+    if (reverse_direction) {
       // Invert limit_bits if this is a reverse homing_cycle
       limit_bits ^= LIMIT_MASK;
     }
@@ -524,15 +528,15 @@ static void homing_cycle(bool x_axis, bool y_axis, bool z_axis, bool reverse_dir
         out_bits ^= (1<<X_STEP_BIT);
       } else {
         x_overshoot_count--;
-      }     
-    } 
+      }
+    }
     if (y_axis && !(limit_bits & (1<<Y1_LIMIT_BIT))) {
       if(y_overshoot_count == 0) {
         y_axis = false;
         out_bits ^= (1<<Y_STEP_BIT);
       } else {
         y_overshoot_count--;
-      }        
+      }
     }
     // if (z_axis && !(limit_bits & (1<<Z1_LIMIT_BIT))) {
     //   if(z_overshoot_count == 0) {
@@ -540,7 +544,7 @@ static void homing_cycle(bool x_axis, bool y_axis, bool z_axis, bool reverse_dir
     //     out_bits ^= (1<<Z_STEP_BIT);
     //   } else {
     //     z_overshoot_count--;
-    //   }        
+    //   }
     // }
     if(x_axis || y_axis || z_axis) {
         // step all axes still in out_bits
@@ -548,7 +552,7 @@ static void homing_cycle(bool x_axis, bool y_axis, bool z_axis, bool reverse_dir
         _delay_us(CONFIG_PULSE_MICROSECONDS);
         STEPPING_PORT ^= out_bits & STEPPING_MASK;
         _delay_us(step_delay);
-    } else { 
+    } else {
         break;
     }
   }
@@ -565,10 +569,8 @@ static void leave_limit_switch(bool x, bool y, bool z) {
 }
 
 void stepper_homing_cycle() {
-  stepper_synchronize();  
+  stepper_synchronize();
   // home the x and y axis
   approach_limit_switch(true, true, false);
   leave_limit_switch(true, true, false);
 }
-
-
