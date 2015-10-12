@@ -1,7 +1,7 @@
 
 
 var minNumPassWidgets = 3;
-var maxNumPassWidgets = 32;
+var maxNumPassWidgets = 256;
 var preview_canvas_obj = null;
 
 

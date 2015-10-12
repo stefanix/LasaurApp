@@ -37,7 +37,7 @@ class SVGTagReader:
             'text': True  # text is special, see read_tag func
         }
 
-        self.re_findall_lasertags = re.compile('=pass([0-9]+):([0-9]*)(mm\/min)?:([0-9]*)(%)?(:#[a-fA-F0-9]{6})?(:#[a-fA-F0-9]{6})?(:#[a-fA-F0-9]{6})?(:#[a-fA-F0-9]{6})?(:#[a-fA-F0-9]{6})?(:#[a-fA-F0-9]{6})?=').findall
+        self.re_findall_lasertags = re.compile('=pass([0-9]+):([0-9]*)(mm\/min)?:([0-9]*)(%)?(:#[a-f0-9]{6})?(:#[a-f0-9]{6})?(:#[a-f0-9]{6})?(:#[a-f0-9]{6})?(:#[a-f0-9]{6})?(:#[a-f0-9]{6})?=').findall
 
 
     def read_tag(self, tag, node):
@@ -227,7 +227,7 @@ class SVGTagReader:
         # # search one level deep
         for child in tag:
             text_accum.append(child.text or '')
-        text_accum = ' '.join(text_accum)
+        text_accum = ' '.join(text_accum).lower()
         matches = self.re_findall_lasertags(text_accum)
         # Something like: =pass12:2550:100%:#fff000:#ababab:#ccc999=
         # Results in: [('12', '2550', '', '100', '%', ':#fff000', ':#ababab', ':#ccc999', '', '', '')]
