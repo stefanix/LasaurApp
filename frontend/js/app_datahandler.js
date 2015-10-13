@@ -135,6 +135,34 @@ DataHandler = {
     return glist.join('');
   },
 
+  getTimeEstimate : function() {
+    var pos_x = 0;
+    var pos_y = 0;
+    var estimatedTime = 0;
+    for (var i=0; i<this.passes.length; i++) {
+      var pass = this.passes[i];
+      var colors = pass['colors'];
+      var feedrate = this.mapConstrainFeedrate(pass['feedrate']);
+      for (var c=0; c<colors.length; c++) {
+        var color = colors[c];
+        var paths = this.paths_by_color[color];
+        for (var k=0; k<paths.length; k++) {
+          var path = paths[k];
+          if (path.length > 0) {
+            for (var vertex=0; vertex<path.length; vertex++) {
+              var x = path[vertex][0];
+              var y = path[vertex][1];
+              estimatedTime += Math.hypot(x-pos_x, y-pos_y)/feedrate*60;
+              pos_x = x;
+              pos_y = y;
+            }
+          }
+        }
+      }
+    }
+    return estimatedTime;
+  },
+
   getBboxGcode : function() {
     if (!('_all_' in this.stats_by_color)) {
       this.calculateBasicStats();

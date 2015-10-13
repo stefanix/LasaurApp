@@ -22,6 +22,24 @@ function load_into_job_widget(name, jobdata) {
   $('html, body').animate({scrollTop:0}, 400);
 }
 
+function getDurationString(durationSeconds) {
+  var hours   = Math.floor(durationSeconds / 3600);
+  var minutes = Math.floor((durationSeconds - hours * 3600) / 60);
+  var seconds = Math.round(durationSeconds - hours * 3600 - minutes * 60);
+
+  var duration = '';
+  if (seconds > 0 && hours == 0 && minutes < 15) {
+    duration = seconds + 's ' + duration;
+  }
+  if (minutes > 0) {
+    duration = minutes + 'min ' + duration;
+  }
+  if (hours > 0) {
+    duration = hours + 'h ' + duration;
+  }
+
+  return duration;
+}
 
 function refresh_preview(reload_data, read_passes_widget) {
   if (reload_data === true) {
@@ -32,17 +50,12 @@ function refresh_preview(reload_data, read_passes_widget) {
   }
   DataHandler.draw(preview_canvas_obj, app_settings.to_canvas_scale);
   DataHandler.draw_bboxes(preview_canvas_obj, app_settings.to_canvas_scale);
-  // var stats = GcodeReader.getStats();
-  // var length = stats.cuttingPathLength;
-  // var duration = stats.estimatedTime;
-  // $('#previe_stats').html("~" + duration.toFixed(1) + "min");
-  // $().uxmessage('notice', "Total cutting path is: " + (length/1000.0).toFixed(2) +
-  //               "m. Estimated Time: " + duration.toFixed(1) + "min");
   var total_length = DataHandler.getJobPathLength();
+  var total_duration = DataHandler.getTimeEstimate() * 1.10;
   if (total_length > 0) {
-    $('#stats_after_name').html('length: '+(total_length/1000).toFixed(1)+'m');
+    $('#stats_after_name').html(getDurationString(total_duration)+' (length: '+(total_length/1000).toFixed(1)+'m)');
   } else {
-    $('#stats_after_name').html('');
+    $('#stats_after_name').html('select a color');
   }
 }
 
@@ -251,6 +264,14 @@ function addPasses(num) {
       }
       refresh_preview(true, true);
     });
+    pass_elem.find('.feedrate').on('input', (function(e){
+      // estimate no longer valid
+      $('#stats_after_name').html('');
+    }));
+     pass_elem.find('.feedrate').on('change', (function(e){
+      // update time estimate
+      refresh_preview(true, true);
+    }));
   }
   $('#passes_container').show();
 }
