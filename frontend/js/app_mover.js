@@ -38,7 +38,7 @@ $(document).ready(function(){
       x_phy = x;
       y_phy = y;
     }
-    /// contrain
+    /// constrain
     if (!(isNaN(x_phy)) && x_phy != null) {  // allow for NaN, null
       if (x_phy < 0) {
         x_phy = 0;
@@ -274,21 +274,40 @@ $(document).ready(function(){
 
   /// jog buttons ///////////////////////////////
 
+  // Send UDLR movement and message
+  function jog_command(direction, size){
+    var gcode = 'G91\nG0';
+    
+  	switch (direction) {
+  	case 'Up':
+  		gcode += 'Y-';
+  		break;
+  	case 'Down':
+  		gcode += 'Y';
+  		break;
+  	case 'Left':
+  		gcode += 'X-';
+  		break;
+  	default:
+  		gcode += 'X';
+  	};
+  	
+	gcode += app_settings.jog_distance[size] + 'F6000\nG90\n';
+    send_gcode(gcode, 'Jogging ' + direction + ' ' + app_settings.jog_distance[size] + 'mm...', false);
+  }
+  
+  
   $("#jog_up_btn").click(function(e) {
-    var gcode = 'G91\nG0Y-10F6000\nG90\n';
-    send_gcode(gcode, "Moving Up ...", false);
+  	jog_command('Up', 1);
   });   
   $("#jog_left_btn").click(function(e) {
-    var gcode = 'G91\nG0X-10F6000\nG90\n';
-    send_gcode(gcode, "Moving Left ...", false);
+  	jog_command('Left', 1);
   });   
   $("#jog_right_btn").click(function(e) {
-    var gcode = 'G91\nG0X10F6000\nG90\n';
-    send_gcode(gcode, "Moving Right ...", false);
+  	jog_command('Right', 1);
   });
   $("#jog_down_btn").click(function(e) {
-    var gcode = 'G91\nG0Y10F6000\nG90\n';
-    send_gcode(gcode, "Moving Down ...", false);
+  	jog_command('Down', 1);
   });
 
 
@@ -296,88 +315,76 @@ $(document).ready(function(){
 
   $(document).on('keydown', null, 'right', function(e){
     if ($('#tab_mover').is(":visible")) {
-      var gcode = 'G91\nG0X10F6000\nG90\n';
-      send_gcode(gcode, "Moving Right ...", false);
+	  jog_command('Right', 1);
       return false;
     }
   });
   $(document).on('keydown', null, 'alt+right', function(e){
     if ($('#tab_mover').is(":visible")) {
-      var gcode = 'G91\nG0X2F6000\nG90\n';
-      send_gcode(gcode, "Moving Right ...", false);
+	  jog_command('Right', 0);
       return false;
     }
   });
   $(document).on('keydown', null, 'shift+right', function(e){
     if ($('#tab_mover').is(":visible")) {
-      var gcode = 'G91\nG0X50F6000\nG90\n';
-      send_gcode(gcode, "Moving Right ...", false);
+	  jog_command('Right', 2);
       return false;
     }
   });
 
   $(document).on('keydown', null, 'left', function(e){
     if ($('#tab_mover').is(":visible")) {
-      var gcode = 'G91\nG0X-10F6000\nG90\n';
-      send_gcode(gcode, "Moving Left ...", false);
+	  jog_command('Left', 1);
       return false;
     }
   });
   $(document).on('keydown', null, 'alt+left', function(e){
     if ($('#tab_mover').is(":visible")) {
-      var gcode = 'G91\nG0X-2F6000\nG90\n';
-      send_gcode(gcode, "Moving Left ...", false);
+	  jog_command('Left', 0);
       return false;
     }
   });
   $(document).on('keydown', null, 'shift+left', function(e){
     if ($('#tab_mover').is(":visible")) {
-      var gcode = 'G91\nG0X-50F6000\nG90\n';
-      send_gcode(gcode, "Moving Left ...", false);
+	  jog_command('Left', 2);
       return false;
     }
   });
 
   $(document).on('keydown', null, 'up', function(e){
     if ($('#tab_mover').is(":visible")) {
-      var gcode = 'G91\nG0Y-10F6000\nG90\n';
-      send_gcode(gcode, "Moving Up ...", false);
+	  jog_command('Up', 1);
       return false;
     }
   });
   $(document).on('keydown', null, 'alt+up', function(e){
     if ($('#tab_mover').is(":visible")) {
-      var gcode = 'G91\nG0Y-2F6000\nG90\n';
-      send_gcode(gcode, "Moving Up ...", false);
+	  jog_command('Up', 0);
       return false;
     }
   });
   $(document).on('keydown', null, 'shift+up', function(e){
     if ($('#tab_mover').is(":visible")) {
-      var gcode = 'G91\nG0Y-50F6000\nG90\n';
-      send_gcode(gcode, "Moving Up ...", false);
+	  jog_command('Up', 2);
       return false;
     }
   });
 
   $(document).on('keydown', null, 'down', function(e){
     if ($('#tab_mover').is(":visible")) {
-      var gcode = 'G91\nG0Y10F6000\nG90\n';
-      send_gcode(gcode, "Moving Down ...", false);
+	  jog_command('Down', 1);
       return false;
     }
   });
   $(document).on('keydown', null, 'alt+down', function(e){
     if ($('#tab_mover').is(":visible")) {
-      var gcode = 'G91\nG0Y2F6000\nG90\n';
-      send_gcode(gcode, "Moving Down ...", false);
+	  jog_command('Down', 0);
       return false;
     }
   });
   $(document).on('keydown', null, 'shift+down', function(e){
     if ($('#tab_mover').is(":visible")) {
-      var gcode = 'G91\nG0Y50F6000\nG90\n';
-      send_gcode(gcode, "Moving Down ...", false);
+	  jog_command('Down', 2);
       return false;
     }
   });
@@ -410,7 +417,7 @@ $(document).ready(function(){
 
   $("#air_on_btn").click(function(e) {
     var gcode = 'M80\n';
-    send_gcode(gcode, "Air assist on ...", false) 
+    send_gcode(gcode, "Air assist on ...", false)
   });  
   $("#air_off_btn").click(function(e) {
     var gcode = 'M81\n';

@@ -4,6 +4,7 @@ var app_settings = {
   max_seek_speed: 8000,
   default_feedrate: 1500,
   default_intensity: 30,
+  jog_distance:[2,10,50], // Small regular and large jog steps
   num_digits: 2, 
   max_num_queue_items: 24,
   max_segment_length: 5.0,
