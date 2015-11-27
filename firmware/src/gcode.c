@@ -261,7 +261,13 @@ void gcode_process_line() {
           printString("L3");  // Limit Y1 Hit
         }
         if (SENSE_Y2_LIMIT) {
-          printString("L4");  // Limit Y21 Hit
+          printString("L4");  // Limit Y2 Hit
+        }
+        if (SENSE_Z1_LIMIT) {
+          printString("L5");  // Limit Z1 Hit
+        }
+        if (SENSE_Z2_LIMIT) {
+          printString("L6");  // Limit Z2 Hit
         }
       } 
     #endif
