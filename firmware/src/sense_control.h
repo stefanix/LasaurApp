@@ -21,7 +21,6 @@
 #include <stdbool.h>
 #include "config.h"
 
-
 void sense_init();
 #define SENSE_X1_LIMIT !((LIMIT_PIN >> X1_LIMIT_BIT) & 1)
 #define SENSE_X2_LIMIT !((LIMIT_PIN >> X2_LIMIT_BIT) & 1)
@@ -33,8 +32,6 @@ void sense_init();
 #define SENSE_DOOR_OPEN !((SENSE_PIN >> DOOR_BIT) & 1)
 
 void control_init();
-
-void control_laser_intensity(uint8_t intensity);  //0-255 is 0-100%
 
 void control_air_assist(bool enable);
 void control_aux1_assist(bool enable);

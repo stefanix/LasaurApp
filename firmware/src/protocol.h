@@ -26,8 +26,6 @@
 #define CMD_STATUS '\x03'
 #define CMD_SUPERSTATUS '\x04'
 #define CMD_CHUNK_PROCESSED '\x05'
-#define CMD_RASTER_DATA_START '\x07'
-#define CMD_RASTER_DATA_END '\x08'
 #define STATUS_END '\x09'
 
 
@@ -35,7 +33,6 @@
 #define CMD_NONE 'A'
 #define CMD_LINE 'B'
 #define CMD_DWELL 'C'
-#define CMD_RASTER 'D'
 
 #define CMD_REF_RELATIVE 'E' 
 #define CMD_REF_ABSOLUTE 'F'
@@ -59,9 +56,9 @@
 #define PARAM_TARGET_Y 'y' 
 #define PARAM_TARGET_Z 'z' 
 #define PARAM_FEEDRATE 'f'
-#define PARAM_INTENSITY 's'
-#define PARAM_DURATION 'd'
-#define PARAM_PIXEL_WIDTH 'p'
+#define PARAM_PULSE_FREQUENCY 'p'
+#define PARAM_PULSE_DURATION 'd'
+#define PARAM_RASTER_BYTES 'r'
 #define PARAM_OFFTABLE_X 'h'
 #define PARAM_OFFTABLE_Y 'i'
 #define PARAM_OFFTABLE_Z 'j'
@@ -87,7 +84,9 @@
 #define STOPERROR_INVALID_DATA ':'
 #define STOPERROR_INVALID_COMMAND '<'
 #define STOPERROR_INVALID_PARAMETER '>'
+#define STOPERROR_VALUE_OUT_OF_RANGE '('
 #define STOPERROR_TRANSMISSION_ERROR '='
+#define STOPERROR_USART_DATA_OVERRUN ','
 
 
 // status: info markers
@@ -102,6 +101,7 @@
 #define INFO_VERSION 'v'
 #define INFO_BUFFER_UNDERRUN 'w'
 #define INFO_STACK_CLEARANCE 'u'
+#define INFO_DELAYED_MICROSTEPS 't'
 
 #define INFO_HELLO '~'
 
@@ -110,9 +110,8 @@
 #define INFO_OFFCUSTOM_Y 'b'
 #define INFO_OFFCUSTOM_Z 'c'
 #define INFO_FEEDRATE 'g'
-#define INFO_INTENSITY 'h'
-#define INFO_DURATION 'i'
-#define INFO_PIXEL_WIDTH 'j'
+#define INFO_PULSE_FREQUENCY 'h'
+#define INFO_PULSE_DURATION 'i'
 
 
 

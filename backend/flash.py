@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Super Awesome LasaurGrbl python flash script.
 # 
 # Copyright (c) 2011 Nortd Labs

@@ -460,10 +460,13 @@ def unstop():
 @bottle.route('/build')
 @bottle.route('/build/<firmware>')
 @bottle.auth_basic(checkuser)
-def build(self, firmware_name=None):
+def build(firmware_name=None):
     """Build firmware from firmware/src files."""
     buildname = "LasaurGrbl_from_src"
-    return_code = driveboard.build(firmware_name=buildname)
+    if firmware_name is None:
+        return_code = driveboard.build()
+    else:
+        return_code = driveboard.build(firmware_name=buildname)
     if return_code != 0:
         bottle.abort(400, "Build failed.")
 
@@ -471,9 +474,12 @@ def build(self, firmware_name=None):
 @bottle.route('/flash')
 @bottle.route('/flash/<firmware>')
 @bottle.auth_basic(checkuser)
-def flash(self, firmware=None):
+def flash(firmware=None):
     """Flash firmware to MCU."""
-    return_code = driveboard.flash(firmware_file=firmware)
+    if firmware is None:
+        return_code = driveboard.flash()
+    else:
+        return_code = driveboard.flash(firmware_file=firmware)
     if return_code != 0:
         bottle.abort(400, "Flashing failed.")
 

@@ -52,10 +52,10 @@
 #include "protocol.h"
 #include "planner.h"
 #include "sense_control.h"
+#include "laser.h"
 #include "serial.h"  //for debug
 
 
-#define CYCLES_PER_MICROSECOND (F_CPU/1000000)  //16000000/1000000 = 16
 #define CYCLES_PER_ACCELERATION_TICK (F_CPU/ACCELERATION_TICKS_PER_SECOND)  // 16MHz/100 = 160000
 
 
@@ -79,12 +79,12 @@ static volatile bool processing_flag;         // indicates if blocks are being p
 static volatile bool stop_requested;          // when set to true stepper interrupt will go idle on next entry
 static volatile uint8_t stop_status;          // yields the reason for a stop request
 
+static volatile uint16_t delayed_microsteps;  // To recognize CPU overload
 
 // prototypes for static functions (non-accesible from other files)
 static bool acceleration_tick();
 static void adjust_speed( uint32_t steps_per_minute );
 static uint32_t config_step_timer(uint32_t cycles);
-static void adjust_intensity( uint8_t intensity );
 
 
 // Initialize and start the stepper motor subsystem
@@ -142,7 +142,8 @@ void stepper_stop_processing() {
   current_block = NULL;
   // Disable stepper driver interrupt
   TIMSK1 &= ~(1<<OCIE1A);
-  control_laser_intensity(0);
+  laser_set_pulse_duration(0);
+  laser_set_pulse_frequency(0);
 }
 
 // is the stepper interrupt processing
@@ -208,7 +209,10 @@ ISR(TIMER2_OVF_vect) {
 // config_step_timer. It pops blocks from the block_buffer and executes them by pulsing the stepper pins appropriately.
 // The bresenham line tracer algorithm controls all three stepper outputs simultaneously.
 ISR(TIMER1_COMPA_vect) {
-  if (busy) { return; } // The busy-flag is used to avoid reentering this interrupt
+  if (busy) {  // The busy-flag is used to avoid reentering this interrupt
+    delayed_microsteps++;
+    return;
+  }
   busy = true;
   if (stop_requested) {
     // go idle
@@ -273,7 +277,7 @@ ISR(TIMER1_COMPA_vect) {
       busy = false;
       return;       
     }      
-    if (current_block->type == TYPE_LINE || current_block->type == TYPE_RASTER_LINE) {
+    if (current_block->type == TYPE_LINE) {
       // starting on new line block
       adjusted_rate = current_block->initial_rate;
       acceleration_tick_counter = CYCLES_PER_ACCELERATION_TICK/2; // start halfway, midpoint rule.
@@ -282,12 +286,18 @@ ISR(TIMER1_COMPA_vect) {
       counter_y = counter_x;
       counter_z = counter_x;
       step_events_completed = 0;
+      
+      if (current_block->raster) {
+        laser_start_raster(current_block->raster->data, current_block->raster->length);
+      } else {
+        laser_set_pulse_duration(current_block->laser_pulse_duration);
+      }
     }
   }
 
   // process current block, populate out_bits (or handle other commands)
   switch (current_block->type) {
-    case TYPE_LINE: case TYPE_RASTER_LINE:
+    case TYPE_LINE:
       ////// Execute step displacement profile by bresenham line algorithm
       out_bits = current_block->direction_bits;
       counter_x += current_block->steps_x;
@@ -352,7 +362,11 @@ ISR(TIMER1_COMPA_vect) {
         // decelerating
         } else if (step_events_completed >= current_block->decelerate_after) {
           if ( acceleration_tick() ) {  // scheduled speed change
-            adjusted_rate -= current_block->rate_delta;
+            if (adjusted_rate > current_block->rate_delta) {
+              adjusted_rate -= current_block->rate_delta;
+            } else {
+              adjusted_rate = 0; // unsigned
+            }
             if (adjusted_rate < current_block->final_rate) {  // overshot
               adjusted_rate = current_block->final_rate;
             }
@@ -365,22 +379,6 @@ ISR(TIMER1_COMPA_vect) {
           if (adjusted_rate != current_block->nominal_rate) {
             adjusted_rate = current_block->nominal_rate;
             adjust_speed( adjusted_rate );
-          }
-          // Special case raster line. 
-          // Adjust intensity according raster buffer.
-          if (current_block->type == TYPE_RASTER_LINE) {
-            if ((step_events_completed % current_block->pixel_steps) == 1) {
-              // after every pixel width get the next raster value
-              // disable nested interrupts
-              // this is to prevent race conditions with the serial interrupt
-              // over the rx_buffer variables.
-              cli(); 
-              uint8_t chr = serial_raster_read();
-              sei();
-              // map [128,255] -> [0, nominal_laser_intensity]
-              // (chr-128)*2 * (255/current_block->nominal_laser_intensity)
-              adjust_intensity( (510*(chr-128))/current_block->nominal_laser_intensity );
-            }
           }
         }
       } else {  // block finished
@@ -437,7 +435,7 @@ ISR(TIMER1_COMPA_vect) {
 // This function determines an acceleration velocity change every CYCLES_PER_ACCELERATION_TICK by
 // keeping track of the number of elapsed cycles during a de/ac-celeration. The code assumes that
 // step_events occur significantly more often than the acceleration velocity iterations.
-inline bool acceleration_tick() {
+bool acceleration_tick() {
   acceleration_tick_counter += cycles_per_step_event;
   if(acceleration_tick_counter > CYCLES_PER_ACCELERATION_TICK) {
     acceleration_tick_counter -= CYCLES_PER_ACCELERATION_TICK;
@@ -450,7 +448,7 @@ inline bool acceleration_tick() {
 
 // Configures the prescaler and ceiling of timer 1 to produce the given rate as accurately as possible.
 // Returns the actual number of cycles per interrupt
-inline uint32_t config_step_timer(uint32_t cycles) {
+uint32_t config_step_timer(uint32_t cycles) {
   uint16_t ceiling;
   uint16_t prescaler;
   uint32_t actual_cycles;
@@ -488,47 +486,40 @@ inline uint32_t config_step_timer(uint32_t cycles) {
 }
 
 
-inline void adjust_speed( uint32_t steps_per_minute ) {
+void adjust_speed( uint32_t steps_per_minute ) {
   // steps_per_minute is typicaly just adjusted_rate
   if (steps_per_minute < MINIMUM_STEPS_PER_MINUTE) { steps_per_minute = MINIMUM_STEPS_PER_MINUTE; }
-  cycles_per_step_event = config_step_timer((CYCLES_PER_MICROSECOND*1000000*60)/steps_per_minute);
+  uint32_t tmp = (CYCLES_PER_MICROSECOND*1000000*60)/steps_per_minute; // duration: 42us
+  cycles_per_step_event = config_step_timer(tmp); // duration: 5us
+  // performance note: 8'000 mm/min = 82us between microsteps
+
   // beam dynamics
-  uint8_t adjusted_intensity = current_block->nominal_laser_intensity * 
-                               ((float)steps_per_minute/(float)current_block->nominal_rate);
-  uint8_t constrained_intensity = max(adjusted_intensity, 0);
-  adjust_intensity(constrained_intensity);
-}
-
-
-inline void adjust_intensity( uint8_t intensity ) {
-  control_laser_intensity(intensity);
-
-  // depending on intensity adapt PWM freq
-  // assuming: TCCR0A = _BV(COM0A1) | _BV(WGM00);  // phase correct PWM mode
-  if (intensity > 40) {
-    // set PWM freq to 3.9kHz
-    TCCR0B = _BV(CS01);
-  } else if (intensity > 10) {
-    // set PWM freq to 489Hz
-    TCCR0B = _BV(CS01) | _BV(CS00);
-  } else {
-    // set PWM freq to 122Hz
-    TCCR0B = _BV(CS02); 
-  }
+  //
+  // Formula before optimization:
+  // uint16_t adjusted_freq = current_block->laser_pulse_frequency * ((float)steps_per_minute/(float)current_block->nominal_rate); // duration: 62us
+  //
+  // Optimized formula:
+  // - steps_per_minute: at most 21bits, assuming feedrate < 25000 mm/min
+  // - pulse_freq_over_nominal_rate: can be up to 32bit if steps_per_minute is very small
+  // - result: 16bit (never larger than current_block->laser_pulse_frequency)
+  uint16_t adjusted_freq = (current_block->pulse_freq_over_nominal_rate * (steps_per_minute >> 5)) >> 16;  // duration: 6us
+  laser_set_pulse_frequency(adjusted_freq);
 }
 
 
 
 
 
-inline static void homing_cycle(bool x_axis, bool y_axis, bool z_axis, bool reverse_direction, uint32_t microseconds_per_pulse) {
+static void homing_cycle(bool x_axis, bool y_axis, bool z_axis, bool reverse_direction, uint32_t microseconds_per_pulse) {
   
   uint32_t step_delay = microseconds_per_pulse - CONFIG_PULSE_MICROSECONDS;
   uint8_t out_bits = DIRECTION_MASK;
   uint8_t limit_bits;
   uint8_t x_overshoot_count = 6;
   uint8_t y_overshoot_count = 6;
+#ifdef ENABLE_3AXES
   uint8_t z_overshoot_count = 6;
+#endif
   
   if (x_axis) { out_bits |= (1<<X_STEP_BIT); }
   if (y_axis) { out_bits |= (1<<Y_STEP_BIT); }
@@ -591,15 +582,15 @@ inline static void homing_cycle(bool x_axis, bool y_axis, bool z_axis, bool reve
   return;
 }
 
-inline static void approach_limit_switch(bool x, bool y, bool z) {
+static void approach_limit_switch(bool x, bool y, bool z) {
   homing_cycle(x, y, z,false, CONFIG_HOMINGRATE);
 }
 
-inline static void leave_limit_switch(bool x, bool y, bool z) {
+static void leave_limit_switch(bool x, bool y, bool z) {
   homing_cycle(x, y, z, true, CONFIG_HOMINGRATE);
 }
 
-inline void stepper_homing_cycle() {  
+void stepper_homing_cycle() {  
   // home the x and y axis
   #ifdef ENABLE_3AXES
   approach_limit_switch(true, true, true);
@@ -608,6 +599,16 @@ inline void stepper_homing_cycle() {
   approach_limit_switch(true, true, false);
   leave_limit_switch(true, true, false);
   #endif
+}
+
+
+uint16_t stepper_get_delayed_microsteps()
+{
+  uint16_t res;
+  cli();
+  res = delayed_microsteps;
+  sei();
+  return res;
 }
 
 

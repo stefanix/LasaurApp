@@ -46,6 +46,21 @@
 #define CONFIG_INVERT_Y_AXIS 1  // 0 is regular, 1 inverts the y direction
 #define CONFIG_INVERT_Z_AXIS 1  // 0 is regular, 1 inverts the y direction
 
+// Minimum pulse duration to enforce (number of laser IRQs)
+//
+// The power supply has no spec for this, and maybe it is not
+// neccessary to enforce a limit. After seeing some strange flashes of
+// light when using pulse duration 1 (not really sure about the cause),
+// and knowing the PSU will do something special at the start of each
+// pulse to start the laser, I've decided to play it safe.
+#define LASER_MINIMUM_PULSE_DURATION 3 // 3 = 96us (slightly above what the old firmware used)
+
+// Minimum pulse period to enforce (number of laser IRQs)
+//
+// Mainly to prevent software bugs from reaching the laser PSU. No
+// idea if higher frequencies would be useful or damaging.
+#define LASER_MINIMUM_PULSE_PERIOD 8 // 8 = 3922 Hz maximum frequency (exactly what the old firmware used)
+
 
 #define SENSE_DDR               DDRD
 #define SENSE_PORT              PORTD

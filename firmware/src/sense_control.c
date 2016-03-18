@@ -37,26 +37,6 @@ void sense_init() {
 
 
 void control_init() {
-  //// laser control
-  // Setup Timer0 for a 488.28125Hz "phase correct PWM" wave (assuming a 16Mhz clock)
-  // Timer0 can pwm either PD5 (OC0B) or PD6 (OC0A), we use PD6
-  // TCCR0A and TCCR0B are the registers to setup Timer0
-  // see chapter "8-bit Timer/Counter0 with PWM" in Atmga328 specs
-  // OCR0A sets the duty cycle 0-255 corresponding to 0-100%
-  // also see: http://arduino.cc/en/Tutorial/SecretsOfArduinoPWM
-  DDRD |= (1 << DDD6);      // set PD6 as an output
-  OCR0A = 0;              // set PWM to a 0% duty cycle
-  TCCR0A = _BV(COM0A1) | _BV(WGM00);   // phase correct PWM mode
-  // TCCR0A = _BV(COM0A1) | _BV(WGM01) | _BV(WGM00);  // fast PWM mode
-  // prescaler: PWMfreq = 16000/(2*256*prescaler)
-  // TCCR0B = _BV(CS00);                // 1 => 31.3kHz
-  // TCCR0B = _BV(CS01);                // 8 => 3.9kHz
-  TCCR0B = _BV(CS01) | _BV(CS00);    // 64 => 489Hz
-  // TCCR0B = _BV(CS02);                // 256 => 122Hz
-  // TCCR0B = _BV(CS02) | _BV(CS00);    // 1024 => 31Hz
-  // NOTES:
-  // PPI = PWMfreq/(feedrate/25.4/60)
-
   //// air and aux assist control
   ASSIST_DDR |= (1 << AIR_ASSIST_BIT);   // set as output pin
   ASSIST_DDR |= (1 << AUX1_ASSIST_BIT);  // set as output pin
@@ -67,13 +47,7 @@ void control_init() {
 }
 
 
-inline void control_laser_intensity(uint8_t intensity) {
-  OCR0A = intensity;
-}
-
-
-
-inline void control_air_assist(bool enable) {
+void control_air_assist(bool enable) {
   if (enable) {
     ASSIST_PORT |= (1 << AIR_ASSIST_BIT);
   } else {
@@ -81,7 +55,7 @@ inline void control_air_assist(bool enable) {
   }
 }
 
-inline void control_aux1_assist(bool enable) {
+void control_aux1_assist(bool enable) {
   if (enable) {
     ASSIST_PORT |= (1 << AUX1_ASSIST_BIT);
   } else {
@@ -89,7 +63,7 @@ inline void control_aux1_assist(bool enable) {
   }  
 }
 
-inline void control_aux2_assist(bool enable) {
+void control_aux2_assist(bool enable) {
   if (enable) {
     ASSIST_PORT |= (1 << AUX2_ASSIST_BIT);
   } else {

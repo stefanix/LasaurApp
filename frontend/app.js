@@ -70,7 +70,7 @@ function config_received_next() {
       $().uxmessage('error', "status channel");
     };
     websocket.onmessage = function(e) {
-      // {"info": {"chiller": true}, "feedrate": 8000.0, "intensity": 0.0, "pos": [-0.005, 0.005, 0.0], "stops": {}, "stackclear": 572.0, "paused": false, "duration": 0.0, "appver": "15.00-beta1", "firmver": "15.0", "underruns": 1.0, "pixelwidth": 0.0, "offset": [0.0, 0.0, 0.0], "ready": true, "progress": 1.0, "serial": true}
+      // {"info": {"chiller": true}, "feedrate": 8000.0, "intensity": 0.0, "pos": [-0.005, 0.005, 0.0], "stops": {}, "stackclear": 572.0, "paused": false, "duration": 0.0, "appver": "15.00-beta1", "firmver": "15.0", "underruns": 1.0, "pulses_per_mm": 0.0, "offset": [0.0, 0.0, 0.0], "ready": true, "progress": 1.0, "serial": true}
       var data = JSON.parse(e.data);
       // $().uxmessage('notice', e.data, Infinity);
 

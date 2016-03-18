@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Super Awesome LasaurGrbl python flash script.
 # 
 # Copyright (c) 2011 Nortd Labs
@@ -39,6 +40,11 @@ elif sys.platform == "linux" or sys.platform == "linux2":  #Linux
 # =============================================================================
 # No need to edit anything below this line
 
+def run(s):
+    print(s)
+    #subprocess.check_call(s, shell=True)
+    return subprocess.call(s, shell=True)
+
 
 def build_firmware(firmware_name="LasaurGrbl"):
     """Build the firmware and name it firmware_name.hex.
@@ -65,27 +71,21 @@ def build_firmware(firmware_name="LasaurGrbl"):
     DEVICE = "atmega328p"
     CLOCK = "16000000"
     BUILDNAME = firmware_name
-    OBJECTS  = ["main", "serial", "protocol", "planner", "sense_control", "stepper"]
+    OBJECTS  = ["main", "serial", "protocol", "planner", "sense_control", "laser", "stepper"]
 
-    COMPILE = AVRGCCAPP + " -Wall -Os -DF_CPU=" + CLOCK + " -mmcu=" + DEVICE + " -I. -ffunction-sections" + " --std=c99"
-    # COMPILE = AVRGCCAPP + " -Wall -O3 -DF_CPU=" + CLOCK + " -mmcu=" + DEVICE + " -I. -ffunction-sections" + " --std=c99"
+    COMPILE = AVRGCCAPP + " -Wall -O2 -flto -DF_CPU=" + CLOCK + " -mmcu=" + DEVICE + " -I. -ffunction-sections" + " --std=c99"
 
     for fileobj in OBJECTS:
-        command = '%(compile)s -c %(obj)s.c -o %(obj)s.o' % {'compile': COMPILE, 'obj':fileobj}
-        ret += subprocess.call(command, shell=True)
+        ret += run('%(compile)s -c %(obj)s.c -o %(obj)s.o' % {'compile': COMPILE, 'obj':fileobj})
   
-    command = '%(compile)s -o main.elf %(alldoto)s  -lm' % {'compile': COMPILE, 'alldoto':".o ".join(OBJECTS)+'.o'}
-    ret += subprocess.call(command, shell=True)
+    ret += run('%(compile)s -o main.elf %(alldoto)s  -lm' % {'compile': COMPILE, 'alldoto':".o ".join(OBJECTS)+'.o'})
 
-    command = '%(objcopy)s -j .text -j .data -O ihex main.elf %(product)s.hex' % {'objcopy': AVROBJCOPYAPP, 'obj':fileobj, 'product':BUILDNAME}
-    ret += subprocess.call(command, shell=True)
+    ret += run('%(objcopy)s -j .text -j .data -O ihex main.elf %(product)s.hex' % {'objcopy': AVROBJCOPYAPP, 'obj':fileobj, 'product':BUILDNAME})
 
     # command = '%(size)s *.hex *.elf *.o' % {'size':AVRSIZEAPP}
-    command = '%(size)s --mcu=%(mcu)s --format=avr *.elf' % {'size':AVRSIZEAPP, 'mcu':DEVICE}
-    ret += subprocess.call(command, shell=True)
+    ret += run('%(size)s --mcu=%(mcu)s --format=avr *.elf' % {'size':AVRSIZEAPP, 'mcu':DEVICE})
 
-    # command = '%(objdump)s -t -j .bss main.elf' % {'objdump':AVROBJDUMPAPP}
-    # ret += subprocess.call(command, shell=True)
+    # ret += run('%(objdump)s -t -j .bss main.elf' % {'objdump':AVROBJDUMPAPP})
 
     if ret != 0:
         return "Error: failed to build"

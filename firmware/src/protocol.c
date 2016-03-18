@@ -96,12 +96,12 @@ have enough bandwidth. It beats checksums in our case.
 typedef struct {
   uint8_t ref_mode;                // {REF_RELATIVE, REF_ABSOLUTE}
   double feedrate;                 // mm/min {F}
-  uint8_t intensity;               // 0-255 percentage
-  double duration;                 // pierce duration
-  double pixel_width;              // raster pixel width in mm
+  double pulse_frequency;          // laser pulse frequency
+  uint8_t pulse_duration;          // laser pulse duration
   uint8_t offselect;               // {OFFSET_TABLE, OFFSET_CUSTOM}
   double target[3];                // X,Y,Z params accumulated
   double offsets[6];               // coord system offsets [table_X,table_Y,table_Z, custom_X,custom_Y,custom_Z]
+  uint8_t raster_bytes;            // number of bytes for next raster move
 } state_t;
 static state_t st;
 
@@ -125,10 +125,10 @@ static uint16_t stack_clearance();
 void protocol_init() {
   st.ref_mode = REF_ABSOLUTE;
   st.feedrate = CONFIG_FEEDRATE;
-  st.intensity = 0;
   clear_vector(st.target);
-  st.duration = 0.0;
-  st.pixel_width = 0.0;
+  st.pulse_frequency = 0.0;
+  st.pulse_duration = 0.0;
+  st.raster_bytes = 0;
   st.offselect = OFFSET_TABLE;
   // table offset, absolute
   st.offsets[X_AXIS] = CONFIG_X_ORIGIN_OFFSET;
@@ -145,7 +145,7 @@ void protocol_init() {
 }
 
 
-inline void protocol_loop() {
+void protocol_loop() {
   uint8_t chr;
   while(true) {
     chr = serial_protocol_read();  // blocks until there is data
@@ -181,29 +181,18 @@ inline void protocol_loop() {
 
 
 
-inline void on_cmd(uint8_t command) {
+void on_cmd(uint8_t command) {
   uint8_t cs;
   switch(command) {
     case CMD_NONE:
       break;
-    case CMD_LINE: case CMD_RASTER:
-        if(command == CMD_RASTER) {
-          planner_line( st.target[X_AXIS], st.target[Y_AXIS], st.target[Z_AXIS], 
-                        st.feedrate, st.intensity, st.pixel_width );
-        } else {
-          planner_line( st.target[X_AXIS], st.target[Y_AXIS], st.target[Z_AXIS], 
-                        st.feedrate, st.intensity, 0 );
-        }
+    case CMD_LINE:
+      planner_line( st.target[X_AXIS], st.target[Y_AXIS], st.target[Z_AXIS], st.feedrate,
+                    st.pulse_frequency, st.pulse_duration, st.raster_bytes);
       break;
     case CMD_DWELL:
-      planner_dwell(st.duration, st.intensity);
+      //planner_dwell(st.dwell_duration, st.intensity);
       break;
-    // case CMD_SET_FEEDRATE:
-    //   st.feedrate = get_curent_value();
-    //   break;
-    // case CMD_SET_INTENSITY:
-    //   st.intensity = get_curent_value();
-    //   break;
     case CMD_REF_RELATIVE:
       st.ref_mode = REF_RELATIVE;
       break;
@@ -226,7 +215,7 @@ inline void on_cmd(uint8_t command) {
       st.target[Y_AXIS] = st.offsets[TABLEOFF_Y];
       st.target[Z_AXIS] = st.offsets[TABLEOFF_Z];         
       planner_line( st.target[X_AXIS], st.target[Y_AXIS], st.target[Z_AXIS], 
-                    st.feedrate, 0, 0 );
+                    st.feedrate, 0, 0, 0 );
       break;
     case CMD_SET_OFFSET_TABLE: case CMD_SET_OFFSET_CUSTOM:
       while(stepper_processing()) { 
@@ -275,7 +264,7 @@ inline void on_cmd(uint8_t command) {
 
 
 
-inline void on_param(uint8_t parameter) {
+void on_param(uint8_t parameter) {
   double val;
   if(pdata.count == 4) {
     switch(parameter) {
@@ -305,14 +294,14 @@ inline void on_param(uint8_t parameter) {
       case PARAM_FEEDRATE:
         st.feedrate = get_curent_value();
         break;
-      case PARAM_INTENSITY:
-        st.intensity = get_curent_value();
+      case PARAM_PULSE_FREQUENCY:
+        st.pulse_frequency = get_curent_value();
         break;
-      case PARAM_DURATION:
-        st.duration = get_curent_value();
+      case PARAM_PULSE_DURATION:
+        st.pulse_duration = get_curent_value();
         break;
-      case PARAM_PIXEL_WIDTH:
-        st.pixel_width = get_curent_value();
+      case PARAM_RASTER_BYTES:
+        st.raster_bytes = get_curent_value();
         break;
 
       // def table offset, val is absolute
@@ -352,22 +341,22 @@ inline void on_param(uint8_t parameter) {
 }
 
 
-inline void protocol_request_status() {
+void protocol_request_status() {
   status_requested = true;
 }
 
-inline void protocol_request_superstatus() {
+void protocol_request_superstatus() {
   superstatus_requested = true;
 }
 
 
-inline void protocol_mark_underrun() {
+void protocol_mark_underrun() {
   rx_buffer_underruns += 1;
   rx_buffer_underruns_reported = false;
 }
 
 
-inline void protocol_idle() {
+void protocol_idle() {
   // Continuously called in protocol_loop
   // Also called when the protocol loop is blocked by
   // one of the following conditions:
@@ -426,6 +415,7 @@ inline void protocol_idle() {
       serial_write(stop_code);
     }
 
+#ifndef DEBUG_IGNORE_SENSORS
     // always report limits
     if (SENSE_X1_LIMIT && stop_code != STOPERROR_LIMIT_HIT_X1) {
       serial_write(STOPERROR_LIMIT_HIT_X1);
@@ -445,6 +435,7 @@ inline void protocol_idle() {
     if (SENSE_Z2_LIMIT && stop_code != STOPERROR_LIMIT_HIT_Z2) {
       serial_write(STOPERROR_LIMIT_HIT_Z2);
     }
+#endif
 
     // position, an absolute coord, report relative to current offset
     serial_write_param(INFO_POS_X, stepper_get_position_x()-st.offsets[3*st.offselect+X_AXIS]);
@@ -457,6 +448,7 @@ inline void protocol_idle() {
     }
 
     serial_write_param(INFO_STACK_CLEARANCE, stack_clearance());
+    serial_write_param(INFO_DELAYED_MICROSTEPS, stepper_get_delayed_microsteps());
 
     if (superstatus_requested) {
       superstatus_requested = false;
@@ -469,9 +461,8 @@ inline void protocol_idle() {
       serial_write_param(INFO_OFFCUSTOM_Z, st.offsets[CUSTOMOFF_Z]-st.offsets[TABLEOFF_Z]);      
 
       serial_write_param(INFO_FEEDRATE, st.feedrate);
-      serial_write_param(INFO_INTENSITY, st.intensity);
-      serial_write_param(INFO_DURATION, st.duration);
-      serial_write_param(INFO_PIXEL_WIDTH, st.pixel_width);
+      serial_write_param(INFO_PULSE_FREQUENCY, st.pulse_frequency);
+      serial_write_param(INFO_PULSE_DURATION, st.pulse_duration);
     }
 
     serial_write(STATUS_END);
@@ -480,7 +471,7 @@ inline void protocol_idle() {
 
 
 
-inline double get_curent_value() {
+double get_curent_value() {
   // returns a number based on the current data chars
   // chars expected to be extended ascii [128,255]
   // 28bit total, three decimals are restored
@@ -540,14 +531,14 @@ static uint16_t stack_clearance() {
 
 
 
-// inline double num_from_chars(uint8_t char0, uint8_t char1, uint8_t char2, uint8_t char3) {
+// double num_from_chars(uint8_t char0, uint8_t char1, uint8_t char2, uint8_t char3) {
 //   // chars expected to be extended ascii [128,255]
 //   // 28bit total, three decimals are restored
 //   // number is in [-134217.728, 134217.727] 
 //   return ((((char3-128)*2097152+(char2-128)*16384+(char1-128)*128+(char0-128))-134217728)/1000.0);
 // }
 
-// inline void chars_from_num(num, uint8_t* char0, uint8_t* char1, uint8_t* char2, uint8_t* char3) {
+// void chars_from_num(num, uint8_t* char0, uint8_t* char1, uint8_t* char2, uint8_t* char3) {
 //   // num to be [-134217.728, 134217.727]
 //   // three decimals are retained
 //   uint32_t num = lround(num*1000 + 134217728);

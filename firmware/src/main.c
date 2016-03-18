@@ -25,6 +25,7 @@
 #include "sense_control.h"
 #include "protocol.h"
 #include "serial.h"
+#include "laser.h"
 
 
 int main() {
@@ -34,6 +35,7 @@ int main() {
   planner_init();      
   stepper_init();
   sense_init();
+  laser_init();
   control_init();
   
   protocol_loop();

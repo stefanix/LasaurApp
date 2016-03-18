@@ -29,7 +29,7 @@
 #include <avr/sleep.h>
 #include <stdbool.h>
 
-
+#define CYCLES_PER_MICROSECOND (F_CPU/1000000)  //16000000/1000000 = 16
 
 // Initialize and start the stepper motor subsystem
 void stepper_init();
@@ -59,5 +59,7 @@ void stepper_set_position(double x, double y, double z);
 // perform the homing cycle
 void stepper_homing_cycle();
 
+// for recognizing CPU overload at high speed
+uint16_t stepper_get_delayed_microsteps();
 
 #endif

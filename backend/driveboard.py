@@ -2,8 +2,10 @@
 import os
 import sys
 import time
+import math
 import json
 import copy
+import numpy
 import threading
 import serial
 import serial.tools.list_ports
@@ -13,122 +15,17 @@ import statserver
 
 __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
 
-
-
-################ SENDING PROTOCOL
-CMD_STOP = "\x01"
-CMD_RESUME = "\x02"
-CMD_STATUS = "\x03"
-CMD_SUPERSTATUS = "\x04"
-CMD_CHUNK_PROCESSED = "\x05"
-CMD_RASTER_DATA_START = "\x07"
-CMD_RASTER_DATA_END = "\x08"
-STATUS_END = '\x09'
-
-CMD_NONE = "A"
-CMD_LINE = "B"
-CMD_DWELL = "C"
-CMD_RASTER = "D"
-
-CMD_REF_RELATIVE = "E"
-CMD_REF_ABSOLUTE = "F"
-
-CMD_HOMING = "G"
-
-CMD_SET_OFFSET_TABLE = "H"
-CMD_SET_OFFSET_CUSTOM = "I"
-CMD_SEL_OFFSET_TABLE = "J"
-CMD_SEL_OFFSET_CUSTOM = "K"
-
-CMD_AIR_ENABLE = "L"
-CMD_AIR_DISABLE = "M"
-CMD_AUX1_ENABLE = "N"
-CMD_AUX1_DISABLE = "O"
-CMD_AUX2_ENABLE = "P"
-CMD_AUX2_DISABLE = "Q"
-
-
-PARAM_TARGET_X = "x"
-PARAM_TARGET_Y = "y"
-PARAM_TARGET_Z = "z"
-PARAM_FEEDRATE = "f"
-PARAM_INTENSITY = "s"
-PARAM_DURATION = "d"
-PARAM_PIXEL_WIDTH = "p"
-PARAM_OFFTABLE_X = "h"
-PARAM_OFFTABLE_Y = "i"
-PARAM_OFFTABLE_Z = "j"
-PARAM_OFFCUSTOM_X = "k"
-PARAM_OFFCUSTOM_Y = "l"
-PARAM_OFFCUSTOM_Z = "m"
-
-################
-
-
-################ RECEIVING PROTOCOL
-
-# status: error flags
-ERROR_SERIAL_STOP_REQUEST = '!'
-ERROR_RX_BUFFER_OVERFLOW = '"'
-
-ERROR_LIMIT_HIT_X1 = '$'
-ERROR_LIMIT_HIT_X2 = '%'
-ERROR_LIMIT_HIT_Y1 = '&'
-ERROR_LIMIT_HIT_Y2 = '*'
-ERROR_LIMIT_HIT_Z1 = '+'
-ERROR_LIMIT_HIT_Z2 = '-'
-
-ERROR_INVALID_MARKER = '#'
-ERROR_INVALID_DATA = ':'
-ERROR_INVALID_COMMAND = '<'
-ERROR_INVALID_PARAMETER ='>'
-ERROR_TRANSMISSION_ERROR ='='
-
-# status: info flags
-INFO_IDLE_YES = 'A'
-INFO_DOOR_OPEN = 'B'
-INFO_CHILLER_OFF = 'C'
-
-# status: info params
-INFO_POS_X = 'x'
-INFO_POS_Y = 'y'
-INFO_POS_Z = 'z'
-INFO_VERSION = 'v'
-INFO_BUFFER_UNDERRUN = 'w'
-INFO_STACK_CLEARANCE = 'u'
-
-INFO_HELLO = '~'
-
-INFO_OFFCUSTOM_X = 'a'
-INFO_OFFCUSTOM_Y = 'b'
-INFO_OFFCUSTOM_Z = 'c'
-# INFO_TARGET_X = 'd'
-# INFO_TARGET_Y = 'e'
-# INFO_TARGET_Z = 'f'
-INFO_FEEDRATE = 'g'
-INFO_INTENSITY = 'h'
-INFO_DURATION = 'i'
-INFO_PIXEL_WIDTH = 'j'
-################
-
-
-
-# reverse lookup for commands, for debugging
-# NOTE: have to be in sync with above definitions
 markers_tx = {
     "\x01": "CMD_STOP",
     "\x02": "CMD_RESUME",
     "\x03": "CMD_STATUS",
     "\x04": "CMD_SUPERSTATUS",
     "\x05": "CMD_CHUNK_PROCESSED",
-    "\x07": "CMD_RASTER_DATA_START",
-    "\x08": "CMD_RASTER_DATA_END",
     "\x09": "STATUS_END",
 
     "A": "CMD_NONE",
     "B": "CMD_LINE",
     "C": "CMD_DWELL",
-    "D": "CMD_RASTER",
 
     "E": "CMD_REF_RELATIVE",
     "F": "CMD_REF_ABSOLUTE",
@@ -147,14 +44,13 @@ markers_tx = {
     "P": "CMD_AUX2_ENABLE",
     "Q": "CMD_AUX2_DISABLE",
 
-
     "x": "PARAM_TARGET_X",
     "y": "PARAM_TARGET_Y",
     "z": "PARAM_TARGET_Z",
     "f": "PARAM_FEEDRATE",
-    "s": "PARAM_INTENSITY",
-    "d": "PARAM_DURATION",
-    "p": "PARAM_PIXEL_WIDTH",
+    "p": "PARAM_PULSE_FREQUENCY",
+    "d": "PARAM_PULSE_DURATION",
+    "r": "PARAM_RASTER_BYTES",
     "h": "PARAM_OFFTABLE_X",
     "i": "PARAM_OFFTABLE_Y",
     "j": "PARAM_OFFTABLE_Z",
@@ -179,7 +75,9 @@ markers_rx = {
     ':': "ERROR_INVALID_DATA",
     '<': "ERROR_INVALID_COMMAND",
     '>': "ERROR_INVALID_PARAMETER",
+    "(": "ERROR_VALUE_OUT_OF_RANGE",
     '=': "ERROR_TRANSMISSION_ERROR",
+    ',': "ERROR_USART_DATA_OVERRUN",
 
     # status: info flags
     'A': "INFO_IDLE_YES",
@@ -193,6 +91,7 @@ markers_rx = {
     'v': "INFO_VERSION",
     'w': "INFO_BUFFER_UNDERRUN",
     'u': "INFO_STACK_CLEARANCE",
+    't': "INFO_DELAYED_MICROSTEPS",
 
     '~': "INFO_HELLO",
 
@@ -203,13 +102,25 @@ markers_rx = {
     # 'e': "INFO_TARGET_Y",
     # 'f': "INFO_TARGET_Z",
     'g': "INFO_FEEDRATE",
-    'h': "INFO_INTENSITY",
-    'i': "INFO_DURATION",
-    'j': "INFO_PIXEL_WIDTH",
+    'h': "INFO_PULSE_FREQUENCY",
+    'i': "INFO_PULSE_DURATION",
 }
 
+# create a global constant for each of the names above
+for char, name in markers_tx.items():
+    globals()[name] = char
+for char, name in markers_rx.items():
+    globals()[name] = char
 
-
+## more firmware constants, they need wo match device firmware
+TX_CHUNK_SIZE = 16 # number of bytes written to the device in one go
+RX_CHUNK_SIZE = 32
+FIRMBUF_SIZE = 256
+RASTER_BYTES_MAX = 60
+PULSE_SECONDS = 31.875e-6 # see laser.c
+MINIMUM_PULSE_TICKS = 3 # unit: PULSE_SECONDS
+MAXIMUM_PULSE_TICKS = 127 # unit: PULSE_SECONDS
+ACCELERATION = 1800000.0 # mm/min^2, divide by (60*60) to get mm/sec^2
 
 SerialLoop = None
 
@@ -222,11 +133,6 @@ class SerialLoopClass(threading.Thread):
         self.tx_buffer = []
         self.tx_pos = 0
 
-        # TX_CHUNK_SIZE - this is the number of bytes to be
-        # written to the device in one go. It needs to match the device.
-        self.TX_CHUNK_SIZE = 16
-        self.RX_CHUNK_SIZE = 32
-        self.FIRMBUF_SIZE = 256  # needs to match device firmware
         self.firmbuf_used = 0
 
         # used for calculating percentage done
@@ -245,12 +151,11 @@ class SerialLoopClass(threading.Thread):
         self.pdata_count = 0
         self.pdata_chars = [None, None, None, None]
 
-        threading.Thread.__init__(self)
         self.stop_processing = False
 
         self.deamon = True  # kill thread when main thread exits
 
-        # lock mechanism for chared data
+        # lock mechanism for shared data
         # see: http://effbot.org/zone/thread-synchronization.htm
         self.lock = threading.Lock()
 
@@ -268,6 +173,7 @@ class SerialLoopClass(threading.Thread):
             'pos':[0.0, 0.0, 0.0],
             'underruns': 0,
             'stackclear': 999999,
+            'delayed_microsteps': 0,
 
             ### stop conditions
             # indicated when key present
@@ -290,9 +196,8 @@ class SerialLoopClass(threading.Thread):
             'offset': [0.0, 0.0, 0.0],
             # 'pos_target': [0.0, 0.0, 0.0],
             'feedrate': 0.0,
-            'intensity': 0.0,
-            'duration': 0.0,
-            'pixelwidth': 0.0
+            'pulse_frequency': 0.0,
+            'pulse_duration': 0.0
         }
         self._s = copy.deepcopy(self._status)
 
@@ -317,6 +222,14 @@ class SerialLoopClass(threading.Thread):
         self.tx_buffer.append(param)
         self.job_size += 5
 
+
+    def send_raster_data(self, data):
+        for byte in data:
+            v = byte + 128
+            assert v <= 255
+            # FIXME: not very memory efficient, check if it is a problem when large files are queued
+            self.tx_buffer.append(chr(v))
+        self.job_size += len(data)
 
 
     def run(self):
@@ -366,11 +279,11 @@ class SerialLoopClass(threading.Thread):
 
 
     def _serial_read(self):
-        for char in self.device.read(self.RX_CHUNK_SIZE):
+        for char in self.device.read(RX_CHUNK_SIZE):
             # sys.stdout.write('('+char+','+str(ord(char))+')')
             if ord(char) < 32:  ### flow
                 if char == CMD_CHUNK_PROCESSED:
-                    self.firmbuf_used -= self.TX_CHUNK_SIZE
+                    self.firmbuf_used -= TX_CHUNK_SIZE
                     if self.firmbuf_used < 0:
                         print "ERROR: firmware buffer tracking to low"
                 elif char == STATUS_END:
@@ -388,6 +301,7 @@ class SerialLoopClass(threading.Thread):
                     self._s['ready'] = False
                     self._s['underruns'] = self._status['underruns']
                     self._s['stackclear'] = self._status['stackclear']
+                    self._s['delayed_microsteps'] = self._status['delayed_microsteps']
                     # send through status server
                     if self.server_enabled:
                         statusjson = json.dumps(self._status)
@@ -434,6 +348,9 @@ class SerialLoopClass(threading.Thread):
                 elif char == ERROR_TRANSMISSION_ERROR:
                     self._s['stops']['transmission'] = True
                     print "ERROR firmware: transmission"
+                elif char == ERROR_USART_DATA_OVERRUN:
+                    self._s['stops']['usart'] = True
+                    print "ERROR firmware: USART data overrun"
                 else:
                     print "ERROR: invalid stop error marker"
                 # in stop mode, print recent transmission
@@ -484,6 +401,10 @@ class SerialLoopClass(threading.Thread):
                     self._s['firmver'] = num
                 elif char == INFO_BUFFER_UNDERRUN:
                     self._s['underruns'] = num
+                elif char == INFO_STACK_CLEARANCE:
+                    self._s['stackclear'] = num
+                elif char == INFO_DELAYED_MICROSTEPS:
+                    self._s['delayed_microsteps'] = num
                 # super status
                 elif char == INFO_OFFCUSTOM_X:
                     self._s['offset'][0] = num
@@ -493,14 +414,10 @@ class SerialLoopClass(threading.Thread):
                     self._s['offset'][2] = num
                 elif char == INFO_FEEDRATE:
                     self._s['feedrate'] = num
-                elif char == INFO_INTENSITY:
-                    self._s['intensity'] = num
-                elif char == INFO_DURATION:
-                    self._s['duration'] = num
-                elif char == INFO_PIXEL_WIDTH:
-                    self._s['pixelwidth'] = num
-                elif char == INFO_STACK_CLEARANCE:
-                    self._s['stackclear'] = num
+                elif char == INFO_PULSE_FREQUENCY:
+                    self._s['pulse_frequency'] = num
+                elif char == INFO_PULSE_DURATION:
+                    self._s['pulse_duration'] = num
                 else:
                     print "ERROR: invalid param"
                 self.pdata_count = 0
@@ -541,10 +458,10 @@ class SerialLoopClass(threading.Thread):
         ### send buffer chunk
         if self.tx_buffer and len(self.tx_buffer) > self.tx_pos:
             if not self._paused:
-                if (self.FIRMBUF_SIZE - self.firmbuf_used) > self.TX_CHUNK_SIZE:
+                if (FIRMBUF_SIZE - self.firmbuf_used) > TX_CHUNK_SIZE:
                     try:
-                        # to_send = ''.join(islice(self.tx_buffer, 0, self.TX_CHUNK_SIZE))
-                        to_send = self.tx_buffer[self.tx_pos:self.tx_pos+self.TX_CHUNK_SIZE]
+                        # to_send = ''.join(islice(self.tx_buffer, 0, TX_CHUNK_SIZE))
+                        to_send = self.tx_buffer[self.tx_pos:self.tx_pos+TX_CHUNK_SIZE]
                         expectedSent = len(to_send)
                         # by protocol duplicate every char
                         to_send_double = []
@@ -561,7 +478,7 @@ class SerialLoopClass(threading.Thread):
                         else:
                             assumedSent = expectedSent
                             self.firmbuf_used += assumedSent
-                            if self.firmbuf_used > self.FIRMBUF_SIZE:
+                            if self.firmbuf_used > FIRMBUF_SIZE:
                                 print "ERROR: firmware buffer tracking too high"
                         if time.time() - t_prewrite > 0.1:
                             print "WARN: write delay 1"
@@ -609,7 +526,7 @@ def find_controller(baudrate=conf['baudrate']):
             try:
                 s = serial.Serial(port=port, baudrate=baudrate, timeout=2.0)
                 lasaur_hello = s.read(8)
-                if lasaur_hello.find(INFO_HELLO) > -1:
+                if INFO_HELLO in lasaur_hello:
                     return port
                 s.close()
             except serial.SerialException:
@@ -621,7 +538,7 @@ def find_controller(baudrate=conf['baudrate']):
             try:
                 s = serial.Serial(port=i, baudrate=baudrate, timeout=2.0)
                 lasaur_hello = s.read(8)
-                if lasaur_hello.find(INFO_HELLO) > -1:
+                if INFO_HELLO in lasaur_hello:
                     return s.portstr
                 s.close()
             except serial.SerialException:
@@ -755,31 +672,98 @@ def homing():
     """Run homing cycle."""
     global SerialLoop
     with SerialLoop.lock:
-        if SerialLoop._status['ready'] or SerialLoop._status['stops']:
-            SerialLoop.send_command(CMD_HOMING)
-        else:
-            print "WARN: ignoring homing command while job running"
+        print SerialLoop._status
+        # FIXME: the check below breaks for python scripts that import
+        # this file and start with a homing comand in a very bad way:
+        # it skips the homing because _status[] has not yet been
+        # changed from the defaults, and then continues the job. Do we
+        # really need this check at this level? If yes, we probably
+        # should throw an exception to prevent the script from sending
+        # the commands that follow the homing.
+        #
+        #if SerialLoop._status['ready'] or SerialLoop._status['stops']:
+        #    SerialLoop.send_command(CMD_HOMING)
+        #else:
+        #    print "WARN: ignoring homing command while job running"
 
+        SerialLoop.send_command(CMD_HOMING)
+    current_parameters['x'] = 0
+    current_parameters['y'] = 0
+    current_parameters['z'] = 0
+
+current_parameters = {
+    'feedrate': None,
+    'pulse_frequency': None,
+    'pulse_duration': None,
+    'x': None,
+    'y': None,
+    'z': None,
+}
 
 def feedrate(val):
     global SerialLoop
     with SerialLoop.lock:
         SerialLoop.send_param(PARAM_FEEDRATE, val)
+    current_parameters['feedrate'] = val
 
-def intensity(val):
+def intensity(percent, emulate_old_method=False):
+    """Set laser intensity (in percent)
+
+    This selects a suitable pulse frequency and duration for the next
+    move, calling pulse_frequency() and pulse_duration() on your behalf.
+    """
+    assert percent <= 100 and percent >= 0
+    if emulate_old_method:
+        # approximate what the old firmware did
+        old_intensity = percent / 100.0 * 255.0
+        if old_intensity > 40:
+            freq_hz = 3900
+        elif old_intensity > 10:
+            freq_hz = 489
+        else:
+            freq_hz = 122
+        # find closest feasible pulse duration (rounding up to avoid higher frequencies)
+        pulse = math.ceil((percent/100.0) * 1.0/freq_hz / PULSE_SECONDS)
+        if pulse > 0:
+            # find a slightly better frequency
+            freq_hz = 1.0 / (pulse * PULSE_SECONDS / (percent/100.0))
+    else:
+        if percent == 0:
+            pulse = 0
+            freq_hz = 0
+        else:
+            pulse = 3 + math.floor(6 * percent/100)
+            freq_hz = 1.0 / (pulse * PULSE_SECONDS / (percent/100.0))
+
+    if percent > 99:
+        pulse += 1 # make sure pulses overlap slightly
+
+    #print '--> %d Hz, pulse duration %dus' % (freq_hz, pulse * PULSE_SECONDS / 1e-6)
+    pulse_frequency(freq_hz)
+    pulse_duration(pulse)
+
+def pulse_frequency(freq):
+    """Set laser pulse frequency (pulses per second)
+
+    This affects the laser intensity of the next move, in combination
+    with pulse_duration().
+    """
     global SerialLoop
     with SerialLoop.lock:
-        SerialLoop.send_param(PARAM_INTENSITY, val)
+        SerialLoop.send_param(PARAM_PULSE_FREQUENCY, freq)
+    current_parameters['pulse_frequency'] = freq
 
-def duration(val):
+def pulse_duration(duration):
+    """Set laser pulse duration (integer ticks)
+
+    Sets the pulse duration of the next move, in integer ticks between
+    0 and 255. One tick is 31.875e-6 seconds (PULSE_SECONDS).
+    """
+    assert duration >= 0 and duration <= 255
     global SerialLoop
     with SerialLoop.lock:
-        SerialLoop.send_param(PARAM_DURATION, val)
-
-def pixelwidth(val):
-    global SerialLoop
-    with SerialLoop.lock:
-        SerialLoop.send_param(PARAM_PIXEL_WIDTH, val)
+        SerialLoop.send_param(PARAM_PULSE_DURATION, duration)
+    current_parameters['pulse_duration'] = duration
 
 def relative():
     global SerialLoop
@@ -799,17 +783,63 @@ def move(x, y, z=0.0):
         SerialLoop.send_param(PARAM_TARGET_Y, y)
         SerialLoop.send_param(PARAM_TARGET_Z, z)
         SerialLoop.send_command(CMD_LINE)
+    current_parameters['x'] = x
+    current_parameters['y'] = y
+    current_parameters['z'] = z
 
-def rastermove(x, y, z=0.0):
+def _raster_move_raw(x, y, data):
+    """Raster move with data length limited by firmware"""
     global SerialLoop
     with SerialLoop.lock:
+        assert len(data) <= RASTER_BYTES_MAX
         SerialLoop.send_param(PARAM_TARGET_X, x)
         SerialLoop.send_param(PARAM_TARGET_Y, y)
-        SerialLoop.send_param(PARAM_TARGET_Z, z)
-        SerialLoop.send_command(CMD_RASTER)
+        SerialLoop.send_param(PARAM_RASTER_BYTES, len(data))
+        SerialLoop.send_command(CMD_LINE)
+        SerialLoop.send_raster_data(data)
+        SerialLoop.send_param(PARAM_RASTER_BYTES, 0)
 
+def raster_move(x, y, data, verbose=False):
+    """Execute a raster move from the current position
 
-
+    Each data byte corresponds to a pulse. The number of pulses per mm
+    can be calculated from the data length.  The raster move starts
+    with a pulse and ends at (x, y) where the next pulse would be
+    expected.
+    
+    Data bytes must be <= 127. They encode the pulse length in
+    firmware ticks, like pulse_duration() does.  One tick is 31.875e-6
+    seconds (PULSE_SECONDS).
+    
+    Calls to intensity(), pulse_duration() or pulse_frequency() do not
+    affect the raster move.  The laser power is already fully defined
+    by the raster move itself. For example, you can double the power
+    by repeating every data byte once.
+    """
+    global SerialLoop
+    data = numpy.array(data, dtype='uint8', copy=False)
+    x0, y0 = current_parameters['x'], current_parameters['y']
+    length = math.hypot(x0-x, y0-y)
+    bytes_total = len(data)
+    mm_per_second = current_parameters['feedrate'] / 60.0
+    freq = bytes_total * mm_per_second / length
+    if verbose:
+        print 'raster_move from (%.3f, %.3f) to (%.3f, %.3f) at %.0f mm/min' % (x0, y0, x, y, current_parameters['feedrate'])
+        print '  length %.1f mm, %d bytes, data rate %.0f bytes/sec (%.f%% of serial capacity)' % (length, bytes_total, freq, 100*freq/(conf['baudrate']/10/2))
+        print '  byte duration %.0f us, pulse density %.3f ppmm (%.3f mm between pulses)' % (1.0/freq/1e-6, bytes_total/length, length/bytes_total)
+        print '  max pulse duration in data: %d ticks (%.0f us)' % (data.max(), data.max()*PULSE_SECONDS/1e-6)
+    freq_old = current_parameters['pulse_frequency']
+    pulse_frequency(freq)
+    n = RASTER_BYTES_MAX
+    while len(data) > 0:
+        chunk, data = data[:n], data[n:] 
+        fac = float(len(data))/bytes_total
+        px = fac*x0 + (1-fac)*x
+        py = fac*y0 + (1-fac)*y
+        _raster_move_raw(px, py, chunk)
+    pulse_frequency(freq_old)
+    current_parameters['x'] = x
+    current_parameters['y'] = y
 
 def job(jobdict):
     """Queue an .lsa job.

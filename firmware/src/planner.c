@@ -26,14 +26,18 @@
 #include "stepper.h"
 #include "config.h"
 #include "protocol.h"
+#include "serial.h"
+#include "laser.h"
 
 
 // The number of linear motions that can be in the plan at any give time
-#define BLOCK_BUFFER_SIZE 14  // do not make bigger than uint8_t
-
+#define BLOCK_BUFFER_SIZE 10  // do not make bigger than uint8_t
 static block_t block_buffer[BLOCK_BUFFER_SIZE];  // ring buffer for motion instructions
 static volatile uint8_t block_buffer_head;       // index of the next block to be pushed
 static volatile uint8_t block_buffer_tail;       // index of the block to process now
+
+#define RASTER_BUFFER_SIZE 4
+static raster_t raster_buffer[RASTER_BUFFER_SIZE];
 
 static int32_t position[3];             // The current position of the tool in absolute steps
 static double previous_unit_vec[3];     // Unit vector of previous path line segment
@@ -42,6 +46,7 @@ static double previous_nominal_speed;   // Nominal speed of previous path line s
 // prototypes for static functions (non-accesible from other files)
 static int8_t next_block_index(int8_t block_index);
 static int8_t prev_block_index(int8_t block_index);
+static raster_t * find_free_raster_buffer();
 static double estimate_acceleration_distance(double initial_rate, double target_rate, double acceleration);
 static double intersection_distance(double initial_rate, double final_rate, double acceleration, double distance);
 static double max_allowable_speed(double acceleration, double target_velocity, double distance);
@@ -67,7 +72,8 @@ void planner_init() {
 
 // Add a new linear movement to the buffer. x, y and z is 
 // the signed, absolute target position in millimeters. Feed rate specifies the speed of the motion.
-inline void planner_line(double x, double y, double z, double feed_rate, uint8_t nominal_laser_intensity, uint16_t pixel_width) {    
+void planner_line(double x, double y, double z, double feed_rate,
+                  double pulse_frequency, uint8_t pulse_duration, uint8_t raster_bytes) {
   // calculate target position in absolute steps
   int32_t target[3];
   target[X_AXIS] = lround(x*CONFIG_X_STEPS_PER_MM);
@@ -84,17 +90,37 @@ inline void planner_line(double x, double y, double z, double feed_rate, uint8_t
   
   // prepare to set up new block
   block_t *block = &block_buffer[block_buffer_head];
-  
-  // set block type to line command
-  if (pixel_width != 0) {
-    block->type = TYPE_RASTER_LINE;
-    block->pixel_steps = lround(pixel_width*CONFIG_X_STEPS_PER_MM);
+  block->type = TYPE_LINE;
+
+  if (raster_bytes == 0) {
+    block->raster = NULL;
   } else {
-    block->type = TYPE_LINE;
+    block->raster = find_free_raster_buffer();
+    while (!block->raster) {
+      // wait for a raster buffer
+      protocol_idle();
+      block->raster = find_free_raster_buffer();
+    }
+    if (raster_bytes > RASTER_BYTES_MAX) {
+      stepper_request_stop(STOPERROR_VALUE_OUT_OF_RANGE);
+      return;
+    }
+    block->raster->length = raster_bytes;
+    // receive data
+    uint8_t * buf = block->raster->data;
+    for (int i=0; i<raster_bytes; i++) {
+      uint8_t chr = serial_protocol_read(); // blocking until there is data
+      if (chr < 128) {
+        stepper_request_stop(STOPERROR_INVALID_DATA);
+        return;
+      }
+      buf[i] = chr - 128;
+    }
   }
 
-  // set nominal laser intensity
-  block->nominal_laser_intensity = nominal_laser_intensity;
+  // laser intensity
+  block->laser_pulse_duration = pulse_duration;
+  block->laser_pulse_frequency = (double)0x10000 * pulse_frequency * (LASER_IRQ_CYCLES / (1000000.0*CYCLES_PER_MICROSECOND));
 
   // compute direction bits for this block
   block->direction_bits = 0;
@@ -124,7 +150,10 @@ inline void planner_line(double x, double y, double z, double feed_rate, uint8_t
   double inverse_minute = feed_rate * inverse_millimeters;
   block->nominal_speed = block->millimeters * inverse_minute; // always > 0
   block->nominal_rate = ceil(block->step_event_count * inverse_minute); // always > 0
-  
+
+  // precalculate value for adjust_speed(), see stepper.c
+  block->pulse_freq_over_nominal_rate = (double)block->laser_pulse_frequency / block->nominal_rate * (1UL<<(5+16));
+
   // compute the acceleration rate for this block. (step/min/acceleration_tick)
   block->rate_delta = ceil( block->step_event_count * inverse_millimeters 
                             * CONFIG_ACCELERATION / (60 * ACCELERATION_TICKS_PER_SECOND) );
@@ -196,7 +225,7 @@ inline void planner_line(double x, double y, double z, double feed_rate, uint8_t
 }
 
 
-inline void planner_dwell(double seconds, uint8_t nominal_laser_intensity) {
+//void planner_dwell(double seconds, uint8_t nominal_laser_intensity) {
 // // Execute dwell in seconds. Maximum time delay is > 18 hours, more than enough for any application.
 // void mc_dwell(double seconds) {
 //    uint16_t i = floor(seconds);
@@ -210,10 +239,10 @@ inline void planner_dwell(double seconds, uint8_t nominal_laser_intensity) {
 //      i--;
 //    }
 // }  
-}
+//}
 
 
-inline void planner_command(uint8_t type) {
+void planner_command(uint8_t type) {
   // calculate the buffer head and check for space
   int next_buffer_head = next_block_index( block_buffer_head );	
   while(block_buffer_tail == next_buffer_head) {  // buffer full condition
@@ -228,6 +257,9 @@ inline void planner_command(uint8_t type) {
   // set block type command
   block->type = type;
 
+  // mark raster buffer as unused
+  block->raster = NULL;
+
   // Move buffer head
   block_buffer_head = next_buffer_head;
 
@@ -237,22 +269,22 @@ inline void planner_command(uint8_t type) {
 
 
 
-inline bool planner_blocks_available() {
+bool planner_blocks_available() {
   return block_buffer_head != block_buffer_tail;
 }
 
-inline block_t *planner_get_current_block() {
+block_t *planner_get_current_block() {
   if (block_buffer_head == block_buffer_tail) { return(NULL); }
   return(&block_buffer[block_buffer_tail]);
 }
 
-inline void planner_discard_current_block() {
+void planner_discard_current_block() {
   if (block_buffer_head != block_buffer_tail) {
     block_buffer_tail = next_block_index( block_buffer_tail );
   }
 }
 
-inline void planner_reset_block_buffer() {
+void planner_reset_block_buffer() {
   block_buffer_head = 0;
   block_buffer_tail = 0;
 }
@@ -261,7 +293,7 @@ inline void planner_reset_block_buffer() {
 
 
 // Reset the planner position vector and planner speed
-inline void planner_set_position(double x, double y, double z) {
+void planner_set_position(double x, double y, double z) {
   position[X_AXIS] = lround(x*CONFIG_X_STEPS_PER_MM);
   position[Y_AXIS] = lround(y*CONFIG_Y_STEPS_PER_MM);
   position[Z_AXIS] = lround(z*CONFIG_Z_STEPS_PER_MM);    
@@ -272,17 +304,37 @@ inline void planner_set_position(double x, double y, double z) {
 
 
 // Returns the index of the next block in the ring buffer.
-inline static int8_t next_block_index(int8_t block_index) {
+static int8_t next_block_index(int8_t block_index) {
   block_index++;
   if (block_index == BLOCK_BUFFER_SIZE) { block_index = 0; }  // cheaper than module (%)
   return block_index;
 }
 
 // Returns the index of the previous block in the ring buffer
-inline static int8_t prev_block_index(int8_t block_index) {
+static int8_t prev_block_index(int8_t block_index) {
   if (block_index == 0) { block_index = BLOCK_BUFFER_SIZE; }
   block_index--;
   return block_index;
+}
+
+static raster_t * find_free_raster_buffer()
+{
+  for (int i=0; i<RASTER_BUFFER_SIZE; i++) {
+    bool free = true;
+    int8_t block_index = block_buffer_tail;
+    while(block_index != block_buffer_head) {
+      raster_t * raster = block_buffer[block_index].raster;
+      if (raster == &raster_buffer[i]) {
+        free = false;
+        break;
+      }
+      block_index = next_block_index(block_index);
+    }
+    if (free) {
+      return &raster_buffer[i];
+    }
+  }
+  return NULL;
 }
 
 
@@ -297,7 +349,7 @@ inline static int8_t prev_block_index(int8_t block_index) {
 **                       DISTANCE 
 */
 // Calculates the distance (not time) it takes to accelerate from initial_rate to target_rate
-inline static double estimate_acceleration_distance(double initial_rate, double target_rate, double acceleration) {
+static double estimate_acceleration_distance(double initial_rate, double target_rate, double acceleration) {
   return( (target_rate*target_rate-initial_rate*initial_rate)/(2*acceleration) );
 }
 
@@ -317,7 +369,7 @@ inline static double estimate_acceleration_distance(double initial_rate, double 
 // you started at speed initial_rate and accelerated until this point and want to end at the final_rate after
 // a total travel of distance. This can be used to compute the intersection point between acceleration and
 // deceleration in the cases where the trapezoid has no plateau (i.e. never reaches maximum speed)
-inline static double intersection_distance(double initial_rate, double final_rate, double acceleration, double distance) {
+static double intersection_distance(double initial_rate, double final_rate, double acceleration, double distance) {
   return( (2*acceleration*distance-initial_rate*initial_rate+final_rate*final_rate)/(4*acceleration) );
 }
 
@@ -334,7 +386,7 @@ inline static double intersection_distance(double initial_rate, double final_rat
 **                       distance 
 */
 // Calculate the beginning speed that results in target_velocity when accelerated over given distance.
-inline static double max_allowable_speed(double acceleration, double target_velocity, double distance) {
+static double max_allowable_speed(double acceleration, double target_velocity, double distance) {
   return( sqrt(target_velocity*target_velocity-2*acceleration*distance) );
 }
 
@@ -351,7 +403,7 @@ inline static double max_allowable_speed(double acceleration, double target_velo
 **                      accelerate_until    decelerate_after                           
 */                                                                              
 // Calculates accelerate_until and decelerate_after.
-inline static void calculate_trapezoid_for_block(block_t *block, double entry_factor, double exit_factor) {
+static void calculate_trapezoid_for_block(block_t *block, double entry_factor, double exit_factor) {
   block->initial_rate = ceil(block->nominal_rate * entry_factor);  // (step/min)
   block->final_rate = ceil(block->nominal_rate * exit_factor);     // (step/min)
   int32_t acceleration_per_minute = block->rate_delta * ACCELERATION_TICKS_PER_SECOND * 60; // (step/min^2)
@@ -377,7 +429,7 @@ inline static void calculate_trapezoid_for_block(block_t *block, double entry_fa
 }
 
 
-inline static void reduce_entry_speed_reverse(block_t *current, block_t *next) {
+static void reduce_entry_speed_reverse(block_t *current, block_t *next) {
   // 'next' here is the newer/later block, not the next in the iteration
   //                   time->
   //     [tail][][][current][next][][][][head] -> loops around to tail
@@ -397,7 +449,7 @@ inline static void reduce_entry_speed_reverse(block_t *current, block_t *next) {
 }
 
 
-inline static void reduce_entry_speed_forward(block_t *previous, block_t *current) {
+static void reduce_entry_speed_forward(block_t *previous, block_t *current) {
   // 'previous' here is the older/earlier block, not the previous in the iteration
   //                   time->
   //     [tail][][][previous][current][][][][head] -> loops around to tail
@@ -423,7 +475,7 @@ inline static void reduce_entry_speed_forward(block_t *previous, block_t *curren
 // planner, called whenever a new block was added
 // All planner computations are performed with doubles (float on Arduinos) to minimize numerical round-
 // off errors. Only when planned values are converted to stepper rate parameters, these are integers.
-inline static void planner_recalculate() {
+static void planner_recalculate() {
   //// reverse pass
   // Recalculate entry_speed to be (a) less or equal to vmax_junction and
   // (b) low enough so it can definitely reach the next entry_speed at fixed acceleration.

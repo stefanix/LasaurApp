@@ -100,7 +100,7 @@ class Lasersaur(object):
             'feedrate': 0.0,
             'intensity': 0.0,
             'duration': 0.0,
-            'pixelwidth': 0.0,
+            'pulses_per_mm': 0.0,
         }
         """
         return self._request('/status', ret=True)
