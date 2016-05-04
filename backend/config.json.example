@@ -1,0 +1,18 @@
+{
+    "target_size": [1220,610],
+    "tolerance": 0.01,
+    "company_name": "/dev/ttyACM0",
+    "cookie_key": "secret_key_jkn23489hsdf",
+    "language": "de",
+    "influx": false,
+    "open_browser": false,
+    "dummy_mode": false,
+    "public": false,
+    "accounting": {
+        "outputfile": "logs/accounting.json"
+    },
+    "use_id_card_access_restriction": true,
+    "id_card_list_path": "/etc/lasersaur/idlist.txt",
+    "id_card_admin_list_path": "/etc/lasersaur/adminidlist.txt",
+    "network_port": 80
+}

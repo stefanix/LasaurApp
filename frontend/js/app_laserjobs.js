@@ -209,7 +209,7 @@ function addPasses(num) {
   var pass_num_offset = getNumPasses() + 1;
   var buttons = ''
   for (var color in DataHandler.getColorOrder()) {
-    buttons +='<button class="select_color btn btn-small" style="margin:2px"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></button>'
+    buttons +='<button class="select_color btn btn-small" style="margin:2px; padding:7px;"><div style="width:10px; height:10px; background-color:'+color+'"><span style="display:none">'+color+'</span></div></button>'
   }
   for (var i=0; i<num; i++) {
     var passnum = pass_num_offset+i;
@@ -217,23 +217,23 @@ function addPasses(num) {
     if (passnum != 1) {
       margintop = 'margin-top:6px;'
     }
-    var html = '<div class="row well" style="margin:0px; '+margintop+
+    var html = '<div class="row" style="margin:0px; '+margintop+
                   ' padding:4px; background-color:#eeeeee">' +
                 '<div class="form-inline" style="margin-bottom:0px">' +
                   '<label>Pass '+ passnum +': </label>' +
-                  '<div class="input-prepend" style="margin-left:6px">' +
-                    '<span class="add-on" style="margin-right:-5px;">F</span>' +
+                  '<div class="input-group" style="margin-left:6px">' +
+                    '<span class="input-group-addon" style="margin-right:-5px;">F</span>' +
                     '<input type="text" class="feedrate" value="'+app_settings.default_feedrate+
                       '" title="feedrate 1-'+app_settings.max_seek_speed+
-                      'mm/min" style="width:32px" data-delay="500">' +
+                      'mm/min" style="width:40px" data-delay="500">' +
                   '</div>' +
-                  '<div class="input-prepend" style="margin-left:6px">' +
-                    '<span class="add-on" style="margin-right:-5px;">%</span>' +
+                  '<div class="input-group" style="margin-left:6px">' +
+                    '<span class="input-group-addon" style="margin-right:-5px;">%</span>' +
                     '<input class="intensity" type="textfield" value="'+
                       app_settings.default_intensity+
-                      '" title="intensity 0-100%" style="width:26px;" data-delay="500">' +
+                      '" title="intensity 0-100%" style="width:30px;" data-delay="500">' +
                   '</div>' +
-                  '<span class="colorbtns" style="margin-left:6px">'+buttons+'</span>' +
+                  '<span class="colorbtns" style="margin-left:6px;">'+buttons+'</span>' +
                 '</div>' +
               '</div>';
     // $('#passes').append(html);
@@ -314,7 +314,7 @@ function writePassesWidget() {
   } else {
     // no lasertags, if only one color -> assign to pass1
     if (DataHandler.getAllColors().length == 1) {
-      $('#passes > div:nth-child(1) .colorbtns').children('button').addClass('active')
+      $('#passes > div:nth-child(1) .colorbtns').children('button').addClass('active active-strong')
       $().uxmessage('notice', "assigned to pass1");
       readPassesWidget();
     }
@@ -357,13 +357,17 @@ $(document).ready(function(){
     }
   );
 
+  function submit_job() {
+    var data = $('#job_data').val();
 
-  /// button events /////////////////////////////
+    if (data.length === 0) {
+        $().uxmessage('warning', "No data loaded. Please load a document first.");
+      $('#preview_canvas').shake(4,10,500);
+      return;
+    }
 
-  $("#progressbar").hide();
-  $("#job_submit").click(function(e) {
     // send gcode string to server via POST
-    DataHandler.setByJson($('#job_data').val());
+    DataHandler.setByJson(data);
     if (readPassesWidget()) {
       var job_bbox = DataHandler.getJobBbox();
       if (job_bbox[0] >= 0 &&
@@ -371,14 +375,31 @@ $(document).ready(function(){
           job_bbox[2] <= app_settings.work_area_dimensions[0] &&
           job_bbox[3] <= app_settings.work_area_dimensions[1])
       {
-        send_gcode(DataHandler.getGcode(), "G-Code sent to backend.", true);
+        send_gcode(DataHandler.getGcode(), "G-Code sent to backend.", true, $('#job_name').val());
       } else {
         $().uxmessage('warning', "rejecting, outside work area");
       }
     } else {
       $().uxmessage('warning', "nothing to cut -> please assign colors to passes");
     }
+  }
+
+
+  /// button events /////////////////////////////
+
+  $("#progressbar").hide();
+  $("#job_submit").click(function(e) {
+    if ($('#door_status_btn').hasClass('btn-warning')) {
+      $('#door_open_warning_modal').modal();
+    } else {
+      submit_job();
+    }
     return false;
+  });
+
+  $('#really_submit_job_btn').click(function() {
+      submit_job();
+      $('#door_open_warning_modal').modal('hide');
   });
 
 
@@ -392,7 +413,7 @@ $(document).ready(function(){
           job_bbox[2] <= app_settings.work_area_dimensions[0] &&
           job_bbox[3] <= app_settings.work_area_dimensions[1])
       {
-        send_gcode(DataHandler.getBboxGcode(), "BBox G-Code sent to backend", true);
+        send_gcode(DataHandler.getBboxGcode(), "BBox G-Code sent to backend", true, $('#job_name').val());
       } else {
         $().uxmessage('warning', "rejecting, outside work area");
       }
