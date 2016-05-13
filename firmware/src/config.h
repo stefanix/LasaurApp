@@ -34,15 +34,26 @@
 #define BAUD_RATE 57600
 // #define DEBUG_IGNORE_SENSORS  // set for debugging
 
+#define MICROSTEPS 10 // 10 for Gecko, 8 for most other stepper drivers
+
+// #define SYNRAD        // define this, for using a Synrad 48-5 or similar
+/* When using a Synrad Laser instead of an RECI tube PWM shall have 5kHz with additional 1µs tickle
+   pulses in idle phases, to keep ionisation up
+   tickle pulses must not exceed this limit nor shall the PWM frequency go higher than 5kHz to prevent
+   unwanted laser fire
+   To accomplish that, the PWM out for the laser tube must go to D5 instead of D6 for the RECI tube
+   D6 is not capable of 5kHz PWM
+   D5 is also available on the RJ45 jack for the laser signal, so there is no hardware change needed.
+*/
 
 #ifndef V1401
-  #define CONFIG_X_STEPS_PER_MM 32.80839895 //microsteps/mm (no integers, e.g. use 80.0 instead of 80)
-  #define CONFIG_Y_STEPS_PER_MM 32.80839895 //microsteps/mm (no integers, e.g. use 80.0 instead of 80)
-  #define CONFIG_Z_STEPS_PER_MM 32.80839895 //microsteps/mm (no integers, e.g. use 80.0 instead of 80)
+  #define CONFIG_X_STEPS_PER_MM ( 3.280839895 * MICROSTEPS ) //microsteps/mm (no integers, e.g. use 80.0 instead of 80)
+  #define CONFIG_Y_STEPS_PER_MM ( 3.280839895 * MICROSTEPS ) //microsteps/mm (no integers, e.g. use 80.0 instead of 80)
+  #define CONFIG_Z_STEPS_PER_MM ( 3.280839895 * MICROSTEPS ) //microsteps/mm (no integers, e.g. use 80.0 instead of 80)
 #else
-  #define CONFIG_X_STEPS_PER_MM 88.88888888 //microsteps/mm (no integers, e.g. use 80.0 instead of 80)
-  #define CONFIG_Y_STEPS_PER_MM 90.90909090 //microsteps/mm (no integers, e.g. use 80.0 instead of 80)
-  #define CONFIG_Z_STEPS_PER_MM 33.33333333 //microsteps/mm (no integers, e.g. use 80.0 instead of 80)
+  #define CONFIG_X_STEPS_PER_MM ( 8.888888888 * MICROSTEPS ) //microsteps/mm (no integers, e.g. use 80.0 instead of 80)
+  #define CONFIG_Y_STEPS_PER_MM ( 9.090909090 * MICROSTEPS ) //microsteps/mm (no integers, e.g. use 80.0 instead of 80)
+  #define CONFIG_Z_STEPS_PER_MM ( 3.333333333 * MICROSTEPS ) //microsteps/mm (no integers, e.g. use 80.0 instead of 80)
 #endif
 #define CONFIG_PULSE_MICROSECONDS 5
 #define CONFIG_FEEDRATE 8000.0 // in millimeters per minute

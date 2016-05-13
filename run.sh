@@ -1,2 +1,2 @@
 #!/bin/bash
-python backend/app.py
+python backend/app.py -p

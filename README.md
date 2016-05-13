@@ -23,6 +23,7 @@ How to Use this App
 
 
 * make sure you have Python 2.7
+* copy `backend/config.json.example` to `backend/config.json`
 * run *python backend/app.py*
 * The GUI will open in a browser at *http://localhost:4444*
   (supported are Firefox, Chrome, and likely future Safari 6+ or IE 10+)
