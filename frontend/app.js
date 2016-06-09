@@ -1,9 +1,10 @@
 
-var appconfig_main = undefined
-var hardware_ready_state = false
-var firmware_version_reported = false
-var lasaurapp_version_reported = false
-var progress_not_yet_done_flag = false;
+var app_config_main = undefined
+var app_hardware_ready_flag = false
+var app_firmware_version_flag = false
+var app_lasaurapp_version_flag = false
+var app_progress_flag = false;
+var app_pause_state = false;
 
 
 
@@ -17,12 +18,18 @@ $(document).ready(function(){
   if(!Object.hasOwnProperty('keys')) {
     alert("Error: Browser may be too old/non-standard.")
   }
+
+  // unblur button after pressing
+  $(".btn").mouseup(function(){
+      $(this).blur();
+  })
+  
   // get appconfig from server
   get_request({
     url:'/config',
     success: function (data) {
       $().uxmessage('success', "App config received.")
-      appconfig_main = data
+      app_config_main = data
       config_received()
     },
     error: function (data) {
@@ -37,9 +44,9 @@ $(document).ready(function(){
 function config_received() {
   // show in config modal
   var html = ''
-  var keys_sorted = Object.keys(appconfig_main).sort()
+  var keys_sorted = Object.keys(app_config_main).sort()
   for (var i=0; i<keys_sorted.length; i++) {
-    html += keys_sorted[i] + " : " + appconfig_main[keys_sorted[i]] + "<br>"
+    html += keys_sorted[i] + " : " + app_config_main[keys_sorted[i]] + "<br>"
   }
   $('#config_content').html(html)
 
@@ -54,10 +61,9 @@ function config_received() {
 
 function config_received_next() {
 
-  $('#feedrate_field').val(appconfig_main.feedrate);
+  $('#feedrate_field').val(app_config_main.feedrate);
 
   //////// serial connect and pause button ////////
-  var pause_btn_state = false;
 
   // status by websocket
   function status_connect(){
@@ -79,11 +85,11 @@ function config_received_next() {
 
       // pause status
       if (data.paused) {
-        pause_btn_state = true;
+        app_pause_state = true;
         $("#pause_btn").addClass("btn-primary");
         $("#pause_btn").html('<i class="icon-play"></i>');
       } else {
-        pause_btn_state = false;
+        app_pause_state = false;
         $("#pause_btn").removeClass("btn-warning");
         $("#pause_btn").removeClass("btn-primary");
         $("#pause_btn").html('<i class="icon-pause"></i>');
@@ -93,12 +99,12 @@ function config_received_next() {
       if (data.serial) {
         // ready state
         if (data.ready) {
-          hardware_ready_state = true;
+          app_hardware_ready_flag = true;
           $("#connect_btn").removeClass("btn-danger");
           $("#connect_btn").removeClass("btn-warning");
           $("#connect_btn").addClass("btn-success");
         } else {
-          hardware_ready_state = false;
+          app_hardware_ready_flag = false;
           $("#connect_btn").removeClass("btn-danger");
           $("#connect_btn").removeClass("btn-success");
           $("#connect_btn").addClass("btn-warning");
@@ -107,7 +113,7 @@ function config_received_next() {
         $("#connect_btn").removeClass("btn-success");
         $("#connect_btn").removeClass("btn-warning");
         $("#connect_btn").addClass("btn-danger");
-        hardware_ready_state = false;
+        app_hardware_ready_flag = false;
       }
 
       // door, chiller, power, limit, buffer
@@ -204,16 +210,16 @@ function config_received_next() {
             }, 500, 'linear' );
           }
         }
-        if (data.firmver && !firmware_version_reported) {
+        if (data.firmver && !app_firmware_version_flag) {
           $().uxmessage('notice', "Firmware v" + data.firmver);
           $('#firmware_version').html(data.firmver);
-          firmware_version_reported = true;
+          app_firmware_version_flag = true;
         }
       }
-      if (data.appver && !lasaurapp_version_reported) {
+      if (data.appver && !app_lasaurapp_version_flag) {
         $().uxmessage('notice', "LasaurApp v" + data.appver);
         $('#lasaurapp_version').html(data.appver);
-        lasaurapp_version_reported = true;
+        app_lasaurapp_version_flag = true;
       }
 
 
@@ -224,32 +230,6 @@ function config_received_next() {
   status_connect();
 
 
-
-  $("#pause_btn").tooltip({placement:'bottom', delay: {show:500, hide:100}});
-  $("#pause_btn").click(function(e){
-    if (pause_btn_state == true) {  // unpause
-      get_request({
-        url:'/unpause',
-        success: function (data) {
-          pause_btn_state = false;
-          $("#pause_btn").removeClass('btn-primary');
-          $("#pause_btn").html('<i class="icon-pause"></i>');
-          $().uxmessage('notice', "Continuing...");
-        }
-      });
-    } else {  // pause
-      get_request({
-        url:'/pause',
-        success: function (data) {
-          pause_btn_state = true;
-          $("#pause_btn").addClass('btn-primary');
-          $("#pause_btn").html('<i class="icon-play"></i>');
-          $().uxmessage('notice', "Pausing in a bit...");
-        }
-      });
-    }
-    e.preventDefault();
-  });
   //\\\\\\ serial connect and pause button \\\\\\\\
 
 
@@ -310,7 +290,7 @@ function config_received_next() {
     get_request({
       url:'/reset',
       success: function (data) {
-        firmware_version_reported = false;
+        app_firmware_version_flag = false;
         $().uxmessage('notice', "Firmware reset successful.");
       }
     });

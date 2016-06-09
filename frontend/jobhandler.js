@@ -57,7 +57,7 @@
 
 
 
-JobHandler = {
+jobhandler = {
 
   vector : {},
   raster : {},
@@ -69,6 +69,8 @@ JobHandler = {
     this.raster = {}
     this.stats = {}
     name = ""
+    jobview_clear()
+    $('#info_content').html("")
   },
 
   isEmpty : function() {
@@ -109,8 +111,8 @@ JobHandler = {
           image.data = new Image()
           image.data.src = img_base64
           // scale to have one pixel match raster_size (beam width for raster)
-          // image.data.width = Math.round(image.size[0]/appconfig_main.raster_size);
-          // image.data.height = Math.round(image.size[1]/appconfig_main.raster_size);
+          // image.data.width = Math.round(image.size[0]/app_config_main.raster_size);
+          // image.data.height = Math.round(image.size[1]/app_config_main.raster_size);
         }
       }
     }
@@ -123,7 +125,7 @@ JobHandler = {
     }
 
     // view job info
-    $('#job-info').html("hello")
+    $('#info_content').html("hello")
   },
 
 
@@ -159,13 +161,10 @@ JobHandler = {
     var y = 0;
     // clear canvas
     // paper.project.clear()
-    jobview_seekLayer.remove()
-    jobview_seekLayer = new paper.Layer()
-    jobview_feedLayer.remove()
-    jobview_feedLayer = new paper.Layer()
+    jobview_clear()
     // figure out scale
-    var w_workspace = appconfig_main.workspace[0]
-    var h_workspace = appconfig_main.workspace[1]
+    var w_workspace = app_config_main.workspace[0]
+    var h_workspace = app_config_main.workspace[1]
     var aspect_workspace = w_workspace/h_workspace
     var w_canvas = $('#job_canvas').innerWidth()
     var h_canvas = $('#job_canvas').innerHeight()
@@ -205,7 +204,7 @@ JobHandler = {
         // var image = raster.image;
         // var pixwidth = image.width;
         // var pixheight = image.height;
-        // var offset = appconfig_main.raster_offset;
+        // var offset = app_config_main.raster_offset;
         //
         // var ppmmX = pixwidth / width;
         // var ppmmY = pixheight / height;
@@ -229,7 +228,7 @@ JobHandler = {
         //   canvas.line(x1 - offset, y, x1, y);
         // }
 
-        x = pos_x + img_w + appconfig_main.raster_offset;
+        x = pos_x + img_w + app_config_main.raster_offset;
         y = pos_y + img_h;
       }
     }
@@ -250,7 +249,7 @@ JobHandler = {
 
             jobview_seekLayer.activate()
             var p_seek = new paper.Path()
-            p_seek.strokeColor = appconfig_main.seek_color
+            p_seek.strokeColor = app_config_main.seek_color
             p_seek.add([x,y])
             x = pathseg[0][0]*scale
             y = pathseg[0][1]*scale
@@ -276,13 +275,13 @@ JobHandler = {
         // draw group's bounding box
         jobview_seekLayer.activate()
         var group_bounds = new paper.Path.Rectangle(group.bounds)
-        group_bounds.strokeColor = appconfig_main.bounds_color
+        group_bounds.strokeColor = app_config_main.bounds_color
       }
     }
     // draw super bounding box
     jobview_seekLayer.activate()
     var all_bounds = new paper.Path.Rectangle(job_group.bounds)
-    all_bounds.strokeColor = appconfig_main.bounds_color
+    all_bounds.strokeColor = app_config_main.bounds_color
     // finally commit draw
     paper.view.draw()
   },
@@ -428,11 +427,11 @@ JobHandler = {
       this.stats.images = []
       for (var k=0; k<this.raster.images.length; k++) {
         var image = this.raster.images[k]
-        var image_length = (2*appconfig_main.raster_offset + image.size[0])
-                         * Math.floor(image.size[1]/appconfig_main.raster_kerf)
-        var image_bbox = [image.pos[0] - appconfig_main.raster_offset,
+        var image_length = (2*app_config_main.raster_offset + image.size[0])
+                         * Math.floor(image.size[1]/app_config_main.raster_kerf)
+        var image_bbox = [image.pos[0] - app_config_main.raster_offset,
                           image.pos[1],
-                          image.pos[0] + image.size[0] + appconfig_main.raster_offset,
+                          image.pos[0] + image.size[0] + app_config_main.raster_offset,
                           image.pos[1] + image.size[1]
                          ]
         this.stats.images.push({'bbox':path_bbox, 'length':path_length})
@@ -475,7 +474,7 @@ JobHandler = {
     var x_prev = 0;
     var y_prev = 0;
     var d2 = 0;
-    var length_limit = appconfig_main.max_segment_length;
+    var length_limit = app_config_main.max_segment_length;
     var length_limit2 = length_limit*length_limit;
 
     var lerp = function(x0, y0, x1, y1, t) {

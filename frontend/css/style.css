@@ -8,7 +8,7 @@ body {
   /* Margin bottom by footer height */
   margin-bottom: 60px;
   overflow:hidden;
-  background-color: #f8f8f8;
+  background-color: #f2f2f2;
 }
 .footer {
   /*position: absolute;*/
@@ -27,6 +27,7 @@ body {
 #main_navbar {
     margin:0;
     border:0;
+    background-color: transparent;
 }
 
 .menu_btn {
@@ -48,6 +49,11 @@ body {
 }
 .container .text-muted {
   margin: 20px 0;
+}
+
+#job_canvas {
+  height: 100%;
+  background-color: #ffffff;
 }
 
 .footer > .container {

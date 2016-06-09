@@ -18,10 +18,10 @@
     <link href="css/style.css" rel="stylesheet">
 
     <script src="js/jquery.min.js"></script>
-    <script src="js/jquery.hotkeys.js"></script>
     <script src="js/bootstrap.min.js"></script>
     <script src="js/jquery.toastmessage.js"></script>
     <script src="js/paper-full.min.js"></script>
+    <script src="js/mousetrap.min.js"></script>
 
     <script src="lib.js"></script>
     <script src="jobview.js"></script>
@@ -46,12 +46,12 @@
                 <span class="glyphicon glyphicon-menu-hamburger" style="font-size:1.4em"></span>
               </a>
               <ul class="dropdown-menu" role="menu">
-                <li><a id="info_btn" href="#" title="show job information [i]">Job Info</a></li>
+                <li><a id="info_btn" href="#" data-toggle="modal" data-target="#info_modal" title="show job information [I]">Job Info</a></li>
                 <li><a id="export_btn" href="#">Export</a></li>
-                <li><a id="clear_btn" href="#">Clear</a></li>
+                <li><a id="clear_btn" href="#" title="[ESC]">Clear</a></li>
                 <li class="divider"></li>
-                <li><a id="queue_btn" href="#">Job Queue</a></li>
-                <li><a id="library_btn" href="#">Library</a></li>
+                <li><a id="queue_btn" href="#" title="[Q]">Job Queue</a></li>
+                <li><a id="library_btn" href="#" title="[L]">Library</a></li>
                 <li class="divider"></li>
                 <li><a href="https://github.com/nortd/lasersaur/wiki">Manual</a></li>
                 <li><a href="#" data-toggle="modal" data-target="#about_modal">About</a></li>
@@ -70,38 +70,36 @@
         <!-- open button -->
         <div class="btn-group pull-left menu_btn">
             <button id="open_btn" class="btn btn-default" type="submit"
-                    title="open new job" data-loading-text="loading..." autocomplete="off">Open</button>
+                    title="open new job [ENTER]" data-loading-text="loading..." autocomplete="off">Open</button>
         </div>
         <form id="open_file_form" action="#" onsubmit="return false;">
             <input type="file" id="open_file_fld" name="data" style="visibility:hidden; position:fixed">
         </form>
 
+        <!-- assign button -->
+        <div class="btn-group pull-left menu_btn">
+            <button id="assign_btn" class="btn btn-default" type="submit" title="assign color to pass [A]">Assign</button>
+        </div>
+
         <!-- process buttons -->
         <div class="btn-group pull-left menu_btn">
-            <button id="run_btn" class="btn btn-primary" type="submit" title="run this job">
+            <button id="run_btn" class="btn btn-primary" type="submit" title="run this job [CTRL-ENTER]">
               Run this job!
             </button>
-            <button id="boundary_btn" class="btn btn-primary" type="submit" title="run bounding box">
+            <button id="boundary_btn" class="btn btn-primary" type="submit" title="run bounding box [CTRL-SHIFT-ENTER]">
               <span class="glyphicon glyphicon-resize-full"></span>
             </button>
         </div>
 
         <div class="btn-group pull-left menu_btn">
           <!-- pause button -->
-          <button id="pause_btn" class="btn btn-default" type="submit" title="toggle pause">
+          <button id="pause_btn" class="btn btn-default" type="submit" title="toggle pause [SPACE]">
             <span class="glyphicon glyphicon-pause"></span>
           </button>
           <!-- stop button -->
-          <button id="stop_btn" class="btn btn-default" type="submit" title="stop and purge job">
+          <button id="stop_btn" class="btn btn-default" type="submit" title="stop and purge job [CTRL-ESC]">
             <span class="glyphicon glyphicon-stop"></span>
           </button>
-        </div>
-
-        <!-- status indicators -->
-        <div class="btn-group menu_btn">
-          <button id="ready_status_btn" class="btn disabled btn-danger" type="submit">Ready</button>
-          <button id="door_status_btn" class="btn disabled btn-warning" type="submit">Door</button>
-          <button id="chiller_status_btn" class="btn disabled btn-warning" type="submit">Chiller</button>
         </div>
 
       </div>
@@ -111,11 +109,11 @@
     <div id="main_container" class="container">
 
       <!-- canvas -->
-      <canvas id="job_canvas" class="pull-left" style="height:100%; background-color: #ffffff;" resize></canvas>
+      <canvas id="job_canvas" class="pull-left" resize></canvas>
 
       <!-- info div -->
       <div id="info_panel" class="pull-right" style="width:220px; overflow:auto">
-        <div id="job-info" style="width:100%;background-color:#bbbbbb"></div>
+        <!-- <div id="job-info" style="width:100%;background-color:#bbbbbb"></div> -->
 
         <div id="job_passes" style="width:100%;padding:6px">
           <div style="margin-bottom:20px">
@@ -221,6 +219,20 @@
         </div>
       </div>
 
+      <!-- info modal -->
+      <div id="info_modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              <h4 class="modal-title" id="myModalLabel">Job Info</h4>
+            </div>
+            <div id="info_content" class="modal-body">
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
     <!-- end page content -->
 
@@ -232,21 +244,28 @@
           <img src="img/lasersaur-dino-lasaurapp-190.png" style="margin-right:6px">
         </a>
 
+        <!-- status indicators -->
+        <div class="btn-group menu_btn footer_btn">
+          <button id="ready_status_btn" class="btn disabled btn-danger" type="submit">Ready</button>
+          <button id="door_status_btn" class="btn disabled btn-warning" type="submit">Door</button>
+          <button id="chiller_status_btn" class="btn disabled btn-warning" type="submit">Chiller</button>
+        </div>
+
         <div class="btn-group footer_btn">
           <!-- origin button -->
-          <button id="origin_btn" class="btn btn-default" type="submit" title="move to origin">
+          <button id="origin_btn" class="btn btn-default" type="submit" title="move to origin [0]">
             (0,0)
           </button>
           <!-- homing button -->
-          <button id="homing_btn" class="btn btn-default" type="submit" title="run homing cycle, find table origin">
+          <button id="homing_btn" class="btn btn-default" type="submit" title="run homing cycle, find table origin [H]">
             <span class="glyphicon glyphicon-home"></span>
           </button>
         </div>
 
         <div class="btn-group footer_btn">
-            <button id="motion_btn" class="btn btn-default" type="submit">Motion</button>
-            <button id="offset_btn" class="btn btn-default" type="submit">Offset</button>
-            <button id="jog_btn" class="btn btn-default" type="submit">Jog</button>
+            <button id="motion_btn" class="btn btn-default" type="submit" title="[M]">Motion</button>
+            <button id="offset_btn" class="btn btn-default" type="submit" title="[O]">Offset</button>
+            <button id="jog_btn" class="btn btn-default" type="submit" title="[J]">Jog</button>
         </div>
 
       </div>

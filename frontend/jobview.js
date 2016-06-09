@@ -12,6 +12,16 @@ var info_width_init = 0
 var jobview_width_last = 0
 var jobview_height_last = 0
 
+
+function jobview_clear(){
+  jobview_seekLayer.remove()
+  jobview_seekLayer = new paper.Layer()
+  jobview_feedLayer.remove()
+  jobview_feedLayer = new paper.Layer()
+  paper.view.draw()
+}
+
+
 function jobview_resize() {
   var win_width = $(window).innerWidth()
   var win_height = $(window).innerHeight()
@@ -27,9 +37,9 @@ function jobview_resize() {
 
   // calculate jobview_mm2px
   // used to scale mm geometry to be displayed on canvas
-  if (appconfig_main !== undefined) {
-    var wk_width = appconfig_main.workspace[0]
-    var wk_height = appconfig_main.workspace[1]
+  if (app_config_main !== undefined) {
+    var wk_width = app_config_main.workspace[0]
+    var wk_height = app_config_main.workspace[1]
     var aspect_workspace = wk_width/wk_height
     var aspect_canvas = canvas_width/canvas_height
     jobview_mm2px = canvas_width/wk_width  // default for same aspect
@@ -161,6 +171,7 @@ function jobview_ready() {
       path = hitResult.item
       path.parent.selected = !path.parent.selected
       // show info on this group
+      alert(path.strokeColor.toCSS(true))
 
     } else {
       jobview_deselect_all()

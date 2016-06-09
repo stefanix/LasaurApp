@@ -5,8 +5,14 @@ function controls_ready() {
   // dropdown /////////////////////////
 
   $("#info_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
-  $("#info_btn").click(function(e){
-    alert("info")
+  // $("#info_btn").click(function(e){
+  //   alert("info")
+  //   return false
+  // })
+
+  $("#assign_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
+  $("#assign_btn").click(function(e){
+    alert("assign")
     return false
   })
 
@@ -18,7 +24,7 @@ function controls_ready() {
 
   $("#clear_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#clear_btn").click(function(e){
-    alert("clear")
+    jobhandler.clear()
     return false
   })
 
@@ -76,7 +82,27 @@ function controls_ready() {
 
   $("#pause_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#pause_btn").click(function(e){
-    alert("pause")
+    if (app_pause_state == true) {  // unpause
+      get_request({
+        url:'/unpause',
+        success: function (data) {
+          app_pause_state = false;
+          $("#pause_btn").removeClass('btn-primary');
+          $("#pause_btn").html('<i class="icon-pause"></i>');
+          $().uxmessage('notice', "Continuing...");
+        }
+      });
+    } else {  // pause
+      get_request({
+        url:'/pause',
+        success: function (data) {
+          app_pause_state = true;
+          $("#pause_btn").addClass('btn-primary');
+          $("#pause_btn").html('<i class="icon-play"></i>');
+          $().uxmessage('notice', "Pausing in a bit...");
+        }
+      });
+    }
     return false
   })
 
@@ -123,27 +149,82 @@ function controls_ready() {
 
 
   // shortcut keys /////////////////////////////////////
-  // https://github.com/jeresig/jquery.hotkeys /////////
 
-  $(document).on('keypress', null, 'i', function(e){
-    $('#info_btn').trigger('click')
-    return false
+  Mousetrap.bind(['i'], function(e) {
+      $('#info_btn').trigger('click')
+      return false;
   })
 
-  $(document).on('keypress', null, 'c', function(e){
-    $('#clear_btn').trigger('click')
-    return false
+  Mousetrap.bind(['esc'], function(e) {
+      $('#clear_btn').trigger('click')
+      return false;
   })
 
-  $(document).on('keypress', null, 'q', function(e){
-    $('#queue_btn').trigger('click')
-    return false
+  Mousetrap.bind(['q'], function(e) {
+      $('#queue_btn').trigger('click')
+      return false;
   })
 
-  $(document).on('keypress', null, 'l', function(e){
-    $('#library_btn').trigger('click')
-    return false
+  Mousetrap.bind(['l'], function(e) {
+      $('#library_btn').trigger('click')
+      return false;
   })
 
+
+  Mousetrap.bind(['enter'], function(e) {
+      $('#open_btn').trigger('click')
+      return false;
+  })
+
+  Mousetrap.bind(['a'], function(e) {
+      $('#assign_btn').trigger('click')
+      return false;
+  })
+
+  Mousetrap.bind(['command+enter', 'ctrl+enter'], function(e) {
+      $('#run_btn').trigger('click')
+      return false;
+  })
+
+  Mousetrap.bind(['command+shift+enter', 'ctrl+shift+enter'], function(e) {
+      $('#boundary_btn').trigger('click')
+      return false;
+  })
+
+  Mousetrap.bind(['space'], function(e) {
+      $('#pause_btn').trigger('click')
+      return false;
+  })
+
+  Mousetrap.bind(['ctrl+esc', 'command+esc'], function(e) {
+      $('#stop_btn').trigger('click')
+      return false;
+  })
+
+
+  Mousetrap.bind(['0'], function(e) {
+      $('#origin_btn').trigger('click')
+      return false;
+  })
+
+  Mousetrap.bind(['h'], function(e) {
+      $('#homing_btn').trigger('click')
+      return false;
+  })
+
+  Mousetrap.bind(['m'], function(e) {
+      $('#motion_btn').trigger('click')
+      return false;
+  })
+
+  Mousetrap.bind(['o'], function(e) {
+      $('#offset_btn').trigger('click')
+      return false;
+  })
+
+  Mousetrap.bind(['j'], function(e) {
+      $('#jog_btn').trigger('click')
+      return false;
+  })
 
 }

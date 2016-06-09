@@ -1,5 +1,5 @@
 
-var current_name = ""
+var import_name = ""
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -36,7 +36,7 @@ $(document).ready(function(){
     }
 
     // reset file input form field so change event also triggers again
-    current_name = $('#open_file_fld').val().split('\\').pop().split('/').pop()
+    import_name = $('#open_file_fld').val().split('\\').pop().split('/').pop()
     $('#open_file_fld').val('')
   })
 
@@ -46,19 +46,19 @@ $(document).ready(function(){
     var job = e.target.result
 
     // notify parsing started
-    $().uxmessage('notice', "parsing "+current_name+" ...")
+    $().uxmessage('notice', "parsing "+import_name+" ...")
     // large file note
     if (job.length > 102400) {
       $().uxmessage('notice', "Big file! May take a few minutes.")
     }
 
     // send to backend
-    var load_request = {'job':job, 'name':current_name, 'optimize':true}
+    var load_request = {'job':job, 'name':import_name, 'optimize':true}
     post_request({
       url:'/load',
       data: load_request,
       success: function (jobname) {
-        $().uxmessage('notice', "Parsed "+current_name+".")
+        $().uxmessage('notice', "Parsed "+import_name+".")
         $().uxmessage('notice', jobname)
         // get parsed geometry in lsa format
         get_request({
@@ -90,8 +90,8 @@ $(document).ready(function(){
   function handleParsedGeometry(job) {
     // job is an lsa dict
 
-    JobHandler.set(job, current_name, true)
-    JobHandler.draw()
+    jobhandler.set(job, import_name, true)
+    jobhandler.draw()
 
 
     // debug, show image, stats

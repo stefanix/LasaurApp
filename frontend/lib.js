@@ -157,7 +157,7 @@ function send_job(job, success_msg, progress) {
               if ($("#progressbar").children().first().width() == 0) {
                 $("#progressbar").children().first().width('5%');
                 $("#progressbar").show();
-                progress_not_yet_done_flag = true;
+                app_progress_flag = true;
                 setTimeout(update_progress, 2000);
               }
             }
