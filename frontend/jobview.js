@@ -18,12 +18,12 @@ function jobview_resize() {
   var canvas_width = win_width-info_width_init
   var canvas_height = win_height-nav_height_init-footer_height_init
   // var containter_height = win_height-nav_height_init-footer_height_init
-  $("#main-container").height(canvas_height)
-  $("#job-canvas").width(win_width-info_width_init)
-  // $("#info-panel").width(job_info_min_width)
-  $("#info-panel").height(canvas_height)
-  // jobview_width = $('#job-canvas').innerWidth()
-  // jobview_height = $('#job-canvas').innerHeight()
+  $("#main_container").height(canvas_height)
+  $("#job_canvas").width(win_width-info_width_init)
+  // $("#info_panel").width(job_info_min_width)
+  $("#info_panel").height(canvas_height)
+  // jobview_width = $('#job_canvas').innerWidth()
+  // jobview_height = $('#job_canvas').innerHeight()
 
   // calculate jobview_mm2px
   // used to scale mm geometry to be displayed on canvas
@@ -37,21 +37,21 @@ function jobview_resize() {
       // canvas wider, fit by height
       jobview_mm2px = canvas_height/wk_height
       // indicate border, only on one side necessary
-      $("#job-canvas").width(Math.floor(wk_width*jobview_mm2px))
-      $("#info-panel").width(win_width-Math.ceil(wk_width*jobview_mm2px))
+      $("#job_canvas").width(Math.floor(wk_width*jobview_mm2px))
+      $("#info_panel").width(win_width-Math.ceil(wk_width*jobview_mm2px))
     } else if (aspect_workspace > aspect_canvas) {
       // canvas taller, fit by width
       var h_scaled = Math.floor(wk_height*jobview_mm2px)
-      $("#info-panel").width(info_width_init)
-      $("#main-container").height(h_scaled)
-      $("#info-panel").height(h_scaled)
-      // $('#main-footer').height(win_height-nav_height_init-h_scaled)
+      $("#info_panel").width(info_width_init)
+      $("#main_container").height(h_scaled)
+      $("#info_panel").height(h_scaled)
+      // $('#main_footer').height(win_height-nav_height_init-h_scaled)
     } else {
       // excact fit
     }
   }
-  jobview_width = $('#job-canvas').innerWidth()
-  jobview_height = $('#job-canvas').innerHeight()
+  jobview_width = $('#job_canvas').innerWidth()
+  jobview_height = $('#job_canvas').innerHeight()
 
   // resize content
   setTimeout(function() {
@@ -92,17 +92,17 @@ $(window).resize(function() {
 function jobview_ready() {
   // This function is called after appconfig received.
 
-  nav_height_init = $('#main-navbar').outerHeight(true)
-  footer_height_init = $('#main-footer').outerHeight(true)
-  info_width_init = $("#info-panel").outerWidth(true)
+  nav_height_init = $('#main_navbar').outerHeight(true)
+  footer_height_init = $('#main_footer').outerHeight(true)
+  info_width_init = $("#info_panel").outerWidth(true)
 
   // calc/set canvas size
   jobview_resize()
   // store inital size
   jobview_width_last = jobview_width
   jobview_height_last = jobview_height
-  // setup paper with job-canvas
-  var canvas = document.getElementById('job-canvas')
+  // setup paper with job_canvas
+  var canvas = document.getElementById('job_canvas')
   paper.setup(canvas)
 
   // seek lines layer
@@ -161,7 +161,7 @@ function jobview_ready() {
       path = hitResult.item
       path.parent.selected = !path.parent.selected
       // show info on this group
-      
+
     } else {
       jobview_deselect_all()
     }

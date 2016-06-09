@@ -8,12 +8,6 @@ var current_name = ""
 
 $(document).ready(function(){
 
-  // open button
-  $('#open_btn').click(function(e){
-    e.preventDefault()
-    $('#open_file_fld').trigger('click')
-  })
-
   // file upload form
   $('#open_file_fld').change(function(e){
     e.preventDefault()
@@ -44,7 +38,7 @@ $(document).ready(function(){
     // reset file input form field so change event also triggers again
     current_name = $('#open_file_fld').val().split('\\').pop().split('/').pop()
     $('#open_file_fld').val('')
-  });
+  })
 
 
 
@@ -70,8 +64,9 @@ $(document).ready(function(){
         get_request({
           url:'/get/'+jobname,
           success: function (data) {
-            // alert(JSON.stringify(data));
-            handleParsedGeometry(data);
+            // alert(JSON.stringify(data))
+            // $().uxmessage('notice', data)
+            handleParsedGeometry(data)
           },
           error: function (data) {
             $().uxmessage('error', "/get error.")
@@ -119,4 +114,4 @@ $(document).ready(function(){
   }
 
 
-});  // ready
+})  // ready

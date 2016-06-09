@@ -1,5 +1,6 @@
 
 // module to handle job data
+// read, write, draw, stats, cleanup/filter
 
 
 // {
@@ -86,6 +87,11 @@ JobHandler = {
     this.name = name
     $('title').html("LasaurApp - " + name)
 
+    // handle json string representations as well
+    if (typeof(job) === 'string') {
+      job = JSON.parse(job)
+    }
+
     if ('vector' in job) {
       this.vector = job.vector
       if (optimize) {
@@ -161,8 +167,8 @@ JobHandler = {
     var w_workspace = appconfig_main.workspace[0]
     var h_workspace = appconfig_main.workspace[1]
     var aspect_workspace = w_workspace/h_workspace
-    var w_canvas = $('#job-canvas').innerWidth()
-    var h_canvas = $('#job-canvas').innerHeight()
+    var w_canvas = $('#job_canvas').innerWidth()
+    var h_canvas = $('#job_canvas').innerHeight()
     var aspect_canvas = w_canvas/h_canvas
     var scale = w_canvas/w_workspace  // default for same aspect
     if (aspect_canvas > aspect_workspace) {

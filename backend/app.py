@@ -16,7 +16,7 @@ argparser = argparse.ArgumentParser(description='Run LasaurApp.', prog='lasaurap
 argparser.add_argument('port', metavar='serial_port', nargs='?', default=False,
                        help='serial port to the Lasersaur')
 argparser.add_argument('-v', '--version', action='version', version='%(prog)s ' + conf['version'],
-                       default=False, help='bind to all network devices (default: bind to 127.0.0.1)')
+                       default=False, help='print version of this app')
 # argparser.add_argument('-l', '--list', dest='list_serial_devices', action='store_true',
 #                     default=False, help='list all serial devices currently connected')
 argparser.add_argument('-t', '--threaded', dest='threaded', action='store_true',
@@ -53,6 +53,3 @@ if args.threaded:
             break
     web.stop()
 print "END of LasaurApp"
-
-
-

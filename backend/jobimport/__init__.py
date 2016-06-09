@@ -25,7 +25,7 @@ def convert(job, optimize=True, tolerance=conf['tolerance']):
     """
     type_ = get_type(job)
     if type_ == 'lsa':
-        if type(job) is str:
+        if type(job) in (str, unicode):
             job = json.loads(job)
         if optimize:
             # only optimize if requested

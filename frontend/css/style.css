@@ -7,14 +7,16 @@ html {
 body {
   /* Margin bottom by footer height */
   margin-bottom: 60px;
+  overflow:hidden;
+  background-color: #f8f8f8;
 }
 .footer {
-  position: absolute;
+  /*position: absolute;*/
   bottom: 0;
   width: 100%;
   /* Set the fixed height of the footer here */
   height: 60px;
-  background-color: #f5f5f5;
+  /*background-color: #f0f0f0;*/
 }
 
 
@@ -22,11 +24,20 @@ body {
 -------------------------------------------------- */
 /* Not required for template or sticky footer method. */
 
-#main-navbar {
+#main_navbar {
     margin:0;
+    border:0;
 }
 
-#main-container {
+.menu_btn {
+  padding: 8px;
+}
+
+.footer_btn {
+  padding: 12px;
+}
+
+#main_container {
   /*position:fixed;
   top:52px;
   left:0;*/

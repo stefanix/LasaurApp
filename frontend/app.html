@@ -18,6 +18,7 @@
     <link href="css/style.css" rel="stylesheet">
 
     <script src="js/jquery.min.js"></script>
+    <script src="js/jquery.hotkeys.js"></script>
     <script src="js/bootstrap.min.js"></script>
     <script src="js/jquery.toastmessage.js"></script>
     <script src="js/paper-full.min.js"></script>
@@ -27,6 +28,7 @@
     <script src="app.js"></script>
     <script src="jobhandler.js"></script>
     <script src="import.js"></script>
+    <script src="controls.js"></script>
 
   </head>
 
@@ -34,15 +36,8 @@
   <body>
 
     <!-- fixed navbar -->
-    <nav id="main-navbar" class="navbar navbar-default">
+    <nav id="main_navbar" class="navbar navbar-default">
       <div class="container" style="width:100%; padding-left:0">
-
-        <div class="btn-group pull-right" style="padding:8px">
-          <!-- status indicators -->
-          <button id="ready_status_btn" class="btn disabled btn-danger" type="submit">Ready</button>
-          <button id="door_status_btn" class="btn disabled btn-warning" type="submit">Door</button>
-          <button id="chiller_status_btn" class="btn disabled btn-warning" type="submit">Chiller</button>
-        </div>
 
         <div id="navbar" class="navbar pull-left" style="padding-left:0px; margin:0; border:0">
           <ul class="nav navbar-nav" style="height:50px">
@@ -51,30 +46,29 @@
                 <span class="glyphicon glyphicon-menu-hamburger" style="font-size:1.4em"></span>
               </a>
               <ul class="dropdown-menu" role="menu">
-                <li><a href="#">Open</a></li>
-                <li><a href="#">Clear</a></li>
-                <li><a href="#">Job Info</a></li>
-                <li><a href="#">Export</a></li>
+                <li><a id="info_btn" href="#" title="show job information [i]">Job Info</a></li>
+                <li><a id="export_btn" href="#">Export</a></li>
+                <li><a id="clear_btn" href="#">Clear</a></li>
                 <li class="divider"></li>
-                <li><a href="#about">Job Queue</a></li>
-                <li><a href="#about">Library</a></li>
+                <li><a id="queue_btn" href="#">Job Queue</a></li>
+                <li><a id="library_btn" href="#">Library</a></li>
                 <li class="divider"></li>
-                <li><a href="#about">Manual</a></li>
-                <li><a href="#about">About</a></li>
+                <li><a href="https://github.com/nortd/lasersaur/wiki">Manual</a></li>
+                <li><a href="#" data-toggle="modal" data-target="#about_modal">About</a></li>
                 <li class="divider"></li>
                 <li class="dropdown-header">Admin</li>
-                <li><a href="#">Flash Firmware</a></li>
-                <li><a href="#">Flash Firmware from Source</a></li>
-                <li><a href="#">Reset Atmega</a></li>
-                <li><a href="#" data-toggle="modal" data-target="#config-modal">Show Configuration</a></li>
-                <li><a href="#" data-toggle="modal" data-target="#log-modal">Log</a></li>
+                <li><a id="flash_btn" href="#">Flash Firmware</a></li>
+                <li><a id="flash_source_btn" href="#">Flash Firmware from Source</a></li>
+                <li><a id="reset_btn" href="#">Reset Atmega</a></li>
+                <li><a href="#" data-toggle="modal" data-target="#config_modal">Show Configuration</a></li>
+                <li><a href="#" data-toggle="modal" data-target="#log_modal">Log</a></li>
               </ul>
             </li>
           </ul>
         </div>
 
         <!-- open button -->
-        <div class="btn-group pull-left" style="padding:8px">
+        <div class="btn-group pull-left menu_btn">
             <button id="open_btn" class="btn btn-default" type="submit"
                     title="open new job" data-loading-text="loading..." autocomplete="off">Open</button>
         </div>
@@ -83,7 +77,7 @@
         </form>
 
         <!-- process buttons -->
-        <div class="btn-group pull-left" style="padding:8px">
+        <div class="btn-group pull-left menu_btn">
             <button id="run_btn" class="btn btn-primary" type="submit" title="run this job">
               Run this job!
             </button>
@@ -92,7 +86,7 @@
             </button>
         </div>
 
-        <div class="btn-group pull-left" style="padding:8px">
+        <div class="btn-group pull-left menu_btn">
           <!-- pause button -->
           <button id="pause_btn" class="btn btn-default" type="submit" title="toggle pause">
             <span class="glyphicon glyphicon-pause"></span>
@@ -103,20 +97,27 @@
           </button>
         </div>
 
+        <!-- status indicators -->
+        <div class="btn-group menu_btn">
+          <button id="ready_status_btn" class="btn disabled btn-danger" type="submit">Ready</button>
+          <button id="door_status_btn" class="btn disabled btn-warning" type="submit">Door</button>
+          <button id="chiller_status_btn" class="btn disabled btn-warning" type="submit">Chiller</button>
+        </div>
+
       </div>
     </nav>
 
     <!-- begin page content -->
-    <div id="main-container" class="container">
+    <div id="main_container" class="container">
 
       <!-- canvas -->
-      <canvas id="job-canvas" class="pull-left" style="height:100%" resize></canvas>
+      <canvas id="job_canvas" class="pull-left" style="height:100%; background-color: #ffffff;" resize></canvas>
 
       <!-- info div -->
-      <div id="info-panel" class="pull-right" style="width:200px; background-color:#f8f8f8; overflow:auto">
+      <div id="info_panel" class="pull-right" style="width:220px; overflow:auto">
         <div id="job-info" style="width:100%;background-color:#bbbbbb"></div>
 
-        <div id="job-passes" style="width:100%;padding:6px">
+        <div id="job_passes" style="width:100%;padding:6px">
           <div style="margin-bottom:20px">
             <label>Pass 1</label>
             <form class="form-inline">
@@ -178,8 +179,22 @@
 
       </div>
 
+      <!-- about modal-->
+      <div id="about_modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              <h4 class="modal-title" id="myModalLabel">About</h4>
+            </div>
+            <div id="about_content" class="modal-body">
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- log modal-->
-      <div id="log-modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+      <div id="log_modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
           <div class="modal-content">
             <div class="modal-header">
@@ -193,7 +208,7 @@
       </div>
 
       <!-- config modal -->
-      <div id="config-modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+      <div id="config_modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
           <div class="modal-content">
             <div class="modal-header">
@@ -210,13 +225,14 @@
     <!-- end page content -->
 
     <!-- footer -->
-    <footer id="main-footer" class="footer">
+    <footer id="main_footer" class="footer">
       <div class="container" style="width:100%">
+
         <a class="navbar-brand" href="/">
           <img src="img/lasersaur-dino-lasaurapp-190.png" style="margin-right:6px">
         </a>
 
-        <div class="btn-group" style="padding:8px">
+        <div class="btn-group footer_btn">
           <!-- origin button -->
           <button id="origin_btn" class="btn btn-default" type="submit" title="move to origin">
             (0,0)
@@ -227,10 +243,10 @@
           </button>
         </div>
 
-        <div class="btn-group" style="padding:12px">
-            <button id="ready_status_btn" class="btn btn-default" type="submit">Motion</button>
-            <button id="door_status_btn" class="btn btn-default" type="submit">Offset</button>
-            <button id="chiller_status_btn" class="btn btn-default" type="submit">Jog</button>
+        <div class="btn-group footer_btn">
+            <button id="motion_btn" class="btn btn-default" type="submit">Motion</button>
+            <button id="offset_btn" class="btn btn-default" type="submit">Offset</button>
+            <button id="jog_btn" class="btn btn-default" type="submit">Jog</button>
         </div>
 
       </div>

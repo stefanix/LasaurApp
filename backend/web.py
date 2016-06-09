@@ -11,6 +11,7 @@ import threading
 import webbrowser
 import wsgiref.simple_server
 import bottle
+import traceback
 from config import conf
 import driveboard
 import jobimport
@@ -18,7 +19,7 @@ import jobimport
 
 __author__  = 'Stefan Hechenberger <stefan@nortd.com>'
 
-
+DEBUG = False
 bottle.BaseRequest.MEMFILE_MAX = 1024*1024*100 # max 100Mb files
 
 
@@ -303,6 +304,7 @@ def load():
     try:
         job = jobimport.convert(job, optimize=optimize)
     except TypeError:
+        if DEBUG: traceback.print_exc()
         bottle.abort(400, "Invalid file type.")
 
     altname = _unique_name(name)
@@ -333,7 +335,7 @@ def listing(kind=None):
 def get(jobname='woot'):
     """Get a queue job in .lsa format."""
     base, name = os.path.split(_get_path(jobname))
-    return bottle.static_file(name, root=base, mimetype='text/plain')
+    return bottle.static_file(name, root=base, mimetype='application/json')
 
 
 @bottle.route('/star/<jobname>')
@@ -390,7 +392,7 @@ def listing_library():
 def get_library(jobname):
     """Get a library job in .lsa format."""
     base, name = os.path.split(_get_path(jobname, library=True))
-    return bottle.static_file(name, root=base, mimetype='text/plain')
+    return bottle.static_file(name, root=base, mimetype='application/json')
 
 
 @bottle.route('/load_library/<jobname>')
@@ -530,6 +532,9 @@ def start(threaded=True, browser=False, debug=False):
         Derived from WSGIRefServer.run()
         to have control over the main loop.
     """
+    global DEBUG
+    DEBUG = debug
+
     class FixedHandler(wsgiref.simple_server.WSGIRequestHandler):
         def address_string(self): # Prevent reverse DNS lookups please.
             return self.client_address[0]

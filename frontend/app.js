@@ -46,6 +46,9 @@ function config_received() {
   // call 'ready' of jobview
   jobview_ready()
 
+  // call 'ready' of controls
+  controls_ready()
+
 }
 
 
