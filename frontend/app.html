@@ -113,7 +113,6 @@
 
       <!-- info div -->
       <div id="info_panel" class="pull-right" style="width:220px; overflow:auto">
-        <!-- <div id="job-info" style="width:100%;background-color:#bbbbbb"></div> -->
 
         <div id="job_passes" style="width:100%;padding:6px">
           <div style="margin-bottom:20px">
@@ -122,17 +121,17 @@
               <div class="form-group">
                 <div class="input-group">
                   <div class="input-group-addon">F</div>
-                  <input type="text" class="form-control input-sm feedrate" style="width:4.5em;" placeholder="1500" title="feedrate">
+                  <input type="text" class="form-control input-sm feedrate" style="width:4.2em;" placeholder="1500" title="feedrate">
                 </div>
                 <div class="input-group">
                   <div class="input-group-addon">%</div>
                   <input type="text" class="form-control input-sm intensity" style="width:3.5em;" placeholder="100" title="intensity 0-100%">
                 </div>
+                <button id="assign_btn" class="btn btn-primary btn-sm" type="submit">
+                  <span class="glyphicon glyphicon-plus"></span>
+                </button>
               </div>
             </form>
-            <div style="margin-top:10px">
-              <button class="btn btn-default btn-sm" type="submit">Assign</button>
-            </div>
           </div>
 
           <div style="margin-bottom:20px">
@@ -141,17 +140,17 @@
               <div class="form-group">
                 <div class="input-group">
                   <div class="input-group-addon">F</div>
-                  <input type="text" class="form-control input-sm feedrate" style="width:4.5em;" placeholder="1500" title="feedrate">
+                  <input type="text" class="form-control input-sm feedrate" style="width:4.2em;" placeholder="1500" title="feedrate">
                 </div>
                 <div class="input-group">
                   <div class="input-group-addon">%</div>
                   <input type="text" class="form-control input-sm intensity" style="width:3.5em;" placeholder="100" title="intensity 0-100%">
                 </div>
+                <button id="assign_btn" class="btn btn-primary btn-sm" type="submit">
+                  <span class="glyphicon glyphicon-plus"></span>
+                </button>
               </div>
             </form>
-            <div style="margin-top:10px">
-              <button class="btn btn-default btn-sm" type="submit">Assign</button>
-            </div>
           </div>
 
           <div style="margin-bottom:20px">
@@ -160,16 +159,32 @@
               <div class="form-group">
                 <div class="input-group">
                   <div class="input-group-addon">F</div>
-                  <input type="text" class="form-control input-sm feedrate" style="width:4.5em;" placeholder="1500" title="feedrate">
+                  <input type="text" class="form-control input-sm feedrate" style="width:4.2em;" placeholder="1500" title="feedrate">
                 </div>
                 <div class="input-group">
                   <div class="input-group-addon">%</div>
-                  <input type="text" class="form-control input-sm intensity" style="width:3.5em;" placeholder="100" title="intensity 0-100%">
+                  <input type="text" class="form-control input-sm intensity" style="width:3.5em" placeholder="100" title="intensity 0-100%">
                 </div>
+                <button id="assign_btn" class="btn btn-primary btn-sm" type="submit">
+                  <span class="glyphicon glyphicon-plus"></span>
+                </button>
               </div>
             </form>
-            <div style="margin-top:10px">
-              <button class="btn btn-default btn-sm" type="submit">Assign</button>
+            <div class="btn-group pull-left" style="margin-top:0.5em;">
+              <button id="color_btn" class="btn btn-default btn-sm" type="submit" style="width:14.4em; background-color: yellow">
+                <span class="glyphicon glyphicon-eye-open"></span>
+              </button>
+              <button id="color_remove_btn" class="btn btn-default btn-sm" type="submit">
+                <span class="glyphicon glyphicon-remove"></span>
+              </button>
+            </div>
+            <div class="btn-group pull-left" style="margin-top:0.5em;">
+              <button id="color_btn" class="btn btn-default btn-sm" type="submit" style="width:14.4em; background-color: purple">
+                <span class="glyphicon glyphicon-eye-open"></span>
+              </button>
+              <button id="color_remove_btn" class="btn btn-default btn-sm" type="submit">
+                <span class="glyphicon glyphicon-remove"></span>
+              </button>
             </div>
           </div>
 
