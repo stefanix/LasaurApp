@@ -90,31 +90,31 @@ function controls_ready() {
 
   // footer /////////////////////////
 
-  $("#origin_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
+  $("#origin_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
   $("#origin_btn").click(function(e){
     alert("origin")
     return false
   })
 
-  $("#homing_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
+  $("#homing_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
   $("#homing_btn").click(function(e){
     alert("homing")
     return false
   })
 
-  $("#motion_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
+  $("#motion_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
   $("#motion_btn").click(function(e){
     alert("motion")
     return false
   })
 
-  $("#offset_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
+  $("#offset_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
   $("#offset_btn").click(function(e){
     alert("offset")
     return false
   })
 
-  $("#jog_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
+  $("#jog_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
   $("#jog_btn").click(function(e){
     alert("jog")
     return false
@@ -122,7 +122,8 @@ function controls_ready() {
 
 
 
-  // shortcut keys /////////////////////////
+  // shortcut keys /////////////////////////////////////
+  // https://github.com/jeresig/jquery.hotkeys /////////
 
   $(document).on('keypress', null, 'i', function(e){
     $('#info_btn').trigger('click')
