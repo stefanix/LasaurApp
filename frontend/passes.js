@@ -14,11 +14,7 @@ function passes_add(feedrate, intensity, colors_assigned) {
 
   // bind all color add buttons within dropdown
   $('.color_add_btn_'+num).click(function(e) {
-    // $(this).parentsUntil().toggle();
-    // $('#pass_'+num+' .pass_colselect').toggle()
     var color = $(this).children('span').text()
-    // passes_add_colors(num, [color])
-    // $(this).parentsUntil('ul.pass_color_dropdown').toggle()
     $('#passsel_'+num+'_'+color.slice(1)).hide()
     $('#pass_'+num+'_'+color.slice(1)).show(300)
     $('#passdp_'+num).dropdown("toggle");
@@ -32,15 +28,14 @@ function passes_add(feedrate, intensity, colors_assigned) {
     $('#pass_'+num+'_'+color.slice(1)).hide(300)
     return false
   })
+
+  // hotkey
+  // $('#assign_btn_'+num).tooltip({placement:'bottom', delay: {show:1000, hide:100}})
+  Mousetrap.bind([num.toString()], function(e) {
+      $('#assign_btn_'+num).trigger('click')
+      return false;
+  })
 }
-
-
-// function passes_add_colors(passnum, colors) {
-//   for (var i = 0; i < colors.length; i++) {
-//     var html = passes_color_html(colors[i])
-//     $(html).appendTo('#pass_'+passnum+' .pass_colors')
-//   }
-// }
 
 
 function passes_color_html(num, color) {
@@ -86,7 +81,7 @@ function passes_pass_html(num, feedrate, intensity, colors) {
         '</div>'+
         '<div class="dropdown input-group">'+
           '<button class="btn btn-primary btn-sm dropdown-toggle" type="button" style="width:34px" '+
-            'id="assign_btn_'+num+'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">'+
+            'id="assign_btn_'+num+'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" title="['+num+']">'+
             '<span class="glyphicon glyphicon-plus"></span>'+
           '</button>'+
           '<ul id="passdp_'+num+'" class="dropdown-menu dropdown-menu-right pass_color_dropdown" aria-labelledby="assign_btn_'+num+'">'+

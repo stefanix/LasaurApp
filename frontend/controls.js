@@ -155,7 +155,7 @@ function controls_ready() {
       return false;
   })
 
-  Mousetrap.bind(['esc'], function(e) {
+  Mousetrap.bind(['del', 'backspace'], function(e) {
       $('#clear_btn').trigger('click')
       return false;
   })
