@@ -29,6 +29,7 @@
     <script src="jobhandler.js"></script>
     <script src="import.js"></script>
     <script src="controls.js"></script>
+    <script src="passes.js"></script>
 
   </head>
 
@@ -60,8 +61,8 @@
                 <li><a id="flash_btn" href="#">Flash Firmware</a></li>
                 <li><a id="flash_source_btn" href="#">Flash Firmware from Source</a></li>
                 <li><a id="reset_btn" href="#">Reset Atmega</a></li>
-                <li><a href="#" data-toggle="modal" data-target="#config_modal">Show Configuration</a></li>
-                <li><a href="#" data-toggle="modal" data-target="#log_modal">Log</a></li>
+                <li><a id="config_btn" href="#" data-toggle="modal" data-target="#config_modal" title="[C]">Show Configuration</a></li>
+                <li><a id="log_btn" href="#" data-toggle="modal" data-target="#log_modal" title="[SHIFT-C]">Log</a></li>
               </ul>
             </li>
           </ul>
@@ -75,11 +76,6 @@
         <form id="open_file_form" action="#" onsubmit="return false;">
             <input type="file" id="open_file_fld" name="data" style="visibility:hidden; position:fixed">
         </form>
-
-        <!-- assign button -->
-        <div class="btn-group pull-left menu_btn">
-            <button id="assign_btn" class="btn btn-default" type="submit" title="assign color to pass [A]">Assign</button>
-        </div>
 
         <!-- process buttons -->
         <div class="btn-group pull-left menu_btn">
@@ -112,84 +108,8 @@
       <canvas id="job_canvas" class="pull-left" resize></canvas>
 
       <!-- info div -->
-      <div id="info_panel" class="pull-right" style="width:220px; overflow:auto">
-
-        <div id="job_passes" style="width:100%;padding:6px">
-          <div style="margin-bottom:20px">
-            <label>Pass 1</label>
-            <form class="form-inline">
-              <div class="form-group">
-                <div class="input-group">
-                  <div class="input-group-addon">F</div>
-                  <input type="text" class="form-control input-sm feedrate" style="width:4.2em;" placeholder="1500" title="feedrate">
-                </div>
-                <div class="input-group">
-                  <div class="input-group-addon">%</div>
-                  <input type="text" class="form-control input-sm intensity" style="width:3.5em;" placeholder="100" title="intensity 0-100%">
-                </div>
-                <button id="assign_btn" class="btn btn-primary btn-sm" type="submit">
-                  <span class="glyphicon glyphicon-plus"></span>
-                </button>
-              </div>
-            </form>
-          </div>
-
-          <div style="margin-bottom:20px">
-            <label>Pass 2</label>
-            <form class="form-inline">
-              <div class="form-group">
-                <div class="input-group">
-                  <div class="input-group-addon">F</div>
-                  <input type="text" class="form-control input-sm feedrate" style="width:4.2em;" placeholder="1500" title="feedrate">
-                </div>
-                <div class="input-group">
-                  <div class="input-group-addon">%</div>
-                  <input type="text" class="form-control input-sm intensity" style="width:3.5em;" placeholder="100" title="intensity 0-100%">
-                </div>
-                <button id="assign_btn" class="btn btn-primary btn-sm" type="submit">
-                  <span class="glyphicon glyphicon-plus"></span>
-                </button>
-              </div>
-            </form>
-          </div>
-
-          <div style="margin-bottom:20px">
-            <label>Pass 3</label>
-            <form class="form-inline">
-              <div class="form-group">
-                <div class="input-group">
-                  <div class="input-group-addon">F</div>
-                  <input type="text" class="form-control input-sm feedrate" style="width:4.2em;" placeholder="1500" title="feedrate">
-                </div>
-                <div class="input-group">
-                  <div class="input-group-addon">%</div>
-                  <input type="text" class="form-control input-sm intensity" style="width:3.5em" placeholder="100" title="intensity 0-100%">
-                </div>
-                <button id="assign_btn" class="btn btn-primary btn-sm" type="submit">
-                  <span class="glyphicon glyphicon-plus"></span>
-                </button>
-              </div>
-            </form>
-            <div class="btn-group pull-left" style="margin-top:0.5em;">
-              <button id="color_btn" class="btn btn-default btn-sm" type="submit" style="width:14.4em; background-color: yellow">
-                <span class="glyphicon glyphicon-eye-open"></span>
-              </button>
-              <button id="color_remove_btn" class="btn btn-default btn-sm" type="submit">
-                <span class="glyphicon glyphicon-remove"></span>
-              </button>
-            </div>
-            <div class="btn-group pull-left" style="margin-top:0.5em;">
-              <button id="color_btn" class="btn btn-default btn-sm" type="submit" style="width:14.4em; background-color: purple">
-                <span class="glyphicon glyphicon-eye-open"></span>
-              </button>
-              <button id="color_remove_btn" class="btn btn-default btn-sm" type="submit">
-                <span class="glyphicon glyphicon-remove"></span>
-              </button>
-            </div>
-          </div>
-
-        </div>
-
+      <div id="info_panel" class="pull-right" style="width:240px; overflow:auto">
+        <div id="job_passes" style="width:100%;padding:6px"></div>
       </div>
 
       <!-- about modal-->
@@ -278,10 +198,12 @@
         </div>
 
         <div class="btn-group footer_btn">
-            <button id="motion_btn" class="btn btn-default" type="submit" title="[M]">Motion</button>
-            <button id="offset_btn" class="btn btn-default" type="submit" title="[O]">Offset</button>
-            <button id="jog_btn" class="btn btn-default" type="submit" title="[J]">Jog</button>
+          <button id="select_btn" class="btn btn-default" type="submit" title="[S]">Select</span></button>
+          <button id="motion_btn" class="btn btn-default" type="submit" title="[M]">Motion</button>
+          <button id="offset_btn" class="btn btn-default" type="submit" title="[O]">Offset</button>
         </div>
+
+        <button id="jog_btn" class="btn btn-default" type="submit" title="[J]">Jog</button>
 
       </div>
     </footer>

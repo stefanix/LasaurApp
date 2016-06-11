@@ -82,3 +82,10 @@ div.log_warning {
 div.log_error {
   border: 2px solid red;
 }
+
+
+.pass_color_dropdown > li > a:hover {
+    background-color: transparent;
+    background-image: none;
+    color: white;
+}

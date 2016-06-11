@@ -10,12 +10,6 @@ function controls_ready() {
   //   return false
   // })
 
-  $("#assign_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
-  $("#assign_btn").click(function(e){
-    alert("assign")
-    return false
-  })
-
   $("#export_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#export_btn").click(function(e){
     alert("export")
@@ -128,6 +122,12 @@ function controls_ready() {
     return false
   })
 
+  $("#select_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
+  $("#select_btn").click(function(e){
+    alert("select")
+    return false
+  })
+
   $("#motion_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
   $("#motion_btn").click(function(e){
     alert("motion")
@@ -170,14 +170,18 @@ function controls_ready() {
       return false;
   })
 
-
-  Mousetrap.bind(['enter'], function(e) {
-      $('#open_btn').trigger('click')
+  Mousetrap.bind(['c'], function(e) {
+      $('#config_btn').trigger('click')
       return false;
   })
 
-  Mousetrap.bind(['a'], function(e) {
-      $('#assign_btn').trigger('click')
+  Mousetrap.bind(['shift+l'], function(e) {
+      $('#log_btn').trigger('click')
+      return false;
+  })
+
+  Mousetrap.bind(['enter'], function(e) {
+      $('#open_btn').trigger('click')
       return false;
   })
 
@@ -209,6 +213,11 @@ function controls_ready() {
 
   Mousetrap.bind(['h'], function(e) {
       $('#homing_btn').trigger('click')
+      return false;
+  })
+
+  Mousetrap.bind(['s'], function(e) {
+      $('#select_btn').trigger('click')
       return false;
   })
 

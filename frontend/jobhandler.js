@@ -23,7 +23,7 @@
 //           [                              # list of paths
 //               [                          # list of polylines
 //                   [                      # list of verteces
-//                       [0,-10, 0],        # list of coords
+//                       [0,-10, 0],        # list of coordinates
 //                   ],
 //               ],
 //           ],
@@ -71,6 +71,7 @@ jobhandler = {
     name = ""
     jobview_clear()
     $('#info_content').html("")
+    passes_clear()
   },
 
   isEmpty : function() {
@@ -358,12 +359,16 @@ jobhandler = {
   //   }
   //   return all_colors;
   // },
-  //
-  // getAllColors : function() {
-  //   // return list of colors
-  //   return Object.keys(this.paths_by_color);
-  // },
-  //
+
+  getAllColors : function() {
+    // return list of colors
+    if ('colors' in this.vector) {
+      return this.vector.colors
+    } else {
+      return []
+    }
+  },
+
   // getColorOrder : function() {
   //     var color_order = {};
   //     var color_count = 0;
