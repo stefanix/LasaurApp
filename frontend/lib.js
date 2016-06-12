@@ -17,7 +17,7 @@
       $('#log_content').children('div').first().show('blind')
       if ($("#log_content").is(':hidden')) {
         $().toastmessage('showToast',
-          {text: text, sticky: false, position: 'top-right', type: 'notice'}
+          {text: text, sticky: false, position: 'top-left', type: 'notice'}
         )
       }
     } else if (kind == 'success') {
@@ -25,7 +25,7 @@
       $('#log_content').children('div').first().show('blind')
       if ($("#log_content").is(':hidden')) {
         $().toastmessage('showToast',
-          {text: text, sticky: false, position: 'top-right', type: 'success'}
+          {text: text, sticky: false, position: 'top-left', type: 'success'}
         )
       }
     } else if (kind == 'warning') {
@@ -33,7 +33,7 @@
       $('#log_content').children('div').first().show('blind')
       if ($("#log_content").is(':hidden')) {
         $().toastmessage('showToast',
-          {text: text, sticky: false, position: 'top-right', type: 'warning'}
+          {text: text, sticky: false, position: 'top-left', type: 'warning'}
         )
       }
     } else if (kind == 'error') {
@@ -41,7 +41,7 @@
       $('#log_content').children('div').first().show('blind');
       if ($("#log_content").is(':hidden')) {
         $().toastmessage('showToast',
-          {text: text, sticky: false, position: 'top-right', type: 'error'}
+          {text: text, sticky: false, position: 'top-left', type: 'error'}
         )
       }
     }

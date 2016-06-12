@@ -70,8 +70,8 @@ jobhandler = {
     this.stats = {}
     name = ""
     jobview_clear()
-    $('#info_content').html("")
     passes_clear()
+    $('#job_info').html('')
   },
 
   isEmpty : function() {
@@ -126,7 +126,7 @@ jobhandler = {
     }
 
     // view job info
-    $('#info_content').html("hello")
+    $('#job_info').html(this.name+' | '+(this.stats['_all_'].length/1000.0).toFixed(1)+'m')
   },
 
 
@@ -399,25 +399,28 @@ jobhandler = {
     if ('paths' in this.vector) {
       this.stats.paths = []
       for (var k=0; k<this.vector.paths.length; k++) {
-        var x_prev = 0
-        var y_prev = 0
+        var path = this.vector.paths[k]
         var path_length = 0
         var path_bbox = [Infinity, Infinity, -Infinity, -Infinity]
-        var path = this.vector.paths[k]
-        if (path.length > 1) {
-          var x = path[0][0]
-          var y = path[0][1]
-          // this.bboxExpand(path_bbox, x, y)
-          x_prev = x
-          y_prev = y
-          for (vertex=1; vertex<path.length; vertex++) {
-            var x = path[vertex][0]
-            var y = path[vertex][1]
-            path_length +=
-              Math.sqrt((x-x_prev)*(x-x_prev)+(y-y_prev)*(y-y_prev))
+        for (var poly = 0; poly < path.length; poly++) {
+          var polyline = path[poly]
+          var x_prev = 0
+          var y_prev = 0
+          if (polyline.length > 1) {
+            var x = polyline[0][0]
+            var y = polyline[0][1]
             // this.bboxExpand(path_bbox, x, y)
             x_prev = x
             y_prev = y
+            for (vertex=1; vertex<polyline.length; vertex++) {
+              var x = polyline[vertex][0]
+              var y = polyline[vertex][1]
+              path_length +=
+                Math.sqrt((x-x_prev)*(x-x_prev)+(y-y_prev)*(y-y_prev))
+              // this.bboxExpand(path_bbox, x, y)
+              x_prev = x
+              y_prev = y
+            }
           }
         }
         this.stats.paths.push({'bbox':path_bbox, 'length':path_length})

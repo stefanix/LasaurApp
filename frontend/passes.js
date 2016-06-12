@@ -7,10 +7,14 @@ function passes_clear() {
 function passes_add(feedrate, intensity, colors_assigned) {
   // multiple = typeof multiple !== 'undefined' ? multiple : 1  // default to 1
   var colors = jobhandler.getAllColors()
-  var num_passes_already = $('#job_passes').children().length
+  var num_passes_already = $('#job_passes').children('.pass_widget').length
   var num = num_passes_already + 1
   var html = passes_pass_html(num, feedrate, intensity, colors)
-  var pass_elem = $(html).appendTo('#job_passes')
+  if ($('#pass_add_widget').length) {
+    var pass_elem = $(html).insertBefore('#pass_add_widget')
+  } else {
+    var pass_elem = $(html).appendTo('#job_passes')
+  }
 
   // bind color assign button
   $('#assign_btn_'+num).click(function(e) {
@@ -80,8 +84,8 @@ function passes_pass_html(num, feedrate, intensity, colors) {
   }
   // html template like it's 1999
   var html =
-  '<div id="pass_'+num+'" class="row" style="margin:0; margin-bottom:20px">'+
-    '<label>Pass '+num+'</label>'+
+  '<div id="pass_'+num+'" class="row pass_widget" style="margin:0; margin-bottom:20px">'+
+    '<label style="color:#666666">Pass '+num+'</label>'+
     '<form class="form-inline">'+
       '<div class="form-group">'+
         '<div class="input-group" style="margin-right:4px">'+
@@ -106,4 +110,31 @@ function passes_pass_html(num, feedrate, intensity, colors) {
     '<div class="pass_colors">'+colors_html+'</div>'+
   '</div>'
   return html
+}
+
+
+function passes_add_widget() {
+  var html =
+  '<div id="pass_add_widget" class="row" style="margin:0; margin-bottom:20px">'+
+    '<label style="color:#666666">More Passes</label>'+
+    '<div>'+
+      '<button class="btn btn-default btn-sm dropdown-toggle" type="button" style="width:34px" '+
+        'id="pass_add_btn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" title="[P]">'+
+        '<span class="glyphicon glyphicon-plus"></span>'+
+      '</button>'+
+    '</div>'+
+  '</div>'
+  var pass_elem = $(html).appendTo('#job_passes')
+
+  // bind pass_add_btn
+  $('#pass_add_btn').click(function(e) {
+    passes_add(1500, 100, [])
+    return false
+  })
+
+  // hotkey
+  Mousetrap.bind(['p'], function(e) {
+      $('#pass_add_btn').trigger('click')
+      return false;
+  })
 }

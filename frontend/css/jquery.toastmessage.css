@@ -11,8 +11,8 @@
 .toast-item {
 	height: auto;
 	background: #333;
-    opacity: 0.9;
-    border-radius: 10px;
+  opacity: 0.9;
+  border-radius: 10px;
 	-moz-border-radius: 10px;
 	-webkit-border-radius: 10px;
 	color: #eee;
@@ -102,7 +102,7 @@
 .toast-position-top-left {
     position: fixed;
     left: 20px;
-    top: 20px;
+    top: 80px;
 }
 
 .toast-position-top-center {

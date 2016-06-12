@@ -7,6 +7,11 @@ var import_name = ""
 
 
 $(document).ready(function(){
+  passes_add(1500, 100, ['#ff00ff', '#889933'])
+  passes_add(1500, 100, ['#837362'])
+  passes_add(1500, 100, [])
+  passes_add_widget()
+
   // file upload form
   $('#open_file_fld').change(function(e){
     e.preventDefault()
@@ -92,9 +97,10 @@ $(document).ready(function(){
     jobhandler.set(job, import_name, true)
     jobhandler.draw()
 
-    passes_add(1500, 80, ['#ff00ff', '#889933'])
-    passes_add(1500, 80, ['#837362'])
-    passes_add(1500, 80, [])
+    passes_add(1500, 100, ['#ff00ff', '#889933'])
+    passes_add(1500, 100, ['#837362'])
+    passes_add(1500, 100, [])
+    passes_add_widget()
 
     // debug, show image, stats
     // if ('rasters' in job) {
