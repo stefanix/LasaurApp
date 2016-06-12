@@ -80,7 +80,7 @@ function passes_pass_html(num, feedrate, intensity, colors) {
   }
   // html template like it's 1999
   var html =
-  '<div id="pass_'+num+'" style="margin-bottom:20px">'+
+  '<div id="pass_'+num+'" class="row" style="margin:0; margin-bottom:20px">'+
     '<label>Pass '+num+'</label>'+
     '<form class="form-inline">'+
       '<div class="form-group">'+
