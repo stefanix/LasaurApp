@@ -12,6 +12,8 @@ var info_width_init = 0
 var jobview_width_last = 0
 var jobview_height_last = 0
 
+var jobview_color_selected = undefined
+
 
 function jobview_clear(){
   jobview_seekLayer.remove()
@@ -171,10 +173,11 @@ function jobview_ready() {
       path = hitResult.item
       path.parent.selected = !path.parent.selected
       // show info on this group
-      alert(path.strokeColor.toCSS(true))
+      jobview_color_selected = path.strokeColor.toCSS(true)
 
     } else {
       jobview_deselect_all()
+      jobview_color_selected = undefined
     }
   }
 

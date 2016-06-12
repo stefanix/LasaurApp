@@ -12,6 +12,19 @@ function passes_add(feedrate, intensity, colors_assigned) {
   var html = passes_pass_html(num, feedrate, intensity, colors)
   var pass_elem = $(html).appendTo('#job_passes')
 
+  // bind color assign button
+  $('#assign_btn_'+num).click(function(e) {
+    if (jobview_color_selected !== undefined) {
+      var col_sliced = jobview_color_selected.slice(1)
+      $('#passsel_'+num+'_'+col_sliced).hide()
+      $('#pass_'+num+'_'+col_sliced).hide()
+      $('#pass_'+num+'_'+col_sliced).show(300)
+      return false
+    } else {
+      return true
+    }
+  })
+
   // bind all color add buttons within dropdown
   $('.color_add_btn_'+num).click(function(e) {
     var color = $(this).children('span').text()
