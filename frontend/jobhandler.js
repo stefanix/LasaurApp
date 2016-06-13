@@ -63,6 +63,7 @@ jobhandler = {
   raster : {},
   stats : {},
   name : "",
+  job_group : undefined,
 
   clear : function() {
     this.vector = {}
@@ -238,12 +239,12 @@ jobhandler = {
     // paths
     if ('paths' in this.vector) {
       jobview_feedLayer.activate()
-      var job_group = new paper.Group()
+      this.job_group = new paper.Group()
       for (var i=0; i<this.vector.paths.length; i++) {
         var path = this.vector.paths[i]
         jobview_feedLayer.activate()
         var group = new paper.Group()
-        job_group.addChild(group)
+        this.job_group.addChild(group)
         for (var j=0; j<path.length; j++) {
           var pathseg = path[j]
           if (pathseg.length > 0) {
@@ -281,7 +282,7 @@ jobhandler = {
     }
     // draw super bounding box
     jobview_seekLayer.activate()
-    var all_bounds = new paper.Path.Rectangle(job_group.bounds)
+    var all_bounds = new paper.Path.Rectangle(this.job_group.bounds)
     all_bounds.strokeColor = app_config_main.bounds_color
     // finally commit draw
     paper.view.draw()
@@ -392,6 +393,26 @@ jobhandler = {
     }
   },
 
+
+  selectColor : function(color) {
+    // select paths by color in job view
+    var index = this.vector.colors.indexOf(color)
+    for (var i = 0; i < this.job_group.children.length; i++) {
+      if (i==index) {
+        this.job_group.children[i].selected = true
+        var color_group = this.job_group.children[i]
+        jobview_color_selected = color
+        setTimeout(function() {
+          color_group.selected = false
+          jobview_color_selected = undefined
+          paper.view.draw()
+        }, 1500);
+      } else {
+        this.job_group.children[i].selected = false
+      }
+    }
+    paper.view.draw()
+  },
 
 
 

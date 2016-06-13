@@ -46,9 +46,16 @@ function passes_add(feedrate, intensity, colors_assigned) {
 
   // bind all color remove buttons
   $('.color_remove_btn_'+num).click(function(e) {
-    var color = $(this).children('span.colmem').text()
+    var color = $(this).parent().find('span.colmem').text()
     $('#passsel_'+num+'_'+color.slice(1)).show(0)
     $('#pass_'+num+'_'+color.slice(1)).hide(300)
+    return false
+  })
+
+  // bind all color select buttons
+  $('.color_select_btn_'+num).click(function(e) {
+    var color = $(this).parent().find('span.colmem').text()
+    jobhandler.selectColor(color)
     return false
   })
 
@@ -64,12 +71,13 @@ function passes_add(feedrate, intensity, colors_assigned) {
 function passes_color_html(num, color) {
   var html =
   '<div id="pass_'+num+'_'+color.slice(1)+'" class="btn-group pull-left" style="margin-top:0.5em; display:none">'+
-    '<button id="color_btn" class="btn btn-default btn-sm" type="submit" style="width:175px; background-color:'+color+'">'+
+    '<span style="display:none" class="colmem">'+color+'</span>'+
+    '<button id="color_btn" class="btn btn-default btn-sm color_select_btn_'+num+'" '+
+      'type="submit" style="width:175px; background-color:'+color+'">'+
       '<span class="glyphicon glyphicon-eye-open"></span>'+
     '</button>'+
     '<button class="btn btn-default btn-sm color_remove_btn_'+num+'" type="submit" style="width:34px">'+
       '<span class="glyphicon glyphicon-remove"></span>'+
-      '<span style="display:none" class="colmem">'+color+'</span>'+
     '</button>'+
   '</div>'
   return html

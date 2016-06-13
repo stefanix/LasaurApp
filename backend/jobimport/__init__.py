@@ -86,11 +86,13 @@ def read_svg(svg_string, workspace, tolerance, forced_dpi=None, optimize=True):
 
     if 'lasertags' in res:
         # format: [('12', '2550', '', '100', '%', ':#fff000', ':#ababab', ':#ccc999', '', '', '')]
+        # sort lasertags by pass number
         def _cmp(a, b):
             if a[0] < b[0]: return -1
             elif a[0] > b[0]: return 1
             else: return 0
         res['lasertags'].sort(_cmp)
+        # add tags ass passes
         for tag in res['lasertags']:
             if len(tag) == 11:
                 # raster pass
@@ -122,7 +124,6 @@ def read_svg(svg_string, workspace, tolerance, forced_dpi=None, optimize=True):
                         "feedrate": tag[1],
                         "intensity": tag[3]
                     })
-
     return job
 
 
