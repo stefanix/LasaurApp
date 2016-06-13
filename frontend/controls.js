@@ -64,7 +64,7 @@ function controls_ready() {
 
   $("#run_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#run_btn").click(function(e){
-    alert("run")
+    jobhandler.setPassesFromGUI()
     return false
   })
 

@@ -826,7 +826,7 @@ def job(jobdict):
                     "paths": [0],          # paths by index
                     "relative": True,      # optional, default: False
                     "seekrate": 6000,      # optional, rate to first vertex
-                    "feedrate": 2000,      # optional, rate to other verteces
+                    "feedrate": 2000,      # optional, rate to other vertices
                     "intensity": 100,      # optional, default: 0 (in percent)
                     "pierce_time": 0,      # optional, default: 0
                     "air_assist": "pass",  # optional (feed, pass, off), default: pass
@@ -836,7 +836,7 @@ def job(jobdict):
             "paths":
             [                              # list of paths
                 [                          # list of polylines
-                    [                      # list of verteces
+                    [                      # list of vertices
                         [0,-10, 0],        # list of coords
                     ],
                 ],

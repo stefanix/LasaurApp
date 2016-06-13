@@ -12,7 +12,7 @@
 //                   "paths": [0],          # paths by index
 //                   "relative": True,      # optional, default: False
 //                   "seekrate": 6000,      # optional, rate to first vertex
-//                   "feedrate": 2000,      # optional, rate to other verteces
+//                   "feedrate": 2000,      # optional, rate to other vertices
 //                   "intensity": 100,      # optional, default: 0 (in percent)
 //                   "pierce_time": 0,      # optional, default: 0
 //                   "air_assist": "pass",  # optional (feed, pass, off), default: pass
@@ -290,49 +290,72 @@ jobhandler = {
 
   // passes and colors //////////////////////////
 
-  // setPassesFromLasertags : function(lasertags) {
-  //   // lasertags come in this format
-  //   // (pass_num, feedrate, units, intensity, units, color1, color2, ..., color6)
-  //   // [(12, 2550, '', 100, '%', ':#fff000', ':#ababab', ':#ccc999', '', '', ''), ...]
-  //   this.passes = [];
-  //   for (var i=0; i<lasertags.length; i++) {
-  //     var vals = lasertags[i];
-  //     if (vals.length == 11) {
-  //       var pass = vals[0];
-  //       var feedrate = vals[1];
-  //       var intensity = vals[3];
-  //       if (typeof(pass) === 'number' && pass > 0) {
-  //         //make sure to have enough pass widgets
-  //         var passes_to_create = pass - this.passes.length
-  //         if (passes_to_create >= 1) {
-  //           for (var k=0; k<passes_to_create; k++) {
-  //             this.passes.push({'colors':[], 'feedrate':1200, 'intensity':10})
-  //           }
-  //         }
-  //         pass = pass-1;  // convert to zero-indexed
-  //         // feedrate
-  //         if (feedrate != '' && typeof(feedrate) === 'number') {
-  //           this.passes[pass]['feedrate'] = feedrate;
-  //         }
-  //         // intensity
-  //         if (intensity != '' && typeof(intensity) === 'number') {
-  //           this.passes[pass]['intensity'] = intensity;
-  //         }
-  //         // colors
-  //         for (var ii=5; ii<vals.length; ii++) {
-  //           var col = vals[ii];
-  //           if (col.slice(0,1) == '#') {
-  //             this.passes[pass]['colors'].push(col);
-  //           }
-  //         }
-  //       } else {
-  //         $().uxmessage('error', "invalid lasertag (pass number)");
-  //       }
-  //     } else {
-  //       $().uxmessage('error', "invalid lasertag (num of args)");
-  //     }
-  //   }
-  // },
+  setPassesFromGUI : function() {
+    // read pass/color assinments from gui and set in this.vector.passes
+    // assigns paths to passes and sets feedrate and intensity
+    var assignments = passes_get_assignments()
+    // [{"colors":[], "feedrate":1500, "intensity":100}, ...]
+    var passes = this.vector.passes = []
+    for (var i = 0; i < assignments.length; i++) {
+      var assignment = assignments[i]
+      //convert corlors to path indices
+      var path_indices = []
+      for (var ii = 0; ii < assignment.colors.length; ii++) {
+        path_indices.push(this.vector.colors.indexOf(assignment.colors[ii]))
+      }
+      if (path_indices.length) {
+        passes.push({"paths":path_indices, "feedrate":assignment.feedrate,
+        "intensity":assignment.intensity})
+      }
+    }
+    // console.log(this.vector.passes)
+  },
+
+
+  setPassesFromLasertags : function(lasertags) {
+    // lasertags come in this format
+    // (pass_num, feedrate, units, intensity, units, color1, color2, ..., color6)
+    // [(12, 2550, '', 100, '%', ':#fff000', ':#ababab', ':#ccc999', '', '', ''), ...]
+    var passes = this.vector.passes = []
+
+    for (var i=0; i<lasertags.length; i++) {
+      var vals = lasertags[i];
+      if (vals.length == 11) {
+        var pass = vals[0];
+        var feedrate = vals[1];
+        var intensity = vals[3];
+        if (typeof(pass) === 'number' && pass > 0) {
+          //make sure to have enough pass widgets
+          var passes_to_create = pass - this.passes.length
+          if (passes_to_create >= 1) {
+            for (var k=0; k<passes_to_create; k++) {
+              this.passes.push({'colors':[], 'feedrate':1200, 'intensity':10})
+            }
+          }
+          pass = pass-1;  // convert to zero-indexed
+          // feedrate
+          if (feedrate != '' && typeof(feedrate) === 'number') {
+            this.passes[pass]['feedrate'] = feedrate;
+          }
+          // intensity
+          if (intensity != '' && typeof(intensity) === 'number') {
+            this.passes[pass]['intensity'] = intensity;
+          }
+          // colors
+          for (var ii=5; ii<vals.length; ii++) {
+            var col = vals[ii];
+            if (col.slice(0,1) == '#') {
+              this.passes[pass]['colors'].push(col);
+            }
+          }
+        } else {
+          $().uxmessage('error', "invalid lasertag (pass number)");
+        }
+      } else {
+        $().uxmessage('error', "invalid lasertag (num of args)");
+      }
+    }
+  },
 
   // getPasses : function() {
   //   return this.passes;
@@ -369,15 +392,7 @@ jobhandler = {
     }
   },
 
-  // getColorOrder : function() {
-  //     var color_order = {};
-  //     var color_count = 0;
-  //     for (var color in this.paths_by_color) {
-  //       color_order[color] = color_count;
-  //       color_count++;
-  //     }
-  //     return color_order
-  // },
+
 
 
 

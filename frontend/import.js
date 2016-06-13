@@ -97,10 +97,7 @@ $(document).ready(function(){
     jobhandler.set(job, import_name, true)
     jobhandler.draw()
 
-    passes_add(1500, 100, ['#ff00ff', '#889933'])
-    passes_add(1500, 100, ['#837362'])
-    passes_add(1500, 100, [])
-    passes_add_widget()
+    passes_set_assignments(job)
 
     // debug, show image, stats
     // if ('rasters' in job) {

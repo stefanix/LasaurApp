@@ -15,6 +15,12 @@ function passes_add(feedrate, intensity, colors_assigned) {
   } else {
     var pass_elem = $(html).appendTo('#job_passes')
   }
+  // assign colors
+  for (var i = 0; i < colors_assigned.length; i++) {
+    var col_sliced = colors_assigned[i].slice(1)
+    $('#passsel_'+num+'_'+col_sliced).hide()
+    $('#pass_'+num+'_'+col_sliced).show(300)
+  }
 
   // bind color assign button
   $('#assign_btn_'+num).click(function(e) {
@@ -137,4 +143,48 @@ function passes_add_widget() {
       $('#pass_add_btn').trigger('click')
       return false;
   })
+}
+
+
+function passes_get_assignments() {
+  var assignments = []
+  $('#job_passes').children('.pass_widget').each(function(i) { // each pass
+    var feedrate = $(this).find("input.feedrate").val()
+    var intensity = $(this).find("input.feedrate").val()
+    assignments.push({"colors":[], "feedrate":feedrate, "intensity":intensity})
+    $(this).children('div.pass_colors').children('div').filter(':visible').each(function(k) {
+      var color = $(this).find('.colmem').text()
+      assignments[i].colors.push(color)
+      // console.log('assign '+color+' -> '+(i+1))
+    })
+  })
+  return assignments
+}
+
+
+function passes_set_assignments(job) {
+  // set passes in gui from lsa job dict
+  // console.log(job)
+  var not_set_flag = true
+  if ("vector" in job) {
+    if ("passes" in job.vector && "colors" in job.vector) {
+      for (var i = 0; i < job.vector.passes.length; i++) {
+        var pass = job.vector.passes[i]
+        not_set_flag = false
+        // convert path index to color
+        var colors = []
+        for (var ii = 0; ii < pass.paths.length; ii++) {
+          var pathidx = pass.paths[ii]
+          colors.push(job.vector.colors[pathidx])
+        }
+        passes_add(pass.feedrate, pass.intensity, colors)
+      }
+    }
+  }
+  if (not_set_flag) {
+    passes_add(1500, 100, [])
+    passes_add(1500, 100, [])
+    passes_add(1500, 100, [])
+  }
+  passes_add_widget()
 }
