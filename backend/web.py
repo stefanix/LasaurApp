@@ -113,60 +113,70 @@ def status():
 @checkserial
 def homing():
     driveboard.homing()
+    return '{}'
 
 @bottle.route('/feedrate/<val:float>')
 @bottle.auth_basic(checkuser)
 @checkserial
 def feedrate(val):
     driveboard.feedrate(val)
+    return '{}'
 
 @bottle.route('/intensity/<val:float>')
 @bottle.auth_basic(checkuser)
 @checkserial
 def intensity(val):
     driveboard.intensity(val)
+    return '{}'
 
 @bottle.route('/relative')
 @bottle.auth_basic(checkuser)
 @checkserial
 def relative():
     driveboard.relative()
+    return '{}'
 
 @bottle.route('/absolute')
 @bottle.auth_basic(checkuser)
 @checkserial
 def absolute():
     driveboard.absolute()
+    return '{}'
 
 @bottle.route('/move/<x:float>/<y:float>/<z:float>')
 @bottle.auth_basic(checkuser)
 @checkserial
 def move(x, y, z):
     driveboard.move(x, y, z)
+    return '{}'
 
 @bottle.route('/air_on')
 @bottle.auth_basic(checkuser)
 @checkserial
 def air_on():
     driveboard.air_on()
+    return '{}'
 
 @bottle.route('/air_off')
 @bottle.auth_basic(checkuser)
 @checkserial
 def air_off():
     driveboard.air_off()
+    return '{}'
 
 @bottle.route('/aux1_on')
 @bottle.auth_basic(checkuser)
 @checkserial
 def aux1_on():
     driveboard.aux1_on()
+    return '{}'
 
 @bottle.route('/aux1_off')
 @bottle.auth_basic(checkuser)
 @checkserial
 def aux1_off():
     driveboard.aux1_off()
+    return '{}'
 
 @bottle.route('/offset/<x:float>/<y:float>/<z:float>')
 @bottle.auth_basic(checkuser)
@@ -174,6 +184,7 @@ def aux1_off():
 def offset(x, y, z):
     driveboard.def_offset_custom(x, y, z)
     driveboard.sel_offset_custom()
+    return '{}'
 
 @bottle.route('/clear_offset')
 @bottle.auth_basic(checkuser)
@@ -181,6 +192,7 @@ def offset(x, y, z):
 def clear_offset():
     driveboard.def_offset_custom(0,0,0)
     driveboard.sel_offset_table()
+    return '{}'
 
 
 
@@ -347,6 +359,7 @@ def star(jobname):
         os.rename(jobpath, jobpath + '.starred')
     else:
         bottle.abort(400, "No such file.")
+    return '{}'
 
 
 @bottle.route('/unstar/<jobname>')
@@ -358,6 +371,7 @@ def unstar(jobname):
         os.rename(jobpath, jobpath[:-8])
     else:
         bottle.abort(400, "No such file.")
+    return '{}'
 
 
 @bottle.route('/remove/<jobname>')
@@ -367,6 +381,7 @@ def remove(jobname):
     jobpath = _get_path(jobname)
     os.remove(jobpath)
     print "INFO: file deleted: " + jobpath
+    return '{}'
 
 
 @bottle.route('/clear')
@@ -374,6 +389,7 @@ def remove(jobname):
 def clear():
     """Clear job list."""
     _clear()
+    return '{}'
 
 
 
@@ -404,10 +420,6 @@ def load_library(jobname):
     _add(job, jobname)
     return json.dumps(jobname)
 
-@bottle.route('/test')
-@bottle.auth_basic(checkuser)
-def test(jobname):
-    return 100/0.0
 
 
 ### JOB EXECUTION
@@ -421,6 +433,7 @@ def run(jobname):
     if not driveboard.status()['ready']:
         bottle.abort(400, "Machine not ready.")
     driveboard.job(json.loads(job))
+    return '{}'
 
 
 @bottle.route('/pause')
@@ -429,6 +442,7 @@ def run(jobname):
 def pause():
     """Pause a job gracefully."""
     driveboard.pause()
+    return '{}'
 
 
 @bottle.route('/unpause')
@@ -437,6 +451,7 @@ def pause():
 def unpause():
     """Resume a paused job."""
     driveboard.unpause()
+    return '{}'
 
 
 @bottle.route('/stop')
@@ -445,6 +460,7 @@ def unpause():
 def stop_():
     """Halt machine immediately and purge job."""
     driveboard.stop()
+    return '{}'
 
 
 @bottle.route('/unstop')
@@ -453,6 +469,7 @@ def stop_():
 def unstop():
     """Recover machine from stop mode."""
     driveboard.unstop()
+    return '{}'
 
 
 
@@ -460,36 +477,47 @@ def unstop():
 ### MCU MANAGMENT
 
 @bottle.route('/build')
-@bottle.route('/build/<firmware>')
+# @bottle.route('/build/<firmware>')
 @bottle.auth_basic(checkuser)
-def build(self, firmware_name=None):
+def build(firmware_name=None):
     """Build firmware from firmware/src files."""
     buildname = "LasaurGrbl_from_src"
     return_code = driveboard.build(firmware_name=buildname)
     if return_code != 0:
         bottle.abort(400, "Build failed.")
+    else:
+        return '{"flash_url": "/flash/%s"}' % (buildname)
 
 
 @bottle.route('/flash')
 @bottle.route('/flash/<firmware>')
 @bottle.auth_basic(checkuser)
-def flash(self, firmware=None):
+def flash(firmware=None):
     """Flash firmware to MCU."""
-    return_code = driveboard.flash(firmware_file=firmware)
+    if firmware is None:
+        return_code = driveboard.flash()
+    else:
+        return_code = driveboard.flash(firmware_file=firmware)
     if return_code != 0:
         bottle.abort(400, "Flashing failed.")
+    else:
+        return '{}'
 
 
 @bottle.route('/reset')
 @bottle.auth_basic(checkuser)
 def reset():
     """Reset MCU"""
-    connected = driveboard.connected()
-    if connected:
-        driveboard.close()
-    driveboard.reset()
-    if connected:
-        driveboard.connect()
+    try:
+        connected = driveboard.connected()
+        if connected:
+            driveboard.close()
+        driveboard.reset()
+        if connected:
+            driveboard.connect()
+    except IOError:
+        bottle.abort(400, "Reset failed.")
+    return '{}'
 
 
 @bottle.route('/hello/<name>')

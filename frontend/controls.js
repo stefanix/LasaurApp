@@ -36,19 +36,39 @@ function controls_ready() {
 
   $("#flash_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#flash_btn").click(function(e){
-    alert("flash")
+    get_request({
+      url:'/flash',
+      success: function (data) {
+        $().uxmessage('success', "Flashing successful.");
+      }
+    });
+    $('#hamburger').dropdown("toggle");
     return false
   })
 
-  $("#flash_source_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
-  $("#flash_source_btn").click(function(e){
-    alert("flash source")
-    return false
-  })
+  // $("#flash_source_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
+  // $("#flash_source_btn").click(function(e){
+  //   get_request({
+  //     url:'/reset',
+  //     success: function (data) {
+  //       app_firmware_version_flag = false;
+  //       $().uxmessage('notice', "Firmware reset successful.");
+  //     }
+  //   });
+  //   $('#hamburger').dropdown("toggle");
+  //   return false
+  // })
 
   $("#reset_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#reset_btn").click(function(e){
-    alert("reset")
+    get_request({
+      url:'/reset',
+      success: function (data) {
+        app_firmware_version_flag = false;
+        $().uxmessage('success', "Reset successful.");
+      }
+    });
+    $('#hamburger').dropdown("toggle");
     return false
   })
 
@@ -102,7 +122,24 @@ function controls_ready() {
 
   $("#stop_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#stop_btn").click(function(e){
-    alert("stop")
+    get_request({
+      url:'/stop',
+      success: function (data) {
+        setTimeout(function() {
+          get_request({
+            url:'/unstop',
+            success: function (data) {
+              get_request({
+                url:'/move/0/0/0',
+                success: function (data) {
+                  $().uxmessage('notice', 'Moving to Origin.');
+                }
+              });
+            }
+          });
+        }, 1000);
+      }
+    });
     return false
   })
 
@@ -112,13 +149,29 @@ function controls_ready() {
 
   $("#origin_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
   $("#origin_btn").click(function(e){
-    alert("origin")
+    var gcode;
+    if(e.shiftKey) {
+      // also reset offset
+      alert("TODO: reset offset")
+      reset_offset____();  // TODO
+    }
+    get_request({
+      url:'/move/0/0/0',
+      success: function (data) {
+        $().uxmessage('notice', "Going to origin ...");
+      }
+    });
     return false
   })
 
   $("#homing_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
   $("#homing_btn").click(function(e){
-    alert("homing")
+    get_request({
+      url:'/homing',
+      success: function (data) {
+        $().uxmessage('notice', "Homing ...");
+      }
+    });
     return false
   })
 

@@ -1,5 +1,5 @@
 # Super Awesome LasaurGrbl python flash script.
-# 
+#
 # Copyright (c) 2011 Nortd Labs
 # Open Source by the terms of the Gnu Public License (GPL3) or higher.
 
@@ -34,33 +34,33 @@ def flash_upload(serial_port=serial_port, resources_dir=resources_dir, firmware_
         CLOCK = "16000000"
         PROGRAMMER = "arduino"
         BITRATE = "115200"
-     
+
         if sys.platform == "darwin":  # OSX
             AVRDUDEAPP    = os.path.join(resources_dir, "firmware/tools_osx/avrdude")
             AVRDUDECONFIG = os.path.join(resources_dir, "firmware/tools_osx/avrdude.conf")
-        
+
         elif sys.platform == "win32": # Windows
             AVRDUDEAPP    = os.path.join(resources_dir, "firmware", "tools_win", "avrdude")
             AVRDUDECONFIG = os.path.join(resources_dir, "firmware", "tools_win", "avrdude.conf")
-        
+
         elif sys.platform == "linux" or sys.platform == "linux2":  #Linux
             AVRDUDEAPP    = os.path.join(resources_dir, "/usr/bin/avrdude")
             AVRDUDECONFIG = os.path.join(resources_dir, "/etc/avrdude.conf")
 
         # call avrdude, returns 0 on success
-        command = ('"%(dude)s" -c %(programmer)s -b %(bps)s -P %(port)s -p %(device)s -C "%(dudeconf)s" -Uflash:w:"%(firmware)s":i' 
+        command = ('"%(dude)s" -c %(programmer)s -b %(bps)s -P %(port)s -p %(device)s -C "%(dudeconf)s" -Uflash:w:"%(firmware)s":i'
             % {'dude':AVRDUDEAPP, 'programmer':PROGRAMMER, 'bps':BITRATE, 'port':serial_port, 'device':DEVICE, 'dudeconf':AVRDUDECONFIG, 'firmware':FIRMWARE})
 
         print command
         return subprocess.call(command, shell=True)
 
-        # PROGRAMMER = "avrisp"  # old way, required pressing the reset button            
-        # os.system('%(dude)s -c %(programmer)s -b %(bps)s -P %(port)s -p %(device)s -C %(dudeconf)s -B 10 -F -U flash:w:%(firmware)s:i' 
+        # PROGRAMMER = "avrisp"  # old way, required pressing the reset button
+        # os.system('%(dude)s -c %(programmer)s -b %(bps)s -P %(port)s -p %(device)s -C %(dudeconf)s -B 10 -F -U flash:w:%(firmware)s:i'
         #     % {'dude':AVRDUDEAPP, 'programmer':PROGRAMMER, 'bps':BITRATE, 'port':serial_port, 'device':DEVICE, 'dudeconf':AVRDUDECONFIG, 'firmware':FIRMWARE})
 
         # fuse setting taken over from Makefile for reference
         #os.system('%(dude)s -U hfuse:w:0xd2:m -U lfuse:w:0xff:m' % {'dude':AVRDUDEAPP})
-    
+
     elif conf['hardware'] == 'beaglebone' or conf['hardware'] == 'raspberrypi':
         # Make sure you have avrdude installed:
         # beaglebone:
@@ -188,6 +188,7 @@ def reset_atmega():
         GPIO.output(pinReset, GPIO.HIGH)
     else:
         print "ERROR: forced reset only possible on beaglebone and raspberrypi"
+        raise IOError
 
 
 def usb_reset_hack():
@@ -197,7 +198,7 @@ def usb_reset_hack():
     # to the USB stack on the Linux dev machine (possibly also on OSX or Win).
     # Note: This should be irrelevant on the Lasersaur/BBB.
     command = "avrdude -p atmega328p -P "+conf['serial_port']+" -c arduino -U flash:r:flash.bin:r -q -q"
-    return subprocess.call(command, shell=True) 
+    return subprocess.call(command, shell=True)
 
 
 if __name__ == '__main__':
