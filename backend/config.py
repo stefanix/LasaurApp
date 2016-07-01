@@ -31,6 +31,7 @@ conf = {
     'firmware': 'LasaurGrbl.hex',
     'tolerance': 0.01,
     'workspace': [1220,610,0],
+    'grid_mm': 100,
     # 'intensity_minmax': [0,255],
     'seekrate': 6000,
     'feedrate': 2000,

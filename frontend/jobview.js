@@ -188,7 +188,7 @@ function jobview_ready() {
 
 
   // grid
-  jobview_grid(100)
+  jobview_grid()
   // // some test paths
   // jobview_testpath()
   // commit
@@ -196,9 +196,12 @@ function jobview_ready() {
 }
 
 
-function jobview_grid(line_every_mm){
+function jobview_grid(){
+  if (!('workspace' in app_config_main) || !('grid_mm' in app_config_main) ) {
+    return
+  }
   var w_mm = app_config_main.workspace[0]
-  var h_mm = app_config_main.workspace[1]
+  var line_every_mm = app_config_main.grid_mm
   var every_px = (jobview_width*line_every_mm)/w_mm
   jobview_gridLayer = new paper.Layer()
   jobview_gridLayer.activate()

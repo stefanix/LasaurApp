@@ -239,7 +239,8 @@ function controls_ready() {
   })
 
   Mousetrap.bind(['del', 'backspace'], function(e) {
-      $('#clear_btn').trigger('click')
+      // $('#clear_btn').trigger('click')
+      jobhandler.clear()
       return false;
   })
 
