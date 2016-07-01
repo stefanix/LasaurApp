@@ -5,50 +5,38 @@ function controls_ready() {
   // dropdown /////////////////////////
 
   $("#info_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
-  // $("#info_btn").click(function(e){
-  //   alert("info")
-  //   return false
-  // })
+  $("#info_btn").click(function(e){
+    $('#info_modal').modal('toggle');
+    return false
+  })
 
   $("#export_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#export_btn").click(function(e){
-    var load_request = {'job':job, 'name':import_name, 'optimize':true}
-    post_request({
-      url:'/load',
-      data: load_request,
-      success: function (jobname) {
-        $().uxmessage('notice', "Parsed "+import_name+".")
-        $().uxmessage('notice', jobname)
-        // get parsed geometry in lsa format
-        get_request({
-          url:'/get/'+jobname,
-          success: function (data) {
-            // alert(JSON.stringify(data))
-            // $().uxmessage('notice', data)
-            handleParsedGeometry(data)
-          },
-          error: function (data) {
-            $().uxmessage('error', "/get error.")
-            $().uxmessage('error', JSON.stringify(data), false)
-          }
-        })
-      },
-      error: function (data) {
-        $().uxmessage('error', "/load error.")
-        $().uxmessage('error', JSON.stringify(data), false)
-      },
-      complete: function (data) {
-        $('#open_btn').button('reset')
-      }
-    })
-    $('#hamburger').dropdown("hide")
+    var blob = new Blob([jobhandler.getJson()], {type: "text/plain;charset=utf-8"});
+    saveAs(blob, jobhandler.name+'.lsa');
+    // var load_request = {'job':jobhandler.getJson()}
+    // post_request({
+    //   url:'/temp',
+    //   data: load_request,
+    //   success: function (jobname) {
+    //     console.log("stashing successful")
+    //     // download file
+    //     window.open('/download/'+jobname+'/'+jobhandler.name+'.lsa', '_blank')
+    //   },
+    //   error: function (data) {
+    //     $().uxmessage('error', "/temp error.")
+    //     $().uxmessage('error', JSON.stringify(data), false)
+    //   }
+    // })
+    // $('#hamburger').dropdown("toggle")
+    $("body").trigger("click")
     return false
   })
 
   $("#clear_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#clear_btn").click(function(e){
     jobhandler.clear()
-    $('#hamburger').dropdown("hide");
+    $("body").trigger("click")
     return false
   })
 
@@ -72,7 +60,7 @@ function controls_ready() {
         $().uxmessage('success', "Flashing successful.");
       }
     });
-    $('#hamburger').dropdown("hide");
+    $("body").trigger("click")
     return false
   })
 
@@ -85,7 +73,8 @@ function controls_ready() {
   //       $().uxmessage('notice', "Firmware reset successful.");
   //     }
   //   });
-  //   $('#hamburger').dropdown("hide");
+  //   $('#hamburger').dropdown("hide")
+  //   $("body").trigger("click")
   //   return false
   // })
 
@@ -98,7 +87,7 @@ function controls_ready() {
         $().uxmessage('success', "Reset successful.");
       }
     });
-    $('#hamburger').dropdown("hide");
+    $("body").trigger("click")
     return false
   })
 

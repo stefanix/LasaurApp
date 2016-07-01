@@ -73,6 +73,7 @@ jobhandler = {
     jobview_clear()
     passes_clear()
     $('#job_info_text').html('')
+    $('#info_content').html('')
     $('#info_btn').hide()
   },
 
@@ -127,9 +128,20 @@ jobhandler = {
       this.calculateBasicStats()
     }
 
-    // view job info
-    $('#job_info_text').html(this.name+' | '+(this.stats['_all_'].length/1000.0).toFixed(1)+'m')
-    // $('#info_btn').show()
+    // job info
+    var job_length_m = (this.stats['_all_'].length/1000.0).toFixed(1)
+    $('#job_info_text').html(this.name+' | '+job_length_m+'m')
+    $('#info_btn').show()
+    var html = ''
+    html += "name : " + this.name + "<br>"
+    html += "length : " + job_length_m + "m<br>"
+    if ('paths' in this.vector) {
+      html += "vector paths : " + this.vector.paths.length + "<br>"
+    }
+    if ('raster' in this.vector) {
+      html += "raster images : " + this.raster.images.length + "<br>"
+    }
+    $('#info_content').html(html)
   },
 
 

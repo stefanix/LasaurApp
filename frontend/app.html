@@ -22,6 +22,7 @@
     <script src="js/jquery.toastmessage.js"></script>
     <script src="js/paper-full.min.js"></script>
     <script src="js/mousetrap.min.js"></script>
+    <script src="js/FileSaver.js"></script>
 
     <script src="lib.js"></script>
     <script src="jobview.js"></script>
@@ -104,8 +105,8 @@
         <div id="job_info" class="pull-left" style="font-size:1.2em; margin:13px; color:#666666">
           <span id="job_info_text"></span>
           <a id="info_btn" style="display:none; margin-left:4px; position:relative; top:1px"
-            href="#" data-toggle="modal" data-target="#info_modal" title="show job information [I]">
-            <span class="glyphicon glyphicon-info-sign"></span>
+            href="#" data-toggle="modal" data-target="#info_modal">
+            <span class="glyphicon glyphicon-info-sign" style="color:#888888"></span>
           </a>
         </div>
         <!-- <div id="job_info" class="pull-left" style="">hello</div> -->
@@ -130,7 +131,7 @@
           <div class="modal-content">
             <div class="modal-header">
               <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-              <h4 class="modal-title" id="myModalLabel">About</h4>
+              <h4 class="modal-title" id="about_header">About</h4>
             </div>
             <div id="about_content" class="modal-body">
             </div>
@@ -144,7 +145,7 @@
           <div class="modal-content">
             <div class="modal-header">
               <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-              <h4 class="modal-title" id="myModalLabel">Log</h4>
+              <h4 class="modal-title" id="log_header">Log</h4>
             </div>
             <div id="log_content" class="modal-body">
             </div>
@@ -158,7 +159,7 @@
           <div class="modal-content">
             <div class="modal-header">
               <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-              <h4 class="modal-title" id="myModalLabel">Configuration</h4>
+              <h4 class="modal-title" id="config_header">Configuration</h4>
             </div>
             <div id="config_content" class="modal-body">
             </div>
@@ -172,7 +173,7 @@
           <div class="modal-content">
             <div class="modal-header">
               <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-              <h4 class="modal-title" id="myModalLabel">Job Info</h4>
+              <h4 class="modal-title" id="info_header">Job Info</h4>
             </div>
             <div id="info_content" class="modal-body">
             </div>

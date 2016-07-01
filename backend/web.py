@@ -74,15 +74,17 @@ def favicon_handler():
 @bottle.auth_basic(checkuser)
 def temp():
     """Create temp file for downloading."""
-    filedata = bottle.request.forms.get('filedata')
+    load_request = json.loads(bottle.request.forms.get('load_request'))
+    job = load_request.get('job')  # always a string
     fp = tempfile.NamedTemporaryFile(mode='w', delete=False)
     filename = fp.name
     with fp:
-        fp.write(filedata)
+        fp.write(job)
         fp.close()
-    print filedata
+    print job
     print "file stashed: " + os.path.basename(filename)
-    return os.path.basename(filename)
+    # return os.path.basename(filename)
+    return json.dumps(os.path.basename(filename))
 
 
 @bottle.route('/download/<filename>/<dlname>')
