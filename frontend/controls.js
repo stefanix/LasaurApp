@@ -53,13 +53,15 @@ function controls_ready() {
 
   $("#queue_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#queue_btn").click(function(e){
-    alert("queue")
+    $("body").trigger("click")
+    $('#queue_modal').modal('toggle');
     return false
   })
 
   $("#library_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#library_btn").click(function(e){
-    alert("library")
+    $("body").trigger("click")
+    $('#library_modal').modal('toggle');
     return false
   })
 
@@ -235,6 +237,11 @@ function controls_ready() {
 
   Mousetrap.bind(['i'], function(e) {
       $('#info_btn').trigger('click')
+      return false;
+  })
+
+  Mousetrap.bind(['e'], function(e) {
+      $('#export_btn').trigger('click')
       return false;
   })
 

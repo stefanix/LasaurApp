@@ -52,9 +52,12 @@ function config_received() {
 
   // call 'ready' of jobview
   jobview_ready()
-
   // call 'ready' of controls
   controls_ready()
+  // call 'ready' of queue
+  queue_ready()
+
+
 
   // start_status_channel()
 }
