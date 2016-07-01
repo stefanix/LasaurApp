@@ -41,14 +41,14 @@ function controls_ready() {
         $('#open_btn').button('reset')
       }
     })
-    $('#hamburger').dropdown("toggle");
+    $('#hamburger').dropdown("hide")
     return false
   })
 
   $("#clear_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#clear_btn").click(function(e){
     jobhandler.clear()
-    $('#hamburger').dropdown("toggle");
+    $('#hamburger').dropdown("hide");
     return false
   })
 
@@ -72,7 +72,7 @@ function controls_ready() {
         $().uxmessage('success', "Flashing successful.");
       }
     });
-    $('#hamburger').dropdown("toggle");
+    $('#hamburger').dropdown("hide");
     return false
   })
 
@@ -85,7 +85,7 @@ function controls_ready() {
   //       $().uxmessage('notice', "Firmware reset successful.");
   //     }
   //   });
-  //   $('#hamburger').dropdown("toggle");
+  //   $('#hamburger').dropdown("hide");
   //   return false
   // })
 
@@ -98,7 +98,7 @@ function controls_ready() {
         $().uxmessage('success', "Reset successful.");
       }
     });
-    $('#hamburger').dropdown("toggle");
+    $('#hamburger').dropdown("hide");
     return false
   })
 
@@ -239,8 +239,7 @@ function controls_ready() {
   })
 
   Mousetrap.bind(['del', 'backspace'], function(e) {
-      // $('#clear_btn').trigger('click')
-      jobhandler.clear()
+      $('#clear_btn').trigger('click')
       return false;
   })
 
