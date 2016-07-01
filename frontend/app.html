@@ -47,15 +47,15 @@
                 <span class="glyphicon glyphicon-menu-hamburger" style="font-size:1.4em"></span>
               </a>
               <ul id="hamburger" class="dropdown-menu" role="menu">
-                <li><a id="info_btn" href="#" data-toggle="modal" data-target="#info_modal" title="show job information [I]">Job Info</a></li>
-                <li><a id="export_btn" href="#">Export</a></li>
+                <!-- <li><a id="info_btn" href="#" data-toggle="modal" data-target="#info_modal" title="show job information [I]">Job Info</a></li> -->
+                <li><a id="export_btn" href="#" data-loading-text='<span class="glyphicon glyphicon-refresh spinning"></span>'>Export</a></li>
                 <li><a id="clear_btn" href="#" title="[DEL]">Clear</a></li>
                 <li class="divider"></li>
                 <li><a id="queue_btn" href="#" title="[Q]">Job Queue</a></li>
                 <li><a id="library_btn" href="#" title="[L]">Library</a></li>
                 <li class="divider"></li>
-                <li><a href="https://github.com/nortd/lasersaur/wiki">Manual</a></li>
                 <li><a href="#" data-toggle="modal" data-target="#about_modal">About</a></li>
+                <li><a href="https://github.com/nortd/lasersaur/wiki">Manual</a></li>
                 <li class="divider"></li>
                 <li class="dropdown-header">Admin</li>
                 <li><a id="flash_btn" href="#">Flash Firmware</a></li>
@@ -71,7 +71,7 @@
         <!-- open button -->
         <div class="btn-group pull-left menu_btn">
             <button id="open_btn" class="btn btn-default" type="submit"
-                    title="open new job [ENTER]" data-loading-text="loading..." autocomplete="off">Open</button>
+                    title="open new job [ENTER]" data-loading-text='<span class="glyphicon glyphicon-refresh spinning"></span>'>Open</button>
         </div>
         <form id="open_file_form" action="#" onsubmit="return false;">
             <input type="file" id="open_file_fld" name="data" style="visibility:hidden; position:fixed">
@@ -79,10 +79,12 @@
 
         <!-- process buttons -->
         <div class="btn-group pull-left menu_btn">
-            <button id="run_btn" class="btn btn-primary" type="submit" title="run this job [CTRL-ENTER]">
+            <button id="run_btn" class="btn btn-primary" type="submit" title="run this job [CTRL-ENTER]"
+              data-loading-text='Running <span class="glyphicon glyphicon-refresh spinning"></span>'>
               Run this job!
             </button>
-            <button id="boundary_btn" class="btn btn-primary" type="submit" title="run bounding box [CTRL-SHIFT-ENTER]">
+            <button id="boundary_btn" class="btn btn-primary" type="submit" title="run bounding box [CTRL-SHIFT-ENTER]"
+              data-loading-text='<span class="glyphicon glyphicon-refresh spinning"></span>'>
               <span class="glyphicon glyphicon-resize-full"></span>
             </button>
         </div>
@@ -99,7 +101,13 @@
         </div>
 
         <!-- job info -->
-        <div id="job_info" class="pull-left" style="font-size:1.2em; margin:13px; color:#666666"></div>
+        <div id="job_info" class="pull-left" style="font-size:1.2em; margin:13px; color:#666666">
+          <span id="job_info_text"></span>
+          <a id="info_btn" style="display:none; margin-left:4px; position:relative; top:1px"
+            href="#" data-toggle="modal" data-target="#info_modal" title="show job information [I]">
+            <span class="glyphicon glyphicon-info-sign"></span>
+          </a>
+        </div>
         <!-- <div id="job_info" class="pull-left" style="">hello</div> -->
 
       </div>

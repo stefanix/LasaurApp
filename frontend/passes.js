@@ -15,6 +15,11 @@ function passes_add(feedrate, intensity, colors_assigned) {
   } else {
     var pass_elem = $(html).appendTo('#job_passes')
   }
+  // unblur buttons after pressing
+  $("#pass_add_widget > .btn").mouseup(function(){
+      $(this).blur();
+  })
+
   // assign colors
   for (var i = 0; i < colors_assigned.length; i++) {
     var col_sliced = colors_assigned[i].slice(1)

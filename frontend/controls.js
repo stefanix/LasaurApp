@@ -12,13 +12,43 @@ function controls_ready() {
 
   $("#export_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#export_btn").click(function(e){
-    alert("export")
+    var load_request = {'job':job, 'name':import_name, 'optimize':true}
+    post_request({
+      url:'/load',
+      data: load_request,
+      success: function (jobname) {
+        $().uxmessage('notice', "Parsed "+import_name+".")
+        $().uxmessage('notice', jobname)
+        // get parsed geometry in lsa format
+        get_request({
+          url:'/get/'+jobname,
+          success: function (data) {
+            // alert(JSON.stringify(data))
+            // $().uxmessage('notice', data)
+            handleParsedGeometry(data)
+          },
+          error: function (data) {
+            $().uxmessage('error', "/get error.")
+            $().uxmessage('error', JSON.stringify(data), false)
+          }
+        })
+      },
+      error: function (data) {
+        $().uxmessage('error', "/load error.")
+        $().uxmessage('error', JSON.stringify(data), false)
+      },
+      complete: function (data) {
+        $('#open_btn').button('reset')
+      }
+    })
+    $('#hamburger').dropdown("toggle");
     return false
   })
 
   $("#clear_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#clear_btn").click(function(e){
     jobhandler.clear()
+    $('#hamburger').dropdown("toggle");
     return false
   })
 

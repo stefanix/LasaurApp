@@ -2,6 +2,7 @@ var jobview_width = 0
 var jobview_height = 0
 var jobview_mm2px = 1.0
 
+var jobview_gridLayer = undefined
 var jobview_feedLayer = undefined
 var jobview_seekLayer = undefined
 
@@ -186,7 +187,44 @@ function jobview_ready() {
   tool_pass.activate()
 
 
-  // some test paths
+  // grid
+  jobview_grid(100)
+  // // some test paths
+  // jobview_testpath()
+  // commit
+  paper.view.draw()
+}
+
+
+function jobview_grid(line_every_mm){
+  var w_mm = app_config_main.workspace[0]
+  var h_mm = app_config_main.workspace[1]
+  var every_px = (jobview_width*line_every_mm)/w_mm
+  jobview_gridLayer = new paper.Layer()
+  jobview_gridLayer.activate()
+  var grid_group = new paper.Group()
+  // vertical
+  var x = every_px
+  while (x < jobview_width) {
+    var line = new paper.Path()
+    line.add([x,0], [x,jobview_height])
+    grid_group.addChild(line);
+    x += every_px
+  }
+  // horizontal
+  var y = every_px
+  while (y < jobview_height) {
+    var line = new paper.Path()
+    line.add([0,y], [jobview_width,y])
+    grid_group.addChild(line);
+    y += every_px
+  }
+  grid_group.strokeColor = '#dddddd';
+}
+
+
+function jobview_testpath(){
+  jobview_feedLayer.activate()
   var width = jobview_width
   var height = jobview_height
   var path = new paper.Path()
@@ -198,7 +236,4 @@ function jobview_ready() {
   path2.strokeColor = 'red'
   path2.closed = true
   path2.add([60,60],[width-60,60],[width-60,height-60],[60,height-60])
-
-  paper.view.draw()
-
 }

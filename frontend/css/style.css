@@ -10,6 +10,9 @@ body {
   overflow:hidden;
   background-color: #f2f2f2;
 }
+a, a:active, a:focus {
+  outline:none
+}
 .footer {
   /*position: absolute;*/
   bottom: 0;
@@ -88,4 +91,15 @@ div.log_error {
     background-color: transparent;
     background-image: none;
     color: white;
+}
+
+
+.glyphicon.spinning {
+    animation: spin 1s infinite linear;
+    transform-origin: 49.5% 49.7%;
+}
+
+@keyframes spin {
+    from { transform: scale(1) rotate(0deg); }
+    to { transform: scale(1) rotate(360deg); }
 }

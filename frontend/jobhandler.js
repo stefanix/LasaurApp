@@ -72,7 +72,8 @@ jobhandler = {
     name = ""
     jobview_clear()
     passes_clear()
-    $('#job_info').html('')
+    $('#job_info_text').html('')
+    $('#info_btn').hide()
   },
 
   isEmpty : function() {
@@ -127,7 +128,8 @@ jobhandler = {
     }
 
     // view job info
-    $('#job_info').html(this.name+' | '+(this.stats['_all_'].length/1000.0).toFixed(1)+'m')
+    $('#job_info_text').html(this.name+' | '+(this.stats['_all_'].length/1000.0).toFixed(1)+'m')
+    // $('#info_btn').show()
   },
 
 
