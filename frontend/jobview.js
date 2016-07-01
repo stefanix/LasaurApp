@@ -22,6 +22,7 @@ function jobview_clear(){
   jobview_feedLayer.remove()
   jobview_feedLayer = new paper.Layer()
   paper.view.draw()
+  jobview_color_selected = undefined
 }
 
 

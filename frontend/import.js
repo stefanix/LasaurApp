@@ -97,7 +97,6 @@ $(document).ready(function(){
     jobhandler.set(job, import_name, true)
     jobhandler.draw()
 
-    passes_set_assignments(job)
 
     // debug, show image, stats
     // if ('rasters' in job) {

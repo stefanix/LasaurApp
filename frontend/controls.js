@@ -12,23 +12,34 @@ function controls_ready() {
 
   $("#export_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#export_btn").click(function(e){
-    var blob = new Blob([jobhandler.getJson()], {type: "text/plain;charset=utf-8"});
-    saveAs(blob, jobhandler.name+'.lsa');
-    // var load_request = {'job':jobhandler.getJson()}
-    // post_request({
-    //   url:'/temp',
-    //   data: load_request,
-    //   success: function (jobname) {
-    //     console.log("stashing successful")
-    //     // download file
-    //     window.open('/download/'+jobname+'/'+jobhandler.name+'.lsa', '_blank')
-    //   },
-    //   error: function (data) {
-    //     $().uxmessage('error', "/temp error.")
-    //     $().uxmessage('error', JSON.stringify(data), false)
-    //   }
-    // })
-    // $('#hamburger').dropdown("toggle")
+    if (!jobhandler.isEmpty()) {
+      var filename = jobhandler.name
+      if (filename.length > 4 && filename.slice(-4,-3) == '.') {
+        filename = filename.slice(0,-4)+'.lsa'
+      } else {
+        filename = filename+'.lsa'
+      }
+      jobhandler.setPassesFromGUI()
+      var blob = new Blob([jobhandler.getJson()], {type: "application/json;charset=utf-8"});
+      saveAs(blob, filename);
+      // var load_request = {'job':jobhandler.getJson()}
+      // post_request({
+      //   url:'/temp',
+      //   data: load_request,
+      //   success: function (jobname) {
+      //     console.log("stashing successful")
+      //     // download file
+      //     window.open('/download/'+jobname+'/'+jobhandler.name+'.lsa', '_blank')
+      //   },
+      //   error: function (data) {
+      //     $().uxmessage('error', "/temp error.")
+      //     $().uxmessage('error', JSON.stringify(data), false)
+      //   }
+      // })
+      // $('#hamburger').dropdown("toggle")
+    } else {
+      $().uxmessage('error', "Cannot export. No job loaded.");
+    }
     $("body").trigger("click")
     return false
   })

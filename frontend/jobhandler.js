@@ -121,6 +121,9 @@ jobhandler = {
       }
     }
 
+    // passes, show in gui
+    passes_set_assignments(job)
+
     // stats
     if ('stats' in job) {
       this.stats = job['stats']
