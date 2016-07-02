@@ -517,7 +517,7 @@ jobhandler = {
       for (var k=0; k<this.raster.images.length; k++) {
         var image = this.raster.images[k]
         var image_length = (2*app_config_main.raster_offset + image.size[0])
-                         * Math.floor(image.size[1]/app_config_main.raster_kerf)
+                         * Math.floor(image.size[1]/app_config_main.raster_size)
         var image_bbox = [image.pos[0] - app_config_main.raster_offset,
                           image.pos[1],
                           image.pos[0] + image.size[0] + app_config_main.raster_offset,
