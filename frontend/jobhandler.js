@@ -316,7 +316,9 @@ jobhandler = {
                                     new paper.Point(bbox[0]*scale,bbox[1]*scale),
                                     new paper.Point(bbox[2]*scale,bbox[3]*scale) )
     // all_bounds.strokeColor = app_config_main.bounds_color
+    all_bounds.strokeWidth = 2
     all_bounds.strokeColor = '#666666'
+    all_bounds.dashArray = [2, 4]
   },
 
 
