@@ -351,51 +351,6 @@ jobhandler = {
   },
 
 
-  setPassesFromLasertags : function(lasertags) {
-    // lasertags come in this format
-    // (pass_num, feedrate, units, intensity, units, color1, color2, ..., color6)
-    // [(12, 2550, '', 100, '%', ':#fff000', ':#ababab', ':#ccc999', '', '', ''), ...]
-    var passes = this.vector.passes = []
-
-    for (var i=0; i<lasertags.length; i++) {
-      var vals = lasertags[i];
-      if (vals.length == 11) {
-        var pass = vals[0];
-        var feedrate = vals[1];
-        var intensity = vals[3];
-        if (typeof(pass) === 'number' && pass > 0) {
-          //make sure to have enough pass widgets
-          var passes_to_create = pass - this.passes.length
-          if (passes_to_create >= 1) {
-            for (var k=0; k<passes_to_create; k++) {
-              this.passes.push({'colors':[], 'feedrate':1200, 'intensity':10})
-            }
-          }
-          pass = pass-1;  // convert to zero-indexed
-          // feedrate
-          if (feedrate != '' && typeof(feedrate) === 'number') {
-            this.passes[pass]['feedrate'] = feedrate;
-          }
-          // intensity
-          if (intensity != '' && typeof(intensity) === 'number') {
-            this.passes[pass]['intensity'] = intensity;
-          }
-          // colors
-          for (var ii=5; ii<vals.length; ii++) {
-            var col = vals[ii];
-            if (col.slice(0,1) == '#') {
-              this.passes[pass]['colors'].push(col);
-            }
-          }
-        } else {
-          $().uxmessage('error', "invalid lasertag (pass number)");
-        }
-      } else {
-        $().uxmessage('error', "invalid lasertag (num of args)");
-      }
-    }
-  },
-
   normalizeColors : function() {
     var random_color_flag = false
     // randomized colors if no colors assigned
