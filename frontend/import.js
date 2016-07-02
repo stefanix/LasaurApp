@@ -44,6 +44,7 @@ $(document).ready(function(){
     file_fld = file_fld.slice(file_fld.lastIndexOf('\\')+1) || file_fld  // drop unix path
     file_fld = file_fld.slice(file_fld.lastIndexOf('/')+1) || file_fld   // drop windows path
     import_name = file_fld.slice(0, file_fld.lastIndexOf('.')) || file_fld  // drop extension
+    $('#open_file_fld').val('')
   })
 
 

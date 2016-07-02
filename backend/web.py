@@ -271,16 +271,14 @@ def _clear(limit=None):
 
 def _add(job, name):
     # add job (lsa string)
-    # delete excessive job files
-    num_to_del = (len(_get_sorted('*.lsa')) +1) - conf['max_jobs_in_list']
-    _clear(num_to_del)
-    # add
+    # overwrites file if already exists, use _unique_name(name) to avoid
     namepath = os.path.join(conf['stordir'], name.strip('/\\')+'.lsa')
-    if os.path.exists(namepath):
-        bottle.abort(400, "File name exists.")
     with open(namepath, 'w') as fp:
         fp.write(job)
         print "file saved: " + namepath
+    # delete excessive job files
+    num_to_del = (len(_get_sorted('*.lsa')) +1) - conf['max_jobs_in_list']
+    _clear(num_to_del)
 
 def _unique_name(jobname):
     files = _get_sorted('*.lsa*', stripext=True)
@@ -306,13 +304,15 @@ def load():
         job: Parsed lsa or job string (lsa, svg, dxf, or ngc).
         name: name of the job (string)
         optimize: flag whether to optimize (bool)
+        overwrite: flag whether to overwite file if present (bool)
     """
     load_request = json.loads(bottle.request.forms.get('load_request'))
     job = load_request.get('job')  # always a string
     name = load_request.get('name')
-    optimize = load_request.get('optimize')
+    optimize = load_request.get('optimize') or True
+    overwrite = load_request.get('overwrite') or False
     # sanity check
-    if job is None or name is None or optimize is None:
+    if job is None or name is None:
         bottle.abort(400, "Invalid request data.")
     # convert
     try:
@@ -321,9 +321,10 @@ def load():
         if DEBUG: traceback.print_exc()
         bottle.abort(400, "Invalid file type.")
 
-    altname = _unique_name(name)
-    _add(json.dumps(job), altname)
-    return json.dumps(altname)
+    if not overwrite:
+        name = _unique_name(name)
+    _add(json.dumps(job), name)
+    return json.dumps(name)
 
 
 

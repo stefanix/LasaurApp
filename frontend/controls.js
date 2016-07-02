@@ -124,12 +124,42 @@ function controls_ready() {
   $("#run_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#run_btn").click(function(e){
     jobhandler.setPassesFromGUI()
+    // save job to queue, in-place
+    var load_request = {
+      'job':jobhandler.getJson(),
+      'name':jobhandler.name,
+      'optimize':false,
+      'overwrite':true
+    }
+    post_request({
+      url:'/load',
+      data: load_request,
+      success: function (jobname) {
+        $().uxmessage('notice', "Saved to queue: "+jobname)
+        // run job
+        console.log("run!!!!!!!")
+        get_request({
+          url:'/run/'+jobname,
+          success: function (data) {
+            $().uxmessage('success', "Running job ...")
+          }
+        })
+      },
+      error: function (data) {
+        $().uxmessage('error', "/load error.")
+        $().uxmessage('error', JSON.stringify(data), false)
+      },
+      complete: function (data) {
+        $('#open_btn').button('reset')
+      }
+    })
     return false
   })
 
   $("#boundary_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#boundary_btn").click(function(e){
-    alert("boundary")
+    jobhandler.setPassesFromGUI()
+
     return false
   })
 
