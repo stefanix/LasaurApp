@@ -166,8 +166,8 @@ function passes_add_widget() {
 function passes_get_assignments() {
   var assignments = []
   $('#job_passes').children('.pass_widget').each(function(i) { // each pass
-    var feedrate = $(this).find("input.feedrate").val()
-    var intensity = $(this).find("input.intensity").val()
+    var feedrate = parseFloat($(this).find("input.feedrate").val()).toFixed()
+    var intensity = parseFloat($(this).find("input.intensity").val()).toFixed()
     assignments.push({"colors":[], "feedrate":feedrate, "intensity":intensity})
     $(this).children('div.pass_colors').children('div').filter(':visible').each(function(k) {
       var color = $(this).find('.colmem').text()

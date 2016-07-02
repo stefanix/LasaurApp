@@ -1,15 +1,15 @@
 
-function queue_clear() {
-  $('#queue_content').html("")
+function library_clear() {
+  $('#library_content').html("")
 }
 
-function queue_ready() {
-  queue_update()
+function library_ready() {
+  library_update()
 }
 
-function queue_update() {
+function library_update() {
   get_request({
-    url:'/listing',
+    url:'/listing_library',
     success: function (data) {
       var html = '<table class="table table-hover table-condensed">'
       html += '<thead><tr><td>Name</td></tr></thead><tbody>'
@@ -18,12 +18,12 @@ function queue_update() {
         html += '<tr style="cursor:pointer"><td>'+data[i]+'</td></tr>'
       }
       html += '</tbody></table>'
-      $('#queue_content').html(html)
+      $('#library_content').html(html)
       // load action
-      $('#queue_content table tbody tr').click(function(e){
+      $('#library_content table tbody tr').click(function(e){
         var jobname = $(this).children('td').text()
-        import_open(jobname)
-        $('#queue_modal').modal('toggle')
+        import_open(jobname, true)
+        $('#library_modal').modal('toggle')
         return false
       })
     }
