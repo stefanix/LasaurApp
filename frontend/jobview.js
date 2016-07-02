@@ -3,8 +3,9 @@ var jobview_height = 0
 var jobview_mm2px = 1.0
 
 var jobview_gridLayer = undefined
-var jobview_feedLayer = undefined
+var jobview_boundsLayer = undefined
 var jobview_seekLayer = undefined
+var jobview_feedLayer = undefined
 
 var nav_height_init = 0
 var footer_height = 0
@@ -17,6 +18,8 @@ var jobview_color_selected = undefined
 
 
 function jobview_clear(){
+  jobview_boundsLayer.remove()
+  jobview_boundsLayer = new paper.Layer()
   jobview_seekLayer.remove()
   jobview_seekLayer = new paper.Layer()
   jobview_feedLayer.remove()
@@ -68,7 +71,8 @@ function jobview_resize() {
   jobview_height = $('#job_canvas').innerHeight()
 
   // resize content
-  setTimeout(function() {
+  clearTimeout(window.lastResizeTimer)
+  window.lastResizeTimer = setTimeout(function() {
     var resize_scale = jobview_width/jobview_width_last
     jobview_width_last = jobview_width
     jobview_height_last = jobview_height
@@ -80,7 +84,7 @@ function jobview_resize() {
       }
     }
     paper.view.draw()
-  }, 600);
+  }, 300)
 }
 
 
@@ -119,10 +123,12 @@ function jobview_ready() {
   var canvas = document.getElementById('job_canvas')
   paper.setup(canvas)
 
-  // seek lines layer
+  // feed/seek lines layer
+  jobview_boundsLayer = new paper.Layer();
   jobview_feedLayer = paper.project.activeLayer
   jobview_seekLayer = new paper.Layer();
   jobview_feedLayer.activate()
+  // bounds layer
 
   // tools
   var tool1, tool2, tool_pass;

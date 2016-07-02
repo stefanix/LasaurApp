@@ -25,6 +25,7 @@ function passes_add(feedrate, intensity, colors_assigned) {
     var col_sliced = colors_assigned[i].slice(1)
     $('#passsel_'+num+'_'+col_sliced).hide()
     $('#pass_'+num+'_'+col_sliced).show(300)
+    passes_update_bounds()
   }
 
   // bind color assign button
@@ -34,6 +35,7 @@ function passes_add(feedrate, intensity, colors_assigned) {
       $('#passsel_'+num+'_'+col_sliced).hide()
       $('#pass_'+num+'_'+col_sliced).hide()
       $('#pass_'+num+'_'+col_sliced).show(300)
+      passes_update_bounds()
       return false
     } else {
       return true
@@ -45,7 +47,8 @@ function passes_add(feedrate, intensity, colors_assigned) {
     var color = $(this).children('span').text()
     $('#passsel_'+num+'_'+color.slice(1)).hide()
     $('#pass_'+num+'_'+color.slice(1)).show(300)
-    $('#passdp_'+num).dropdown("toggle");
+    $('#passdp_'+num).dropdown("toggle")
+    passes_update_bounds()
     return false
   })
 
@@ -54,6 +57,7 @@ function passes_add(feedrate, intensity, colors_assigned) {
     var color = $(this).parent().find('span.colmem').text()
     $('#passsel_'+num+'_'+color.slice(1)).show(0)
     $('#pass_'+num+'_'+color.slice(1)).hide(300)
+    passes_update_bounds()
     return false
   })
 
@@ -200,4 +204,16 @@ function passes_set_assignments(job) {
     passes_add(1500, 100, [])
   }
   passes_add_widget()
+}
+
+
+function passes_update_bounds() {
+  // called whenever passes wiget changes happen (color add/remove)
+  // this event handler is debounced to minimize updates
+  clearTimeout(window.lastBoundsUpdateTimer)
+  window.lastBoundsUpdateTimer = setTimeout(function() {
+    jobhandler.setPassesFromGUI()
+    jobhandler.renderBounds()
+    jobhandler.draw()
+  }, 2000)
 }

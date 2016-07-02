@@ -159,6 +159,8 @@ function controls_ready() {
   $("#boundary_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#boundary_btn").click(function(e){
     jobhandler.setPassesFromGUI()
+    passes_get_bbox()
+    var bbox_all = jobhandler.stats['_all_'].bbox
 
     return false
   })

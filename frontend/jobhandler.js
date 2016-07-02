@@ -64,6 +64,7 @@ jobhandler = {
   stats : {},
   name : "",
   job_group : undefined,
+  scale : undefined,
 
   clear : function() {
     this.vector = {}
@@ -177,7 +178,7 @@ jobhandler = {
 
   // rendering //////////////////////////////////
 
-  draw : function () {
+  render : function () {
     var x = 0;
     var y = 0;
     // clear canvas
@@ -190,10 +191,10 @@ jobhandler = {
     var w_canvas = $('#job_canvas').innerWidth()
     var h_canvas = $('#job_canvas').innerHeight()
     var aspect_canvas = w_canvas/h_canvas
-    var scale = w_canvas/w_workspace  // default for same aspect
+    var scale = this.scale = w_canvas/w_workspace  // default for same aspect
     if (aspect_canvas > aspect_workspace) {
       // canvas wider, fit by height
-      var scale = h_canvas/h_workspace
+      var scale = this.scale = h_canvas/h_workspace
       // indicate border, only on one side necessary
       var w_scaled = w_workspace*scale
       var p_bound = new paper.Path()
@@ -293,17 +294,33 @@ jobhandler = {
             }
           }
         }
-        // draw group's bounding box
-        jobview_seekLayer.activate()
-        var group_bounds = new paper.Path.Rectangle(group.bounds)
-        group_bounds.strokeColor = app_config_main.bounds_color
+        // // draw group's bounding box
+        // jobview_boundsLayer.activate()
+        // var group_bounds = new paper.Path.Rectangle(group.bounds)
+        // group_bounds.strokeColor = app_config_main.bounds_color
       }
     }
-    // draw super bounding box
-    jobview_seekLayer.activate()
-    var all_bounds = new paper.Path.Rectangle(this.job_group.bounds)
-    all_bounds.strokeColor = app_config_main.bounds_color
-    // finally commit draw
+
+  },
+
+
+  renderBounds : function () {
+    jobview_boundsLayer.remove()
+    jobview_boundsLayer = new paper.Layer()
+    jobview_boundsLayer.activate()
+    // var all_bounds = new paper.Path.Rectangle(this.job_group.bounds)
+    // var bbox_all = this.stats['_all_'].bbox
+    var scale = this.scale
+    var bbox = this.getActivePassesBbox()
+    var all_bounds = new paper.Path.Rectangle(
+                                    new paper.Point(bbox[0]*scale,bbox[1]*scale),
+                                    new paper.Point(bbox[2]*scale,bbox[3]*scale) )
+    // all_bounds.strokeColor = app_config_main.bounds_color
+    all_bounds.strokeColor = '#666666'
+  },
+
+
+  draw : function () {
     paper.view.draw()
   },
 
@@ -490,7 +507,7 @@ jobhandler = {
           if (polyline.length > 1) {
             var x = polyline[0][0]
             var y = polyline[0][1]
-            // this.bboxExpand(path_bbox, x, y)
+            this.bboxExpand(path_bbox, x, y)
             x_prev = x
             y_prev = y
             for (vertex=1; vertex<polyline.length; vertex++) {
@@ -498,7 +515,7 @@ jobhandler = {
               var y = polyline[vertex][1]
               path_length +=
                 Math.sqrt((x-x_prev)*(x-x_prev)+(y-y_prev)*(y-y_prev))
-              // this.bboxExpand(path_bbox, x, y)
+              this.bboxExpand(path_bbox, x, y)
               x_prev = x
               y_prev = y
             }
@@ -506,8 +523,8 @@ jobhandler = {
         }
         this.stats.paths.push({'bbox':path_bbox, 'length':path_length})
         length_all += path_length
-        // this.bboxExpand(bbox_all, path_bbox[0], path_bbox[1])
-        // this.bboxExpand(bbox_all, path_bbox[2], path_bbox[3])
+        this.bboxExpand(bbox_all, path_bbox[0], path_bbox[1])
+        this.bboxExpand(bbox_all, path_bbox[2], path_bbox[3])
       }
     }
 
@@ -523,10 +540,10 @@ jobhandler = {
                           image.pos[0] + image.size[0] + app_config_main.raster_offset,
                           image.pos[1] + image.size[1]
                          ]
-        this.stats.images.push({'bbox':path_bbox, 'length':path_length})
+        this.stats.images.push({'bbox':image_bbox, 'length':image_length})
         length_all += image_length
-        // this.bboxExpand(bbox_all, image_bbox[0], image_bbox[1])
-        // this.bboxExpand(bbox_all, image_bbox[2], image_bbox[3])
+        this.bboxExpand(bbox_all, image_bbox[0], image_bbox[1])
+        this.bboxExpand(bbox_all, image_bbox[2], image_bbox[3])
       }
     }
 
@@ -538,22 +555,48 @@ jobhandler = {
   },
 
 
-  getJobPathLength : function() {
-    var total_length = 0;
-    for (var k=0; k<this.vector.passes.length; k++) {
-      // var
-
-
-
+  getActivePassesBbox : function() {
+    var bbox = [Infinity, Infinity, -Infinity, -Infinity]
+    // vector
+    if ('passes' in this.vector) {
+      for (var i = 0; i < this.vector.passes.length; i++) {
+        var pass = this.vector.passes[i]
+        for (var j = 0; j < pass.paths.length; j++) {
+          var path_idx = pass.paths[j]
+          if (path_idx >= 0 && path_idx < this.stats.paths.length) {
+            this.bboxExpand2(bbox, this.stats.paths[path_idx].bbox)
+          }
+        }
+      }
     }
-
-    for (var color in this.getPassesColors()) {
-      stat = this.stats[color];
-      total_length += stat['length'];
+    // raster
+    if ('passes' in this.raster) {
+      for (var i = 0; i < this.raster.passes.length; i++) {
+        var pass = this.raster.passes[i]
+        for (var j = 0; j < pass.images.length; j++) {
+          var image_idx = pass.images[j]
+          if (image_idx >= 0 && image_idx < this.stats.images.length) {
+            this.bboxExpand2(bbox, this.stats.images[image_idx].bbox)
+          }
+        }
+      }
     }
-    return total_length;
+    return bbox
   },
 
+
+  bboxExpand : function(bbox, x, y) {
+    if (x < bbox[0]) {bbox[0] = x;}
+    else if (x > bbox[2]) {bbox[2] = x;}
+    if (y < bbox[1]) {bbox[1] = y;}
+    else if (y > bbox[3]) {bbox[3] = y;}
+  },
+
+
+  bboxExpand2 : function(bbox, bbox2) {
+    this.bboxExpand(bbox, bbox2[0], bbox2[1])
+    this.bboxExpand(bbox, bbox2[2], bbox2[3])
+  },
 
 
   // path optimizations /////////////////////////
