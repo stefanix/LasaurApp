@@ -64,19 +64,8 @@ $(document).ready(function(){
       success: function (jobname) {
         $().uxmessage('notice', "Parsed "+import_name+".")
         $().uxmessage('notice', jobname)
-        // get parsed geometry in lsa format
-        get_request({
-          url:'/get/'+jobname,
-          success: function (data) {
-            // alert(JSON.stringify(data))
-            // $().uxmessage('notice', data)
-            handleParsedGeometry(data)
-          },
-          error: function (data) {
-            $().uxmessage('error', "/get error.")
-            $().uxmessage('error', JSON.stringify(data), false)
-          }
-        })
+        queue_update()
+        import_open(jobname)
       },
       error: function (data) {
         $().uxmessage('error', "/load error.")
@@ -89,33 +78,41 @@ $(document).ready(function(){
 
   }
 
-
-
-  function handleParsedGeometry(job) {
-    // job is an lsa dict
-
-    jobhandler.set(job, import_name, true)
-    jobhandler.draw()
-
-
-    // debug, show image, stats
-    // if ('rasters' in job) {
-      // for (var i=0; i<job.rasters.length; i++) {
-      //   var raster = job.rasters[i];
-      //   // convert base64 to Image object
-      //   var imgid = 'rasterimg' + i;
-      //   $('#tab_import').append('<img id="'+imgid+'" src="'+raster['image']+'">');
-      //   var img = document.getElementById(imgid);
-      //
-      //   // stats
-      //   raster_stats = {'pos':raster['pos'],
-      //                   'size_mm':raster['size_mm'],
-      //                   'size_px':[img.width, img.height],
-      //                   'len':raster['image'].length}
-      //   $('#tab_import').append('<p>'+JSON.stringify(raster_stats)+'</p>');
-      // }
-    // }
-  }
-
-
 })  // ready
+
+
+
+function import_open(jobname) {
+  // get job in lsa format
+  get_request({
+    url:'/get/'+jobname,
+    success: function (job) {
+      // alert(JSON.stringify(data))
+      // $().uxmessage('notice', data)
+      jobhandler.set(job, jobname, true)
+      jobhandler.draw()
+
+      // debug, show image, stats
+      // if ('rasters' in job) {
+        // for (var i=0; i<job.rasters.length; i++) {
+        //   var raster = job.rasters[i];
+        //   // convert base64 to Image object
+        //   var imgid = 'rasterimg' + i;
+        //   $('#tab_import').append('<img id="'+imgid+'" src="'+raster['image']+'">');
+        //   var img = document.getElementById(imgid);
+        //
+        //   // stats
+        //   raster_stats = {'pos':raster['pos'],
+        //                   'size_mm':raster['size_mm'],
+        //                   'size_px':[img.width, img.height],
+        //                   'len':raster['image'].length}
+        //   $('#tab_import').append('<p>'+JSON.stringify(raster_stats)+'</p>');
+        // }
+      // }
+    },
+    error: function (data) {
+      $().uxmessage('error', "/get error.")
+      $().uxmessage('error', JSON.stringify(data), false)
+    }
+  })
+}

@@ -56,8 +56,8 @@ function config_received() {
   controls_ready()
   // call 'ready' of queue
   queue_ready()
-
-
+  // call 'ready' of library
+  library_ready()
 
   // start_status_channel()
 }
