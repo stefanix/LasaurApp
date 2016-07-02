@@ -73,7 +73,8 @@ jobhandler = {
     name = ""
     jobview_clear()
     passes_clear()
-    $('#job_info_text').html('')
+    $('#job_info_name').html('')
+    $('#job_info_length').html('')
     $('#info_content').html('')
     $('#info_btn').hide()
   },
@@ -135,12 +136,12 @@ jobhandler = {
     }
 
     // job info
-    var job_length_m = (this.stats['_all_'].length/1000.0).toFixed(1)
-    $('#job_info_text').html(this.name+' | '+job_length_m+'m')
+    $('#job_info_name').html(this.name)
     $('#info_btn').show()
+    // info modal
     var html = ''
     html += "name : " + this.name + "<br>"
-    html += "length : " + job_length_m + "m<br>"
+    // html += "length : " + job_length_m + "m<br>"
     if ('paths' in this.vector) {
       html += "vector paths : " + this.vector.paths.length + "<br>"
     }
@@ -377,31 +378,6 @@ jobhandler = {
     }
   },
 
-  // getPasses : function() {
-  //   return this.passes;
-  // },
-  //
-  // hasPasses : function() {
-  //   if (this.passes.length > 0) {return true}
-  //   else {return false}
-  // },
-  //
-  // clearPasses : function() {
-  //   this.passes = [];
-  // },
-  //
-  // getPassesColors : function() {
-  //   var all_colors = {};
-  //   for (var i=0; i<this.passes.length; i++) {
-  //     var mapping = this.passes[i];
-  //     var colors = mapping['colors'];
-  //     for (var c=0; c<colors.length; c++) {
-  //       var color = colors[c];
-  //       all_colors[color] = true;
-  //     }
-  //   }
-  //   return all_colors;
-  // },
 
   getAllColors : function() {
     // return list of colors
@@ -511,6 +487,34 @@ jobhandler = {
     }
   },
 
+  getActivePassesLength : function() {
+    var length = 0
+    // vector
+    if ('passes' in this.vector) {
+      for (var i = 0; i < this.vector.passes.length; i++) {
+        var pass = this.vector.passes[i]
+        for (var j = 0; j < pass.paths.length; j++) {
+          var path_idx = pass.paths[j]
+          if (path_idx >= 0 && path_idx < this.stats.paths.length) {
+            length += this.stats.paths[path_idx].length
+          }
+        }
+      }
+    }
+    // raster
+    if ('passes' in this.raster) {
+      for (var i = 0; i < this.raster.passes.length; i++) {
+        var pass = this.raster.passes[i]
+        for (var j = 0; j < pass.images.length; j++) {
+          var image_idx = pass.images[j]
+          if (image_idx >= 0 && image_idx < this.stats.images.length) {
+            length += his.stats.images[image_idx].length
+          }
+        }
+      }
+    }
+    return length
+  },
 
   getActivePassesBbox : function() {
     var bbox = [Infinity, Infinity, -Infinity, -Infinity]
