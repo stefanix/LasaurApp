@@ -740,7 +740,13 @@ def build(firmware_name="LasaurGrbl"):
 
 def reset():
     import flash
+    reconnect = False
+    if connected():
+        close()
+        reconnect = True
     flash.reset_atmega()
+    if reconnect:
+        connect()
 
 
 def status():

@@ -511,12 +511,7 @@ def flash(firmware=None):
 def reset():
     """Reset MCU"""
     try:
-        connected = driveboard.connected()
-        if connected:
-            driveboard.close()
         driveboard.reset()
-        if connected:
-            driveboard.connect()
     except IOError:
         bottle.abort(400, "Reset failed.")
     return '{}'

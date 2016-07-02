@@ -121,6 +121,8 @@ jobhandler = {
       }
     }
 
+    this.normalizeColors()
+
     // passes, show in gui
     passes_set_assignments(job)
 
@@ -371,6 +373,32 @@ jobhandler = {
         }
       } else {
         $().uxmessage('error', "invalid lasertag (num of args)");
+      }
+    }
+  },
+
+  normalizeColors : function() {
+    var random_color_flag = false
+    // randomized colors if no colors assigned
+    if (!('colors' in this.vector)) {
+      if ('paths' in this.vector && this.vector.paths.length > 0) {
+        // no color assignments, paths exist
+        random_color_flag = true
+      }
+    } else if ('paths' in this.vector && this.vector.paths.length > 0) {
+      if (this.vector.paths.length != this.vector.colors.length) {
+        // pass-color assignments do not match
+        console.log("jobhandler.normalizeColors: colors-paths mismatch")
+        random_color_flag = true
+      }
+    }
+    // assign random colors
+    if (random_color_flag) {
+      this.vector.colors = []
+      this.vector.colors.push('#000000')  // first always black
+      for (var i = 1; i < this.vector.paths.length; i++) {
+        var random_color = '#'+(Math.random()*0xaaaaaa<<0).toString(16)
+        this.vector.colors.push(random_color)
       }
     }
   },

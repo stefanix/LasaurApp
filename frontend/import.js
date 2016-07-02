@@ -40,8 +40,10 @@ $(document).ready(function(){
     }
 
     // reset file input form field so change event also triggers again
-    import_name = $('#open_file_fld').val().split('\\').pop().split('/').pop()
-    $('#open_file_fld').val('')
+    var file_fld = $('#open_file_fld').val()
+    file_fld = file_fld.slice(file_fld.lastIndexOf('\\')+1) || file_fld  // drop unix path
+    file_fld = file_fld.slice(file_fld.lastIndexOf('/')+1) || file_fld   // drop windows path
+    import_name = file_fld.slice(0, file_fld.lastIndexOf('.')) || file_fld  // drop extension
   })
 
 
@@ -62,8 +64,7 @@ $(document).ready(function(){
       url:'/load',
       data: load_request,
       success: function (jobname) {
-        $().uxmessage('notice', "Parsed "+import_name+".")
-        $().uxmessage('notice', jobname)
+        $().uxmessage('notice', "Parsed "+jobname+".")
         queue_update()
         import_open(jobname)
       },
@@ -82,10 +83,15 @@ $(document).ready(function(){
 
 
 
-function import_open(jobname) {
+function import_open(jobname, from_library) {
+  from_library = typeof from_library !== 'undefined' ? from_library : false  // default to false
   // get job in lsa format
+  var url = '/get/'+jobname
+  if (from_library === true) {
+    url = '/get_library/'+jobname
+  }
   get_request({
-    url:'/get/'+jobname,
+    url: url,
     success: function (job) {
       // alert(JSON.stringify(data))
       // $().uxmessage('notice', data)

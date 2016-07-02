@@ -6,7 +6,7 @@ function controls_ready() {
 
   $("#info_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#info_btn").click(function(e){
-    $('#info_modal').modal('toggle');
+    $('#info_modal').modal('toggle')
     return false
   })
 
@@ -20,8 +20,8 @@ function controls_ready() {
         filename = filename+'.lsa'
       }
       jobhandler.setPassesFromGUI()
-      var blob = new Blob([jobhandler.getJson()], {type: "application/json;charset=utf-8"});
-      saveAs(blob, filename);
+      var blob = new Blob([jobhandler.getJson()], {type: "application/json;charset=utf-8"})
+      saveAs(blob, filename)
       // var load_request = {'job':jobhandler.getJson()}
       // post_request({
       //   url:'/temp',
@@ -38,7 +38,7 @@ function controls_ready() {
       // })
       // $('#hamburger').dropdown("toggle")
     } else {
-      $().uxmessage('error', "Cannot export. No job loaded.");
+      $().uxmessage('error', "Cannot export. No job loaded.")
     }
     $("body").trigger("click")
     return false
@@ -54,14 +54,14 @@ function controls_ready() {
   $("#queue_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#queue_btn").click(function(e){
     $("body").trigger("click")
-    $('#queue_modal').modal('toggle');
+    $('#queue_modal').modal('toggle')
     return false
   })
 
   $("#library_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#library_btn").click(function(e){
     $("body").trigger("click")
-    $('#library_modal').modal('toggle');
+    $('#library_modal').modal('toggle')
     return false
   })
 
@@ -70,36 +70,43 @@ function controls_ready() {
     get_request({
       url:'/flash',
       success: function (data) {
-        $().uxmessage('success', "Flashing successful.");
+        app_firmware_version_flag = false
+        $().uxmessage('success', "Flashing successful.")
       }
-    });
+    })
     $("body").trigger("click")
     return false
   })
 
-  // $("#flash_source_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
-  // $("#flash_source_btn").click(function(e){
-  //   get_request({
-  //     url:'/reset',
-  //     success: function (data) {
-  //       app_firmware_version_flag = false;
-  //       $().uxmessage('notice', "Firmware reset successful.");
-  //     }
-  //   });
-  //   $('#hamburger').dropdown("hide")
-  //   $("body").trigger("click")
-  //   return false
-  // })
+  $("#flash_source_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
+  $("#flash_source_btn").click(function(e){
+    get_request({
+      url:'/build',
+      success: function (data) {
+        $().uxmessage('notice', "Firmware build successful.")
+        // flash new firmware
+        get_request({
+          url:data.flash_url,
+          success: function (data) {
+            app_firmware_version_flag = false
+            $().uxmessage('success', "Flashing successful.")
+          }
+        })
+      }
+    })
+    $("body").trigger("click")
+    return false
+  })
 
   $("#reset_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#reset_btn").click(function(e){
     get_request({
       url:'/reset',
       success: function (data) {
-        app_firmware_version_flag = false;
-        $().uxmessage('success', "Reset successful.");
+        app_firmware_version_flag = false
+        $().uxmessage('success', "Reset successful.")
       }
-    });
+    })
     $("body").trigger("click")
     return false
   })
@@ -132,10 +139,10 @@ function controls_ready() {
       get_request({
         url:'/unpause',
         success: function (data) {
-          app_pause_state = false;
-          $("#pause_btn").removeClass('btn-primary');
-          $("#pause_btn").html('<i class="icon-pause"></i>');
-          $().uxmessage('notice', "Continuing...");
+          app_pause_state = false
+          $("#pause_btn").removeClass('btn-primary')
+          $("#pause_btn").html('<i class="icon-pause"></i>')
+          $().uxmessage('notice', "Continuing...")
         }
       });
     } else {  // pause
@@ -143,9 +150,9 @@ function controls_ready() {
         url:'/pause',
         success: function (data) {
           app_pause_state = true;
-          $("#pause_btn").addClass('btn-primary');
-          $("#pause_btn").html('<i class="icon-play"></i>');
-          $().uxmessage('notice', "Pausing in a bit...");
+          $("#pause_btn").addClass('btn-primary')
+          $("#pause_btn").html('<i class="icon-play"></i>')
+          $().uxmessage('notice', "Pausing in a bit...")
         }
       });
     }
@@ -164,12 +171,12 @@ function controls_ready() {
               get_request({
                 url:'/move/0/0/0',
                 success: function (data) {
-                  $().uxmessage('notice', 'Moving to Origin.');
+                  $().uxmessage('notice', 'Moving to Origin.')
                 }
-              });
+              })
             }
-          });
-        }, 1000);
+          })
+        }, 1000)
       }
     });
     return false
@@ -190,7 +197,7 @@ function controls_ready() {
     get_request({
       url:'/move/0/0/0',
       success: function (data) {
-        $().uxmessage('notice', "Going to origin ...");
+        $().uxmessage('notice', "Going to origin ...")
       }
     });
     return false
@@ -201,9 +208,9 @@ function controls_ready() {
     get_request({
       url:'/homing',
       success: function (data) {
-        $().uxmessage('notice', "Homing ...");
+        $().uxmessage('notice', "Homing ...")
       }
-    });
+    })
     return false
   })
 

@@ -49,6 +49,9 @@ function config_received() {
     html += keys_sorted[i] + " : " + app_config_main[keys_sorted[i]] + "<br>"
   }
   $('#config_content').html(html)
+  // about modal
+  $('#app_version').html(app_config_main.version)
+  // $('#firmware_version').html(app_config_main.)
 
   // call 'ready' of jobview
   jobview_ready()

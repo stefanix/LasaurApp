@@ -15,7 +15,7 @@ function queue_update() {
       html += '<thead><tr><td>Name</td></tr></thead><tbody>'
       data.reverse()
       for (var i = 0; i < data.length; i++) {
-        html += '<tr><td>'+data[i]+'</td></tr>'
+        html += '<tr style="cursor:pointer"><td>'+data[i]+'</td></tr>'
       }
       html += '</tbody></table>'
       $('#queue_content').html(html)
@@ -23,12 +23,9 @@ function queue_update() {
       $('#queue_content table tr').click(function(e){
         var jobname = $(this).children('td').text()
         import_open(jobname)
-        $('#queue_modal').modal('toggle');
+        $('#queue_modal').modal('toggle')
         return false
       })
-
-      // console.log(data)
-      // $().uxmessage('success', "listing successful.");
     }
-  });
+  })
 }
