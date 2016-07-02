@@ -210,6 +210,9 @@ function passes_set_assignments(job) {
 function passes_update_handler() {
   // called whenever passes wiget changes happen (color add/remove)
   // this event handler is debounced to minimize updates
+  if (jobhandler.isEmpty()) {
+    return
+  }
   clearTimeout(window.lastPassesUpdateTimer)
   window.lastPassesUpdateTimer = setTimeout(function() {
     jobhandler.setPassesFromGUI()

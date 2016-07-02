@@ -159,9 +159,13 @@ function controls_ready() {
   $("#boundary_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#boundary_btn").click(function(e){
     jobhandler.setPassesFromGUI()
-    passes_get_bbox()
-    var bbox_all = jobhandler.stats['_all_'].bbox
-
+    var bounds = jobhandler.getActivePassesBbox()
+    get_request({url:'/move/'+bounds[0].toFixed(3)+'/'+bounds[1].toFixed(3)+'/0'})
+    get_request({url:'/move/'+bounds[2].toFixed(3)+'/'+bounds[1].toFixed(3)+'/0'})
+    get_request({url:'/move/'+bounds[2].toFixed(3)+'/'+bounds[3].toFixed(3)+'/0'})
+    get_request({url:'/move/'+bounds[0].toFixed(3)+'/'+bounds[3].toFixed(3)+'/0'})
+    get_request({url:'/move/'+bounds[0].toFixed(3)+'/'+bounds[1].toFixed(3)+'/0'})
+    get_request({url:'/move/0/0/0'})
     return false
   })
 
@@ -176,7 +180,7 @@ function controls_ready() {
           $("#pause_btn").html('<i class="icon-pause"></i>')
           $().uxmessage('notice', "Continuing...")
         }
-      });
+      })
     } else {  // pause
       get_request({
         url:'/pause',
