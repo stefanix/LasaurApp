@@ -1,15 +1,16 @@
 
 
 
-function status_label_update(val, domid) {
+function status_label_update(val, domid, classyes, classno) {
   if (val) {
-    $(domid).removeClass("label-success")
-    $(domid).addClass("label-danger")
+    $(domid).removeClass(classno)
+    $(domid).addClass(classyes)
   } else {
-    $(domid).removeClass("label-danger")
-    $(domid).addClass("label-success")
+    $(domid).removeClass(classyes)
+    $(domid).addClass(classno)
   }
 }
+
 
 function status_any_error(data, domid) {
   var flag = false

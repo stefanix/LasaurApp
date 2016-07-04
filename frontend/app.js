@@ -129,15 +129,15 @@ function start_status_channel() {
     }
 
     // stop and info status
-    status_label_update(data.stops.x1, '#status_limit_x1')
-    status_label_update(data.stops.x2, '#status_limit_x2')
-    status_label_update(data.stops.y1, '#status_limit_y1')
-    status_label_update(data.stops.y2, '#status_limit_y2')
-    status_label_update(data.stops.z1, '#status_limit_z1')
-    status_label_update(data.stops.z2, '#status_limit_z2')
-    status_label_update(data.info.door, '#status_door')
-    status_label_update(data.info.chiller, '#status_chiller')
-    status_label_update(data.stops.requested, '#status_stop')
+    status_label_update(data.stops.x1, '#status_limit_x1', "label-danger", "label-success")
+    status_label_update(data.stops.x2, '#status_limit_x2', "label-danger", "label-success")
+    status_label_update(data.stops.y1, '#status_limit_y1', "label-danger", "label-success")
+    status_label_update(data.stops.y2, '#status_limit_y2', "label-danger", "label-success")
+    status_label_update(data.stops.z1, '#status_limit_z1', "label-danger", "label-success")
+    status_label_update(data.stops.z2, '#status_limit_z2', "label-danger", "label-success")
+    status_label_update(data.info.door, '#status_door', "label-warning", "label-success")
+    status_label_update(data.info.chiller, '#status_chiller', "label-warning", "label-success")
+    status_label_update(data.stops.requested, '#status_stop', "label-danger", "label-success")
     status_any_error(data, "#status_error")
 
 
