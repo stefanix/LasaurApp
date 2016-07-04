@@ -112,7 +112,7 @@ function start_status_channel() {
         // ready - event
         app_ready_state = true
         $("#status_btn").removeClass("btn-danger")
-        if (!data.info.door || !data.info.chiller) {
+        if (data.info.door || data.info.chiller) {
           $("#status_btn").addClass("btn-warning")
         } else {
           $("#status_btn").addClass("btn-success")
