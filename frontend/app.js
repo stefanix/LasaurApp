@@ -27,7 +27,6 @@ $(document).ready(function(){
 
   // run_btn, make a ladda progress spinner button
   app_run_btn = Ladda.create($("#run_btn")[0])
-  app_run_btn.start()
 
   // get appconfig from server
   get_request({
@@ -110,41 +109,36 @@ function start_status_channel() {
     // pause status
     if (data.paused) {
       app_pause_state = true
+      // pause button
       $("#pause_btn").removeClass("btn-default")
       $("#pause_btn").addClass("btn-primary")
       $("#pause_glyph").hide()
       $("#play_glyph").show()
       // run button
       $('#run_btn span.ladda-spinner').hide()
-      // $('#run_btn').addClass('btn-disabled')
-      // $('#run_btn_spinner').removeClass('spinning')
     } else {
-      app_pause_state = false;
+      app_pause_state = false
+      // pause button
       $("#pause_btn").removeClass("btn-primary")
       $("#pause_btn").addClass("btn-default")
       $("#play_glyph").hide()
       $("#pause_glyph").show()
       // run button
       $('#run_btn span.ladda-spinner').show()
-      // $('#run_btn_spinner').addClass('spinning')
     }
 
     // progress
     if (data.progress < 1) {
-      // $('#run_btn_spinner').show()
-      // $('#run_btn').prop('disabled', true)
-      // $('#run_btn').button('loading')
       if (app_run_btn.isLoading()) {
         app_run_btn.setProgress(data.progress)
       } else {
         app_run_btn.start()
+        $('#boundary_btn').prop('disabled', true)
       }
     } else {
-      // $('#run_btn_spinner').hide()
-      // $('#run_btn').prop('disabled', false)
-      // $('#run_btn').button('reset')
       if (app_run_btn.isLoading()) {
         app_run_btn.stop()
+        $('#boundary_btn').prop('disabled', false)
       }
     }
 
