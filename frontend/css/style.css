@@ -94,7 +94,7 @@ div.log_error {
 }
 
 
-.glyphicon.spinning {
+.spinning {
     animation: spin 1s infinite linear;
     transform-origin: 49.5% 49.7%;
 }

@@ -137,11 +137,13 @@ function controls_ready() {
       success: function (jobname) {
         $().uxmessage('notice', "Saved to queue: "+jobname)
         // run job
-        console.log("run!!!!!!!")
         get_request({
           url:'/run/'+jobname,
           success: function (data) {
             $().uxmessage('success', "Running job ...")
+          },
+          complete: function (data) {
+
           }
         })
       },
@@ -150,7 +152,7 @@ function controls_ready() {
         $().uxmessage('error', JSON.stringify(data), false)
       },
       complete: function (data) {
-        $('#open_btn').button('reset')
+
       }
     })
     return false

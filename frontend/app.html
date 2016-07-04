@@ -16,6 +16,7 @@
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/jquery.toastmessage.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
+    <link href="css/ladda-themeless.min.css" rel="stylesheet">
 
     <script src="js/jquery.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
@@ -23,6 +24,8 @@
     <script src="js/paper-full.min.js"></script>
     <script src="js/mousetrap.min.js"></script>
     <script src="js/FileSaver.js"></script>
+    <script src="js/spin.min.js"></script>
+    <script src="js/ladda.min.js"></script>
 
     <script src="lib.js"></script>
     <script src="jobview.js"></script>
@@ -83,16 +86,28 @@
 
         <!-- process buttons -->
         <div class="btn-group pull-left menu_btn">
-            <button id="run_btn" class="btn btn-primary" type="submit" title="run this job [CTRL-ENTER]"
-              data-loading-text='Running <span class="glyphicon glyphicon-refresh spinning"></span>'>
-              Run this job!
-            </button>
-            <button id="boundary_btn" class="btn btn-primary" type="submit" title="run bounding box [CTRL-SHIFT-ENTER]"
-              data-loading-text='<span class="glyphicon glyphicon-refresh spinning"></span>'>
-              <span class="glyphicon glyphicon-resize-full"></span>
-            </button>
+          <button id="run_btn" class="btn btn-primary ladda-button" data-style="expand-right" style="min-width:90px">
+            <span class="ladda-label">Run</span>
+          </button>
+          <!-- <button id="run_btn" class="btn btn-primary" type="submit" style="min-width:90px" title="run this job [CTRL-ENTER]">
+            Run <span id="run_btn_spinner" class="glyphicon glyphicon-refresh spinning" style="display:none"></span>
+          </button> -->
+        <!-- </div>
+        <div class="btn-group pull-left menu_btn"> -->
+          <button id="boundary_btn" class="btn btn-primary" type="submit" title="run bounding box [CTRL-SHIFT-ENTER]"
+            data-loading-text='<span class="glyphicon glyphicon-refresh spinning"></span>'>
+            <span class="glyphicon glyphicon-resize-full"></span>
+          </button>
         </div>
 
+        <!-- progress bar -->
+        <!-- <div class="progress pull-left" style="width:100px">
+          <div class="progress-bar" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="width: 60%">
+            <span class="sr-only">60% Complete</span>
+          </div>
+        </div> -->
+
+        <!-- pause/play/stop buttons -->
         <div class="btn-group pull-left menu_btn">
           <!-- pause button -->
           <button id="pause_btn" class="btn btn-default" type="submit" title="toggle pause [SPACE]">
