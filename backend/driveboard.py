@@ -268,6 +268,7 @@ class SerialLoopClass(threading.Thread):
             'pos':[0.0, 0.0, 0.0],
             'underruns': 0,
             'stackclear': 999999,
+            'progress': 1.0,
 
             ### stop conditions
             # indicated when key present

@@ -140,49 +140,49 @@ function post_request(args) {
 
 
 
-function send_job(job, success_msg, progress) {
-  if (true) {
-    if ('vector' in job || 'raster' in job) {
-      // $().uxmessage('notice', JSON.stringify(job), Infinity);
-      $.ajax({
-        type: "POST",
-        url: "/job",
-        data: {'job_data':JSON.stringify(job)},
-        // dataType: "json",
-        success: function (data) {
-          if (data == "__ok__") {
-            $().uxmessage('success', success_msg);
-            if (progress = true) {
-              // show progress bar, register live updates
-              if ($("#progressbar").children().first().width() == 0) {
-                $("#progressbar").children().first().width('5%');
-                $("#progressbar").show();
-                app_progress_flag = true;
-                setTimeout(update_progress, 2000);
-              }
-            }
-          } else {
-            $().uxmessage('error', "Backend error: " + data);
-          }
-        },
-        error: function (data) {
-          // alert(JSON.stringify(data))
-          $().uxmessage('error', "Timeout. LasaurApp server down?");
-          if ("responseText" in data) {
-            $().uxmessage('error', data.responseText, Infinity);
-          }
-        },
-        complete: function (data) {
-          // future use
-        }
-      });
-    } else {
-      $().uxmessage('error', "No job data.");
-    }
-  } else {
-    $().uxmessage('warning', "Not ready, request ignored.");
-  }
-}
+// function send_job(job, success_msg, progress) {
+//   if (true) {
+//     if ('vector' in job || 'raster' in job) {
+//       // $().uxmessage('notice', JSON.stringify(job), Infinity);
+//       $.ajax({
+//         type: "POST",
+//         url: "/job",
+//         data: {'job_data':JSON.stringify(job)},
+//         // dataType: "json",
+//         success: function (data) {
+//           if (data == "__ok__") {
+//             $().uxmessage('success', success_msg);
+//             if (progress = true) {
+//               // show progress bar, register live updates
+//               if ($("#progressbar").children().first().width() == 0) {
+//                 $("#progressbar").children().first().width('5%');
+//                 $("#progressbar").show();
+//                 app_progress_flag = true;
+//                 setTimeout(update_progress, 2000);
+//               }
+//             }
+//           } else {
+//             $().uxmessage('error', "Backend error: " + data);
+//           }
+//         },
+//         error: function (data) {
+//           // alert(JSON.stringify(data))
+//           $().uxmessage('error', "Timeout. LasaurApp server down?");
+//           if ("responseText" in data) {
+//             $().uxmessage('error', data.responseText, Infinity);
+//           }
+//         },
+//         complete: function (data) {
+//           // future use
+//         }
+//       });
+//     } else {
+//       $().uxmessage('error', "No job data.");
+//     }
+//   } else {
+//     $().uxmessage('warning', "Not ready, request ignored.");
+//   }
+// }
 
 
 

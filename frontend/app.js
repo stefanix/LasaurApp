@@ -3,7 +3,7 @@ var app_config_main = undefined
 var app_hardware_ready_flag = false
 var app_firmware_version_flag = false
 var app_lasaurapp_version_flag = false
-var app_progress_flag = false
+var app_ready_state = false
 var app_pause_state = false
 var app_run_btn = undefined
 
@@ -106,25 +106,66 @@ function start_status_channel() {
     }
     $('#status_content').html(html)
 
+    // ready status
+    if (data.ready) {
+      if (!app_ready_state) {
+        // ready - event
+        app_ready_state = true
+        $("#status_btn").removeClass("btn-danger")
+        if (!data.info.door || !data.info.chiller) {
+          $("#status_btn").addClass("btn-warning")
+        } else {
+          $("#status_btn").addClass("btn-success")
+        }
+      }
+    } else {
+      if (app_ready_state) {
+        // not ready - event
+        app_ready_state = false
+        $("#status_btn").removeClass("btn-warning")
+        $("#status_btn").removeClass("btn-success")
+        $("#status_btn").addClass("btn-danger")
+      }
+    }
+
+    // stop and info status
+    status_label_update(data.stops.x1, '#status_limit_x1')
+    status_label_update(data.stops.x2, '#status_limit_x2')
+    status_label_update(data.stops.y1, '#status_limit_y1')
+    status_label_update(data.stops.y2, '#status_limit_y2')
+    status_label_update(data.stops.z1, '#status_limit_z1')
+    status_label_update(data.stops.z2, '#status_limit_z2')
+    status_label_update(data.info.door, '#status_door')
+    status_label_update(data.info.chiller, '#status_chiller')
+    status_label_update(data.stops.requested, '#status_stop')
+    status_any_error(data, "#status_error")
+
+
     // pause status
     if (data.paused) {
-      app_pause_state = true
-      // pause button
-      $("#pause_btn").removeClass("btn-default")
-      $("#pause_btn").addClass("btn-primary")
-      $("#pause_glyph").hide()
-      $("#play_glyph").show()
-      // run button
-      $('#run_btn span.ladda-spinner').hide()
+      if (!app_pause_state) {
+        // pause - event
+        app_pause_state = true
+        // pause button
+        $("#pause_btn").removeClass("btn-default")
+        $("#pause_btn").addClass("btn-primary")
+        $("#pause_glyph").hide()
+        $("#play_glyph").show()
+        // run button
+        $('#run_btn span.ladda-spinner').hide()
+      }
     } else {
-      app_pause_state = false
-      // pause button
-      $("#pause_btn").removeClass("btn-primary")
-      $("#pause_btn").addClass("btn-default")
-      $("#play_glyph").hide()
-      $("#pause_glyph").show()
-      // run button
-      $('#run_btn span.ladda-spinner').show()
+      if (app_pause_state) {
+        // unpause - event
+        app_pause_state = false
+        // pause button
+        $("#pause_btn").removeClass("btn-primary")
+        $("#pause_btn").addClass("btn-default")
+        $("#play_glyph").hide()
+        $("#pause_glyph").show()
+        // run button
+        $('#run_btn span.ladda-spinner').show()
+      }
     }
 
     // progress
@@ -132,13 +173,19 @@ function start_status_channel() {
       if (app_run_btn.isLoading()) {
         app_run_btn.setProgress(data.progress)
       } else {
+        // job processing starts - event
         app_run_btn.start()
         $('#boundary_btn').prop('disabled', true)
+        $('#origin_btn').prop('disabled', true)
+        $('#homing_btn').prop('disabled', true)
       }
     } else {
       if (app_run_btn.isLoading()) {
+        // job processing ends - event
         app_run_btn.stop()
         $('#boundary_btn').prop('disabled', false)
+        $('#origin_btn').prop('disabled', false)
+        $('#homing_btn').prop('disabled', false)
       }
     }
 
