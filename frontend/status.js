@@ -1,18 +1,18 @@
 
 
 
-function status_label_update(val, domid, classyes, classno) {
+function status_label_update(val, domid, classactive) {
   if (val) {
-    $(domid).removeClass(classno)
-    $(domid).addClass(classyes)
+    $(domid).removeClass("label-success")
+    $(domid).addClass(classactive)
   } else {
-    $(domid).removeClass(classyes)
-    $(domid).addClass(classno)
+    $(domid).removeClass(classactive)
+    $(domid).addClass("label-success")
   }
 }
 
 
-function status_any_error(data, domid) {
+function status_txerror_update(data, domid) {
   var flag = false
   var label = "TxError"
   if (data.stops.buffer) {
