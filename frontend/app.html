@@ -56,6 +56,7 @@
                 <li class="divider"></li>
                 <li><a id="queue_btn" href="#" data-toggle="modal" data-target="#queue_modal" title="[Q]">Job Queue</a></li>
                 <li><a id="library_btn" href="#" data-toggle="modal" data-target="#library_modal" title="[L]">Library</a></li>
+                <li><a id="gcode_btn" href="#" data-toggle="modal" data-target="#gcode_modal" title="[G]">GCode Edior</a></li>
                 <li class="divider"></li>
                 <li><a href="#" data-toggle="modal" data-target="#about_modal">About</a></li>
                 <li><a href="https://github.com/nortd/lasersaur/wiki">Manual</a></li>
@@ -95,7 +96,8 @@
         <div class="btn-group pull-left menu_btn">
           <!-- pause button -->
           <button id="pause_btn" class="btn btn-default" type="submit" title="toggle pause [SPACE]">
-            <span class="glyphicon glyphicon-pause"></span>
+            <span id="pause_glyph" class="glyphicon glyphicon-pause"></span>
+            <span id="play_glyph" class="glyphicon glyphicon-play" style="display:none"></span>
           </button>
           <!-- stop button -->
           <button id="stop_btn" class="btn btn-default" type="submit" title="stop and purge job [CTRL-ESC]">
@@ -172,7 +174,9 @@
               <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
               <h4 class="modal-title" id="config_header">Configuration</h4>
             </div>
-            <div id="config_content" class="modal-body">
+            <div class="modal-body row" style="padding:40px">
+              <div id="config_content" class="pull-left"></div>
+              <div id="status_content" class="pull-right"></div>
             </div>
           </div>
         </div>
@@ -231,12 +235,30 @@
           <img src="img/lasersaur-dino-lasaurapp-190.png" style="margin-right:6px">
         </a>
 
-        <!-- status indicators -->
-        <div class="btn-group menu_btn footer_btn">
+        <!-- status indicator -->
+        <div class="btn-group dropup">
+          <button class="btn btn-default btn-danger dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Status
+          </button>
+          <ul class="dropdown-menu" style="padding:10px">
+            <span id="status_limit_x1" class="label label-danger">Limit x1</span>
+            <span id="status_limit_x2" class="label label-danger">Limit x2</span>
+            <span id="status_limit_y1" class="label label-danger">Limit y1</span>
+            <span id="status_limit_y2" class="label label-danger">Limit y2</span>
+            <span id="status_limit_z1" class="label label-danger">Limit z1</span>
+            <span id="status_limit_z2" class="label label-danger">Limit z2</span>
+            <span id="status_door" class="label label-danger">Door</span>
+            <span id="status_chiller" class="label label-danger">Chiller</span>
+            <span id="status_stop" class="label label-danger">Stop Mode</span>
+            <span id="status_error" class="label label-danger">Error</span>
+          </ul>
+        </div>
+        <!-- <button id="ready_status_btn" class="btn btn-danger" type="submit">Status</button> -->
+        <!-- <div class="btn-group menu_btn footer_btn">
           <button id="ready_status_btn" class="btn disabled btn-danger" type="submit">Ready</button>
           <button id="door_status_btn" class="btn disabled btn-warning" type="submit">Door</button>
           <button id="chiller_status_btn" class="btn disabled btn-warning" type="submit">Chiller</button>
-        </div>
+        </div> -->
 
         <div class="btn-group footer_btn">
           <!-- origin button -->
@@ -252,8 +274,8 @@
         <div class="btn-group footer_btn">
           <button id="select_btn" class="btn btn-default" type="submit" title="[S]">Select</span></button>
           <button id="offset_btn" class="btn btn-default" type="submit" title="[O]">Offset</button>
+          <button id="motion_btn" class="btn btn-default" type="submit" title="[M]">Move</button>
           <button id="jog_btn" class="btn btn-default" type="submit" title="[J]">Jog</button>
-          <button id="motion_btn" class="btn btn-default" type="submit" title="[M]">Path</button>
         </div>
 
         <!-- <button id="jog_btn" class="btn btn-default" type="submit" title="[J]">Jog</button> -->

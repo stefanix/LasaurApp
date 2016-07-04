@@ -166,8 +166,8 @@ function passes_add_widget() {
 function passes_get_assignments() {
   var assignments = []
   $('#job_passes').children('.pass_widget').each(function(i) { // each pass
-    var feedrate = parseFloat($(this).find("input.feedrate").val()).toFixed()
-    var intensity = parseFloat($(this).find("input.intensity").val()).toFixed()
+    var feedrate = Math.round(parseFloat($(this).find("input.feedrate").val()))
+    var intensity = Math.round(parseFloat($(this).find("input.intensity").val()))
     assignments.push({"colors":[], "feedrate":feedrate, "intensity":intensity})
     $(this).children('div.pass_colors').children('div').filter(':visible').each(function(k) {
       var color = $(this).find('.colmem').text()
@@ -210,15 +210,16 @@ function passes_set_assignments(job) {
 function passes_update_handler() {
   // called whenever passes wiget changes happen (color add/remove)
   // this event handler is debounced to minimize updates
-  if (jobhandler.isEmpty()) {
-    return
-  }
   clearTimeout(window.lastPassesUpdateTimer)
   window.lastPassesUpdateTimer = setTimeout(function() {
     jobhandler.setPassesFromGUI()
     // length
     var length = (jobhandler.getActivePassesLength()/1000.0).toFixed(1)
-    $('#job_info_length').html(' | '+length+'m')
+    if (length != 0) {
+      $('#job_info_length').html(' | '+length+'m')
+    } else {
+      $('#job_info_length').html('')
+    }
     // bounds
     jobhandler.renderBounds()
     jobhandler.draw()

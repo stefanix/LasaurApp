@@ -175,9 +175,6 @@ function controls_ready() {
       get_request({
         url:'/unpause',
         success: function (data) {
-          app_pause_state = false
-          $("#pause_btn").removeClass('btn-primary')
-          $("#pause_btn").html('<i class="icon-pause"></i>')
           $().uxmessage('notice', "Continuing...")
         }
       })
@@ -185,12 +182,9 @@ function controls_ready() {
       get_request({
         url:'/pause',
         success: function (data) {
-          app_pause_state = true;
-          $("#pause_btn").addClass('btn-primary')
-          $("#pause_btn").html('<i class="icon-play"></i>')
           $().uxmessage('notice', "Pausing in a bit...")
         }
-      });
+      })
     }
     return false
   })

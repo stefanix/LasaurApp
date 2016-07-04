@@ -62,39 +62,63 @@ function config_received() {
   // call 'ready' of library
   library_ready()
 
-  // start_status_channel()
+  start_status_channel()
 }
 
 
 function start_status_channel() {
   // status by websocket
-  websocket = new WebSocket("ws://"+location.hostname+":4411/");
+  websocket = new WebSocket("ws://"+location.hostname+":4411/")
   websocket.onopen = function(e) {
-    $().uxmessage('success', "status channel OPEN");
-  };
+    $().uxmessage('success', "status channel OPEN")
+  }
   websocket.onclose = function(e) {
-    $().uxmessage('warning', "status channel CLOSED");
-    // setTimeout(function() {status_connect()}, 8000);
-  };
+    $().uxmessage('warning', "status channel CLOSED")
+    // setTimeout(function() {status_connect()}, 8000)
+  }
   websocket.onerror = function(e) {
-    $().uxmessage('error', "status channel");
-  };
+    $().uxmessage('error', "status channel")
+  }
   websocket.onmessage = function(e) {
     // {"info": {"chiller": true}, "feedrate": 8000.0, "intensity": 0.0, "pos": [-0.005, 0.005, 0.0], "stops": {}, "stackclear": 572.0, "paused": false, "duration": 0.0, "appver": "15.00-beta1", "firmver": "15.0", "underruns": 1.0, "pixelwidth": 0.0, "offset": [0.0, 0.0, 0.0], "ready": true, "progress": 1.0, "serial": true}
-    var data = JSON.parse(e.data);
-    // $().uxmessage('notice', e.data, Infinity);
+    var data = JSON.parse(e.data)
+    // $().uxmessage('notice', e.data, Infinity)
+
+    // show in config modal
+    var html = ''
+    var keys_sorted = Object.keys(data).sort()
+    for (var i=0; i<keys_sorted.length; i++) {
+      var val = data[keys_sorted[i]]
+      if (typeof(val) === 'object' && val !== null) {
+        html += keys_sorted[i]+"<br>"
+        // iterate over sub-asso-array
+        var subkeys_sorted = Object.keys(val).sort()
+        for (var j = 0; j < subkeys_sorted.length; j++) {
+          html += "--"+subkeys_sorted[j] + ": " + val[subkeys_sorted[j]] + "<br>"
+        }
+      } else  {
+        html += keys_sorted[i] + " : " + data[keys_sorted[i]] + "<br>"
+      }
+    }
+    $('#status_content').html(html)
 
     // pause status
     if (data.paused) {
-      app_pause_state = true;
-      $("#pause_btn").addClass("btn-primary");
-      $("#pause_btn").html('<i class="icon-play"></i>');
+      app_pause_state = true
+      $("#pause_btn").removeClass("btn-default")
+      $("#pause_btn").addClass("btn-primary")
+      $("#pause_glyph").hide()
+      $("#play_glyph").show()
     } else {
       app_pause_state = false;
-      $("#pause_btn").removeClass("btn-warning");
-      $("#pause_btn").removeClass("btn-primary");
-      $("#pause_btn").html('<i class="icon-pause"></i>');
+      $("#pause_btn").removeClass("btn-primary")
+      $("#pause_btn").addClass("btn-default")
+      $("#play_glyph").hide()
+      $("#pause_glyph").show()
     }
+
+    /////// DEBUG
+    return
 
     // serial connected
     if (data.serial) {
@@ -187,7 +211,7 @@ function start_status_channel() {
             !$('#location_set_btn').is(":focus") &&
             !$('#origin_set_btn').is(":focus"))
         {
-          var x = parseFloat(data.pos[0]).toFixed(2) - app_settings.table_offset[0];
+          var x = data.pos[0] - app_settings.table_offset[0];
           $('#x_location_field').val(x.toFixed(2));
           // $('#x_location_field').animate({
           //   opacity: 0.5
@@ -196,7 +220,7 @@ function start_status_channel() {
           //     opacity: 1.0
           //   }, 600, function() {});
           // });
-          var y = parseFloat(data.pos[1]).toFixed(2) - app_settings.table_offset[1];
+          var y = data.pos[1] - app_settings.table_offset[1];
           $('#y_location_field').val(y.toFixed(2));
           // $('#y_location_field').animate({
           //   opacity: 0.5
@@ -223,5 +247,5 @@ function start_status_channel() {
       app_lasaurapp_version_flag = true;
     }
 
-  };  // websocket.onmessage
-}  // ready_2
+  }  // websocket.onmessage
+}  // start_status_channel

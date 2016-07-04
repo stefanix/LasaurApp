@@ -348,7 +348,7 @@ jobhandler = {
         "intensity":assignment.intensity})
       }
     }
-    // console.log(this.vector.passes)
+    console.log(this.vector.passes)
   },
 
 
