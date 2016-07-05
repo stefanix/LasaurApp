@@ -66,11 +66,12 @@ function config_received() {
   // call 'ready' of library
   library_ready()
 
-  start_status_channel()
+  // open websocket status channel
+  app_status_connect()
 }
 
 
-function start_status_channel() {
+function app_status_connect() {
   // status by websocket
   websocket = new WebSocket("ws://"+location.hostname+":4411/")
   websocket.onopen = function(e) {
@@ -78,16 +79,23 @@ function start_status_channel() {
   }
   websocket.onclose = function(e) {
     $().uxmessage('warning', "status channel CLOSED")
+    // fallback on http get status request
+    get_request({
+      url:'/status',
+      success: function (data) {
+        console.log(data)
+      }
+    })
     // setTimeout(function() {status_connect()}, 8000)
   }
   websocket.onerror = function(e) {
     $().uxmessage('error', "status channel")
   }
   websocket.onmessage = function(e) {
-    // {"info": {"chiller": true}, "feedrate": 8000.0, "intensity": 0.0, "pos": [-0.005, 0.005, 0.0], "stops": {}, "stackclear": 572.0, "paused": false, "duration": 0.0, "appver": "15.00-beta1", "firmver": "15.0", "underruns": 1.0, "pixelwidth": 0.0, "offset": [0.0, 0.0, 0.0], "ready": true, "progress": 1.0, "serial": true}
+    // {"info": {"chiller": true}, "feedrate": 8000.0, "intensity": 0.0, "pos": [-0.005, 0.005, 0.0], "stops": {}, "stackclear": 572.0, "paused": false, "duration": 0.0, "appver": "15.00-beta1", "firmver": "15.0", "underruns": 1.0, "pixelwidth": 0.0, "offset": [0.0, 0.0, 0.0], "idle": true, "progress": 1.0, "serial": true}
     var data = JSON.parse(e.data)
-    // $().uxmessage('notice', e.data, Infinity)
-
+    // console.log(data)
+    
     // show in config modal
     var html = ''
     var keys_sorted = Object.keys(data).sort()
@@ -111,20 +119,21 @@ function start_status_channel() {
       if (!app_ready_state) {
         // ready - event
         app_ready_state = true
-        $("#status_btn").removeClass("btn-danger")
-        if (data.info.door || data.info.chiller) {
-          $("#status_btn").addClass("btn-warning")
-        } else {
-          $("#status_btn").addClass("btn-success")
-        }
+        //run button
+        app_run_btn.stop()
+        $('#boundary_btn').prop('disabled', false)
+        $('#origin_btn').prop('disabled', false)
+        $('#homing_btn').prop('disabled', false)
       }
     } else {
       if (app_ready_state) {
         // not ready - event
         app_ready_state = false
-        $("#status_btn").removeClass("btn-warning")
-        $("#status_btn").removeClass("btn-success")
-        $("#status_btn").addClass("btn-danger")
+        // run button
+        app_run_btn.start()
+        $('#boundary_btn').prop('disabled', true)
+        $('#origin_btn').prop('disabled', true)
+        $('#homing_btn').prop('disabled', true)
       }
     }
 
@@ -139,7 +148,19 @@ function start_status_channel() {
     status_label_update(data.info.chiller, '#status_chiller', "label-warning")
     status_label_update(data.stops.requested, '#status_stop', "label-danger")
     status_txerror_update(data, "#status_error")
-
+    // main status button
+    if (!$.isEmptyObject(data.stops)) {
+      $("#status_btn").removeClass("btn-warning")
+      $("#status_btn").removeClass("btn-success")
+      $("#status_btn").addClass("btn-danger")
+    } else {
+      $("#status_btn").removeClass("btn-danger")
+      if (!$.isEmptyObject(data.info)) {
+        $("#status_btn").addClass("btn-warning")
+      } else {
+        $("#status_btn").addClass("btn-success")
+      }
+    }
 
     // pause status
     if (data.paused) {
@@ -174,18 +195,10 @@ function start_status_channel() {
         app_run_btn.setProgress(data.progress)
       } else {
         // job processing starts - event
-        app_run_btn.start()
-        $('#boundary_btn').prop('disabled', true)
-        $('#origin_btn').prop('disabled', true)
-        $('#homing_btn').prop('disabled', true)
       }
     } else {
       if (app_run_btn.isLoading()) {
         // job processing ends - event
-        app_run_btn.stop()
-        $('#boundary_btn').prop('disabled', false)
-        $('#origin_btn').prop('disabled', false)
-        $('#homing_btn').prop('disabled', false)
       }
     }
 

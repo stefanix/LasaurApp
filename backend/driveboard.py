@@ -262,12 +262,12 @@ class SerialLoopClass(threading.Thread):
         self._status = {
             'appver':conf['version'],
             'firmver': None,
-            'ready': False,
+            'ready': False,                  # is hardware idle (and not stop mode)
             'paused': False,
-            'serial': False,
+            'serial': False,                # is serial connected
             'pos':[0.0, 0.0, 0.0],
-            'underruns': 0,
-            'stackclear': 999999,
+            'underruns': 0,                 # how many times machine is waiting for serial data
+            'stackclear': 999999,           # minimal stack clearance (must stay above 0)
             'progress': 1.0,
 
             ### stop conditions

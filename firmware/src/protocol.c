@@ -16,17 +16,17 @@
 */
 
 
-/* 
+/*
 
 The Lasersaur Protocol
 ======================
 
 The protocol is a ascii/binary hybrid. Markers are printable
-ascii values while binary data is transmitted in the extended 
+ascii values while binary data is transmitted in the extended
 ascii range [128,255].
 
 A transmitted byte can either be a command, a parameter, or a
-partial number (data). Four bytes encode a number. Parameters 
+partial number (data). Four bytes encode a number. Parameters
 need to be set before sending the command that uses them.
 Similarly the number needs to be set before sending the parameter
 marker. This inverse transmission makes the parser super simple.
@@ -45,7 +45,7 @@ Flow Control
 
 The firmware has a serial rx buffer which receives the instructions
 byte-by-byte. The client sends a maximum number of bytes that is equvalent
-to the buffer size. Whenever the firmware processes bytes from the 
+to the buffer size. Whenever the firmware processes bytes from the
 buffer it lets the client know it can send more bytes. Latter notification
 does not happen for every byte but for a certain chunk of bytes.
 
@@ -55,8 +55,8 @@ Transmission Error Detection
 
 To diagnose faulty serial connections this firmware uses a simple
 error detection scheme. Every byte is transmitted twice and the redundant
-byte is compared and discarded right in the serial interrupt handler. 
-Computationally this is very efficient. It's also quite suitable since we 
+byte is compared and discarded right in the serial interrupt handler.
+Computationally this is very efficient. It's also quite suitable since we
 have enough bandwidth. It beats checksums in our case.
 
 */
@@ -113,7 +113,7 @@ static data_t pdata;
 
 static volatile bool status_requested;           // when set protocol_idle will write status to serial
 static volatile bool superstatus_requested;      // extended status
-static volatile uint16_t rx_buffer_underruns;     // when the rx serial buffer runs empty
+static volatile uint16_t rx_buffer_underruns;    // when the rx serial buffer runs empty
 static volatile bool rx_buffer_underruns_reported;
 
 static void on_cmd(uint8_t command);
@@ -188,10 +188,10 @@ inline void on_cmd(uint8_t command) {
       break;
     case CMD_LINE: case CMD_RASTER:
         if(command == CMD_RASTER) {
-          planner_line( st.target[X_AXIS], st.target[Y_AXIS], st.target[Z_AXIS], 
+          planner_line( st.target[X_AXIS], st.target[Y_AXIS], st.target[Z_AXIS],
                         st.feedrate, st.intensity, st.pixel_width );
         } else {
-          planner_line( st.target[X_AXIS], st.target[Y_AXIS], st.target[Z_AXIS], 
+          planner_line( st.target[X_AXIS], st.target[Y_AXIS], st.target[Z_AXIS],
                         st.feedrate, st.intensity, 0 );
         }
       break;
@@ -211,7 +211,7 @@ inline void on_cmd(uint8_t command) {
       st.ref_mode = REF_ABSOLUTE;
       break;
     case CMD_HOMING:
-      while(stepper_processing()) { 
+      while(stepper_processing()) {
         // sleep_mode();
         protocol_idle();
       }
@@ -224,12 +224,12 @@ inline void on_cmd(uint8_t command) {
       st.offselect = OFFSET_TABLE;
       st.target[X_AXIS] = st.offsets[TABLEOFF_X];
       st.target[Y_AXIS] = st.offsets[TABLEOFF_Y];
-      st.target[Z_AXIS] = st.offsets[TABLEOFF_Z];         
-      planner_line( st.target[X_AXIS], st.target[Y_AXIS], st.target[Z_AXIS], 
+      st.target[Z_AXIS] = st.offsets[TABLEOFF_Z];
+      planner_line( st.target[X_AXIS], st.target[Y_AXIS], st.target[Z_AXIS],
                     st.feedrate, 0, 0 );
       break;
     case CMD_SET_OFFSET_TABLE: case CMD_SET_OFFSET_CUSTOM:
-      while(stepper_processing()) { 
+      while(stepper_processing()) {
         // sleep_mode();
         protocol_idle();
       }
@@ -266,7 +266,7 @@ inline void on_cmd(uint8_t command) {
       break;
     case CMD_AUX2_DISABLE:
       planner_control_aux2_assist_disable();
-      break;   
+      break;
     default:
       stepper_request_stop(STOPERROR_INVALID_COMMAND);
   }
@@ -399,15 +399,15 @@ inline void protocol_idle() {
     // WARN: this is contioously call during a stop condition
     // TODO: reset serial rx buffer
     planner_reset_block_buffer();
-    planner_set_position(stepper_get_position_x(), stepper_get_position_y(), stepper_get_position_z());      
+    planner_set_position(stepper_get_position_x(), stepper_get_position_y(), stepper_get_position_z());
     pdata.count = 0;
   }
 
-  
+
   if (status_requested || superstatus_requested) {
     status_requested = false;
     // idle flag
-    if (!planner_blocks_available() && !serial_data_available()) {
+    if ((!planner_blocks_available() && !serial_data_available()) && !stepper_stop_requested()) {
       serial_write(INFO_IDLE_YES);
       sleep_mode();  // sleep a bit
     }
@@ -466,7 +466,7 @@ inline void protocol_idle() {
       // custom offset, an absolute coord, report relative to table offset
       serial_write_param(INFO_OFFCUSTOM_X, st.offsets[CUSTOMOFF_X]-st.offsets[TABLEOFF_X]);
       serial_write_param(INFO_OFFCUSTOM_Y, st.offsets[CUSTOMOFF_Y]-st.offsets[TABLEOFF_Y]);
-      serial_write_param(INFO_OFFCUSTOM_Z, st.offsets[CUSTOMOFF_Z]-st.offsets[TABLEOFF_Z]);      
+      serial_write_param(INFO_OFFCUSTOM_Z, st.offsets[CUSTOMOFF_Z]-st.offsets[TABLEOFF_Z]);
 
       serial_write_param(INFO_FEEDRATE, st.feedrate);
       serial_write_param(INFO_INTENSITY, st.intensity);
@@ -484,7 +484,7 @@ inline double get_curent_value() {
   // returns a number based on the current data chars
   // chars expected to be extended ascii [128,255]
   // 28bit total, three decimals are restored
-  // number is in [-134217.728, 134217.727] 
+  // number is in [-134217.728, 134217.727]
   //
   // The encoding in Python works like this:
   //// num = int(round( (num*1000) + (2**27)))
@@ -494,7 +494,7 @@ inline double get_curent_value() {
   //// char3 = ((num&(127<<21))>>21)+128
   return ((((pdata.chars[3]-128L)*2097152L +  // 2097152 = 128*128*128
             (pdata.chars[2]-128L)*16384L +   //   16384 = 128*128
-            (pdata.chars[1]-128L)*128L + 
+            (pdata.chars[1]-128L)*128L +
             (pdata.chars[0]-128L))-134217728L ) / 1000.0);  // 134217728 = 2**27
 }
 
@@ -506,7 +506,7 @@ extern uint8_t _end;
 extern uint8_t __stack;
 void paint_stack() __attribute__ ((naked)) __attribute__ ((section (".init1")));
 void paint_stack() {
-  // paint stack sram with 0xc5 so we can detect 
+  // paint stack sram with 0xc5 so we can detect
   // how much sram gets used by stack spikes.
   // This gets called before main() by the ".init1" line.
   __asm volatile ("    ldi r30,lo8(_end)\n"
@@ -543,7 +543,7 @@ static uint16_t stack_clearance() {
 // inline double num_from_chars(uint8_t char0, uint8_t char1, uint8_t char2, uint8_t char3) {
 //   // chars expected to be extended ascii [128,255]
 //   // 28bit total, three decimals are restored
-//   // number is in [-134217.728, 134217.727] 
+//   // number is in [-134217.728, 134217.727]
 //   return ((((char3-128)*2097152+(char2-128)*16384+(char1-128)*128+(char0-128))-134217728)/1000.0);
 // }
 
