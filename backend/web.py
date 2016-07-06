@@ -106,12 +106,9 @@ def config():
 
 @bottle.route('/status')
 @bottle.auth_basic(checkuser)
-# @checkserial
+@checkserial
 def status():
-    if driveboard.connected():
-        return json.dumps(driveboard.status())
-    else:
-        bottle.abort(400, "No machine.")
+    return json.dumps(driveboard.status())
 
 
 @bottle.route('/homing')

@@ -212,6 +212,7 @@ markers_rx = {
 
 
 SerialLoop = None
+fallback_msg_thread = None
 
 class SerialLoopClass(threading.Thread):
 
@@ -233,8 +234,8 @@ class SerialLoopClass(threading.Thread):
         self.job_size = 0
 
         # status flags
-        self._status = {}
-        self._s = {}
+        self._status = {}    # last complete status frame
+        self._s = {}         # status fram currently assembling
         self.reset_status()
         self._paused = False
 
@@ -254,17 +255,15 @@ class SerialLoopClass(threading.Thread):
         # see: http://effbot.org/zone/thread-synchronization.htm
         self.lock = threading.Lock()
 
-        self.server_enabled = False
-
 
 
     def reset_status(self):
         self._status = {
+            'ready': False,                  # is hardware idle (and not stop mode)
+            'serial': False,                # is serial connected
             'appver':conf['version'],
             'firmver': None,
-            'ready': False,                  # is hardware idle (and not stop mode)
             'paused': False,
-            'serial': False,                # is serial connected
             'pos':[0.0, 0.0, 0.0],
             'underruns': 0,                 # how many times machine is waiting for serial data
             'stackclear': 999999,           # minimal stack clearance (must stay above 0)
@@ -272,20 +271,13 @@ class SerialLoopClass(threading.Thread):
 
             ### stop conditions
             # indicated when key present
-            # possible keys are:
-            # x1, x2, y1, y2, z1, z2
-            # requested
-            # buffer
-            # marker
-            # data
-            # command
-            # parameter
-            # transmission
             'stops': {},
+            # possible keys:
+            # x1, x2, y1, y2, z1, z2,
+            # requested, buffer, marker, data, command, parameter, transmission
 
-            # door
-            # chiller
             'info':{},
+            # possible keys: door, chiller
 
             ### super
             'offset': [0.0, 0.0, 0.0],
@@ -376,7 +368,7 @@ class SerialLoopClass(threading.Thread):
                         print "ERROR: firmware buffer tracking to low"
                 elif char == STATUS_END:
                     # status frame complete, compile status
-                    self._status, self._s = self._s, self._status
+                    self._status, self._s = self._s, self._status  # flip
                     self._status['paused'] = self._paused
                     self._status['serial'] = bool(self.device)
                     if self.job_size == 0:
@@ -390,7 +382,7 @@ class SerialLoopClass(threading.Thread):
                     self._s['underruns'] = self._status['underruns']
                     self._s['stackclear'] = self._status['stackclear']
                     # send through status server
-                    if self.server_enabled:
+                    if statserver.is_running():
                         statusjson = json.dumps(self._status)
                         statserver.send(statusjson)
                         statserver.on_connected_message(statusjson)
@@ -633,6 +625,10 @@ def find_controller(baudrate=conf['baudrate']):
 
 
 def connect(port=conf['serial_port'], baudrate=conf['baudrate'], server=False):
+    # start up status server
+    if server:
+        statserver.start()
+
     global SerialLoop
     if not SerialLoop:
         SerialLoop = SerialLoopClass()
@@ -676,16 +672,25 @@ def connect(port=conf['serial_port'], baudrate=conf['baudrate'], server=False):
                     break
 
             SerialLoop.start()  # this calls run() in a thread
-
-            # start up status server
-            SerialLoop.server_enabled = server
-            if SerialLoop.server_enabled:
-                statserver.start()
-
         except serial.SerialException:
             SerialLoop = None
             print "ERROR: Cannot connect serial on port: %s" % (port)
-
+            if server:
+                # keep sending statserver messages
+                def run_fallback_stat_msgs():
+                    while True:
+                        if statserver.is_running():
+                            statusjson = json.dumps({'ready': False, 'serial': False})
+                            statserver.send(statusjson)
+                            statserver.on_connected_message(statusjson)
+                            time.sleep(1.0)
+                        else:
+                            print "driveboard:statusthread: stopped."
+                            break
+                global fallback_msg_thread
+                fallback_msg_thread = threading.Thread(target=run_fallback_stat_msgs)
+                fallback_msg_thread.deamon = True  # kill thread when main thread exits
+                fallback_msg_thread.start()
     else:
         print "ERROR: disconnect first"
 
@@ -696,6 +701,10 @@ def connected():
 
 
 def close():
+    # stop status server
+    statserver.stop()
+    fallback_msg_thread.join()
+
     global SerialLoop
     if SerialLoop:
         if SerialLoop.device:
@@ -707,9 +716,6 @@ def close():
         if SerialLoop.is_alive():
             SerialLoop.stop_processing = True
             SerialLoop.join()
-        # stop status server
-        if SerialLoop.server_enabled:
-            statserver.stop()
     else:
         ret = False
     SerialLoop = None
@@ -755,6 +761,7 @@ def status():
     global SerialLoop
     with SerialLoop.lock:
         stats = copy.deepcopy(SerialLoop._status)
+        stats['serial'] = connected()  # make sure serial flag is up-to-date
     return stats
 
 

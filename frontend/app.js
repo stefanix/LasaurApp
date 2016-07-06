@@ -26,6 +26,7 @@ $(document).ready(function(){
   })
 
   // run_btn, make a ladda progress spinner button
+  // http://msurguy.github.io/ladda-bootstrap/
   app_run_btn = Ladda.create($("#run_btn")[0])
 
   // get appconfig from server
@@ -94,8 +95,8 @@ function app_status_connect() {
   websocket.onmessage = function(e) {
     // {"info": {"chiller": true}, "feedrate": 8000.0, "intensity": 0.0, "pos": [-0.005, 0.005, 0.0], "stops": {}, "stackclear": 572.0, "paused": false, "duration": 0.0, "appver": "15.00-beta1", "firmver": "15.0", "underruns": 1.0, "pixelwidth": 0.0, "offset": [0.0, 0.0, 0.0], "idle": true, "progress": 1.0, "serial": true}
     var data = JSON.parse(e.data)
-    // console.log(data)
-    
+    console.log(data)
+
     // show in config modal
     var html = ''
     var keys_sorted = Object.keys(data).sort()
@@ -115,6 +116,7 @@ function app_status_connect() {
     $('#status_content').html(html)
 
     // ready status
+    // hardware sends this when idle but not in a "stop mode" (e.g. error)
     if (data.ready) {
       if (!app_ready_state) {
         // ready - event

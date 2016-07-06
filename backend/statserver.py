@@ -14,6 +14,9 @@ logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
 
 class Server():
     def __init__(self):
+        self.reset()
+
+    def reset(self):
         self.server = None
         self.serverthread = None
         self.serverlock = threading.Lock()
@@ -53,7 +56,7 @@ class ClientSocket(WebSocket):
             driveboard.air_off()
 
 
-                 
+
     def handleConnected(self):
         print "statserver: Client %s connected." % self.address
         with S.messageglock:
@@ -70,7 +73,7 @@ def start():
     ### server thread
     print "statserver: Starting on port %s." % (conf['websocket_port'])
     S.stop_server = False
-    S.server = SimpleWebSocketServer(conf['network_host'], 
+    S.server = SimpleWebSocketServer(conf['network_host'],
                                      conf['websocket_port'], ClientSocket)
 
     def run_server():
@@ -122,7 +125,6 @@ def stop():
         print "statserver: Message thread stopped."
     else:
         print "statserver: Message thread was already stopped."
-    S.messagethread = None
 
     if S.serverthread and S.serverthread.is_alive():
         with S.serverlock:
@@ -131,15 +133,18 @@ def stop():
         print "statserver: Server thread stopped."
     else:
         print "statserver: Server thread was already stopped."
-    S.serverthread = None
-    S.server.close()
-    S.server = None
 
+    S.reset()
+
+
+
+def is_running():
+    return bool(S.server)
 
 
 def send(msg):
     """Broadcast a message to all clients.
-    This function is low-latency optimized by delegating the sending 
+    This function is low-latency optimized by delegating the sending
     process to a different thread. Even the locking is optimized
     with some caching.
     """
