@@ -80,14 +80,6 @@ function app_status_connect() {
   }
   app_websocket.onclose = function(e) {
     $().uxmessage('warning', "status channel CLOSED")
-    // fallback on http get status request
-    // get_request({
-    //   url:'/status',
-    //   success: function (data) {
-    //     console.log(data)
-    //   }
-    // })
-    setTimeout(function() {status_connect()}, 8000)
   }
   app_websocket.onerror = function(e) {
     $().uxmessage('error', "status channel")
