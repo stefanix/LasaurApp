@@ -1,35 +1,39 @@
 
 var status_websocket = undefined
-var status_websocket_cache = false
-var status_cache = {
-  //// always
-  'serial': true,                // is serial connected
-  'ready': false,                 // is hardware idle (and not stop mode)
-  //// when hardware connected
-  'appver': undefined,
-  'firmver': undefined,
-  'paused': false,
-  'pos':[0.0, 0.0, 0.0],
-  'underruns': 0,          // how many times machine is waiting for serial data
-  'stackclear': Infinity,  // minimal stack clearance (must stay above 0)
-  'progress': 1.0,
+var status_server_cache = false
+var status_cache = {}
 
-  //// stop conditions
-  // indicated when key present
-  'stops': {},
-  // possible keys:
-  // x1, x2, y1, y2, z1, z2,
-  // requested, buffer, marker, data, command, parameter, transmission
+function status_init() {
+  status_cache = {
+    //// always
+    'serial': false,                // is serial connected
+    'ready': false,                 // is hardware idle (and not stop mode)
+    //// when hardware connected
+    'appver': undefined,
+    'firmver': undefined,
+    'paused': false,
+    'pos':[0.0, 0.0, 0.0],
+    'underruns': 0,          // how many times machine is waiting for serial data
+    'stackclear': Infinity,  // minimal stack clearance (must stay above 0)
+    'progress': 1.0,
 
-  'info':{},
-  // possible keys: door, chiller
+    //// stop conditions
+    // indicated when key present
+    'stops': {'dirty':true},
+    // possible keys:
+    // x1, x2, y1, y2, z1, z2,
+    // requested, buffer, marker, data, command, parameter, transmission
 
-  //// only when hardware idle
-  'offset': [0.0, 0.0, 0.0],
-  'feedrate': 0.0,
-  'intensity': 0.0,
-  'duration': 0.0,
-  'pixelwidth': 0.0
+    'info':{'dirty':true},
+    // possible keys: door, chiller
+
+    //// only when hardware idle
+    'offset': [0.0, 0.0, 0.0],
+    'feedrate': 0.0,
+    'intensity': 0.0,
+    'duration': 0.0,
+    'pixelwidth': 0.0
+  }
 }
 
 
@@ -76,13 +80,18 @@ function status_check_new(data1, data2) {
 
 
 function status_set_main_button(status) {
-  if (!$.isEmptyObject(status.stops) || !status.serial || !(status_websocket.readyState == 3)) {
+  if (!status_websocket || (status_websocket.readyState == 3)) {  // disconnected
     $("#status_btn").removeClass("btn-warning btn-success").addClass("btn-danger")
-  } else {
-    if (!$.isEmptyObject(status.info)) {
-      $("#status_btn").removeClass("btn-danger").addClass("btn-warning")
+  } else {  // connected
+    if (!$.isEmptyObject(status.stops) || !status.serial) {  // connected but stops, serial down
+      $("#status_btn").removeClass("btn-warning btn-success").addClass("btn-danger")
+      console.log('red')
     } else {
-      $("#status_btn").removeClass("btn-danger").addClass("btn-success")
+      if (!$.isEmptyObject(status.info)) {  // connected, no stops, serial up, warnings
+        $("#status_btn").removeClass("btn-danger btn-success").addClass("btn-warning")
+      } else {  // connected, no stops, serial up, no warnings
+        $("#status_btn").removeClass("btn-danger btn-warning").addClass("btn-success")
+      }
     }
   }
 }
@@ -93,13 +102,31 @@ function status_set_main_button(status) {
 
 var status_handlers = {
   //// always, evn when no hardware connected
+  'server': function (status) {
+    if (status.server) {  // server connected
+      $().uxmessage('success', "Server says HELLO!")
+      $("#status_server").removeClass("label-danger").addClass("label-success")
+      status_init()
+      status_server_cache = true
+    } else {  // server disconnected
+      if (status_server_cache) {
+        status_server_cache = false
+        $().uxmessage('warning', "Server LOST.")
+        $("#status_server").removeClass("label-success").addClass("label-danger")
+        // gray-out all dependant indicators
+        $('#status_serial').removeClass("label-danger label-success").addClass("label-default")
+        $(".status_hw").removeClass("label-success label-danger label-warning").addClass("label-default")
+      }
+    }
+    status_set_main_button(status)
+  },
   'serial': function (status) {
-    if (status.serial) {
-      $(".status_hw").removeClass("label-default")
-      $('#status_serial').removeClass("label-danger").addClass("label-success")
-    } else {
+    if (status.serial) {  // serial up
+      $('#status_serial').removeClass("label-default label-danger").addClass("label-success")
+    } else {  // serial down
+      $('#status_serial').removeClass("label-default label-success").addClass("label-danger")
+      // gray-out all hardware indicators
       $(".status_hw").removeClass("label-success label-danger label-warning").addClass("label-default")
-      $('#status_serial').removeClass("label-success").addClass("label-danger")
     }
     status_set_main_button(status)
   },
@@ -193,6 +220,7 @@ var status_handlers = {
   //// stop conditions
   'stops': function (status) {
     // reset all stop error indicators
+    $(".status_hw").removeClass("label-default")
     $('#status_limit_x1').removeClass("label-danger").addClass("label-success")
     $('#status_limit_x2').removeClass("label-danger").addClass("label-success")
     $('#status_limit_y1').removeClass("label-danger").addClass("label-success")
@@ -226,6 +254,7 @@ var status_handlers = {
   },
   'info': function (status) {
     // reset all info indicators
+    $(".status_hw").removeClass("label-default")
     $('#status_door').removeClass("label-warning").addClass("label-success")
     $('#status_chiller').removeClass("label-warning").addClass("label-success")
     // set info indicators

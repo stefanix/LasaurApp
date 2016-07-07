@@ -703,7 +703,8 @@ def connected():
 def close():
     # stop status server
     statserver.stop()
-    fallback_msg_thread.join()
+    if fallback_msg_thread and fallback_msg_thread.is_alive():
+        fallback_msg_thread.join()
 
     global SerialLoop
     if SerialLoop:

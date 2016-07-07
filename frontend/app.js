@@ -9,7 +9,7 @@ var app_run_btn = undefined
 
 
 $(document).ready(function(){
-  $().uxmessage('notice', "Frontend started.")
+  // $().uxmessage('notice', "Frontend started.")
   // modern browser check
   if(!Object.hasOwnProperty('keys')) {
     alert("Error: Browser may be too old/non-standard.")
@@ -28,7 +28,7 @@ $(document).ready(function(){
   get_request({
     url:'/config',
     success: function (data) {
-      $().uxmessage('success', "App config received.")
+      // $().uxmessage('success', "App config received.")
       app_config_main = data
       config_received()
     },
@@ -77,14 +77,10 @@ function app_status_connect() {
   var url = "ws://"+location.hostname+":"+app_config_main.websocket_port+"/"
   status_websocket = new WebSocket(url)
   status_websocket.onopen = function(e) {
-    $().uxmessage('success', "Server says HELLO!")
-    $("#status_server").removeClass("label-danger").addClass("label-success")
-    status_set_main_button(status_cache)
+    status_handlers.server({'server':true})
   }
   status_websocket.onclose = function(e) {
-    $().uxmessage('warning', "Server LOST.")
-    $("#status_server").removeClass("label-success").addClass("label-danger")
-    status_set_main_button(status_cache)
+    status_handlers.server({'server':false, 'serial':false})
   }
   status_websocket.onerror = function(e) {
     if (status_websocket.readyState != 3) {
