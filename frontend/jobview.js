@@ -71,11 +71,9 @@ function jobview_resize() {
   var canvas_height = win_height-nav_height_init-footer_height_init
   // var containter_height = win_height-nav_height_init-footer_height_init
   $("#main_container").height(canvas_height)
-  $("#job_canvas").width(win_width-info_width_init)
+  $("#canvas_container").width(win_width-info_width_init)
   // $("#info_panel").width(job_info_min_width)
   $("#info_panel").height(canvas_height)
-  // jobview_width = $('#job_canvas').innerWidth()
-  // jobview_height = $('#job_canvas').innerHeight()
 
   // calculate jobview_mm2px
   // used to scale mm geometry to be displayed on canvas
@@ -89,7 +87,7 @@ function jobview_resize() {
       // canvas wider, fit by height
       jobview_mm2px = canvas_height/wk_height
       // indicate border, only on one side necessary
-      $("#job_canvas").width(Math.floor(wk_width*jobview_mm2px))
+      $("#canvas_container").width(Math.floor(wk_width*jobview_mm2px))
       $("#info_panel").width(win_width-Math.ceil(wk_width*jobview_mm2px))
     } else if (aspect_workspace > aspect_canvas) {
       // canvas taller, fit by width
@@ -139,6 +137,7 @@ function jobview_deselect_all() {
 
 $(window).resize(function() {
   jobview_resize()
+  jobview_calc_scale()
 })
 
 
