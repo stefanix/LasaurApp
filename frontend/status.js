@@ -1,5 +1,6 @@
 
-
+var status_websocket = undefined
+var status_websocket_cache = false
 var status_cache = {
   //// always
   'serial': true,                // is serial connected
@@ -75,7 +76,7 @@ function status_check_new(data1, data2) {
 
 
 function status_set_main_button(status) {
-  if (!$.isEmptyObject(status.stops) || !status.serial) {
+  if (!$.isEmptyObject(status.stops) || !status.serial || !(status_websocket.readyState == 3)) {
     $("#status_btn").removeClass("btn-warning btn-success").addClass("btn-danger")
   } else {
     if (!$.isEmptyObject(status.info)) {
@@ -94,8 +95,10 @@ var status_handlers = {
   //// always, evn when no hardware connected
   'serial': function (status) {
     if (status.serial) {
+      $(".status_hw").removeClass("label-default")
       $('#status_serial').removeClass("label-danger").addClass("label-success")
     } else {
+      $(".status_hw").removeClass("label-success label-danger label-warning").addClass("label-default")
       $('#status_serial').removeClass("label-success").addClass("label-danger")
     }
     status_set_main_button(status)

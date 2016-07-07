@@ -1,7 +1,6 @@
 
 var app_config_main = undefined
 var app_run_btn = undefined
-var app_websocket = undefined
 
 
 
@@ -67,25 +66,32 @@ function config_received() {
   // connect and also continuously check connection and reconnect if closed
   app_status_connect()
   setInterval(function () {
-      if (!app_websocket || app_websocket.readyState == 3) {app_status_connect()}
-    }, 6000)
+      if (!status_websocket || status_websocket.readyState == 3) {
+        app_status_connect()
+      }
+    }, 8000)
 }
 
 
 function app_status_connect() {
   var url = "ws://"+location.hostname+":"+app_config_main.websocket_port+"/"
-  app_websocket = new WebSocket(url)
-  app_websocket.onopen = function(e) {
-    $().uxmessage('success', "status channel OPEN")
+  status_websocket = new WebSocket(url)
+  status_websocket.onopen = function(e) {
+    $().uxmessage('success', "Server says HELLO!")
+    $("#status_server").removeClass("label-danger").addClass("label-success")
+    status_set_main_button(status_cache)
   }
-  app_websocket.onclose = function(e) {
-    $().uxmessage('warning', "status channel CLOSED")
+  status_websocket.onclose = function(e) {
+    $().uxmessage('warning', "Server LOST.")
+    $("#status_server").removeClass("label-success").addClass("label-danger")
+    status_set_main_button(status_cache)
   }
-  app_websocket.onerror = function(e) {
-    $().uxmessage('error', "status channel")
+  status_websocket.onerror = function(e) {
+    if (status_websocket.readyState != 3) {
+      $().uxmessage('error', "Server")
+    }
   }
-  app_websocket.onmessage = function(e) {
-    // {"info": {"chiller": true}, "feedrate": 8000.0, "intensity": 0.0, "pos": [-0.005, 0.005, 0.0], "stops": {}, "stackclear": 572.0, "paused": false, "duration": 0.0, "appver": "15.00-beta1", "firmver": "15.0", "underruns": 1.0, "pixelwidth": 0.0, "offset": [0.0, 0.0, 0.0], "idle": true, "progress": 1.0, "serial": true}
+  status_websocket.onmessage = function(e) {
     var data = JSON.parse(e.data)
     // console.log(data)
 
@@ -110,5 +116,5 @@ function app_status_connect() {
     // call handlers, only when status changes
     status_handle_message(data)
 
-  }  // app_websocket.onmessage
+  }  // status_websocket.onmessage
 }  // start_status_channel
