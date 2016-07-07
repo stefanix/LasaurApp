@@ -150,8 +150,8 @@
                  This software is made available under the <a href="https://gnu.org/licenses/gpl.html">GPLv3 (version 3 or later)</a> software license.
                  Copyright (c) 2013-2016 <a href="http://labs.nortd.com/">Nortd Labs</a></p>
               <ul>
-              <li>LasaurApp version <span id="app_version"></span></li>
-              <li>Firmware version <span id="firmware_version">&lt;not received&gt;</span></li>
+              <li>LasaurApp version <span id="app_version">&lt;not received&gt;</span></li>
+              <li>Firmware version <span id="firm_version">&lt;not received&gt;</span></li>
               </ul>
             </div>
           </div>
@@ -243,24 +243,34 @@
 
         <!-- status indicator -->
         <div class="btn-group dropup">
-          <button id="status_btn" class="btn btn-default btn-danger dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <button id="status_btn" class="btn btn-success dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             Status
           </button>
           <ul class="dropdown-menu" style="padding:10px">
             <li>
-              <span id="status_limit_x1" class="label label-danger">Limit x1</span>
-              <span id="status_limit_x2" class="label label-danger">Limit x2</span>
-              <span id="status_limit_y1" class="label label-danger">Limit y1</span>
-              <span id="status_limit_y2" class="label label-danger">Limit y2</span>
-              <span id="status_limit_z1" class="label label-danger">Limit z1</span>
-              <span id="status_limit_z2" class="label label-danger">Limit z2</span>
-              <span id="status_stop" class="label label-danger">Stop Mode</span>
-              <span id="status_error" class="label label-danger">Error</span>
+              <span id="status_serial" class="label label-success">Connected</span>
             </li>
-            <li role="separator" class="divider"></li>
+            <li class="dropdown-header">Errors</li>
             <li>
-              <span id="status_door" class="label label-warning">Door</span>
-              <span id="status_chiller" class="label label-warning">Chiller</span>
+              <span id="status_limit_x1" class="label label-success">Limit x1</span>
+              <span id="status_limit_x2" class="label label-success">Limit x2</span>
+              <span id="status_limit_y1" class="label label-success">Limit y1</span>
+              <span id="status_limit_y2" class="label label-success">Limit y2</span>
+              <span id="status_limit_z1" class="label label-success">Limit z1</span>
+              <span id="status_limit_z2" class="label label-success">Limit z2</span>
+              <span id="status_requested" class="label label-success">Requested</span>
+              <span id="status_buffer" class="label label-success">Buffer</span>
+              <span id="status_marker" class="label label-success">Marker</span>
+              <span id="status_data" class="label label-success">Data</span>
+              <span id="status_command" class="label label-success">Command</span>
+              <span id="status_parameter" class="label label-success">Parameter</span>
+              <span id="status_trasmission" class="label label-success">Transmission</span>
+            </li>
+            <!-- <li role="separator" class="divider"></li> -->
+            <li class="dropdown-header">Warnings</li>
+            <li>
+              <span id="status_door" class="label label-success">Door</span>
+              <span id="status_chiller" class="label label-success">Chiller</span>
             </li>
           </ul>
         </div>

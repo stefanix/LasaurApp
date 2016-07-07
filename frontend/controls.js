@@ -70,7 +70,7 @@ function controls_ready() {
     get_request({
       url:'/flash',
       success: function (data) {
-        app_firmware_version_flag = false
+        status_cache.firmver = undefined
         $().uxmessage('success', "Flashing successful.")
       }
     })
@@ -88,7 +88,7 @@ function controls_ready() {
         get_request({
           url:data.flash_url,
           success: function (data) {
-            app_firmware_version_flag = false
+            status_cache.firmver = undefined
             $().uxmessage('success', "Flashing successful.")
           }
         })
@@ -103,7 +103,7 @@ function controls_ready() {
     get_request({
       url:'/reset',
       success: function (data) {
-        app_firmware_version_flag = false
+        status_cache.firmver = undefined
         $().uxmessage('success', "Reset successful.")
       }
     })
@@ -173,7 +173,7 @@ function controls_ready() {
 
   $("#pause_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#pause_btn").click(function(e){
-    if (app_pause_state == true) {  // unpause
+    if (status_cache.paused) {  // unpause
       get_request({
         url:'/unpause',
         success: function (data) {
