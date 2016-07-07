@@ -185,30 +185,8 @@ jobhandler = {
     // clear canvas
     // paper.project.clear()
     jobview_clear()
-    // figure out scale
-    var w_workspace = app_config_main.workspace[0]
-    var h_workspace = app_config_main.workspace[1]
-    var aspect_workspace = w_workspace/h_workspace
-    var w_canvas = $('#job_canvas').innerWidth()
-    var h_canvas = $('#job_canvas').innerHeight()
-    var aspect_canvas = w_canvas/h_canvas
-    var scale = this.scale = w_canvas/w_workspace  // default for same aspect
-    if (aspect_canvas > aspect_workspace) {
-      // canvas wider, fit by height
-      var scale = this.scale = h_canvas/h_workspace
-      // indicate border, only on one side necessary
-      var w_scaled = w_workspace*scale
-      var p_bound = new paper.Path()
-      p_bound.fillColor = '#eeeeee'
-      p_bound.closed = true
-      p_bound.add([w_scaled,0],[w_canvas,0],[w_canvas,h_canvas],[w_scaled,h_canvas])
-    } else if (aspect_workspace > aspect_canvas) {
-      var h_scaled = h_workspace*scale
-      var p_bound = new paper.Path()
-      p_bound.fillColor = '#eeeeee'
-      p_bound.closed = true
-      p_bound.add([0,h_scaled],[w_canvas,h_scaled],[w_canvas,h_canvas],[0,h_canvas])
-    }
+    jobview_calc_scale()
+    var scale = jobview_scale
 
     // rasters
     if ('images' in this.raster) {
@@ -311,7 +289,7 @@ jobhandler = {
     jobview_boundsLayer.activate()
     // var all_bounds = new paper.Path.Rectangle(this.job_group.bounds)
     // var bbox_all = this.stats['_all_'].bbox
-    var scale = this.scale
+    var scale = jobview_scale
     var bbox = this.getActivePassesBbox()
     var all_bounds = new paper.Path.Rectangle(
                                     new paper.Point(bbox[0]*scale,bbox[1]*scale),

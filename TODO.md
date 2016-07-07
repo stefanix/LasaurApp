@@ -1,10 +1,7 @@
 
-- status loop/websocket
-  - status button
-  - green - orange - red
-  - ready - gantry ready tool not - not ready
-- pause button states
-- machine states
+- send low level combined also as job
+  - bypass queue
+  - e.g: boundary
 
 - select tool
 - offset tool

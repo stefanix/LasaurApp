@@ -135,12 +135,15 @@ function controls_ready() {
       url:'/load',
       data: load_request,
       success: function (jobname) {
-        $().uxmessage('notice', "Saved to queue: "+jobname)
+        // $().uxmessage('notice', "Saved to queue: "+jobname)
         // run job
         get_request({
           url:'/run/'+jobname,
           success: function (data) {
-            $().uxmessage('success', "Running job ...")
+            // $().uxmessage('success', "Running job ...")
+          },
+          error: function (data) {
+            $().uxmessage('error', "/run error.")
           },
           complete: function (data) {
 
@@ -177,14 +180,14 @@ function controls_ready() {
       get_request({
         url:'/unpause',
         success: function (data) {
-          $().uxmessage('notice', "Continuing...")
+          // $().uxmessage('notice', "Continuing...")
         }
       })
     } else {  // pause
       get_request({
         url:'/pause',
         success: function (data) {
-          $().uxmessage('notice', "Pausing in a bit...")
+          // $().uxmessage('notice', "Pausing in a bit...")
         }
       })
     }
@@ -201,9 +204,12 @@ function controls_ready() {
             url:'/unstop',
             success: function (data) {
               get_request({
+                url:'/feedrate/'+app_config_main.seekrate
+              })
+              get_request({
                 url:'/move/0/0/0',
                 success: function (data) {
-                  $().uxmessage('notice', 'Moving to Origin.')
+                  // $().uxmessage('notice', 'Moving to Origin.')
                 }
               })
             }

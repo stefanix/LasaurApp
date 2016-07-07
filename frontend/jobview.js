@@ -6,6 +6,7 @@ var jobview_gridLayer = undefined
 var jobview_boundsLayer = undefined
 var jobview_seekLayer = undefined
 var jobview_feedLayer = undefined
+var jobview_headLayer = undefined
 
 var nav_height_init = 0
 var footer_height = 0
@@ -15,6 +16,8 @@ var jobview_width_last = 0
 var jobview_height_last = 0
 
 var jobview_color_selected = undefined
+
+var jobview_scale = 1
 
 
 function jobview_clear(){
@@ -26,6 +29,38 @@ function jobview_clear(){
   jobview_feedLayer = new paper.Layer()
   paper.view.draw()
   jobview_color_selected = undefined
+}
+
+
+function jobview_calc_scale() {
+  // figure out scale
+  var w_workspace = app_config_main.workspace[0]
+  var h_workspace = app_config_main.workspace[1]
+  var aspect_workspace = w_workspace/h_workspace
+  var w_canvas = $('#job_canvas').innerWidth()
+  var h_canvas = $('#job_canvas').innerHeight()
+  var aspect_canvas = w_canvas/h_canvas
+  jobview_scale = w_canvas/w_workspace  // default for same aspect
+  if (aspect_canvas > aspect_workspace) {
+    // canvas wider, fit by height
+    jobview_scale = h_canvas/h_workspace
+  }
+  // if (aspect_canvas > aspect_workspace) {
+  //   // canvas wider, fit by height
+  //   jobview_scale = h_canvas/h_workspace
+  //   // indicate border, only on one side necessary
+  //   var w_scaled = w_workspace*scale
+  //   var p_bound = new paper.Path()
+  //   p_bound.fillColor = '#eeeeee'
+  //   p_bound.closed = true
+  //   p_bound.add([w_scaled,0],[w_canvas,0],[w_canvas,h_canvas],[w_scaled,h_canvas])
+  // } else if (aspect_workspace > aspect_canvas) {
+  //   var h_scaled = h_workspace*scale
+  //   var p_bound = new paper.Path()
+  //   p_bound.fillColor = '#eeeeee'
+  //   p_bound.closed = true
+  //   p_bound.add([0,h_scaled],[w_canvas,h_scaled],[w_canvas,h_canvas],[0,h_canvas])
+  // }
 }
 
 
@@ -196,6 +231,10 @@ function jobview_ready() {
 
   // grid
   jobview_grid()
+
+  // head
+  jobview_head()
+
   // // some test paths
   // jobview_testpath()
   // commit
@@ -230,6 +269,31 @@ function jobview_grid(){
     y += every_px
   }
   grid_group.strokeColor = '#dddddd';
+}
+
+
+function jobview_head(){
+  jobview_headLayer = new paper.Layer()
+  jobview_headLayer.activate()
+  var head_group = new paper.Group()
+
+  var line1 = new paper.Path()
+  line1.add([-10,0],[10,0])
+  head_group.addChild(line1)
+
+  var line2 = new paper.Path()
+  line2.add([0,-10],[0,10])
+  head_group.addChild(line2)
+
+  var circ1 = new paper.Path.Circle([0,0],5)
+  head_group.addChild(circ1)
+
+  head_group.strokeColor = '#aa0000';
+}
+
+function jobview_head_move(pos) {
+  jobview_headLayer.position = new paper.Point(pos[0]*jobview_scale, pos[1]*jobview_scale)
+  paper.view.draw()
 }
 
 

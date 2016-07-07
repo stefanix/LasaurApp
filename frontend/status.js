@@ -85,7 +85,6 @@ function status_set_main_button(status) {
   } else {  // connected
     if (!$.isEmptyObject(status.stops) || !status.serial) {  // connected but stops, serial down
       $("#status_btn").removeClass("btn-warning btn-success").addClass("btn-danger")
-      console.log('red')
     } else {
       if (!$.isEmptyObject(status.info)) {  // connected, no stops, serial up, warnings
         $("#status_btn").removeClass("btn-danger btn-success").addClass("btn-warning")
@@ -179,6 +178,11 @@ var status_handlers = {
     }
   },
   'pos':function (status) {
+    // jobview_head_move(status.pos)
+    $("#head_position").animate({
+      left: Math.round(status.pos[0]*jobview_scale),
+      top: Math.round(status.pos[1]*jobview_scale),
+    }, 500, 'linear' )
     // // head position
     // if (data.pos) {
     //   // only update if not manually entering at the same time
@@ -205,15 +209,24 @@ var status_handlers = {
     //     //     opacity: 1.0
     //     //   }, 600, function() {});
     //     // });
-    //     $("#head_position").animate({
-    //       left: Math.round(x),
-    //       top: Math.round(y),
-    //     }, 500, 'linear' );
+        // $("#head_position").animate({
+        //   left: Math.round(status.pos[0]*jobview_scale),
+        //   top: Math.round(status.pos[1]*jobview_scale),
+        // }, 500, 'linear' );
     //   }
     // }
   },
   'underruns': function (status) {},
-  'stackclear': function (status) {},
+  'stackclear': function (status) {
+    if (typeof(status.stackclear) == 'number') {
+      if (status.stackclear < 200) {
+        $().uxmessage('warn', "Drive hardware low on memory.")
+      } else if (status.stackclear < 100) {
+        $().uxmessage('error', "Drive hardware low on memory. Stopping!")
+        $('#stop_btn').trigger('click')
+      }
+    }
+  },
   'progress': function (status) {
     app_run_btn.setProgress(status.progress)
   },
