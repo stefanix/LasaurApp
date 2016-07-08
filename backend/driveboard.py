@@ -408,7 +408,8 @@ class SerialLoopClass(threading.Thread):
                     print "ERROR firmware: limit hit z2"
                 elif char == ERROR_SERIAL_STOP_REQUEST:
                     self._s['stops']['requested'] = True
-                    print "ERROR firmware: stop request"
+                    # print "ERROR firmware: stop request"
+                    print "INFO firmware: stop request"
                 elif char == ERROR_RX_BUFFER_OVERFLOW:
                     self._s['stops']['buffer'] = True
                     print "ERROR firmware: rx buffer overflow"
@@ -429,17 +430,18 @@ class SerialLoopClass(threading.Thread):
                     print "ERROR firmware: transmission"
                 else:
                     print "ERROR: invalid stop error marker"
-                # in stop mode, print recent transmission
-                recent_chars = self.tx_buffer[max(0,self.tx_pos-128):self.tx_pos]
-                print "RECENT TX BUFFER:"
-                for char in recent_chars:
-                    if markers_tx.has_key(char):
-                        print "\t%s" % (markers_tx[char])
-                    elif 127 < ord(char) < 256:
-                        print "\t(data byte)"
-                    else:
-                        print "\t(invalid)"
-                print "----------------"
+                # in stop mode, print recent transmission, unless stop request
+                if char != ERROR_SERIAL_STOP_REQUEST:
+                    recent_chars = self.tx_buffer[max(0,self.tx_pos-128):self.tx_pos]
+                    print "RECENT TX BUFFER:"
+                    for char in recent_chars:
+                        if markers_tx.has_key(char):
+                            print "\t%s" % (markers_tx[char])
+                        elif 127 < ord(char) < 256:
+                            print "\t(data byte)"
+                        else:
+                            print "\t(invalid)"
+                    print "----------------"
                 # stop mode housekeeping
                 self.tx_buffer = []
                 self.tx_pos = 0

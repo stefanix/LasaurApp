@@ -124,6 +124,7 @@ function post_request(args) {
       }
     },
     error: function (data) {
+      $().uxmessage('error', args.url)
       if ('error' in args) {
         args.error(data)
       }
@@ -226,4 +227,40 @@ function generate_download(filename, filedata) {
       // future use
     }
   });
+}
+
+
+
+function job_from_path(path, seekrate, feedrate, air_assist, success_msg) {
+  // Args:
+  //     path: [[[0,-10, 0],],]
+  //         list of polylines, list of points, list of coordinates
+  //     seekrate:
+  //     feedrate:
+  //     air_assist: one of "feed", "pass", "off"
+  var job = {
+    "vector":{
+      "passes":[
+        {
+          "paths":[0],
+          "seekrate":seekrate,
+          "feedrate":feedrate,
+          "air_assist": air_assist
+        }
+      ],
+      "paths":[path]
+    }
+  }
+  // json stringify while limiting numbers to 3 decimals
+  var json_job = JSON.stringify(job,
+    function(key, val) {
+      return val.toFixed ? Number(val.toFixed(3)) : val
+    })
+  post_request({
+    url:'/run',
+    data: {'job':json_job},
+    success: function (jobname) {
+      $().uxmessage('notice', success_msg)
+    }
+  })
 }

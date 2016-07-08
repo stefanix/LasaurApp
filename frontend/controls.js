@@ -165,12 +165,15 @@ function controls_ready() {
   $("#boundary_btn").click(function(e){
     jobhandler.setPassesFromGUI()
     var bounds = jobhandler.getActivePassesBbox()
-    get_request({url:'/move/'+bounds[0].toFixed(3)+'/'+bounds[1].toFixed(3)+'/0'})
-    get_request({url:'/move/'+bounds[2].toFixed(3)+'/'+bounds[1].toFixed(3)+'/0'})
-    get_request({url:'/move/'+bounds[2].toFixed(3)+'/'+bounds[3].toFixed(3)+'/0'})
-    get_request({url:'/move/'+bounds[0].toFixed(3)+'/'+bounds[3].toFixed(3)+'/0'})
-    get_request({url:'/move/'+bounds[0].toFixed(3)+'/'+bounds[1].toFixed(3)+'/0'})
-    get_request({url:'/move/0/0/0'})
+    var polyline = [
+        [bounds[0],bounds[1],0],
+        [bounds[2],bounds[1],0],
+        [bounds[2],bounds[3],0],
+        [bounds[0],bounds[3],0],
+        [bounds[0],bounds[1],0]
+      ]
+    job_from_path([polyline], app_config_main.seekrate,
+                  app_config_main.seekrate, "off", "Running boundary.")
     return false
   })
 

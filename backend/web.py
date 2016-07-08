@@ -440,6 +440,24 @@ def run(jobname):
     return '{}'
 
 
+@bottle.route('/run', method='POST')
+@bottle.auth_basic(checkuser)
+@checkserial
+def run_direct():
+    """Run an lsa job directly, by-passing the queue.
+    Args:
+        (Args come in through the POST request.)
+        job: Parsed lsa job.
+    """
+    load_request = json.loads(bottle.request.forms.get('load_request'))
+    job = load_request.get('job')  # always a string
+    # sanity check
+    if job is None:
+        bottle.abort(400, "Invalid request data.")
+    driveboard.job(json.loads(job))
+    return '{}'
+
+
 @bottle.route('/pause')
 @bottle.auth_basic(checkuser)
 @checkserial
