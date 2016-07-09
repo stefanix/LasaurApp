@@ -13,7 +13,6 @@
 <script src="/js/jquery.toastmessage.js"></script>
 <script src="/js/jquery.hotkeys.js"></script>
 <script src="/js/settings.js"></script>
-<script src="/js/app_svgreader.js"></script>
 <script src="/js/app_datahandler.js"></script>
 <script src="/js/app_canvas.js"></script>
 <script src="/js/app.js"></script>
@@ -205,6 +204,9 @@
                                             <li><a id="svg_import_90_btn" href="#">Import 90dpi SVG</a></li>
                                             <li><a id="svg_import_96_btn" href="#">Import 96dpi SVG</a></li>
                                                 <li class="divider"></li>
+                                            <li><a id="dxf_import_mm_btn" href="#">Import mm DXF</a></li>
+                                            <li><a id="dxf_import_in_btn" href="#">Import in DXF</a></li>
+                                                <li class="divider"></li>
                                             <li><a id="svg_import_nop_btn" href="#">Import without Optimizing</a></li>
                                         </ul>
                                     </div>
@@ -212,7 +214,7 @@
 
                                         <div class="pull-left">
                                             <form id="svg_upload_form" action="#" onsubmit="return false;">
-                                                <input type="file" id="svg_upload_file" name="data" style="visibility:hidden; position:fixed">
+                                                <input type="file" id="upload_file" name="data" style="visibility:hidden; position:fixed">
                                             </form>
                                         </div>
                                     </div>
@@ -326,7 +328,24 @@
                                     <!-- log -->
                                 </div>
                             </div> <!-- end of log tab -->
-
+                            <!--  START   CUSTOM GCODE TAB -->
+                            <!-- orig author jondale@jondale.net -->
+                            <div id='tab_gcode' class='tab-pane'>
+                              <div id='gcode_content'>
+                                <textarea id='gcode_edit' style='clear:both; width: 900px;' rows=20></textarea>
+                                <button id="gcode_submit" class="btn btn-large btn-primary">Send to Lasersaur</button>
+                              </div>
+                            </div>
+                            <script>
+                              $('.tabs-left ul').append('<li><a href="#tab_gcode" id="tab_gcode_button" data-toggle="tab"><i class="icon-exclamation-sign" style="margin-right:2px"></i> Gcode</a></li>');
+                              $("#gcode_submit").click(function(e) {
+                              var gcode = $('#gcode_edit').val();
+                              if (gcode){
+                              send_gcode(gcode, "G-Code sent to backend.", true);
+                              }
+                              });
+                            </script>
+                                <!-- END      CUSTOM GCODE TAB -->
                             <!--content end-->
                         </div>
                     </div>

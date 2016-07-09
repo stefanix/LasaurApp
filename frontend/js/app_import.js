@@ -10,6 +10,7 @@ $(document).ready(function(){
 
   var path_optimize = 1;
   var forceSvgDpiTo = undefined;
+  var dxf_unit = undefined;
 
   /// big canvas init
   var w = app_settings.canvas_dimensions[0];
@@ -36,7 +37,7 @@ $(document).ready(function(){
   //reset tap
   $('#canvas_properties .colorbtns').html('');  // reset colors
   canvas.background('#ffffff');
-  var supported_files_text = 'Supported file formats are: <b>SVG</b>, <b>DXF</b> (<a href="http://www.lasersaur.com/manual/dxf_import">subset</a>)'
+  var supported_files_text = 'Supported file formats are: <b>SVG</b>, <b>DXF</b> (<a href="https://github.com/allartburns/LasaurApp/tree/dxfgrabber">dxfgrabber notes</a>)'
   $('#dpi_import_info').html(supported_files_text);
 
 
@@ -44,10 +45,10 @@ $(document).ready(function(){
                            app_settings.work_area_dimensions[1]+'mm');
 
   // file upload form
-  $('#svg_upload_file').change(function(e){
+  $('#upload_file').change(function(e){
     $('#file_import_btn').button('loading');
     $('#svg_loading_hint').show();
-    var input = $('#svg_upload_file').get(0)
+    var input = $('#upload_file').get(0)
     var browser_supports_file_api = true;
     if (typeof window.FileReader !== 'function') {
       browser_supports_file_api = false;
@@ -56,7 +57,7 @@ $(document).ready(function(){
       browser_supports_file_api = false;
       $().uxmessage('notice', "This browser does not support the files property.");
     }
-
+  
     if (browser_supports_file_api) {
       if (input.files[0]) {
         var fr = new FileReader()
@@ -71,13 +72,13 @@ $(document).ready(function(){
 
     // reset file input form field so change event also triggers if
     // same file is chosen again (but with different dpi)
-    $('#import_name').val($('#svg_upload_file').val().split('\\').pop().split('/').pop());
-    $('#svg_upload_file').val('');
+    $('#import_name').val($('#upload_file').val().split('\\').pop().split('/').pop());
+    $('#upload_file').val('');
 
     e.preventDefault();
   });
 
-
+ 
   function sendToBackend(e) {
     var filedata = e.target.result;
     var filename = $('#import_name').val()
@@ -99,6 +100,7 @@ $(document).ready(function(){
       data: {'filename':filename,
              'filedata':filedata,
              'dpi':forceSvgDpiTo,
+             'dxf_unit':dxf_unit,
              'optimize':path_optimize,
              'dimensions':JSON.stringify(app_settings.work_area_dimensions)},
       dataType: "json",
@@ -108,7 +110,6 @@ $(document).ready(function(){
           $('#dpi_import_info').html('Using <b>' + data.dpi + '</b> for converting units.');
         } else if (ext == '.dxf' || ext == '.DXF') {
           $().uxmessage('success', "DXF parsed.");
-          $('#dpi_import_info').html('Assuming mm units in DXF file.');
         } else if (ext == '.ngc' || ext == '.NGC') {
           $().uxmessage('success', "G-Code parsed.");
         } else {
@@ -123,15 +124,16 @@ $(document).ready(function(){
       complete: function (data) {
         $('#file_import_btn').button('reset');
         forceSvgDpiTo = undefined;  // reset
+        dxf_unit = undefined;  // reset
       }
     });
   }
 
   function handleParsedGeometry(data) {
-    // data is a dict with the following keys [boundarys, dpi, lasertags]
-    var boundarys = data.boundarys;
-    if (boundarys) {
-      DataHandler.setByPaths(boundarys);
+    // data is a dict with the following keys [boundaries, dpi, lasertags]
+    var boundaries = data.boundaries;
+    if (boundaries) {
+      DataHandler.setByPaths(boundaries);
       if (path_optimize) {
         DataHandler.segmentizeLongLines();
       }
@@ -197,30 +199,43 @@ $(document).ready(function(){
   // forwarding file open click
   $('#file_import_btn').click(function(e){
     path_optimize = 1;
-    $('#svg_upload_file').trigger('click');
+    $('#upload_file').trigger('click');
   });
   $('#svg_import_72_btn').click(function(e){
     path_optimize = 1;
     forceSvgDpiTo = 72;
-    $('#svg_upload_file').trigger('click');
+    $('#upload_file').trigger('click');
     return false;
   });
   $('#svg_import_90_btn').click(function(e){
     path_optimize = 1;
     forceSvgDpiTo = 90;
-    $('#svg_upload_file').trigger('click');
+    $('#upload_file').trigger('click');
     return false;
   });
   $('#svg_import_96_btn').click(function(e){
     path_optimize = 1;
     forceSvgDpiTo = 96;
-    $('#svg_upload_file').trigger('click');
+    $('#upload_file').trigger('click');
     return false;
   });
+  // dxf workaround similar to SVG dpi issue
+  $('#dxf_import_mm_btn').click(function(e){
+      path_optimize = 1;
+      dxf_unit = 4
+      $('#upload_file').trigger('click');
+      return false;
+  });
+  $('#dxf_import_in_btn').click(function(e){
+      path_optimize = 1;
+      dxf_unit = 1
+      $('#upload_file').trigger('click');
+      return false;
+  });
   $('#svg_import_nop_btn').click(function(e){
-    path_optimize = 0;
-    $('#svg_upload_file').trigger('click');
-    return false;
+      path_optimize = 0;
+      $('#upload_file').trigger('click');
+      return false;
   });
 
 

@@ -1,5 +1,35 @@
+dxfgrabber branch notes
+=======================
 
-LasaurApp
+This branch replaces the lasersaur dxf reader with a parser driving
+dxfgrabber.   All new work added by jet is under the existing
+lasersaur licensing.  This work is done on jet's personal time,
+not supported by any commercial entities, and donations are always welcome.
+
+You'll need to install the latest dxfgrabber from console:
+
+root@laserdev:~/LasaurApp# pip install dxfgrabber
+
+Changes:
+
+- dxf line colors from entity or entity layer
+- dxf units converted to mm
+- flip dxf files on the Y axis by default
+
+In Testing:
+- flip dxf files on the X axis by default
+
+TODO list:
+- fix circle/arc generation?  Make test file with holes from 1mm to
+  25mm for tests.
+- TEXT YES TEXT I'M WORKING ON THAT DILUTE! DILUTE! OK!
+- more dxf entities
+- remapping/reducing dxf color sets down to a set of 0..7
+  (which will probably change when we start rasterizing)
+
+--- start of LasaurApp official README.md ---
+
+LasaurApp 
 =========
 
 LasaurApp is the official [Lasersaur](http://lasersaur.com) app. It has all the functionality to operate this kind of laser cutter:
@@ -15,7 +45,7 @@ This app is written mostly in cross-platform, cross-browser Javascript and Pytho
 
 When running on the Driveboard people can start using the 'saur' directly from their laptop without having to setup any software or drivers. This is done this way because we imagine laser cutters being shared in shops. We see people controlling laser cutters from their laptops and not wanting to go through annoying setup processes. Besides this, html-based GUIs are just awesome :)
 
-**DISCLAIMER:** Please be aware that operating a self-built laser cutter can be dangerous and requires full awareness of the risks involved. NORTD Labs does not warrant for any contents of the manual and does not assume any risks whatsoever with regard to the contents of this manual or the machine assembled by you. NORTD Labs further does not warrant for and does not assume any risks whatsoever with regard to any parts of the machine contained in this manual which are provided by third parties. You need to have the necessary experience in handling high-voltage electrical devices and class 4 laser beams to build the machine described in this manual. Otherwise you should seek professional advice for building the machine.
+**DISCLAIMER:** Please be aware that operating a self-built laser cutter can be dangerous and requires full awareness of the risks involved. NORTD Labs does not warrant for any contents of the manual and does not assume any risks whatsoever with regard to the contents of this manual or the machine assembled by you. NORTD Labs further does not warrant for and does not assume any risks whatsoever with regard to any parts of the machine contained in this manual which are provided by third parties. You need to have the necessary experience in handling high-voltage electrical devices and class 4 laser beams to build the machine described in this manual. Otherwise you should seek professional advice for building the machine. 
 
 
 How to Use this App
@@ -24,7 +54,7 @@ How to Use this App
 
 * make sure you have Python 2.7
 * run *python backend/app.py*
-* The GUI will open in a browser at *http://localhost:4444*
+* The GUI will open in a browser at *http://localhost:4444* 
   (supported are Firefox, Chrome, and likely future Safari 6+ or IE 10+)
 
 For more information see the [Lasersaur Software Setup Guide](http://www.lasersaur.com/manual/software).
@@ -49,7 +79,7 @@ Notes on Testing on a Virtual Windows System
 ---------------------------------------------
 When running VirtualBox on OSX it has troubles accessing the USB port even when all the VirtualBox settings are correct. This is because OSX captures the device. To make it available in VirtualBox one has to unload it in OSX first. The following works for Arduino Unos:
 
-- sudo kextunload -b com.apple.driver.AppleUSBCDC
+- sudo kextunload -b com.apple.driver.AppleUSBCDC 
 
 After the VirtualBox session this can be undone with:
 
@@ -58,4 +88,9 @@ After the VirtualBox session this can be undone with:
 For other USB devices thee following may be useful too:
 - sudo kextunload -b com.apple.driver.AppleUSBCDCWCM
 - sudo kextunload -b com.apple.driver.AppleUSBCDCACMData
-- sudo kextunload -b com.apple.driver.AppleUSBCDCACMControl
+- sudo kextunload -b com.apple.driver.AppleUSBCDCACMControl 
+=======
+lasersaur
+=========
+
+Lasersaur -- open source laser cutter

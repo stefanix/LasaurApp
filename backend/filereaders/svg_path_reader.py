@@ -13,7 +13,7 @@ class SVGPathReader:
     Handle SVG path data.
 
     This is where all the geometry gets converted for the
-    boundarys output.
+    boundaries output.
 
     Use this by importing the singleton:
     from svg_path_reader import svgPathReader

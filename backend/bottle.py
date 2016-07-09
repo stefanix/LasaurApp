@@ -635,6 +635,7 @@ class Bottle(object):
             raise
         except Exception, e:
             if not self.catchall: raise
+            print e
             return HTTPError(500, "Internal Server Error", e, format_exc(10))
 
     def _cast(self, out, request, response, peek=None):

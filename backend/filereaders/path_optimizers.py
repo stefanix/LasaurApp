@@ -212,10 +212,10 @@ def sort_by_seektime(path, start=[0.0, 0.0]):
 
 
 
-def optimize_all(boundarys, tolerance):
+def optimize_all(boundaries, tolerance):
     tolerance2 = tolerance**2
     epsilon2 = (0.1*tolerance)**2
-    for color in boundarys:
-        connect_segments(boundarys[color], epsilon2)
-        simplify_all(boundarys[color], tolerance2)
-        sort_by_seektime(boundarys[color])
+    for color in boundaries:
+        connect_segments(boundaries[color], epsilon2)
+        simplify_all(boundaries[color], tolerance2)
+        sort_by_seektime(boundaries[color])

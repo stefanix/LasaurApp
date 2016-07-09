@@ -33,7 +33,9 @@ void sense_init();
 #define SENSE_DOOR_OPEN !((SENSE_PIN >> DOOR_BIT) & 1)
 #ifdef DRIVEBOARD
   // invert door, remove power, add z_limits
-  #define SENSE_LIMITS (SENSE_X1_LIMIT || SENSE_X2_LIMIT || SENSE_Y1_LIMIT || SENSE_Y2_LIMIT || SENSE_Z1_LIMIT || SENSE_Z2_LIMIT)
+  // jet: remove zlimits if they aren't being used.  Noise from
+  //      the tube can create false triggers
+  #define SENSE_LIMITS (SENSE_X1_LIMIT || SENSE_X2_LIMIT || SENSE_Y1_LIMIT || SENSE_Y2_LIMIT )
   #define SENSE_ANY (SENSE_LIMITS || SENSE_CHILLER_OFF || SENSE_DOOR_OPEN)
 #else
   #define SENSE_POWER_OFF !((SENSE_PIN >> POWER_BIT) & 1)
