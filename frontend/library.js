@@ -8,7 +8,7 @@ function library_ready() {
 }
 
 function library_update() {
-  get_request({
+  request_get({
     url:'/listing_library',
     success: function (data) {
       var html = '<table class="table table-hover table-condensed">'

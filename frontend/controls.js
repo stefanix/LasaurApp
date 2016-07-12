@@ -23,7 +23,7 @@ function controls_ready() {
       var blob = new Blob([jobhandler.getJson()], {type: "application/json;charset=utf-8"})
       saveAs(blob, filename)
       // var load_request = {'job':jobhandler.getJson()}
-      // post_request({
+      // request_post({
       //   url:'/temp',
       //   data: load_request,
       //   success: function (jobname) {
@@ -67,7 +67,7 @@ function controls_ready() {
 
   $("#flash_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#flash_btn").click(function(e){
-    get_request({
+    request_get({
       url:'/flash',
       success: function (data) {
         status_cache.firmver = undefined
@@ -80,12 +80,12 @@ function controls_ready() {
 
   $("#flash_source_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#flash_source_btn").click(function(e){
-    get_request({
+    request_get({
       url:'/build',
       success: function (data) {
         $().uxmessage('notice', "Firmware build successful.")
         // flash new firmware
-        get_request({
+        request_get({
           url:data.flash_url,
           success: function (data) {
             status_cache.firmver = undefined
@@ -100,7 +100,7 @@ function controls_ready() {
 
   $("#reset_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#reset_btn").click(function(e){
-    get_request({
+    request_get({
       url:'/reset',
       success: function (data) {
         status_cache.firmver = undefined
@@ -131,13 +131,13 @@ function controls_ready() {
       'optimize':false,
       'overwrite':true
     }
-    post_request({
+    request_post({
       url:'/load',
       data: load_request,
       success: function (jobname) {
         // $().uxmessage('notice', "Saved to queue: "+jobname)
         // run job
-        get_request({
+        request_get({
           url:'/run/'+jobname,
           success: function (data) {
             // $().uxmessage('success', "Running job ...")
@@ -165,29 +165,21 @@ function controls_ready() {
   $("#boundary_btn").click(function(e){
     jobhandler.setPassesFromGUI()
     var bounds = jobhandler.getActivePassesBbox()
-    var polyline = [
-        [bounds[0],bounds[1],0],
-        [bounds[2],bounds[1],0],
-        [bounds[2],bounds[3],0],
-        [bounds[0],bounds[3],0],
-        [bounds[0],bounds[1],0]
-      ]
-    job_from_path([polyline], app_config_main.seekrate,
-                  app_config_main.seekrate, "off", "Running boundary.")
+    request_boundary(bounds, app_config_main.seekrate)
     return false
   })
 
   $("#pause_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#pause_btn").click(function(e){
     if (status_cache.paused) {  // unpause
-      get_request({
+      request_get({
         url:'/unpause',
         success: function (data) {
           // $().uxmessage('notice', "Continuing...")
         }
       })
     } else {  // pause
-      get_request({
+      request_get({
         url:'/pause',
         success: function (data) {
           // $().uxmessage('notice', "Pausing in a bit...")
@@ -199,25 +191,17 @@ function controls_ready() {
 
   $("#stop_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#stop_btn").click(function(e){
-    get_request({
+    request_get({
       url:'/stop',
       success: function (data) {
         setTimeout(function() {
-          get_request({
+          request_get({
             url:'/unstop',
             success: function (data) {
-              get_request({
-                url:'/feedrate/'+app_config_main.seekrate
-              })
-              get_request({
-                url:'/move/0/0/0',
-                success: function (data) {
-                  // $().uxmessage('notice', 'Moving to Origin.')
-                }
-              })
+              request_absolute_move(0, 0, 0, app_config_main.seekrate, "Moving to Origin.")
             }
           })
-        }, 1000)
+        }, 1500)
       }
     });
     return false
@@ -235,18 +219,13 @@ function controls_ready() {
       alert("TODO: reset offset")
       reset_offset____();  // TODO
     }
-    get_request({
-      url:'/move/0/0/0',
-      success: function (data) {
-        $().uxmessage('notice', "Going to origin ...")
-      }
-    });
+    request_absolute_move(0, 0, 0, app_config_main.seekrate, "Moving to Origin.")
     return false
   })
 
   $("#homing_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
   $("#homing_btn").click(function(e){
-    get_request({
+    request_get({
       url:'/homing',
       success: function (data) {
         $().uxmessage('notice', "Homing ...")

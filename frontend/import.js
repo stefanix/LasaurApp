@@ -56,7 +56,7 @@ $(document).ready(function(){
 
     // send to backend
     var load_request = {'job':job, 'name':import_name, 'optimize':true}
-    post_request({
+    request_post({
       url:'/load',
       data: load_request,
       success: function (jobname) {
@@ -86,7 +86,7 @@ function import_open(jobname, from_library) {
   if (from_library === true) {
     url = '/get_library/'+jobname
   }
-  get_request({
+  request_get({
     url: url,
     success: function (job) {
       // alert(JSON.stringify(data))

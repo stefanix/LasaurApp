@@ -8,7 +8,7 @@ function queue_ready() {
 }
 
 function queue_update() {
-  get_request({
+  request_get({
     url:'/listing',
     success: function (data) {
       var html = '<table class="table table-hover table-condensed">'

@@ -1,12 +1,66 @@
 
 var app_config_main = undefined
 var app_run_btn = undefined
+var app_visibility = undefined
 
+
+// toast messages, install jquery plugin
+;(function($){
+  $.fn.uxmessage = function(kind, text, max_length) {
+    if (max_length == undefined) {
+        max_length = 100
+    }
+
+    if (max_length !== false && text.length > max_length) {
+      text = text.slice(0,max_length) + '\n...'
+    }
+
+    text = text.replace(/\n/g,'<br>')
+
+    if (kind == 'notice') {
+      $('#log_content').prepend('<div class="log_item log_notice well" style="display:none">' + text + '</div>')
+      $('#log_content').children('div').first().show('blind')
+      if ($("#log_content").is(':hidden')) {
+        $().toastmessage('showToast',
+          {text: text, sticky: false, position: 'top-left', type: 'notice'}
+        )
+      }
+    } else if (kind == 'success') {
+      $('#log_content').prepend('<div class="log_item log_success well" style="display:none">' + text + '</div>')
+      $('#log_content').children('div').first().show('blind')
+      if ($("#log_content").is(':hidden')) {
+        $().toastmessage('showToast',
+          {text: text, sticky: false, position: 'top-left', type: 'success'}
+        )
+      }
+    } else if (kind == 'warning') {
+      $('#log_content').prepend('<div class="log_item log_warning well" style="display:none">' + text + '</div>')
+      $('#log_content').children('div').first().show('blind')
+      if ($("#log_content").is(':hidden')) {
+        $().toastmessage('showToast',
+          {text: text, sticky: false, position: 'top-left', type: 'warning'}
+        )
+      }
+    } else if (kind == 'error') {
+      $('#log_content').prepend('<div class="log_item log_error well" style="display:none">' + text + '</div>')
+      $('#log_content').children('div').first().show('blind');
+      if ($("#log_content").is(':hidden')) {
+        $().toastmessage('showToast',
+          {text: text, sticky: false, position: 'top-left', type: 'error'}
+        )
+      }
+    }
+
+    while ($('#log_content').children('div').length > 200) {
+      $('#log_content').children('div').last().remove()
+    }
+
+  };
+})(jQuery)
 
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
 
 $(document).ready(function(){
   // $().uxmessage('notice', "Frontend started.")
@@ -24,8 +78,18 @@ $(document).ready(function(){
   // http://msurguy.github.io/ladda-bootstrap/
   app_run_btn = Ladda.create($("#run_btn")[0])
 
+  // page visibility events
+  window.onfocus = function() {
+    console.log('Got focus');
+    app_visibility = true
+  }
+  window.onblur = function() {
+    console.log('Got blur');
+    app_visibility = false
+  }
+
   // get appconfig from server
-  get_request({
+  request_get({
     url:'/config',
     success: function (data) {
       // $().uxmessage('success', "App config received.")
