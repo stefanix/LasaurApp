@@ -26,6 +26,8 @@ class Server():
         self.message = None
         self.message_on_connected = None
         self.stop_messager = False
+        self.msg_every = 1
+        self.msg_send_counter = 0
 
 S = Server()
 
@@ -33,27 +35,28 @@ S = Server()
 class ClientSocket(WebSocket):
 
     def handleMessage(self):
-        # if self.data is None:
-        #     self.data = ''
-        # try:
-        #     self.sendMessage(str(self.data))
-        # except Exception as n:
-        #     print n
-        print str(self.data)
+        # echo
+        # self.sendMessage(str(self.data))
+
+        # print str(self.data)
         try:
             msg = json.loads(str(self.data))
         except ValueError:
             msg = {}
+        # print msg
 
-        print msg
+        if "status_every" in msg:
+            with S.messageglock:
+                S.msg_every = msg["status_every"]
+                # print S.msg_every
 
-        if 'cmd_air_enable' in msg:
-            print "air"
-            driveboard.air_on()
-
-        elif 'cmd_air_disable' in msg:
-            print "noair"
-            driveboard.air_off()
+        # if 'cmd_air_enable' in msg:
+        #     print "air"
+        #     driveboard.air_on()
+        #
+        # elif 'cmd_air_disable' in msg:
+        #     print "noair"
+        #     driveboard.air_off()
 
 
 
@@ -140,6 +143,18 @@ def stop():
 
 def is_running():
     return bool(S.server)
+
+
+def msg_every_now():
+    ret = False
+    with S.messageglock:
+        S.msg_send_counter += 1
+        # print "--- %s >= %s" % (S.msg_send_counter, S.msg_every)
+        if S.msg_send_counter >= S.msg_every:
+            # print "-"
+            S.msg_send_counter = 0
+            ret = True
+    return ret
 
 
 def send(msg):

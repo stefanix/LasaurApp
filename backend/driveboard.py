@@ -382,7 +382,7 @@ class SerialLoopClass(threading.Thread):
                     self._s['underruns'] = self._status['underruns']
                     self._s['stackclear'] = self._status['stackclear']
                     # send through status server
-                    if statserver.is_running():
+                    if statserver.is_running() and statserver.msg_every_now():
                         statusjson = json.dumps(self._status)
                         statserver.send(statusjson)
                         statserver.on_connected_message(statusjson)

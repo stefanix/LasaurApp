@@ -1,7 +1,7 @@
 
 var app_config_main = undefined
 var app_run_btn = undefined
-var app_visibility = undefined
+var app_visibility = true
 
 
 // toast messages, install jquery plugin
@@ -80,12 +80,18 @@ $(document).ready(function(){
 
   // page visibility events
   window.onfocus = function() {
-    console.log('Got focus');
+    // console.log('Got focus')
     app_visibility = true
+    if (status_websocket && status_websocket.readyState == 1) {
+      status_websocket.send('{"status_every":1}')
+    }
   }
   window.onblur = function() {
-    console.log('Got blur');
+    // console.log('Got blur')
     app_visibility = false
+    if (status_websocket && status_websocket.readyState == 1) {
+      status_websocket.send('{"status_every":10}')
+    }
   }
 
   // get appconfig from server
