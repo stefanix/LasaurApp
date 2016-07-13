@@ -96,6 +96,22 @@ function status_set_main_button(status) {
 }
 
 
+function status_set_refresh() {
+  if (status_websocket && status_websocket.readyState == 1) {  // connected
+    var every = 1
+    if (app_visibility) {  // app focused
+      if (status_cache.ready) {  // focused and ready -> idle
+        every = 3
+      }  // else: every = 1
+    } else {  // app blured
+      every = 10
+    }
+    // send request to statserver
+    status_websocket.send('{"status_every":'+every+'}')
+  }
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // these functions are called when the various data points change /////////////
 
@@ -136,20 +152,13 @@ var status_handlers = {
       $('#boundary_btn').prop('disabled', false)
       $('#origin_btn').prop('disabled', false)
       $('#homing_btn').prop('disabled', false)
-      // reduce status refresh rate
-      if (status_websocket && status_websocket.readyState == 1) {
-        status_websocket.send('{"status_every":3}')
-      }
     } else {
       app_run_btn.start()
       $('#boundary_btn').prop('disabled', true)
       $('#origin_btn').prop('disabled', true)
       $('#homing_btn').prop('disabled', true)
-      // increase status refresh rate
-      if (status_websocket && status_websocket.readyState == 1) {
-        status_websocket.send('{"status_every":1}')
-      }
     }
+    status_set_refresh()
   },
   //// when hardware connected
   'appver': function (status) {

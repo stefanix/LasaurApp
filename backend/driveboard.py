@@ -685,7 +685,7 @@ def connect(port=conf['serial_port'], baudrate=conf['baudrate'], server=False):
                             statusjson = json.dumps({'ready': False, 'serial': False})
                             statserver.send(statusjson)
                             statserver.on_connected_message(statusjson)
-                            time.sleep(1.0)
+                            time.sleep(4.0)
                         else:
                             print "driveboard:statusthread: stopped."
                             break

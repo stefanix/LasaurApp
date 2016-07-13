@@ -71,7 +71,8 @@ $(document).ready(function(){
 
   // unblur button after pressing
   $(".btn").mouseup(function(){
-      $(this).blur()
+      // $(this).blur()
+      this.blur()
   })
 
   // run_btn, make a ladda progress spinner button
@@ -81,19 +82,13 @@ $(document).ready(function(){
   // page visibility events
   window.onfocus = function() {
     app_visibility = true
-    if (status_websocket && status_websocket.readyState == 1) {
-      if ('ready' in status_cache && status_cache.ready) {
-        status_websocket.send('{"status_every":3}')
-      } else {
-        status_websocket.send('{"status_every":1}')
-      }
-    }
+    status_set_refresh()
+    // console.log("onfocus")
   }
   window.onblur = function() {
     app_visibility = false
-    if (status_websocket && status_websocket.readyState == 1) {
-      status_websocket.send('{"status_every":10}')
-    }
+    status_set_refresh()
+    // console.log("onblur")
   }
 
   // get appconfig from server

@@ -92,7 +92,7 @@
           </button>
         <!-- </div>
         <div class="btn-group pull-left menu_btn"> -->
-          <button id="boundary_btn" class="btn btn-default" type="submit" title="run bounding box [CTRL-SHIFT-ENTER]"
+          <button id="boundary_btn" class="btn btn-primary" type="submit" title="run bounding box [CTRL-SHIFT-ENTER]"
             data-loading-text='<span class="glyphicon glyphicon-refresh spinning"></span>'>
             <span class="glyphicon glyphicon-resize-full"></span>
           </button>
@@ -294,11 +294,19 @@
           </button>
         </div>
 
-        <div class="btn-group footer_btn">
-          <button id="select_btn" class="btn btn-default" type="submit" title="[S]">Select</span></button>
-          <button id="offset_btn" class="btn btn-default" type="submit" title="[O]">Offset</button>
-          <button id="motion_btn" class="btn btn-default" type="submit" title="[M]">Move</button>
-          <button id="jog_btn" class="btn btn-default" type="submit" title="[J]">Jog</button>
+        <div class="btn-group footer_btn" data-toggle="buttons">
+          <label id="select_btn" class="btn btn-default active">
+            <input type="radio" name="options" autocomplete="off" checked> Select
+          </label>
+          <label id="offset_btn" class="btn btn-default">
+            <input type="radio" name="options" autocomplete="off"> Offset
+          </label>
+          <label id="motion_btn" class="btn btn-default">
+            <input type="radio" name="options" autocomplete="off"> Move
+          </label>
+          <label id="jog_btn" class="btn btn-default">
+            <input type="radio" name="options" autocomplete="off"> Jog
+          </label>
         </div>
 
         <!-- <button id="jog_btn" class="btn btn-default" type="submit" title="[J]">Jog</button> -->
