@@ -136,11 +136,19 @@ var status_handlers = {
       $('#boundary_btn').prop('disabled', false)
       $('#origin_btn').prop('disabled', false)
       $('#homing_btn').prop('disabled', false)
+      // reduce status refresh rate
+      if (status_websocket && status_websocket.readyState == 1) {
+        status_websocket.send('{"status_every":2}')
+      }
     } else {
       app_run_btn.start()
       $('#boundary_btn').prop('disabled', true)
       $('#origin_btn').prop('disabled', true)
       $('#homing_btn').prop('disabled', true)
+      // increase status refresh rate
+      if (status_websocket && status_websocket.readyState == 1) {
+        status_websocket.send('{"status_every":1}')
+      }
     }
   },
   //// when hardware connected

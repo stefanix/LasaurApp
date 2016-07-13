@@ -80,14 +80,12 @@ $(document).ready(function(){
 
   // page visibility events
   window.onfocus = function() {
-    // console.log('Got focus')
     app_visibility = true
     if (status_websocket && status_websocket.readyState == 1) {
       status_websocket.send('{"status_every":1}')
     }
   }
   window.onblur = function() {
-    // console.log('Got blur')
     app_visibility = false
     if (status_websocket && status_websocket.readyState == 1) {
       status_websocket.send('{"status_every":10}')
@@ -158,6 +156,10 @@ function app_status_connect() {
     }
   }
   status_websocket.onmessage = function(e) {
+    // pulsate
+    $("#status_glyph").animate({"opacity": 1.0},50).animate({"opacity": 0.4},200)
+    // $("#status_glyph").fadeIn(50).fadeOut(450)
+    // handle data
     var data = JSON.parse(e.data)
     // console.log(data)
 
