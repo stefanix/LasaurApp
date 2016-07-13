@@ -19,6 +19,12 @@ var jobview_color_selected = undefined
 
 var jobview_scale = 1
 
+// tools
+var jobview_tselect = undefined
+var jobview_toffset = undefined
+var jobview_tmove = undefined
+var jobview_tjog = undefined
+
 
 function jobview_clear(){
   jobview_boundsLayer.remove()
@@ -165,43 +171,31 @@ function jobview_ready() {
   // bounds layer
 
   // tools
-  var tool1, tool2, tool_pass;
-  // Create two drawing tools.
-  // tool1 will draw straight lines,
-  // tool2 will draw clouds.
-
-  // Both share the mouseDown event:
   var path;
-  function onMouseDown(event) {
-    path = new paper.Path();
-    path.strokeColor = 'black';
-    path.add(event.point);
-  }
+  jobview_tselect_init()
+  jobview_toffset_init()
+  jobview_tmove_init()
+  jobview_tjog_init()
+  jobview_tselect.activate()
 
-  tool1 = new paper.Tool();
-  tool1.onMouseDown = onMouseDown;
 
-  tool1.onMouseDrag = function(event) {
-    path.add(event.point);
-  }
+  // grid
+  jobview_grid()
 
-  tool2 = new paper.Tool();
-  tool2.minDistance = 20;
-  tool2.onMouseDown = onMouseDown;
+  // head
+  jobview_head()
 
-  tool2.onMouseDrag = function(event) {
-    // Use the arcTo command to draw cloudy lines
-    path.arcTo(event.point);
-  }
+  // // some test paths
+  // jobview_testpath()
+  // commit
+  paper.view.draw()
+}
 
-  // Pass Tool
-  tool_pass = new paper.Tool();
-  tool_pass.onMouseDown = function(event) {
-    // console.log(paper.project.hitTest())
-    // paper.project.activeLayer.selected = false
-    // if (event.item) {
-    //   event.item.selected = true
-    // }
+
+
+function jobview_tselect_init() {
+  jobview_tselect = new paper.Tool()
+  jobview_tselect.onMouseDown = function(event) {
     var hitOptions = {
       // class: paper.Group,
       segments: true,
@@ -222,22 +216,40 @@ function jobview_ready() {
       jobview_color_selected = undefined
     }
   }
+}
 
-  // tool1.activate()
-  // tool2.activate()
-  tool_pass.activate()
+function jobview_toffset_init() {
+  jobview_toffset = new paper.Tool()
+  jobview_toffset.onMouseDown = function(event) {
+    var x = Math.ceil(event.point.x / jobview_mm2px)
+    var y = Math.ceil(event.point.y / jobview_mm2px)
+    console.log(x + ',' + y)
+  }
+  jobview_toffset.onMouseMove = function(event) {
+    // Use the arcTo command to draw cloudy lines
+    // path.arcTo(event.point)
+  }
+}
 
+function jobview_tmove_init() {
+  jobview_tmove = new paper.Tool()
+  jobview_tmove.minDistance = 20
+  jobview_tmove.onMouseDown = function(event) {
+    path = new paper.Path()
+    path.strokeColor = 'black'
+    path.add(event.point)
+  }
+  jobview_tmove.onMouseDrag = function(event) {
+    // Use the arcTo command to draw cloudy lines
+    path.arcTo(event.point)
+  }
+}
 
-  // grid
-  jobview_grid()
+function jobview_tjog_init() {
+  jobview_tjog = new paper.Tool()
+  jobview_tjog.onMouseDown = function(event) {
 
-  // head
-  jobview_head()
-
-  // // some test paths
-  // jobview_testpath()
-  // commit
-  paper.view.draw()
+  }
 }
 
 

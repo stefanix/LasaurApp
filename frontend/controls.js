@@ -236,24 +236,28 @@ function controls_ready() {
 
   $("#select_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
   $("#select_btn").click(function(e){
+    jobview_tselect.activate()
     console.log("select")
-    return true
-  })
-
-  $("#motion_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
-  $("#motion_btn").click(function(e){
-    console.log("motion")
     return true
   })
 
   $("#offset_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
   $("#offset_btn").click(function(e){
+    jobview_toffset.activate()
     console.log("offset")
+    return true
+  })
+
+  $("#motion_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
+  $("#motion_btn").click(function(e){
+    jobview_tmove.activate()
+    console.log("motion")
     return true
   })
 
   $("#jog_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
   $("#jog_btn").click(function(e){
+    jobview_tjog.activate()
     console.log("jog")
     return true
   })
