@@ -3,8 +3,6 @@
   - bypass queue
   - e.g: boundary
 
-- status pulse visual
-
 - select tool
 - offset tool
 - move tool

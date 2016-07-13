@@ -82,7 +82,11 @@ $(document).ready(function(){
   window.onfocus = function() {
     app_visibility = true
     if (status_websocket && status_websocket.readyState == 1) {
-      status_websocket.send('{"status_every":1}')
+      if ('ready' in status_cache && status_cache.ready) {
+        status_websocket.send('{"status_every":3}')
+      } else {
+        status_websocket.send('{"status_every":1}')
+      }
     }
   }
   window.onblur = function() {
@@ -157,8 +161,8 @@ function app_status_connect() {
   }
   status_websocket.onmessage = function(e) {
     // pulsate
-    $("#status_glyph").animate({"opacity": 1.0},50).animate({"opacity": 0.4},200)
-    // $("#status_glyph").fadeIn(50).fadeOut(450)
+    $("#status_glyph").animate({"opacity": 1.0},50).animate({"opacity": 0.5},200)
+
     // handle data
     var data = JSON.parse(e.data)
     // console.log(data)

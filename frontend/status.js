@@ -138,7 +138,7 @@ var status_handlers = {
       $('#homing_btn').prop('disabled', false)
       // reduce status refresh rate
       if (status_websocket && status_websocket.readyState == 1) {
-        status_websocket.send('{"status_every":2}')
+        status_websocket.send('{"status_every":3}')
       }
     } else {
       app_run_btn.start()
