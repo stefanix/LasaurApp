@@ -1,4 +1,9 @@
 
+
+- bugs
+  - door status
+
+
 - send low level combined also as job
   - bypass queue
   - e.g: boundary

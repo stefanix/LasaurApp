@@ -124,7 +124,8 @@ function request_relative_move(x, y, z, seekrate, success_msg) {
         {
           "paths":[0],
           "relative":true,
-          "seekrate":seekrate
+          "seekrate":seekrate,
+          "air_assist":"off"
         }
       ],
       "paths":[
@@ -151,7 +152,8 @@ function request_absolute_move(x, y, z, seekrate, success_msg) {
       "passes":[
         {
           "paths":[0],
-          "seekrate":seekrate
+          "seekrate":seekrate,
+          "air_assist":"off"
         }
       ],
       "paths":[
