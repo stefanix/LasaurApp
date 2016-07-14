@@ -295,7 +295,24 @@ var status_handlers = {
     status_set_main_button(status)
   },
   //// only when hardware idle
-  'offset': function (status) {},
+  'offset': function (status) {
+    if (status.offset.length == 3) {
+      var x_mm = status.offset[0]
+      var y_mm = status.offset[1]
+      if (x_mm != 0 || y_mm != 0) {
+        jobview_offsetLayer.visible = true
+      } else {
+        jobview_offsetLayer.visible = false
+      }
+      var x = Math.floor(x_mm*jobview_mm2px)
+      var y = Math.floor(y_mm*jobview_mm2px)
+      jobview_offsetLayer.position = new paper.Point(x, y)
+      jobview_boundsLayer.position = new paper.Point(x, y)
+      jobview_seekLayer.position = new paper.Point(x, y)
+      jobview_feedLayer.position = new paper.Point(x, y)
+      paper.view.draw()
+    }
+  },
   'feedrate': function (status) {},
   'intensity': function (status) {},
   'duration': function (status) {},

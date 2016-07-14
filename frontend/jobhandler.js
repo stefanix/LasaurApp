@@ -284,8 +284,7 @@ jobhandler = {
 
 
   renderBounds : function () {
-    jobview_boundsLayer.remove()
-    jobview_boundsLayer = new paper.Layer()
+    jobview_boundsLayer.removeChildren()
     jobview_boundsLayer.activate()
     // var all_bounds = new paper.Path.Rectangle(this.job_group.bounds)
     // var bbox_all = this.stats['_all_'].bbox

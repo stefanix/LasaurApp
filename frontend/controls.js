@@ -2,7 +2,8 @@
 
 function controls_ready() {
 
-  // dropdown /////////////////////////
+
+  // dropdown //////////////////////////////////////////////////////////////
 
   $("#info_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#info_btn").click(function(e){
@@ -113,7 +114,8 @@ function controls_ready() {
 
 
 
-  // navbar /////////////////////////
+  // navbar ////////////////////////////////////////////////////////////////
+
 
   $("#open_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#open_btn").click(function(e){
@@ -209,7 +211,8 @@ function controls_ready() {
 
 
 
-  // footer /////////////////////////
+  // footer buttons /////////////////////////////////////////////////////////
+
 
   $("#origin_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
   $("#origin_btn").click(function(e){
@@ -234,29 +237,50 @@ function controls_ready() {
     return false
   })
 
+
   $("#select_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
   $("#select_btn").click(function(e){
+    $(".tool_extra_btn").hide()
     jobview_tselect.activate()
-    console.log("select")
     return true
   })
+
 
   $("#offset_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
   $("#offset_btn").click(function(e){
+    $(".tool_extra_btn").hide()
     jobview_toffset.activate()
-    console.log("offset")
+    $("#offset_reset_btn").show()
     return true
   })
 
+  $("#offset_reset_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
+  $("#offset_reset_btn").click(function(e){
+    // jobview_offsetLayer.position = new paper.Point(0,0)
+    request_get({
+      url:'/clear_offset',
+      success: function (data) {
+        $().uxmessage('notice', "Offset cleared.")
+        $("#offset_reset_btn").hide()
+        $('#select_btn').trigger('click')
+      }
+    })
+    return true
+  })
+
+
   $("#motion_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
   $("#motion_btn").click(function(e){
+    $(".tool_extra_btn").hide()
     jobview_tmove.activate()
     console.log("motion")
     return true
   })
 
+
   $("#jog_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
   $("#jog_btn").click(function(e){
+    $(".tool_extra_btn").hide()
     jobview_tjog.activate()
     console.log("jog")
     return true
@@ -264,7 +288,8 @@ function controls_ready() {
 
 
 
-  // shortcut keys /////////////////////////////////////
+  // shortcut keys //////////////////////////////////////////////////////////
+
 
   Mousetrap.bind(['i'], function(e) {
       $('#info_btn').trigger('click')

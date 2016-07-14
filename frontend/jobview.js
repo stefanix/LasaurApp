@@ -7,6 +7,9 @@ var jobview_boundsLayer = undefined
 var jobview_seekLayer = undefined
 var jobview_feedLayer = undefined
 var jobview_headLayer = undefined
+var jobview_offsetLayer = undefined
+var jobview_moveLayer = undefined
+var jobview_jogLayer = undefined
 
 var nav_height_init = 0
 var footer_height = 0
@@ -27,14 +30,31 @@ var jobview_tjog = undefined
 
 
 function jobview_clear(){
-  jobview_boundsLayer.remove()
-  jobview_boundsLayer = new paper.Layer()
-  jobview_seekLayer.remove()
-  jobview_seekLayer = new paper.Layer()
-  jobview_feedLayer.remove()
-  jobview_feedLayer = new paper.Layer()
+  jobview_boundsLayer.removeChildren()
+  jobview_seekLayer.removeChildren()
+  jobview_feedLayer.removeChildren()
   paper.view.draw()
   jobview_color_selected = undefined
+}
+
+
+function jobview_reset_layer(layer) {
+  if (layer) {
+    layer.remove()
+  }
+  layer = new paper.Layer()
+  layer.pivot = new paper.Point(0,0)
+  var x = 0
+  var y = 0
+  if ('offset' in status_cache) {
+    var x_mm = status_cache.offset[0]
+    var y_mm = status_cache.offset[1]
+    x = Math.floor(x_mm*jobview_mm2px)
+    y = Math.floor(y_mm*jobview_mm2px)
+  }
+  console.log("status_cahce.offset: "+x_mm+","+y_mm)
+  layer.position = new paper.Point(x,y)
+  return layer
 }
 
 
@@ -163,27 +183,29 @@ function jobview_ready() {
   var canvas = document.getElementById('job_canvas')
   paper.setup(canvas)
 
-  // feed/seek lines layer
-  jobview_boundsLayer = new paper.Layer();
-  jobview_feedLayer = paper.project.activeLayer
-  jobview_seekLayer = new paper.Layer();
-  jobview_feedLayer.activate()
-  // bounds layer
+  // grid
+  jobview_grid()
+
+  // layers
+  jobview_seekLayer = new paper.Layer()
+  jobview_seekLayer.pivot = new paper.Point(0,0)
+  jobview_seekLayer.transformContent = false
+  jobview_feedLayer = new paper.Layer()
+  jobview_feedLayer.pivot = new paper.Point(0,0)  // xforms anchor
+  jobview_feedLayer.transformContent = false      // make xforms more OpenGL-like
+  jobview_boundsLayer = new paper.Layer()
+  jobview_boundsLayer.pivot = new paper.Point(0,0)
+  jobview_boundsLayer.transformContent = false
+
+  // head
+  jobview_head()
 
   // tools
-  var path;
   jobview_tselect_init()
   jobview_toffset_init()
   jobview_tmove_init()
   jobview_tjog_init()
   jobview_tselect.activate()
-
-
-  // grid
-  jobview_grid()
-
-  // head
-  jobview_head()
 
   // // some test paths
   // jobview_testpath()
@@ -219,17 +241,58 @@ function jobview_tselect_init() {
 }
 
 function jobview_toffset_init() {
+  // create graphics
+  jobview_offsetLayer = new paper.Layer()
+  jobview_offsetLayer.transformContent = false
+  jobview_offsetLayer.pivot = new paper.Point(0,0)
+  jobview_offsetLayer.visible = false
+  jobview_offsetLayer.activate()
+  var group = new paper.Group()
+
+  var rec1 = new paper.Path.Rectangle(new paper.Point(-9999,-9999), new paper.Point(9999,0))
+  group.addChild(rec1)
+
+  var rec2 = new paper.Path.Rectangle(new paper.Point(-9999,0), new paper.Point(0,9999))
+  group.addChild(rec2)
+
+  // var line1 = new paper.Path()
+  // line1.add([0,0],[9999,0])
+  // group.addChild(line1)
+  //
+  // var line2 = new paper.Path()
+  // line2.add([0,0],[0,9999])
+  // group.addChild(line2)
+  //
+  // var circ1 = new paper.Path.Circle([0,0],5)
+  // group.addChild(circ1)
+
+  group.fillColor = '#000000'
+  // group.strokeColor = '#000000'
+  rec1.opacity = 0.5
+  rec2.opacity = 0.5
+  // crate tool
   jobview_toffset = new paper.Tool()
   jobview_toffset.onMouseDown = function(event) {
-    var x = Math.ceil(event.point.x / jobview_mm2px)
-    var y = Math.ceil(event.point.y / jobview_mm2px)
-    console.log(x + ',' + y)
+    var x = Math.ceil(event.point.x/jobview_mm2px)
+    var y = Math.ceil(event.point.y/jobview_mm2px)
+    request_get({
+      url:'/offset/'+x+'/'+y+'/0',
+      success: function (data) {
+        $().uxmessage('notice', "Offset set to: "+x+","+y)
+      }
+    })
+    $("#offset_reset_btn").hide()
+    $('#select_btn').trigger('click')
   }
   jobview_toffset.onMouseMove = function(event) {
-    // Use the arcTo command to draw cloudy lines
-    // path.arcTo(event.point)
+    if (event.point.x <= jobview_width && event.point.y <= jobview_height) {
+      jobview_offsetLayer.visible = true
+      jobview_offsetLayer.position = event.point
+    }
   }
 }
+
+
 
 function jobview_tmove_init() {
   jobview_tmove = new paper.Tool()
@@ -261,6 +324,8 @@ function jobview_grid(){
   var line_every_mm = app_config_main.grid_mm
   var every_px = (jobview_width*line_every_mm)/w_mm
   jobview_gridLayer = new paper.Layer()
+  jobview_gridLayer.transformContent = false
+  jobview_gridLayer.pivot = new paper.Point(0,0)
   jobview_gridLayer.activate()
   var grid_group = new paper.Group()
   // vertical
@@ -285,6 +350,8 @@ function jobview_grid(){
 
 function jobview_head(){
   jobview_headLayer = new paper.Layer()
+  jobview_seekLayer.transformContent = false
+  jobview_headLayer.pivot = new paper.Point(0,0)
   jobview_headLayer.activate()
   var head_group = new paper.Group()
 
