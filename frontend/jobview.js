@@ -198,7 +198,7 @@ function jobview_ready() {
   jobview_boundsLayer.transformContent = false
 
   // head
-  jobview_head()
+  // jobview_head()
 
   // tools
   jobview_tselect_init()
@@ -265,6 +265,9 @@ function jobview_toffset_init() {
       url:'/offset/'+x+'/'+y+'/0',
       success: function (data) {
         $().uxmessage('notice', "Offset set to: "+x+","+y)
+      },
+      error: function (data) {
+        jobview_offsetLayer.position = new paper.Point(status_cache.offset[0],status_cache.offset[1])
       }
     })
     $("#offset_reset_btn").hide()
@@ -369,7 +372,7 @@ function jobview_grid(){
 
 function jobview_head(){
   jobview_headLayer = new paper.Layer()
-  jobview_seekLayer.transformContent = false
+  jobview_headLayer.transformContent = false
   jobview_headLayer.pivot = new paper.Point(0,0)
   jobview_headLayer.activate()
   var head_group = new paper.Group()

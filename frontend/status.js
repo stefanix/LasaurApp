@@ -100,7 +100,7 @@ function status_set_refresh() {
   if (status_websocket && status_websocket.readyState == 1) {  // connected
     var every = 1
     if (app_visibility) {  // app focused
-      if (status_cache.ready) {  // focused and ready -> idle
+      if (!status_cache.ready) {  // focused and ready -> idle
         every = 3
       }  // else: every = 1
     } else {  // app blured
@@ -152,12 +152,18 @@ var status_handlers = {
       $('#boundary_btn').prop('disabled', false)
       $('#origin_btn').prop('disabled', false)
       $('#homing_btn').prop('disabled', false)
+      $('#offset_btn').removeClass('disabled')
+      $('#motion_btn').removeClass('disabled')
+      $('#jog_btn').removeClass('disabled')
       jobview_moveLayer.visible = false
     } else {
       app_run_btn.start()
       $('#boundary_btn').prop('disabled', true)
       $('#origin_btn').prop('disabled', true)
       $('#homing_btn').prop('disabled', true)
+      $('#offset_btn').addClass('disabled')
+      $('#motion_btn').addClass('disabled')
+      $('#jog_btn').addClass('disabled')
     }
     status_set_refresh()
   },
@@ -196,43 +202,18 @@ var status_handlers = {
     }
   },
   'pos':function (status) {
-    jobview_head_move(status.pos, status.offset)
+    if (status.pos[0] > 0.01 || status.pos[1] > 0.01) {
+      $("#head_position").show()
+      // jobview_headLayer.visible = true
+    } else {
+      $("#head_position").hide()
+      // jobview_headLayer.visible = false
+    }
+    // jobview_head_move(status.pos, status.offset)
     $("#head_position").animate({
-      left: Math.round((status.pos[0]+status.offset[0])*jobview_mm2px),
-      top: Math.round((status.pos[1]+status.offset[1])*jobview_mm2px),
+      left: Math.round((status.pos[0]+status.offset[0])*jobview_mm2px-16),
+      top: Math.round((status.pos[1]+status.offset[1])*jobview_mm2px-16),
     }, 500, 'linear' )
-    // // head position
-    // if (data.pos) {
-    //   // only update if not manually entering at the same time
-    //   if (!$('#x_location_field').is(":focus") &&
-    //       !$('#y_location_field').is(":focus") &&
-    //       !$('#location_set_btn').is(":focus") &&
-    //       !$('#origin_set_btn').is(":focus"))
-    //   {
-    //     var x = data.pos[0] - app_settings.table_offset[0];
-    //     $('#x_location_field').val(x.toFixed(2));
-    //     // $('#x_location_field').animate({
-    //     //   opacity: 0.5
-    //     // }, 100, function() {
-    //     //   $('#x_location_field').animate({
-    //     //     opacity: 1.0
-    //     //   }, 600, function() {});
-    //     // });
-    //     var y = data.pos[1] - app_settings.table_offset[1];
-    //     $('#y_location_field').val(y.toFixed(2));
-    //     // $('#y_location_field').animate({
-    //     //   opacity: 0.5
-    //     // }, 100, function() {
-    //     //   $('#y_location_field').animate({
-    //     //     opacity: 1.0
-    //     //   }, 600, function() {});
-    //     // });
-        // $("#head_position").animate({
-        //   left: Math.round(status.pos[0]*jobview_scale),
-        //   top: Math.round(status.pos[1]*jobview_scale),
-        // }, 500, 'linear' );
-    //   }
-    // }
   },
   'underruns': function (status) {},
   'stackclear': function (status) {

@@ -248,9 +248,15 @@ function controls_ready() {
 
   $("#offset_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
   $("#offset_btn").click(function(e){
-    $(".tool_extra_btn").hide()
-    jobview_toffset.activate()
-    $("#offset_reset_btn").show()
+    if (!$(this).hasClass('disabled')) {
+      $(".tool_extra_btn").hide()
+      jobview_toffset.activate()
+      $("#offset_reset_btn").show()
+    } else {
+      setTimeout(function(){
+        $('#select_btn').trigger('click')
+      },500)
+    }
     return true
   })
 
@@ -271,16 +277,28 @@ function controls_ready() {
 
   $("#motion_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
   $("#motion_btn").click(function(e){
-    $(".tool_extra_btn").hide()
-    jobview_tmove.activate()
+    if (!$(this).hasClass('disabled')) {
+      $(".tool_extra_btn").hide()
+      jobview_tmove.activate()
+    } else {
+      setTimeout(function(){
+        $('#select_btn').trigger('click')
+      },500)
+    }
     return true
   })
 
 
   $("#jog_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
   $("#jog_btn").click(function(e){
-    $(".tool_extra_btn").hide()
-    jobview_tjog.activate()
+    if (!$(this).hasClass('disabled')) {
+      $(".tool_extra_btn").hide()
+      jobview_tjog.activate()
+    } else {
+      setTimeout(function(){
+        $('#select_btn').trigger('click')
+      },500)
+    }
     return true
   })
 

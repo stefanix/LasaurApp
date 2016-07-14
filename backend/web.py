@@ -185,6 +185,8 @@ def aux1_off():
 @bottle.auth_basic(checkuser)
 @checkserial
 def offset(x, y, z):
+    if not driveboard.status()['ready']:
+        bottle.abort(400, "Machine not ready.")
     driveboard.def_offset_custom(x, y, z)
     driveboard.sel_offset_custom()
     return '{}'
@@ -193,6 +195,8 @@ def offset(x, y, z):
 @bottle.auth_basic(checkuser)
 @checkserial
 def clear_offset():
+    if not driveboard.status()['ready']:
+        bottle.abort(400, "Machine not ready.")
     driveboard.def_offset_custom(0,0,0)
     driveboard.sel_offset_table()
     return '{}'
