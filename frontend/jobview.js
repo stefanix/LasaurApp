@@ -22,11 +22,6 @@ var jobview_color_selected = undefined
 
 var jobview_scale = 1
 
-// tools
-var jobview_tselect = undefined
-var jobview_toffset = undefined
-var jobview_tmove = undefined
-var jobview_tjog = undefined
 
 
 function jobview_clear(){
@@ -201,11 +196,11 @@ function jobview_ready() {
   // jobview_head()
 
   // tools
-  jobview_tselect_init()
-  jobview_toffset_init()
-  jobview_tmove_init()
-  jobview_tjog_init()
-  jobview_tselect.activate()
+  tools_tselect_init()
+  tools_toffset_init()
+  tools_tmove_init()
+  tools_tjog_init()
+  tools_tselect.activate()
 
   // // some test paths
   // jobview_testpath()
@@ -213,129 +208,6 @@ function jobview_ready() {
   paper.view.draw()
 }
 
-
-
-function jobview_tselect_init() {
-  jobview_tselect = new paper.Tool()
-  jobview_tselect.onMouseDown = function(event) {
-    var hitOptions = {
-      // class: paper.Group,
-      segments: true,
-      stroke: true,
-      fill: true,
-      tolerance: 10
-    }
-    var hitResult = jobview_feedLayer.hitTest(event.point, hitOptions)
-    if (hitResult) {
-      jobview_deselect_all()
-      path = hitResult.item
-      path.parent.selected = !path.parent.selected
-      // show info on this group
-      jobview_color_selected = path.strokeColor.toCSS(true)
-
-    } else {
-      jobview_deselect_all()
-      jobview_color_selected = undefined
-    }
-  }
-}
-
-function jobview_toffset_init() {
-  // create layer
-  jobview_offsetLayer = new paper.Layer()
-  jobview_offsetLayer.transformContent = false
-  jobview_offsetLayer.pivot = new paper.Point(0,0)
-  jobview_offsetLayer.visible = false
-  jobview_offsetLayer.activate()
-  // greate group
-  var group = new paper.Group()
-  var rec1 = new paper.Path.Rectangle(new paper.Point(-9999,-9999), new paper.Point(9999,0))
-  group.addChild(rec1)
-  var rec2 = new paper.Path.Rectangle(new paper.Point(-9999,0), new paper.Point(0,9999))
-  group.addChild(rec2)
-  group.fillColor = '#000000'
-  rec1.opacity = 0.5
-  rec2.opacity = 0.5
-  // create tool
-  jobview_toffset = new paper.Tool()
-  jobview_toffset.onMouseDown = function(event) {
-    var x = Math.ceil(event.point.x/jobview_mm2px)
-    var y = Math.ceil(event.point.y/jobview_mm2px)
-    request_get({
-      url:'/offset/'+x+'/'+y+'/0',
-      success: function (data) {
-        $().uxmessage('notice', "Offset set to: "+x+","+y)
-      },
-      error: function (data) {
-        jobview_offsetLayer.position = new paper.Point(status_cache.offset[0],status_cache.offset[1])
-      }
-    })
-    $("#offset_reset_btn").hide()
-    $('#select_btn').trigger('click')
-  }
-  jobview_toffset.onMouseMove = function(event) {
-    if (event.point.x <= jobview_width && event.point.y <= jobview_height) {
-      jobview_offsetLayer.visible = true
-      jobview_offsetLayer.position = event.point
-    }
-  }
-}
-
-
-function jobview_tmove_init() {
-  // create layer
-  jobview_moveLayer = new paper.Layer()
-  jobview_moveLayer.transformContent = false
-  jobview_moveLayer.pivot = new paper.Point(0,0)
-  jobview_moveLayer.visible = false
-  jobview_moveLayer.activate()
-
-  // greate group
-  var group = new paper.Group()
-  var line1 = new paper.Path()
-  line1.add([-9999,0],[9999,0])
-  group.addChild(line1)
-
-  var line2 = new paper.Path()
-  line2.add([0,-9999],[0,9999])
-  group.addChild(line2)
-
-  var circ1 = new paper.Path.Circle([0,0],10)
-  group.addChild(circ1)
-
-  group.strokeColor = '#ff0000'
-
-
-  jobview_tmove = new paper.Tool()
-  jobview_tmove.onMouseDown = function(event) {
-    var x = Math.ceil(event.point.x/jobview_mm2px-status_cache.offset[0])
-    var y = Math.ceil(event.point.y/jobview_mm2px-status_cache.offset[1])
-    request_get({
-      url:'/move/'+x+'/'+y+'/0',
-      success: function (data) {
-        $().uxmessage('notice', "Move requested: "+x+","+y)
-      }
-    })
-    $('#select_btn').trigger('click')
-    // setTimeout(function(){
-    //   jobview_moveLayer.visible = false
-    // },1000)
-  }
-  jobview_tmove.onMouseMove = function(event) {
-    if (event.point.x <= jobview_width && event.point.y <= jobview_height) {
-      jobview_moveLayer.visible = true
-      jobview_moveLayer.position = event.point
-    }
-  }
-}
-
-
-function jobview_tjog_init() {
-  jobview_tjog = new paper.Tool()
-  jobview_tjog.onMouseDown = function(event) {
-
-  }
-}
 
 
 function jobview_grid(){

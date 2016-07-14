@@ -240,8 +240,9 @@ function controls_ready() {
 
   $("#select_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
   $("#select_btn").click(function(e){
+    jobview_jogLayer.visible = false
     $(".tool_extra_btn").hide()
-    jobview_tselect.activate()
+    tools_tselect.activate()
     return true
   })
 
@@ -249,8 +250,9 @@ function controls_ready() {
   $("#offset_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
   $("#offset_btn").click(function(e){
     if (!$(this).hasClass('disabled')) {
+      jobview_jogLayer.visible = false
       $(".tool_extra_btn").hide()
-      jobview_toffset.activate()
+      tools_toffset.activate()
       $("#offset_reset_btn").show()
     } else {
       setTimeout(function(){
@@ -262,7 +264,6 @@ function controls_ready() {
 
   $("#offset_reset_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
   $("#offset_reset_btn").click(function(e){
-    // jobview_offsetLayer.position = new paper.Point(0,0)
     request_get({
       url:'/clear_offset',
       success: function (data) {
@@ -278,8 +279,9 @@ function controls_ready() {
   $("#motion_btn").tooltip({placement:'top', delay: {show:1000, hide:100}})
   $("#motion_btn").click(function(e){
     if (!$(this).hasClass('disabled')) {
+      jobview_jogLayer.visible = false
       $(".tool_extra_btn").hide()
-      jobview_tmove.activate()
+      tools_tmove.activate()
     } else {
       setTimeout(function(){
         $('#select_btn').trigger('click')
@@ -293,7 +295,8 @@ function controls_ready() {
   $("#jog_btn").click(function(e){
     if (!$(this).hasClass('disabled')) {
       $(".tool_extra_btn").hide()
-      jobview_tjog.activate()
+      tools_tjog.activate()
+      jobview_jogLayer.visible = true
     } else {
       setTimeout(function(){
         $('#select_btn').trigger('click')
