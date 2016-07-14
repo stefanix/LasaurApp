@@ -273,7 +273,6 @@ function controls_ready() {
   $("#motion_btn").click(function(e){
     $(".tool_extra_btn").hide()
     jobview_tmove.activate()
-    console.log("motion")
     return true
   })
 
@@ -282,7 +281,6 @@ function controls_ready() {
   $("#jog_btn").click(function(e){
     $(".tool_extra_btn").hide()
     jobview_tjog.activate()
-    console.log("jog")
     return true
   })
 

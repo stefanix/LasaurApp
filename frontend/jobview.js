@@ -241,36 +241,22 @@ function jobview_tselect_init() {
 }
 
 function jobview_toffset_init() {
-  // create graphics
+  // create layer
   jobview_offsetLayer = new paper.Layer()
   jobview_offsetLayer.transformContent = false
   jobview_offsetLayer.pivot = new paper.Point(0,0)
   jobview_offsetLayer.visible = false
   jobview_offsetLayer.activate()
+  // greate group
   var group = new paper.Group()
-
   var rec1 = new paper.Path.Rectangle(new paper.Point(-9999,-9999), new paper.Point(9999,0))
   group.addChild(rec1)
-
   var rec2 = new paper.Path.Rectangle(new paper.Point(-9999,0), new paper.Point(0,9999))
   group.addChild(rec2)
-
-  // var line1 = new paper.Path()
-  // line1.add([0,0],[9999,0])
-  // group.addChild(line1)
-  //
-  // var line2 = new paper.Path()
-  // line2.add([0,0],[0,9999])
-  // group.addChild(line2)
-  //
-  // var circ1 = new paper.Path.Circle([0,0],5)
-  // group.addChild(circ1)
-
   group.fillColor = '#000000'
-  // group.strokeColor = '#000000'
   rec1.opacity = 0.5
   rec2.opacity = 0.5
-  // crate tool
+  // create tool
   jobview_toffset = new paper.Tool()
   jobview_toffset.onMouseDown = function(event) {
     var x = Math.ceil(event.point.x/jobview_mm2px)
@@ -293,20 +279,53 @@ function jobview_toffset_init() {
 }
 
 
-
 function jobview_tmove_init() {
+  // create layer
+  jobview_moveLayer = new paper.Layer()
+  jobview_moveLayer.transformContent = false
+  jobview_moveLayer.pivot = new paper.Point(0,0)
+  jobview_moveLayer.visible = false
+  jobview_moveLayer.activate()
+
+  // greate group
+  var group = new paper.Group()
+  var line1 = new paper.Path()
+  line1.add([-9999,0],[9999,0])
+  group.addChild(line1)
+
+  var line2 = new paper.Path()
+  line2.add([0,-9999],[0,9999])
+  group.addChild(line2)
+
+  var circ1 = new paper.Path.Circle([0,0],10)
+  group.addChild(circ1)
+
+  group.strokeColor = '#ff0000'
+
+
   jobview_tmove = new paper.Tool()
-  jobview_tmove.minDistance = 20
   jobview_tmove.onMouseDown = function(event) {
-    path = new paper.Path()
-    path.strokeColor = 'black'
-    path.add(event.point)
+    var x = Math.ceil(event.point.x/jobview_mm2px-status_cache.offset[0])
+    var y = Math.ceil(event.point.y/jobview_mm2px-status_cache.offset[1])
+    request_get({
+      url:'/move/'+x+'/'+y+'/0',
+      success: function (data) {
+        $().uxmessage('notice', "Move requested: "+x+","+y)
+      }
+    })
+    $('#select_btn').trigger('click')
+    // setTimeout(function(){
+    //   jobview_moveLayer.visible = false
+    // },1000)
   }
-  jobview_tmove.onMouseDrag = function(event) {
-    // Use the arcTo command to draw cloudy lines
-    path.arcTo(event.point)
+  jobview_tmove.onMouseMove = function(event) {
+    if (event.point.x <= jobview_width && event.point.y <= jobview_height) {
+      jobview_moveLayer.visible = true
+      jobview_moveLayer.position = event.point
+    }
   }
 }
+
 
 function jobview_tjog_init() {
   jobview_tjog = new paper.Tool()
@@ -369,8 +388,10 @@ function jobview_head(){
   head_group.strokeColor = '#aa0000';
 }
 
-function jobview_head_move(pos) {
-  jobview_headLayer.position = new paper.Point(pos[0]*jobview_scale, pos[1]*jobview_scale)
+function jobview_head_move(pos, offset) {
+  var x = (pos[0]+offset[0])*jobview_mm2px
+  var y = (pos[1]+offset[1])*jobview_mm2px
+  jobview_headLayer.position = new paper.Point(x, y)
   paper.view.draw()
 }
 

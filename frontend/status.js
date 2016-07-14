@@ -152,6 +152,7 @@ var status_handlers = {
       $('#boundary_btn').prop('disabled', false)
       $('#origin_btn').prop('disabled', false)
       $('#homing_btn').prop('disabled', false)
+      jobview_moveLayer.visible = false
     } else {
       app_run_btn.start()
       $('#boundary_btn').prop('disabled', true)
@@ -195,10 +196,10 @@ var status_handlers = {
     }
   },
   'pos':function (status) {
-    // jobview_head_move(status.pos)
+    jobview_head_move(status.pos, status.offset)
     $("#head_position").animate({
-      left: Math.round(status.pos[0]*jobview_scale),
-      top: Math.round(status.pos[1]*jobview_scale),
+      left: Math.round((status.pos[0]+status.offset[0])*jobview_mm2px),
+      top: Math.round((status.pos[1]+status.offset[1])*jobview_mm2px),
     }, 500, 'linear' )
     // // head position
     // if (data.pos) {
@@ -310,6 +311,7 @@ var status_handlers = {
       jobview_boundsLayer.position = new paper.Point(x, y)
       jobview_seekLayer.position = new paper.Point(x, y)
       jobview_feedLayer.position = new paper.Point(x, y)
+      // redraw
       paper.view.draw()
     }
   },
