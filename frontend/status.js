@@ -42,6 +42,9 @@ function status_handle_message(status) {
   // call handlers for data points, only when a change occurs
   for (var k in status_cache) {
     if (k in status) {
+      console.log("---status---")
+      console.log(status_cache)
+      console.log(status)
       if (status_check_new(status_cache[k], status[k])) {
         status_handlers[k](status)   // call handler
         status_cache[k] = status[k]  // update cache
@@ -58,6 +61,7 @@ function status_check_new(data1, data2) {
     for (var i = 0; i < data1.length; i++) {
       if (data1[i] !== data2[i]) {
         flag = true
+        break
       }
     }
   } else if (typeof(data1) == 'string'
@@ -70,6 +74,7 @@ function status_check_new(data1, data2) {
     for(var k in data1) {
       if (data1[k] !== data2[k]) {
         flag = true
+        break
       }
     }
   } else {
@@ -231,6 +236,7 @@ var status_handlers = {
   },
   //// stop conditions
   'stops': function (status) {
+    console.log("stop changed")
     // reset all stop error indicators
     $(".status_hw").removeClass("label-default")
     $('#status_limit_x1').removeClass("label-danger").addClass("label-success")
@@ -265,6 +271,7 @@ var status_handlers = {
     status_set_main_button(status)
   },
   'info': function (status) {
+    console.log("info changed")
     // reset all info indicators
     $(".status_hw").removeClass("label-default")
     $('#status_door').removeClass("label-warning").addClass("label-success")
