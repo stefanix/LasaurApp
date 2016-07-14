@@ -657,8 +657,8 @@ def connect(port=conf['serial_port'], baudrate=conf['baudrate'], server=False):
                 SerialLoop.device.setDTR(True)
                 # for good measure
                 SerialLoop.device.flushOutput()
-            else:
-                reset()
+            # else:
+            #     reset()
                 # time.sleep(0.5)
                 # SerialLoop.device.flushInput()
                 # SerialLoop.device.flushOutput()
