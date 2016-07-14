@@ -109,3 +109,8 @@ div.log_error {
     from { transform: scale(1) rotate(0deg); }
     to { transform: scale(1) rotate(360deg); }
 }
+
+#status_btn_div ul li {
+  padding-top:2px;
+  padding-bottom:2px;
+}
