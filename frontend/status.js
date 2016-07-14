@@ -42,9 +42,6 @@ function status_handle_message(status) {
   // call handlers for data points, only when a change occurs
   for (var k in status_cache) {
     if (k in status) {
-      console.log("---status---")
-      console.log(status_cache)
-      console.log(status)
       if (status_check_new(status_cache[k], status[k])) {
         status_handlers[k](status)   // call handler
         status_cache[k] = status[k]  // update cache
@@ -244,7 +241,6 @@ var status_handlers = {
   },
   //// stop conditions
   'stops': function (status) {
-    console.log("stop changed")
     // reset all stop error indicators
     $(".status_hw").removeClass("label-default")
     $('#status_limit_x1').removeClass("label-danger").addClass("label-success")
@@ -263,11 +259,11 @@ var status_handlers = {
     // set stop error indicators
     if ('stops' in status) {
       if (status.stops.x1) {$('#status_limit_x1').removeClass("label-success").addClass("label-danger")}
-      if (status.stops.x2) {$('#status_limit_x1').removeClass("label-success").addClass("label-danger")}
-      if (status.stops.y1) {$('#status_limit_x1').removeClass("label-success").addClass("label-danger")}
-      if (status.stops.y2) {$('#status_limit_x1').removeClass("label-success").addClass("label-danger")}
-      if (status.stops.z1) {$('#status_limit_x1').removeClass("label-success").addClass("label-danger")}
-      if (status.stops.z2) {$('#status_limit_x1').removeClass("label-success").addClass("label-danger")}
+      if (status.stops.x2) {$('#status_limit_x2').removeClass("label-success").addClass("label-danger")}
+      if (status.stops.y1) {$('#status_limit_y1').removeClass("label-success").addClass("label-danger")}
+      if (status.stops.y2) {$('#status_limit_y2').removeClass("label-success").addClass("label-danger")}
+      if (status.stops.z1) {$('#status_limit_z1').removeClass("label-success").addClass("label-danger")}
+      if (status.stops.z2) {$('#status_limit_z2').removeClass("label-success").addClass("label-danger")}
       if (status.stops.requested) {$('#status_requested').removeClass("label-success").addClass("label-danger")}
       if (status.stops.buffer) {$('#status_buffer').removeClass("label-success").addClass("label-danger")}
       if (status.stops.marker) {$('#status_marker').removeClass("label-success").addClass("label-danger")}
@@ -279,7 +275,6 @@ var status_handlers = {
     status_set_main_button(status)
   },
   'info': function (status) {
-    console.log("info changed")
     // reset all info indicators
     $(".status_hw").removeClass("label-default")
     $('#status_door').removeClass("label-warning").addClass("label-success")
