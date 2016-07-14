@@ -1,7 +1,6 @@
 
 
 - bugs
-  - door status
   - stop condition does not stop valves
     - stop button does not stop valve
 
