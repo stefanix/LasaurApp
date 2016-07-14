@@ -7,6 +7,7 @@
 - ux
   - run button feedback too delayed on large jobs
   - 500ms status can't keep up
+  - cannot set offset on laser head
 
 
 - send low level combined also as job
