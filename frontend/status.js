@@ -58,11 +58,15 @@ function status_check_new(data1, data2) {
   var flag = false
   if (Array.isArray(data1)) {
     // check array values
-    for (var i = 0; i < data1.length; i++) {
-      if (data1[i] !== data2[i]) {
-        flag = true
-        break
+    if (data1.length == data2.length) {
+      for (var i = 0; i < data1.length; i++) {
+        if (data1[i] !== data2[i]) {
+          flag = true
+          break
+        }
       }
+    } else {
+      flag = true
     }
   } else if (typeof(data1) == 'string'
           || typeof(data1) == 'number'
@@ -71,11 +75,15 @@ function status_check_new(data1, data2) {
       flag = true
     }
   } else if (typeof(data1) == 'object') {
-    for(var k in data1) {
-      if (data1[k] !== data2[k]) {
-        flag = true
-        break
+    if (Object.keys(data1).length == Object.keys(data2).length) {
+      for(var k in data1) {
+        if (data1[k] !== data2[k]) {
+          flag = true
+          break
+        }
       }
+    } else {
+      flag = true
     }
   } else {
     flag = false
