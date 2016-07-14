@@ -7,7 +7,6 @@
 - ux
   - run button feedback too delayed on large jobs
   - 500ms status can't keep up
-  - status labels in firefox squished
 
 
 - send low level combined also as job

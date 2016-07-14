@@ -125,6 +125,7 @@ function controls_ready() {
 
   $("#run_btn").tooltip({placement:'bottom', delay: {show:1000, hide:100}})
   $("#run_btn").click(function(e){
+    app_run_btn.start()
     jobhandler.setPassesFromGUI()
     // save job to queue, in-place
     var load_request = {
@@ -146,6 +147,7 @@ function controls_ready() {
           },
           error: function (data) {
             $().uxmessage('error', "/run error.")
+            app_run_btn.stop()
           },
           complete: function (data) {
 
@@ -155,6 +157,7 @@ function controls_ready() {
       error: function (data) {
         $().uxmessage('error', "/load error.")
         $().uxmessage('error', JSON.stringify(data), false)
+        app_run_btn.stop()
       },
       complete: function (data) {
 
