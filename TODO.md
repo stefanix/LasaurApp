@@ -1,8 +1,7 @@
 
 
 - bugs
-  - stop condition does not stop valves
-    - stop button does not stop valve
+  - stop button does not stop valve
 
 - ux
   - 500ms status can't keep up

@@ -119,40 +119,154 @@ function tools_tjog_init() {
   jobview_jogLayer.activate()
   // greate group
   var group = new paper.Group()
-  var rec_up = new paper.Path.Rectangle(
-    new paper.Point(jobview_width*0.3,0),
-    new paper.Point(jobview_width*0.7,jobview_height*0.3))
-  group.addChild(rec_up)
-  var rec_down = new paper.Path.Rectangle(
-    new paper.Point(jobview_width*0.3,jobview_height*0.7),
-    new paper.Point(jobview_width*0.7,jobview_height))
-  group.addChild(rec_down)
-  var rec_left = new paper.Path.Rectangle(
-    new paper.Point(0,jobview_height*0.3),
-    new paper.Point(jobview_width*0.3,jobview_height*0.7))
-  group.addChild(rec_left)
-  var rec_right = new paper.Path.Rectangle(
-    new paper.Point(jobview_width*0.7,jobview_height*0.3),
-    new paper.Point(jobview_width,jobview_height*0.7))
-  group.addChild(rec_right)
+  var ref = undefined
+  // up widget
+  // var rec_up = new paper.Path.Rectangle(
+  //   new paper.Point(jobview_width*0.3,0),
+  //   new paper.Point(jobview_width*0.7,jobview_height*0.3))
+  // group.addChild(rec_up)
+  var arrow_up = new paper.Path()
+  ref = [0.5*jobview_width,jobview_height*0.1]
+  arrow_up.add(
+    ref,
+    [ref[0]-30,ref[1]+30],
+    [ref[0]-15,ref[1]+30],
+    [ref[0]-15,ref[1]+40],
+    [ref[0]+15,ref[1]+40],
+    [ref[0]+15,ref[1]+30],
+    [ref[0]+30,ref[1]+30],
+    ref)
+  group.addChild(arrow_up)
+  var arrow_up_lg = new paper.Path()
+  ref = [0.5*jobview_width,jobview_height*0.1+50]
+  arrow_up_lg.add(
+    ref,
+    [ref[0]-60,ref[1]+60],
+    [ref[0]-30,ref[1]+60],
+    [ref[0]-30,ref[1]+80],
+    [ref[0]+30,ref[1]+80],
+    [ref[0]+30,ref[1]+60],
+    [ref[0]+60,ref[1]+60],
+    ref)
+  group.addChild(arrow_up_lg)
+  // down widget
+  // var rec_down = new paper.Path.Rectangle(
+  //   new paper.Point(jobview_width*0.3,jobview_height*0.7),
+  //   new paper.Point(jobview_width*0.7,jobview_height))
+  // group.addChild(rec_down)
+  var arrow_down = new paper.Path()
+  ref = [0.5*jobview_width,jobview_height*0.9]
+  arrow_down.add(
+    ref,
+    [ref[0]-30,ref[1]-30],
+    [ref[0]-15,ref[1]-30],
+    [ref[0]-15,ref[1]-40],
+    [ref[0]+15,ref[1]-40],
+    [ref[0]+15,ref[1]-30],
+    [ref[0]+30,ref[1]-30],
+    ref)
+  group.addChild(arrow_down)
+  var arrow_down_lg = new paper.Path()
+  ref = [0.5*jobview_width,jobview_height*0.9-50]
+  arrow_down_lg.add(
+    ref,
+    [ref[0]-60,ref[1]-60],
+    [ref[0]-30,ref[1]-60],
+    [ref[0]-30,ref[1]-80],
+    [ref[0]+30,ref[1]-80],
+    [ref[0]+30,ref[1]-60],
+    [ref[0]+60,ref[1]-60],
+    ref)
+  group.addChild(arrow_down_lg)
+  // left widget
+  // var rec_left = new paper.Path.Rectangle(
+  //   new paper.Point(0,jobview_height*0.3),
+  //   new paper.Point(jobview_width*0.3,jobview_height*0.7))
+  // group.addChild(rec_left)
+  var arrow_left = new paper.Path()
+  ref = [0.1*jobview_width,0.5*jobview_height]
+  arrow_left.add(
+    ref,
+    [ref[0]+30,ref[1]-30],
+    [ref[0]+30,ref[1]-15],
+    [ref[0]+40,ref[1]-15],
+    [ref[0]+40,ref[1]+15],
+    [ref[0]+30,ref[1]+15],
+    [ref[0]+30,ref[1]+30],
+    ref)
+  group.addChild(arrow_left)
+  var arrow_left_lg = new paper.Path()
+  ref = [0.1*jobview_width+50,0.5*jobview_height]
+  arrow_left_lg.add(
+    ref,
+    [ref[0]+60,ref[1]-60],
+    [ref[0]+60,ref[1]-30],
+    [ref[0]+80,ref[1]-30],
+    [ref[0]+80,ref[1]+30],
+    [ref[0]+60,ref[1]+30],
+    [ref[0]+60,ref[1]+60],
+    ref)
+  group.addChild(arrow_left_lg)
+  // right widget
+  // var rec_right = new paper.Path.Rectangle(
+  //   new paper.Point(jobview_width*0.7,jobview_height*0.3),
+  //   new paper.Point(jobview_width,jobview_height*0.7))
+  // group.addChild(rec_right)
+  var arrow_right = new paper.Path()
+  ref = [0.9*jobview_width,0.5*jobview_height]
+  arrow_right.add(
+    ref,
+    [ref[0]-30,ref[1]-30],
+    [ref[0]-30,ref[1]-15],
+    [ref[0]-40,ref[1]-15],
+    [ref[0]-40,ref[1]+15],
+    [ref[0]-30,ref[1]+15],
+    [ref[0]-30,ref[1]+30],
+    ref)
+  group.addChild(arrow_right)
+  var arrow_right_lg = new paper.Path()
+  ref = [0.9*jobview_width-50,0.5*jobview_height]
+  arrow_right_lg.add(
+    ref,
+    [ref[0]-60,ref[1]-60],
+    [ref[0]-60,ref[1]-30],
+    [ref[0]-80,ref[1]-30],
+    [ref[0]-80,ref[1]+30],
+    [ref[0]-60,ref[1]+30],
+    [ref[0]-60,ref[1]+60],
+    ref)
+  group.addChild(arrow_right_lg)
+  // properties
   group.fillColor = '#000000'
-  rec_up.opacity = 0.5
-  rec_down.opacity = 0.5
-  rec_left.opacity = 0.5
-  rec_right.opacity = 0.5
+  arrow_up.opacity = 0.7
+  arrow_up_lg.opacity = 0.7
+  arrow_down.opacity = 0.7
+  arrow_down_lg.opacity = 0.7
+  arrow_left.opacity = 0.7
+  arrow_left_lg.opacity = 0.7
+  arrow_right.opacity = 0.7
+  arrow_right_lg.opacity = 0.7
   // create tool
   tools_tjog = new paper.Tool()
   tools_tjog.onMouseDown = function(event) {
     var hit = jobview_jogLayer.hitTest(event.point)
     if (hit) {
-      if (hit.item === rec_up) {
-        request_relative_move(0, -25, 0, app_config_main.seekrate, "jogging up")
-      } else if (hit.item === rec_down) {
-        request_relative_move(0, 25, 0, app_config_main.seekrate, "jogging down")
-      } else if (hit.item === rec_left) {
-        request_relative_move(-25, 0, 0, app_config_main.seekrate, "jogging left")
-      } else if (hit.item === rec_right) {
-        request_relative_move(25, 0, 0, app_config_main.seekrate, "jogging right")
+      if (hit.item === arrow_up) {
+        request_relative_move(0, -10, 0, app_config_main.seekrate, "jogging up 10mm")
+      } else if (hit.item === arrow_up_lg) {
+        request_relative_move(0, -50, 0, app_config_main.seekrate, "jogging up 50mm")
+      } else if (hit.item === arrow_down) {
+        request_relative_move(0, 10, 0, app_config_main.seekrate, "jogging down 10mm")
+      } else if (hit.item === arrow_down_lg) {
+        request_relative_move(0, 50, 0, app_config_main.seekrate, "jogging down 50mm")
+      } else if (hit.item === arrow_left) {
+        request_relative_move(-10, 0, 0, app_config_main.seekrate, "jogging left 10mm")
+      } else if (hit.item === arrow_left_lg) {
+        request_relative_move(-50, 0, 0, app_config_main.seekrate, "jogging left 50mm")
+      } else if (hit.item === arrow_right) {
+        request_relative_move(10, 0, 0, app_config_main.seekrate, "jogging right 10mm")
+      } else if (hit.item === arrow_right_lg) {
+        request_relative_move(50, 0, 0, app_config_main.seekrate, "jogging right 50mm")
       }
     }
   }
