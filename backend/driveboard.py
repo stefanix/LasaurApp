@@ -893,6 +893,10 @@ def job(jobdict):
         print "ERROR: invalid job"
         return
 
+    # reset vavles
+    air_off()
+    aux1_off()
+
     # ### rasters
     # if jobdict.has_key('raster'):
     #     if jobdict['raster'].has_key('passes') and jobdict['raster'].has_key('images'):
