@@ -72,7 +72,7 @@ function status_check_new(data1, data2) {
     if (data1 !== data2) {
       flag = true
     }
-  } else if (typeof(data1) == 'object') {
+  } else if (typeof(data1) == 'object' && data1 !== null && data2 !== null) {
     if (Object.keys(data1).length == Object.keys(data2).length) {
       for(var k in data1) {
         if (data1[k] !== data2[k]) {
@@ -109,10 +109,10 @@ function status_set_main_button(status) {
 
 function status_set_refresh() {
   if (status_websocket && status_websocket.readyState == 1) {  // connected
-    var every = 1
+    var every = 2
     if (app_visibility) {  // app focused
       if (!status_cache.ready) {  // focused and ready -> idle
-        every = 3
+        every = 4
       }  // else: every = 1
     } else {  // app blured
       every = 10
@@ -213,18 +213,11 @@ var status_handlers = {
     }
   },
   'pos':function (status) {
-    if (status.pos[0] > 0.01 || status.pos[1] > 0.01) {
-      $("#head_position").show()
-      // jobview_headLayer.visible = true
-    } else {
-      $("#head_position").hide()
-      // jobview_headLayer.visible = false
-    }
     // jobview_head_move(status.pos, status.offset)
     $("#head_position").animate({
-      left: Math.round((status.pos[0]+status.offset[0])*jobview_mm2px-16),
-      top: Math.round((status.pos[1]+status.offset[1])*jobview_mm2px-16),
-    }, 500, 'linear' )
+      left: Math.round((status.pos[0]+status.offset[0])*jobview_mm2px-10),
+      top: Math.round((status.pos[1]+status.offset[1])*jobview_mm2px-10),
+    }, 1000, 'linear' )
   },
   'underruns': function (status) {},
   'stackclear': function (status) {
