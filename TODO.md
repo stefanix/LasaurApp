@@ -7,7 +7,6 @@
 - ux
   - 500ms status can't keep up
   - do not hide head at 0,0, but needs to look good
-  - jogtool refinements
 
 - library files not up to date
 
