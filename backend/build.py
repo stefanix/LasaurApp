@@ -1,5 +1,5 @@
 # Super Awesome LasaurGrbl python flash script.
-# 
+#
 # Copyright (c) 2011 Nortd Labs
 # Open Source by the terms of the Gnu Public License (GPL3) or higher.
 
@@ -17,7 +17,7 @@ if sys.platform == "darwin":  # OSX
     AVRSIZEAPP    = "/Applications/Arduino.app/Contents/Resources/Java/hardware/tools/avr/bin/avr-size"
     AVROBJDUMPAPP = "/Applications/Arduino.app/Contents/Resources/Java/hardware/tools/avr/bin/avr-objdump"
     AVRDUDECONFIG = "/Applications/Arduino.app/Contents/Resources/Java/hardware/tools/avr/etc/avrdude.conf"
-    
+
 elif sys.platform == "win32": # Windows
     AVRDUDEAPP    = "C:\\arduino\\hardware\\tools\\avr\\bin\\avrdude"
     AVRGCCAPP     = "C:\\arduino\\hardware\\tools\\avr\\bin\\avr-gcc"
@@ -25,7 +25,7 @@ elif sys.platform == "win32": # Windows
     AVRSIZEAPP    = "C:\\arduino\\hardware\\tools\\avr\\bin\\avr-size"
     AVROBJDUMPAPP = "C:\\arduino\\hardware\\tools\\avr\\bin\\avr-objdump"
     AVRDUDECONFIG = "C:\\arduino\\hardware\\tools\\avr\\etc\\avrdude.conf"
-    
+
 elif sys.platform == "linux" or sys.platform == "linux2":  #Linux
     AVRDUDEAPP    = "avrdude"
     AVRGCCAPP     = "avr-gcc"
@@ -73,7 +73,7 @@ def build_firmware(firmware_name="LasaurGrbl"):
     for fileobj in OBJECTS:
         command = '%(compile)s -c %(obj)s.c -o %(obj)s.o' % {'compile': COMPILE, 'obj':fileobj}
         ret += subprocess.call(command, shell=True)
-  
+
     command = '%(compile)s -o main.elf %(alldoto)s  -lm' % {'compile': COMPILE, 'alldoto':".o ".join(OBJECTS)+'.o'}
     ret += subprocess.call(command, shell=True)
 
@@ -108,6 +108,7 @@ def build_firmware(firmware_name="LasaurGrbl"):
         firmware_src = firmware_name+'.hex'
         firmware_dst = os.path.join(firmware_dir, firmware_src)
         shutil.move(firmware_src, firmware_dst)
+        print firmware_dst
     finally:
         #restore previous cwd
         os.chdir(cwd_temp)

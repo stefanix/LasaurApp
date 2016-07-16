@@ -67,7 +67,8 @@ function status_check_new(data1, data2) {
     }
   } else if (typeof(data1) == 'string'
           || typeof(data1) == 'number'
-          || typeof(data1) == 'boolean') {
+          || typeof(data1) == 'boolean'
+          || typeof(data1) == 'undefined') {
     if (data1 !== data2) {
       flag = true
     }
@@ -180,18 +181,18 @@ var status_handlers = {
   //// when hardware connected
   'appver': function (status) {
     if (status.appver) {
-      $().uxmessage('notice', "LasaurApp v" + status.appver)
-      $('#app_version').html(data.appver)
+      // $().uxmessage('notice', "LasaurApp v" + status.appver)
+      $('#app_version').html(status.appver)
     } else {
       $('#app_version').html('&lt;not received&gt;')
     }
   },
   'firmver': function (status) {
     if (status.firmver) {
-      $().uxmessage('notice', "Firmware v" + status.firmver)
-      $('#firm_version').html(data.firmver)
+      // $().uxmessage('notice', "Firmware v" + status.firmver)
+      $('#firm_version').html(status.firmver)
     } else {
-      $('#firm_version').html('&lt;not received&gt;')
+      $('#firm_version').html("&lt;unknow&gt;")
     }
   },
   'paused': function (status) {

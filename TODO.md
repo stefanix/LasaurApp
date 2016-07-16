@@ -5,19 +5,15 @@
     - stop button does not stop valve
 
 - ux
-  - run button feedback too delayed on large jobs
   - 500ms status can't keep up
-  - cannot set offset on laser head
+  - do not hide head at 0,0, but needs to look good
+  - jogtool refinements
 
 
 - send low level combined also as job
   - bypass queue
   - e.g: boundary
 
-- select tool
-- offset tool
-- move tool
-- jog tool
 
 - gcode editor
 
@@ -27,3 +23,5 @@
 - raster
   - raster fills
   - image raster
+
+- library files not up to date

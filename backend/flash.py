@@ -27,6 +27,7 @@ def flash_upload(serial_port=serial_port, resources_dir=resources_dir, firmware_
 
     if not os.path.exists(FIRMWARE):
         print "ERROR: invalid firmware path"
+        print FIRMWARE
         return
 
     if not (conf['hardware'] == 'beaglebone' or conf['hardware'] == 'raspberrypi'):

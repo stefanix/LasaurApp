@@ -23,7 +23,7 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-#define VERSION 1500             // int or float
+#define VERSION 1501             // int or float
 #define BAUD_RATE 57600
 // #define DEBUG_IGNORE_SENSORS  // set for debugging
 // #define NOT_GEARED
@@ -59,7 +59,7 @@
 #define AUX1_ASSIST_BIT         7           // Arduino: 7
 #define AUX2_ASSIST_BIT         5           // Arduino: 5
 // laser pwm                    6           // Ardunio: 6
-  
+
 #define LIMIT_DDR               DDRC
 #define LIMIT_PORT              PORTC
 #define LIMIT_PIN               PINC
@@ -112,10 +112,10 @@
 
 // The temporal resolution of the acceleration management subsystem. Higher number give smoother
 // acceleration but may impact performance.
-// NOTE: Increasing this parameter will help any resolution related issues, especially with machines 
-// requiring very high accelerations and/or very fast feedrates. In general, this will reduce the 
+// NOTE: Increasing this parameter will help any resolution related issues, especially with machines
+// requiring very high accelerations and/or very fast feedrates. In general, this will reduce the
 // error between how the planner plans the motions and how the stepper program actually performs them.
-// However, at some point, the resolution can be high enough, where the errors related to numerical 
+// However, at some point, the resolution can be high enough, where the errors related to numerical
 // round-off can be great enough to cause problems and/or it's too fast for the Arduino. The correct
 // value for this parameter is machine dependent, so it's advised to set this only as high as needed.
 // Approximate successful values can range from 30L to 100L or more.
@@ -132,7 +132,7 @@
 // never reach its target. This parameter should always be greater than zero.
 #define MINIMUM_STEPS_PER_MINUTE 1600U // (steps/min) - Integer value only
 // 1600 @ 32step_per_mm = 50mm/min
-  
+
 
 #define X_AXIS 0
 #define Y_AXIS 1
@@ -163,4 +163,3 @@
 // x ^= (1 << n); // toggles nth bit of x. all other bits left alone.
 //
 // x = ~x; // toggles ALL the bits in x.
-

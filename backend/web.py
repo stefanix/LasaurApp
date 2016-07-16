@@ -512,7 +512,7 @@ def build(firmware_name=None):
     if return_code != 0:
         bottle.abort(400, "Build failed.")
     else:
-        return '{"flash_url": "/flash/%s"}' % (buildname)
+        return '{"flash_url": "/flash/%s.hex"}' % (buildname)
 
 
 @bottle.route('/flash')
