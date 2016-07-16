@@ -298,6 +298,7 @@ function controls_ready() {
   $("#jog_btn").click(function(e){
     if (!$(this).hasClass('disabled')) {
       $(".tool_extra_btn").hide()
+      $("#jog_hotkey_hint").show()
       tools_tjog.activate()
       jobview_jogLayer.visible = true
     } else {

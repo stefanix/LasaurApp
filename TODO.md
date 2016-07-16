@@ -2,6 +2,7 @@
 
 - bugs
   - stop button does not stop valve
+  - stall between certain x-axis jogs
 
 - ux
   - 500ms status can't keep up
