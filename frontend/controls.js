@@ -404,5 +404,37 @@ function controls_ready() {
       return false;
   })
 
+  Mousetrap.bind(['up'], function(e) {
+      request_relative_move(0, -10, 0, app_config_main.seekrate, "jogging up 10mm")
+      return false;
+  })
+  Mousetrap.bind(['shift+up'], function(e) {
+      request_relative_move(0, -50, 0, app_config_main.seekrate, "jogging up 50mm")
+      return false;
+  })
+  Mousetrap.bind(['down'], function(e) {
+      request_relative_move(0, 10, 0, app_config_main.seekrate, "jogging down 10mm")
+      return false;
+  })
+  Mousetrap.bind(['shift+down'], function(e) {
+      request_relative_move(0, 50, 0, app_config_main.seekrate, "jogging down 50mm")
+      return false;
+  })
+  Mousetrap.bind(['left'], function(e) {
+      request_relative_move(-10, 0, 0, app_config_main.seekrate, "jogging left 10mm")
+      return false;
+  })
+  Mousetrap.bind(['shift+left'], function(e) {
+      request_relative_move(-50, 0, 0, app_config_main.seekrate, "jogging left 50mm")
+      return false;
+  })
+  Mousetrap.bind(['right'], function(e) {
+      request_relative_move(10, 0, 0, app_config_main.seekrate, "jogging right 10mm")
+      return false;
+  })
+  Mousetrap.bind(['shift+right'], function(e) {
+      request_relative_move(50, 0, 0, app_config_main.seekrate, "jogging right 50mm")
+      return false;
+  })
 
 }
