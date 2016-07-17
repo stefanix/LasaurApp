@@ -185,7 +185,6 @@ jobhandler = {
     // clear canvas
     // paper.project.clear()
     jobview_clear()
-    jobview_calc_scale()
     var scale = jobview_mm2px
 
     // rasters

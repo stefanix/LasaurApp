@@ -51,26 +51,6 @@ function jobview_reset_layer(layer) {
 }
 
 
-function jobview_calc_scale() {
-  // figure out scale
-  var w_workspace = app_config_main.workspace[0]
-  var h_workspace = app_config_main.workspace[1]
-
-  jobview_width = $('#job_canvas').innerWidth()
-  jobview_height = $('#job_canvas').innerHeight()
-
-  var aspect_workspace = w_workspace/h_workspace
-  var aspect_canvas = jobview_width/jobview_height
-
-  jobview_mm2px = jobview_width/w_workspace
-  if (aspect_canvas > aspect_workspace) {
-    // canvas wider, fit by height
-    jobview_mm2px = jobview_height/h_workspace
-  }
-
-}
-
-
 function jobview_resize() {
   var max_canvas_width = $(window).innerWidth()-info_width_init-2
   var max_canvas_height = $(window).innerHeight()-nav_height_init-footer_height_init
@@ -111,7 +91,7 @@ function jobview_resize() {
       $("#info_panel").height(max_canvas_height)
     }
   } else {
-    console.log("na")
+    console.log("config retrieve error")
   }
   jobview_width = $('#job_canvas').innerWidth()
   jobview_height = $('#job_canvas').innerHeight()
@@ -150,7 +130,6 @@ function jobview_deselect_all() {
 
 $(window).resize(function() {
   jobview_resize()
-  jobview_calc_scale()
 })
 
 
