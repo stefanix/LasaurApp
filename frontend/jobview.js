@@ -20,8 +20,6 @@ var jobview_height_last = 0
 
 var jobview_color_selected = undefined
 
-var jobview_scale = 1
-
 
 
 function jobview_clear(){
@@ -64,11 +62,9 @@ function jobview_calc_scale() {
   var aspect_workspace = w_workspace/h_workspace
   var aspect_canvas = jobview_width/jobview_height
 
-  jobview_scale = jobview_width/w_workspace  // default for same aspect
   jobview_mm2px = jobview_width/w_workspace
   if (aspect_canvas > aspect_workspace) {
     // canvas wider, fit by height
-    jobview_scale = jobview_height/h_workspace
     jobview_mm2px = jobview_height/h_workspace
   }
 
@@ -76,7 +72,7 @@ function jobview_calc_scale() {
 
 
 function jobview_resize() {
-  var max_canvas_width = $(window).innerWidth()-info_width_init
+  var max_canvas_width = $(window).innerWidth()-info_width_init-2
   var max_canvas_height = $(window).innerHeight()-nav_height_init-footer_height_init
 
   // calculate jobview_mm2px
@@ -100,8 +96,13 @@ function jobview_resize() {
       jobview_mm2px = max_canvas_width/wk_width
       $("#job_canvas").width(max_canvas_width)
       var h_scaled = Math.floor(wk_height*jobview_mm2px)
-      $("#main_container").height(h_scaled)
-      $("#info_panel").height(h_scaled)
+      if (h_scaled < 400) {  // keep sane height
+        $("#main_container").height(h_scaled)
+        $("#info_panel").height(max_canvas_height)
+      } else {
+        $("#main_container").height(h_scaled)
+        $("#info_panel").height(h_scaled)
+      }
     } else {
       // excact fit
       jobview_mm2px = max_canvas_width/wk_width

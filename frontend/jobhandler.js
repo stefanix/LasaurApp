@@ -186,7 +186,7 @@ jobhandler = {
     // paper.project.clear()
     jobview_clear()
     jobview_calc_scale()
-    var scale = jobview_scale
+    var scale = jobview_mm2px
 
     // rasters
     if ('images' in this.raster) {
@@ -288,7 +288,7 @@ jobhandler = {
     jobview_boundsLayer.activate()
     // var all_bounds = new paper.Path.Rectangle(this.job_group.bounds)
     // var bbox_all = this.stats['_all_'].bbox
-    var scale = jobview_scale
+    var scale = jobview_mm2px
     var bbox = this.getActivePassesBbox()
     var all_bounds = new paper.Path.Rectangle(
                                     new paper.Point(bbox[0]*scale,bbox[1]*scale),
