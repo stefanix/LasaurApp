@@ -57,66 +57,60 @@ function jobview_calc_scale() {
   // figure out scale
   var w_workspace = app_config_main.workspace[0]
   var h_workspace = app_config_main.workspace[1]
+
+  jobview_width = $('#job_canvas').innerWidth()
+  jobview_height = $('#job_canvas').innerHeight()
+
   var aspect_workspace = w_workspace/h_workspace
-  var w_canvas = $('#job_canvas').innerWidth()
-  var h_canvas = $('#job_canvas').innerHeight()
-  var aspect_canvas = w_canvas/h_canvas
-  jobview_scale = w_canvas/w_workspace  // default for same aspect
+  var aspect_canvas = jobview_width/jobview_height
+
+  jobview_scale = jobview_width/w_workspace  // default for same aspect
+  jobview_mm2px = jobview_width/w_workspace
   if (aspect_canvas > aspect_workspace) {
     // canvas wider, fit by height
-    jobview_scale = h_canvas/h_workspace
+    jobview_scale = jobview_height/h_workspace
+    jobview_mm2px = jobview_height/h_workspace
   }
-  // if (aspect_canvas > aspect_workspace) {
-  //   // canvas wider, fit by height
-  //   jobview_scale = h_canvas/h_workspace
-  //   // indicate border, only on one side necessary
-  //   var w_scaled = w_workspace*scale
-  //   var p_bound = new paper.Path()
-  //   p_bound.fillColor = '#eeeeee'
-  //   p_bound.closed = true
-  //   p_bound.add([w_scaled,0],[w_canvas,0],[w_canvas,h_canvas],[w_scaled,h_canvas])
-  // } else if (aspect_workspace > aspect_canvas) {
-  //   var h_scaled = h_workspace*scale
-  //   var p_bound = new paper.Path()
-  //   p_bound.fillColor = '#eeeeee'
-  //   p_bound.closed = true
-  //   p_bound.add([0,h_scaled],[w_canvas,h_scaled],[w_canvas,h_canvas],[0,h_canvas])
-  // }
+
 }
 
 
 function jobview_resize() {
-  var win_width = $(window).innerWidth()
-  var win_height = $(window).innerHeight()
-  var canvas_width = win_width-info_width_init
-  var canvas_height = win_height-nav_height_init-footer_height_init
-  // var containter_height = win_height-nav_height_init-footer_height_init
-  $("#main_container").height(canvas_height)
-  $("#canvas_container").width(canvas_width)
-  // $("#info_panel").width(job_info_min_width)
-  $("#info_panel").height(canvas_height)
+  var max_canvas_width = $(window).innerWidth()-info_width_init
+  var max_canvas_height = $(window).innerHeight()-nav_height_init-footer_height_init
 
   // calculate jobview_mm2px
   // used to scale mm geometry to be displayed on canvas
   if (app_config_main !== undefined) {
     var wk_width = app_config_main.workspace[0]
     var wk_height = app_config_main.workspace[1]
+    // get aspects, portrait: < 1, landscape: > 1
     var aspect_workspace = wk_width/wk_height
-    var aspect_canvas = canvas_width/canvas_height
-    jobview_mm2px = canvas_width/wk_width  // default for same aspect
-    if (aspect_canvas > aspect_workspace) {
+    var aspect_canvas_void = max_canvas_width/max_canvas_height
+    if (aspect_canvas_void > aspect_workspace) {  // workspace is narrower
+      console.log("fit by height")
       // canvas wider, fit by height
-      jobview_mm2px = canvas_height/wk_height
-      // indicate border, only on one side necessary
-      $("#canvas_container").width(Math.floor(wk_width*jobview_mm2px))
-    } else if (aspect_workspace > aspect_canvas) {
+      jobview_mm2px = max_canvas_height/wk_height
+      $("#job_canvas").width(Math.floor(wk_width*jobview_mm2px))
+      $("#main_container").height(max_canvas_height)
+      $("#info_panel").height(max_canvas_height)
+    } else if (aspect_workspace > aspect_canvas_void) {  // workspace is wider
+      console.log("fit by width!")
       // canvas taller, fit by width
+      jobview_mm2px = max_canvas_width/wk_width
+      $("#job_canvas").width(max_canvas_width)
       var h_scaled = Math.floor(wk_height*jobview_mm2px)
       $("#main_container").height(h_scaled)
       $("#info_panel").height(h_scaled)
     } else {
       // excact fit
+      jobview_mm2px = max_canvas_width/wk_width
+      $("#job_canvas").width(max_canvas_width)
+      $("#main_container").height(max_canvas_height)
+      $("#info_panel").height(max_canvas_height)
     }
+  } else {
+    console.log("na")
   }
   jobview_width = $('#job_canvas').innerWidth()
   jobview_height = $('#job_canvas').innerHeight()
