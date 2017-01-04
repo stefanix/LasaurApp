@@ -213,37 +213,28 @@ class SVGReader:
                     self.px2mm *= 10.0
                     log.info("px2mm by svg cm unit")
                 elif unit == 'px' or unit == '':
+                    pass
                     # no physical units in file
                     # we have to interpret user (px) units
-                    # 3. For some apps we can make a good guess.
-                    svghead = svgstring[0:400]
-                    if 'Inkscape' in svghead:
-                        self.px2mm *= 25.4/90.0
-                        log.info("SVG exported with Inkscape -> 90dpi.")
-                    elif 'Illustrator' in svghead:
-                        self.px2mm *= 25.4/72.0
-                        log.info("SVG exported with Illustrator -> 72dpi.")
-                    elif 'Intaglio' in svghead:
-                        self.px2mm *= 25.4/72.0
-                        log.info("SVG exported with Intaglio -> 72dpi.")
-                    elif 'CorelDraw' in svghead:
-                        self.px2mm *= 25.4/96.0
-                        log.info("SVG exported with CorelDraw -> 96dpi.")
-                    elif 'Qt' in svghead:
-                        self.px2mm *= 25.4/90.0
-                        log.info("SVG exported with Qt lib -> 90dpi.")
-                    else:
-                        # give up in this step
-                        self.px2mm = None
-                else:
-                    log.error("SVG with unsupported unit.")
-                    self.px2mm = None
 
-        # 4. Get px2mm by the ratio of svg size to target size
-        if not self.px2mm and (width and height):
-            self.px2mm = self._target_size[0]/width
-            log.info("px2mm by target_size/page_size ratio")
-
+        # 3. For some apps we can make a good guess.
+        if not self.px2mm:
+            svghead = svgstring[0:400]
+            if 'Inkscape' in svghead:
+                self.px2mm *= 25.4/90.0
+                log.info("SVG exported with Inkscape -> 90dpi.")
+            elif 'Illustrator' in svghead:
+                self.px2mm *= 25.4/72.0
+                log.info("SVG exported with Illustrator -> 72dpi.")
+            elif 'Intaglio' in svghead:
+                self.px2mm *= 25.4/72.0
+                log.info("SVG exported with Intaglio -> 72dpi.")
+            elif 'CorelDraw' in svghead:
+                self.px2mm *= 25.4/96.0
+                log.info("SVG exported with CorelDraw -> 96dpi.")
+            elif 'Qt' in svghead:
+                self.px2mm *= 25.4/90.0
+                log.info("SVG exported with Qt lib -> 90dpi.")
 
         # 5. Fall back on px unit DPIs default value
         if not self.px2mm:
@@ -255,11 +246,11 @@ class SVGReader:
 
         # translation from viewbox
         if vb_x:
-            tx = vb_x
+            tx = -1 * vb_x
         else:
             tx = 0.0
         if vb_y:
-            ty = vb_y
+            ty = -1 * vb_y
         else:
             ty = 0.0
 
