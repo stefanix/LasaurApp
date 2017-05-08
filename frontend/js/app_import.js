@@ -223,10 +223,7 @@ $(document).ready(function(){
     return false;
   });
 
-
-  // setting up add to queue button
-  $("#import_to_queue").click(function(e) {
-    if (!(DataHandler.isEmpty())) {
+  function addToQueue(){
       var jobdata = DataHandler.getJson(getDeselectedColors());
       var filename = $('#import_name').val();
       save_and_add_to_job_queue(filename, jobdata);
@@ -238,12 +235,20 @@ $(document).ready(function(){
       canvas.background('#ffffff');
       $('#dpi_import_info').html(supported_files_text);
       $('#import_name').val('');
+  }
+
+  // setting up add to queue button
+  $("#import_to_queue").click(function(e) {
+    if (!(DataHandler.isEmpty())) {
+      //if(!useOdoo) {
+        addToQueue();
+//      } else {
+//        $('#material_modal').modal();
+//      }
     } else {
       $().uxmessage('warning', "no data");
     }
     return false;
   });
-
-
 
 });  // ready

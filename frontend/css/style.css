@@ -1,11 +1,11 @@
 
 body {
-  padding-top:50px; 
+  padding-top:50px;
 }
 
 
-a:focus { 
-    outline: none; 
+a:focus {
+    outline: none;
 }
 
 
@@ -20,12 +20,13 @@ div.log_item {
 }
 div.log_notice {
   border: 1px solid #aaaaaa;
+  border-radius: 0;
 }
 div.log_success {
   border: 1px solid green;
 }
 div.log_warning {
-  border: 1px solid orange;  
+  border: 1px solid orange;
 }
 div.log_error {
   border: 1px solid red;
@@ -33,4 +34,78 @@ div.log_error {
 
 button.active-strong {
   border: 1px solid #aaaaaa;
+}
+
+#container {
+  margin-top: 40px;
+}
+
+.jog_btns .btn {
+  padding: 0;
+  margin: 0;
+}
+
+.jog_btns #jog_up_btn, .jog_btns #jog_down_btn {
+  width: 100%;
+}
+
+.jog_btns #jog_left_btn, .jog_btns #jog_right_btn {
+  width: 50%;
+}
+
+#job_history tbody td.name span {
+  text-overflow: ellipsis;
+  width: 130px;
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+#job_history_big tbody tr {
+  cursor: pointer;
+}
+#job_history_big tbody tr.selected {
+  background-color: #4caf50;
+  color: white;
+}
+#selected_history_label {
+  margin-right: 100px;
+}
+
+#selected_history_label .selected-label {
+  margin-right: 5px;
+}
+
+#history_modal .modal-footer {
+  padding-top: 10px;
+}
+
+#history_modal .scroll-container {
+  height: 425px;
+  overflow-y: scroll;
+}
+#history_modal .cell.row-1 { width: 250px; }
+#history_modal .cell.row-2 { width: 115px; }
+#history_modal .cell.row-3 { width: 130px; }
+#history_modal .cell.row-4 { width: 130px; }
+#history_modal .cell.row-5 { width: 80px; }
+#history_modal .cell.row-6 { width: 100px; }
+
+#history_modal .row-1 { width: 215px; }
+#history_modal .row-2 { width: 100px; }
+#history_modal .row-3 { width: 115px; }
+#history_modal .row-4 { width: 115px; }
+#history_modal .row-5 { width: 80px; }
+#history_modal .row-6 { width: 100px; }
+
+#history_modal .cell {
+  display: inline-block;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.btn-primary.active:not(.btn-link):not(.btn-flat) {
+  background-color: #00C320;
+  text-decoration: underline;
 }

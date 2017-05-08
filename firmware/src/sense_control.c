@@ -38,25 +38,37 @@ void sense_init() {
 
 void control_init() {
   //// laser control
-  // Setup Timer0 for a 488.28125Hz "phase correct PWM" wave (assuming a 16Mhz clock)
-  // Timer0 can pwm either PD5 (OC0B) or PD6 (OC0A), we use PD6
-  // TCCR0A and TCCR0B are the registers to setup Timer0
-  // see chapter "8-bit Timer/Counter0 with PWM" in Atmga328 specs
-  // OCR0A sets the duty cycle 0-255 corresponding to 0-100%
-  // also see: http://arduino.cc/en/Tutorial/SecretsOfArduinoPWM
-  DDRD |= (1 << DDD6);      // set PD6 as an output
-  OCR0A = 0;              // set PWM to a 0% duty cycle
-  TCCR0A = _BV(COM0A1) | _BV(WGM00);   // phase correct PWM mode
-  // TCCR0A = _BV(COM0A1) | _BV(WGM01) | _BV(WGM00);  // fast PWM mode
-  // prescaler: PWMfreq = 16000/(2*256*prescaler)
-  // TCCR0B = _BV(CS00);                // 1 => 31.3kHz
-  // TCCR0B = _BV(CS01);                // 8 => 3.9kHz
-  TCCR0B = _BV(CS01) | _BV(CS00);    // 64 => 489Hz
-  // TCCR0B = _BV(CS02);                // 256 => 122Hz
-  // TCCR0B = _BV(CS02) | _BV(CS00);    // 1024 => 31Hz
-  // NOTES:
-  // PPI = PWMfreq/(feedrate/25.4/60)
-
+  #ifdef SYNRAD
+    // For SYNRAD 48-5 RFF lasertube we need to use PD5 (OC0B) as only this can be
+    // configured with 5kHz
+    DDRD |= (1 << DDD5);      // set PD5 as an output
+    //Use CTC-Mode with phase-correct PWM
+    //This means the pwm counts from 0 to OCR0A and back.
+    //Since we can't use PD6 in this mode, we have to usw PD5.
+    TCCR0A = _BV(COM0B1) | _BV(COM0A0) | _BV(WGM00); //CTC phase-correct mode
+    TCCR0B = _BV(WGM02) | _BV(CS01); //3,9kHz
+    OCR0A = 200; //set upper pwm border so that 3,9kHz * 255 / 200 = 4,97kHz
+    OCR0B = 1; //Set Tickle signal (1µs)
+  #else  // This is the standard RECI setting
+    // Setup Timer0 for a 488.28125Hz "phase correct PWM" wave (assuming a 16Mhz clock)
+    // Timer0 can pwm either PD5 (OC0B) or PD6 (OC0A), we use PD6
+    // TCCR0A and TCCR0B are the registers to setup Timer0
+    // see chapter "8-bit Timer/Counter0 with PWM" in Atmga328 specs
+    // OCR0A sets the duty cycle 0-255 corresponding to 0-100%
+    // also see: http://arduino.cc/en/Tutorial/SecretsOfArduinoPWM
+    DDRD |= (1 << DDD6);      // set PD6 as an output
+    OCR0A = 0;              // set PWM to a 0% duty cycle
+    TCCR0A = _BV(COM0A1) | _BV(WGM00);   // phase correct PWM mode
+    // TCCR0A = _BV(COM0A1) | _BV(WGM01) | _BV(WGM00);  // fast PWM mode
+    // prescaler: PWMfreq = 16000/(2*256*prescaler)
+    // TCCR0B = _BV(CS00);                // 1 => 31.3kHz
+    // TCCR0B = _BV(CS01);                // 8 => 3.9kHz
+    TCCR0B = _BV(CS01) | _BV(CS00);    // 64 => 489Hz
+    // TCCR0B = _BV(CS02);                // 256 => 122Hz
+    // TCCR0B = _BV(CS02) | _BV(CS00);    // 1024 => 31Hz
+    // NOTES:
+    // PPI = PWMfreq/(feedrate/25.4/60)
+  #endif
   //// air and aux assist control
   ASSIST_DDR |= (1 << AIR_ASSIST_BIT);   // set as output pin
   ASSIST_DDR |= (1 << AUX1_ASSIST_BIT);  // set as output pin
@@ -74,7 +86,14 @@ void control_init() {
 
 
 void control_laser_intensity(uint8_t intensity) {
-  OCR0A = intensity;
+  #ifndef SYNRAD
+    uint16_t temp = intensity;
+    temp = temp * 200; //Adjust the maximum value to be 200, since we
+    temp = temp >> 8;  //  only count to 200.
+    OCR0B = (temp < 1 ? 1 : temp); //Always let the Tickle Signal remain (1µs)
+  #else
+    OCR0A = intensity;
+  #endif  
 }
 
 

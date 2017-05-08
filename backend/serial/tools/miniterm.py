@@ -289,7 +289,7 @@ class Miniterm(object):
                                     self.serial.write('\r\n')
                                     # Wait for output buffer to drain.
                                     self.serial.flush()
-                                    sys.stderr.write('.')   # Progress indicator.
+                                    #sys.stderr.write('.')   # Progress indicator. #TODO: output debug mode
                                 sys.stderr.write('\n--- File %s sent ---\n' % filename)
                             except IOError, e:
                                 sys.stderr.write('--- ERROR opening file %s: %s ---\n' % (filename, e))

@@ -3,7 +3,7 @@ import re
 
 
 re_findall_floats = re.compile('(-?[0-9]+\.?[0-9]*(?:e-?[0-9]*)?)').findall
-re_scalar_unit = re.compile('(-?[0-9]+\.?[0-9]*(?:e-?[0-9]*)?)([a-z]*)').findall
+re_scalar_unit = re.compile('(-?[0-9]+\.?[0-9]*(?:e-?[0-9]*)?) ?([a-z]*)').findall
 
 
 def parseFloats(float_strings):
