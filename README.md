@@ -34,7 +34,7 @@ For more information see the [Lasersaur Software Setup Guide](http://www.lasersa
 Notes on Creating Standalone Apps
 ----------------------------------
 
-With [PyInstaller](http://www.pyinstaller.org) it's possible to convert a python app to a standalone, single file executable. This allows us to make the setup process much easier and remove all the the prerequisites on the target machine (including python).
+With [PyInstaller](http://www.pyinstaller.org) it's possible to convert a python app to a standalone, single file executable. This allows us to make the setup process much easier and remove all the prerequisites on the target machine (including python).
 
 From a shell/Terminal do the following:
 
